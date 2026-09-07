@@ -1,0 +1,548 @@
+/* =====================================================
+   JIN JI BAO XI (金雞報喜) SLOT SCREEN CSS
+   ===================================================== */
+
+.jinji-screen {
+  width: 100vw;
+  height: 100vh;
+  background-color: #12002b;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  user-select: none;
+}
+
+/* GLOBAL INTERACTIVE BUTTON ANIMATIONS */
+button, .jinji-side-card, .jinji-avatar, .jinji-plus-btn, .pick-coin-card {
+  transition: transform 0.12s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.12s ease;
+}
+button:active, .jinji-side-card:active, .jinji-avatar:active, .jinji-plus-btn:active, .pick-coin-card:active {
+  transform: scale(0.92) !important;
+  filter: brightness(0.9);
+}
+button:hover, .jinji-side-card:hover, .jinji-avatar:hover, .jinji-plus-btn:hover {
+  filter: brightness(1.15);
+}
+
+/* Background Night Sky & Temple Bridge Scenery */
+.jinji-bg-sky {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: 
+    radial-gradient(ellipse at 50% 10%, #4a148c 0%, #1a0033 60%, #0a001a 100%),
+    linear-gradient(180deg, rgba(26, 0, 51, 0.4) 0%, rgba(10, 0, 26, 0.9) 100%);
+  z-index: 0;
+}
+.jinji-bg-sky::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: 
+    radial-gradient(circle at 10% 80%, rgba(255, 179, 0, 0.25) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(255, 179, 0, 0.25) 0%, transparent 40%);
+  pointer-events: none;
+}
+
+/* TOP LEFT (Profile & Coins) */
+.jinji-top-left {
+  position: absolute;
+  top: 1.2vh; left: 1.5vw;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+}
+.jinji-avatar {
+  position: relative;
+  width: 6.8vh; height: 6.8vh;
+  border: 0.3vh solid #ffd700;
+  border-radius: 50%;
+  box-shadow: 0 0.4vh 1vh rgba(0,0,0,0.6);
+  background: radial-gradient(circle, #ffe082, #b8860b);
+  cursor: pointer;
+}
+.jinji-avatar img {
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.jinji-vip-badge {
+  position: absolute;
+  bottom: -0.8vh; left: 50%; transform: translateX(-50%);
+  background: linear-gradient(180deg, #ff1744, #b71c1c);
+  color: #fff;
+  font-size: 1.1vh; font-weight: 900;
+  padding: 0.1vh 0.8vh;
+  border-radius: 1vh;
+  border: 0.15vh solid #ffe082;
+  box-shadow: 0 0.2vh 0.4vh rgba(0,0,0,0.5);
+  white-space: nowrap;
+}
+.jinji-signal-icon {
+  margin-left: 0.5vw;
+  display: flex; gap: 0.15vw; align-items: flex-end; height: 2vh;
+}
+.jinji-sig-bar { width: 0.3vw; background: #4caf50; border-radius: 0.1vw; }
+.jinji-sig-bar.b1 { height: 35%; }
+.jinji-sig-bar.b2 { height: 65%; }
+.jinji-sig-bar.b3 { height: 100%; }
+
+.jinji-coins-display {
+  background: rgba(10, 0, 26, 0.8);
+  color: #ffffff;
+  font-size: 2.2vh; font-weight: 800;
+  padding: 0.6vh 2.5vw;
+  border-radius: 2vh;
+  margin-left: 0.8vw;
+  border: 0.15vh solid #b8860b;
+  box-shadow: inset 0 0 0.8vh rgba(0,0,0,0.8);
+}
+.jinji-plus-btn {
+  background: radial-gradient(circle, #ffe082 20%, #ffb300 80%);
+  color: #4a148c;
+  width: 3.5vh; height: 3.5vh;
+  border-radius: 50%;
+  display: flex; justify-content: center; align-items: center;
+  font-weight: 900; font-size: 2.5vh;
+  margin-left: -1.2vw;
+  border: 0.2vh solid #ffffff;
+  box-shadow: 0 0.2vh 0.6vh rgba(0,0,0,0.6);
+  cursor: pointer;
+}
+
+/* TOP RIGHT (Header Icons) */
+.jinji-top-right {
+  position: absolute;
+  top: 1.2vh; right: 1.5vw;
+  z-index: 30;
+  display: flex; gap: 0.8vw;
+}
+.jinji-tr-btn {
+  width: 5.6vh; height: 5.6vh;
+  border-radius: 50%;
+  border: 0.2vh solid #ffe082;
+  background: radial-gradient(circle, #b8860b 0%, #311b92 100%);
+  color: #ffe082;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  box-shadow: 0 0.4vh 1vh rgba(0,0,0,0.6);
+  cursor: pointer;
+}
+.jinji-tr-btn.trophy-btn { font-size: 2.5vh; }
+.jinji-tr-btn.room-btn span { font-size: 1.4vh; margin-bottom: -0.4vh; }
+.jinji-tr-btn.room-btn small { font-size: 0.9vh; line-height: 1; text-align: center; color: #ffe082; font-weight: 800; }
+.jinji-tr-btn.menu-btn { font-size: 2.8vh; }
+
+/* TOP JACKPOT BANNER & FU POT */
+.jinji-jackpot-header {
+  position: absolute;
+  top: 1.2vh; left: 50%; transform: translateX(-50%);
+  width: 58vw; max-width: 850px; height: 12vh;
+  z-index: 25;
+  display: grid;
+  grid-template-columns: 1fr 1fr 120px 1fr 1fr;
+  gap: 0.6vw;
+  align-items: center;
+}
+
+.jackpot-box {
+  background: linear-gradient(180deg, #28004d 0%, #12002b 100%);
+  border: 0.2vh solid #ffe082;
+  border-radius: 0.8vh;
+  padding: 0.4vh 0.8vw;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  box-shadow: 0 0.4vh 0.8vh rgba(0,0,0,0.6);
+}
+.jackpot-box.grand { border-color: #f44336; background: linear-gradient(180deg, #b71c1c, #4a0000); }
+.jackpot-box.major { border-color: #2196f3; background: linear-gradient(180deg, #0d47a1, #001538); }
+.jackpot-box.minor { border-color: #ab47bc; background: linear-gradient(180deg, #4a148c, #1a0033); }
+.jackpot-box.mini { border-color: #66bb6a; background: linear-gradient(180deg, #1b5e20, #002200); }
+
+.jp-label { font-size: 1.2vh; font-weight: 900; color: #ffe082; letter-spacing: 0.05vw; }
+.jp-val { font-size: 2vh; font-weight: 900; color: #ffffff; text-shadow: 0 0.15vh 0.3vh #000; }
+
+/* Center Fu Pot */
+.jinji-fu-pot-container {
+  display: flex; justify-content: center; align-items: center;
+  position: relative;
+}
+.jinji-fu-pot {
+  width: 90px; height: 75px;
+  background: radial-gradient(circle at 50% 30%, #ffeb3b 0%, #ff8f00 40%, #b71c1c 90%);
+  border: 0.3vh solid #ffe082;
+  border-radius: 50% 50% 40% 40%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  box-shadow: 0 0.6vh 1.5vh rgba(0,0,0,0.7), 0 0 1.5vh rgba(255, 235, 59, 0.6);
+  position: relative;
+}
+.pot-lid { font-size: 3.5vh; margin-top: -1.5vh; filter: drop-shadow(0 0.2vh 0.4vh rgba(0,0,0,0.5)); }
+.pot-coins-overflow { font-size: 1.6vh; animation: pulse 1.5s infinite; }
+
+/* SIDE BUTTONS */
+.jinji-side-left {
+  position: absolute;
+  top: 22vh; left: 1.5vw;
+  z-index: 30;
+  display: flex; flex-direction: column; gap: 1.8vh;
+}
+.jinji-side-card {
+  background: linear-gradient(180deg, #4a0000 0%, #1a0000 100%);
+  border: 0.18vh solid #ffe082;
+  border-radius: 1vh;
+  padding: 0.8vh;
+  width: 6vw;
+  display: flex; flex-direction: column; align-items: center;
+  box-shadow: 0 0.4vh 0.8vh rgba(0,0,0,0.6);
+  cursor: pointer;
+}
+.side-title { color: #ffe082; font-size: 1.1vh; font-weight: 900; text-align: center; line-height: 1.1; }
+.side-val { color: #ffffff; font-size: 1.6vh; font-weight: 900; margin-top: 0.4vh; }
+.side-icon { font-size: 3vh; }
+.side-sub { color: #ffe082; font-size: 1vh; font-weight: 800; margin-top: 0.2vh; }
+
+.jinji-side-right-arrow {
+  position: absolute;
+  top: 45vh; right: 0; z-index: 30;
+}
+.jinji-side-right-arrow button {
+  background: linear-gradient(90deg, #ffe082, #ffb300);
+  border: 0.15vh solid #ffffff; border-right: none;
+  border-radius: 1vh 0 0 1vh;
+  padding: 2.2vh 0.6vw; color: #4a0410; font-size: 2vh; cursor: pointer;
+}
+
+/* MAIN SLOT MACHINE CONTAINER */
+.jinji-machine-container {
+  flex: 1;
+  position: relative;
+  z-index: 10;
+  display: flex; justify-content: center; align-items: center;
+  padding-top: 11vh; padding-bottom: 1vh;
+}
+
+.jinji-machine {
+  background: linear-gradient(180deg, #ffe082 0%, #b8860b 40%, #8d6e63 80%, #ffe082 100%);
+  padding: 1vh 1vw;
+  border-radius: 1.8vh;
+  border: 0.4vh solid #fff59d;
+  box-shadow: 0 1.5vh 3.5vh rgba(0,0,0,0.9);
+  width: 74vw; max-width: 1100px;
+  height: 60vh;
+  display: flex; position: relative; align-items: center;
+}
+
+/* PILLARS */
+.jinji-pillar {
+  width: 4.5vw; height: 100%;
+  background: linear-gradient(180deg, #4a0000, #210000);
+  border: 0.2vh solid #ffe082;
+  border-radius: 0.8vh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  color: #ffe082; font-weight: 900;
+  box-shadow: inset 0 0 1vh #000;
+}
+.left-pillar { margin-right: 0.6vw; }
+.right-pillar { margin-left: 0.6vw; }
+
+.pillar-num { font-size: 2.5vh; color: #ffeb3b; }
+.pillar-text { font-size: 1.1vh; writing-mode: vertical-rl; letter-spacing: 0.2vh; margin-top: 1vh; }
+.pillar-title { font-size: 1.1vh; text-align: center; margin-bottom: 1vh; }
+.gold-pays-icons { display: flex; flex-direction: column; gap: 0.8vh; font-size: 2.2vh; }
+
+/* GRID FRAME */
+.jinji-grid {
+  flex: 1; height: 100%;
+  background: #3e000c;
+  border: 0.35vh solid #ffe082;
+  border-radius: 0.8vh;
+  display: flex; flex-direction: row;
+  overflow: hidden; position: relative;
+  box-shadow: inset 0 0 2.5vh rgba(0,0,0,0.6);
+}
+
+.jinji-col {
+  flex: 1; display: flex; flex-direction: column;
+  border-right: 0.2vh solid rgba(255, 224, 130, 0.25);
+  transition: transform 0.15s ease-out, filter 0.15s ease-out;
+}
+.jinji-col:last-child { border-right: none; }
+
+.jinji-cell {
+  flex: 1; display: flex; justify-content: center; align-items: center;
+  position: relative;
+  background: linear-gradient(180deg, #4a000c 0%, #2b0007 100%);
+  border-bottom: 0.2vh solid rgba(255, 224, 130, 0.2);
+  overflow: hidden;
+}
+.jinji-cell:last-child { border-bottom: none; }
+.jinji-cell.win-highlight {
+  animation: winGlow 1s infinite alternate;
+}
+
+@keyframes winGlow {
+  0% { box-shadow: inset 0 0 1vh #ffeb3b; }
+  100% { box-shadow: inset 0 0 3vh #ffeb3b, 0 0 2vh #ffeb3b; }
+}
+
+/* REEL MOTION BLUR (DFDC Style) */
+.jinji-col.is-spinning {
+  will-change: transform, filter;
+  animation: reelVibe 0.08s linear infinite;
+}
+.jinji-col.is-spinning .jinji-sym-wrapper {
+  filter: blur(4px) brightness(1.1);
+  transform: scaleY(1.08);
+  opacity: 0.9;
+}
+
+@keyframes reelVibe {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+  100% { transform: translateY(0px); }
+}
+
+/* SYMBOL ARTWORK */
+.jinji-sym-wrapper {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 7.5vh;
+}
+.gold-disc-bg {
+  width: 78%; height: 78%; border-radius: 50%;
+  background: radial-gradient(circle, #ffeb3b, #ff8f00);
+  border: 0.25vh solid #ffe082;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0.4vh 0.8vh rgba(0,0,0,0.5);
+}
+.gold-disc-bg.blue-disc { background: radial-gradient(circle, #42a5f5, #0d47a1); }
+.gold-disc-bg.green-disc { background: radial-gradient(circle, #66bb6a, #1b5e20); }
+
+.card-sym {
+  font-size: 7vh; font-weight: 900;
+  font-family: 'Arial Black', sans-serif;
+  text-shadow: 0 0.3vh 0.6vh #000;
+}
+.sym-card-a { color: #ffe082; }
+.sym-card-k { color: #ff4081; }
+.sym-card-q { color: #ab47bc; }
+.sym-card-j { color: #29b6f6; }
+
+.wild-pot-badge {
+  background: radial-gradient(circle, #ffeb3b, #ff8f00);
+  border: 0.25vh solid #ffffff;
+  border-radius: 1vh;
+  padding: 0.4vh 0.8vw;
+  display: flex; flex-direction: column; align-items: center;
+  box-shadow: 0 0.4vh 0.8vh rgba(0,0,0,0.6);
+}
+.wild-pot-badge small { font-size: 1.2vh; font-weight: 900; color: #4a0000; }
+
+.yellow-gem-coin {
+  width: 75%; height: 75%; border-radius: 50%;
+  background: radial-gradient(circle, #fff59d 0%, #fbc02d 60%, #e65100 100%);
+  border: 0.3vh solid #ffffff;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 1.5vh #ffeb3b;
+}
+
+/* BOTTOM BAR WRAPPER & CONTROLS */
+.jinji-bottombar-wrapper {
+  position: relative; z-index: 20;
+  height: 12.5vh; width: 100%;
+}
+.jinji-bottombar-bg {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(180deg, #ffe082 0%, #ffb300 40%, #ff8f00 80%, #e65100 100%);
+  border-top: 0.3vh solid #fff59d;
+  border-radius: 3.5vh 3.5vh 0 0;
+  box-shadow: 0 -0.8vh 2vh rgba(0,0,0,0.5), inset 0 0.8vh 0.8vh rgba(255,255,255,0.6);
+}
+.jinji-bottombar {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  display: flex; padding: 0 2.5vw; align-items: center;
+}
+
+.jbot-left, .jbot-center, .jbot-right {
+  display: flex; align-items: center; gap: 0.8vw;
+}
+.jbot-left { flex: 1; justify-content: flex-start; }
+.jbot-center { flex: 1; justify-content: center; }
+.jbot-right { flex: 1; justify-content: flex-end; }
+
+.jbot-icon-btn, .jbot-bet-btn {
+  width: 5.2vh; height: 5.2vh; border-radius: 1.2vh;
+  border: 0.2vh solid #ffe082;
+  background: linear-gradient(180deg, #4a148c 0%, #1a0033 100%);
+  color: #ffe082; font-size: 2.5vh; font-weight: 900; cursor: pointer;
+  box-shadow: 0 0.4vh 0.8vh rgba(0,0,0,0.5);
+  display: flex; align-items: center; justify-content: center;
+}
+
+.jbot-bet-display {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: linear-gradient(180deg, #2b0007, #120003);
+  border: 0.2vh solid #ffe082; border-radius: 1.2vh;
+  padding: 0.3vh 1.6vw; color: #ffffff; box-shadow: inset 0 0 0.8vh #000;
+}
+.jbot-bet-label { font-size: 1.1vh; font-weight: 800; color: #ffe082; }
+.jbot-bet-val { font-size: 2.1vh; font-weight: 900; }
+.jbot-line-bet { font-size: 0.9vh; color: #ffe082; opacity: 0.8; }
+
+.jbot-info {
+  background: linear-gradient(180deg, #8e24aa 0%, #4a148c 100%);
+  border: 0.35vh solid #ffe082; border-radius: 4vh;
+  padding: 1.3vh 3.5vw; color: #ffffff; font-size: 2.1vh; font-weight: 800;
+  box-shadow: 0 0.5vh 1vh rgba(0,0,0,0.5); text-align: center; min-width: 24vw;
+}
+
+.jbot-maxbet-btn, .jbot-speed-btn {
+  background: linear-gradient(180deg, #fff59d 0%, #fbc02d 100%);
+  border: 0.2vh solid #b8860b; border-radius: 1.2vh;
+  height: 6.8vh; padding: 0 1.2vw; font-size: 1.9vh; font-weight: 900;
+  color: #4a0000; cursor: pointer; box-shadow: 0 0.4vh 0.8vh rgba(0,0,0,0.4);
+}
+
+.jbot-spin-btn {
+  background: linear-gradient(180deg, #4ef0a8 0%, #00b060 50%, #006030 100%);
+  border: 0.3vh solid #ffffff; border-radius: 2vh;
+  height: 8.5vh; padding: 0 2.5vw;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  cursor: pointer; box-shadow: 0 0.6vh 1.2vh rgba(0,0,0,0.6);
+}
+.jbot-spin-title { font-size: 3.2vh; font-weight: 900; color: #ffeb3b; text-shadow: 0 0.2vh 0.4vh #000; }
+.jbot-spin-sub { font-size: 1.1vh; font-weight: 900; color: #e8f5e9; }
+
+.jinji-auto-menu {
+  position: absolute; bottom: 100%; right: 0;
+  background: rgba(10, 0, 26, 0.95); border: 0.2vh solid #ffe082;
+  border-radius: 1.2vh; display: flex; flex-direction: column;
+  padding: 0.8vh; gap: 0.8vh; margin-bottom: 1vh; z-index: 100;
+}
+.jinji-auto-menu button {
+  background: linear-gradient(180deg, #ffe082, #ffb300);
+  border: 0.15vh solid #ffffff; border-radius: 0.8vh;
+  color: #4a0000; font-weight: 900; font-size: 2.2vh; cursor: pointer; padding: 0.5vh 1.2vw;
+}
+
+/* JACKPOT PICK MINI-GAME OVERLAY */
+.jinji-jackpot-pick-overlay {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.88); z-index: 200;
+  display: flex; align-items: center; justify-content: center;
+}
+.jackpot-pick-modal {
+  background: linear-gradient(180deg, #4a148c, #1a0033);
+  border: 0.4vh solid #ffe082; border-radius: 2.5vh;
+  width: 80vw; max-width: 900px; padding: 3vh;
+  text-align: center; color: #fff; box-shadow: 0 1vh 3vh rgba(0,0,0,0.9);
+}
+.jackpot-coins-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5vh; margin-top: 2vh;
+}
+.pick-coin-card {
+  height: 10vh; background: radial-gradient(circle, #ffe082, #ffb300);
+  border: 0.3vh solid #ffffff; border-radius: 1.5vh;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 4vh; cursor: pointer; transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.pick-coin-card:hover { transform: scale(1.08); }
+.pick-coin-card:active { transform: scale(0.92); }
+.pick-coin-card.revealed { background: #fff; color: #000; font-weight: 900; font-size: 2.2vh; }
+.pick-coin-card.revealed.grand { background: #f44336; color: #fff; }
+.pick-coin-card.revealed.major { background: #2196f3; color: #fff; }
+.pick-coin-card.revealed.minor { background: #ab47bc; color: #fff; }
+.pick-coin-card.revealed.mini { background: #66bb6a; color: #fff; }
+
+/* RULES MODAL */
+.jinji-rules-modal {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.85); z-index: 150;
+  display: flex; align-items: center; justify-content: center;
+}
+.jinji-rules-content {
+  background: linear-gradient(180deg, #4a148c, #1a0033);
+  border: 0.35vh solid #ffe082; border-radius: 2vh;
+  width: 75vw; max-width: 850px; max-height: 85vh;
+  padding: 3vh; position: relative; overflow-y: auto; color: #fff;
+}
+.jinji-rules-close {
+  position: absolute; top: 1.5vh; right: 1.5vh;
+  background: #d32f2f; color: #fff; border: 0.2vh solid #fff;
+  width: 4vh; height: 4vh; border-radius: 50%; font-size: 2vh; cursor: pointer;
+}
+.jinji-paytable {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.2vh; margin-bottom: 2vh;
+}
+
+/* ANIMATED JACKPOT WIN CELEBRATION MODAL */
+.jinji-jackpot-win-overlay {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.92);
+  z-index: 300;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.jackpot-win-rays {
+  position: absolute; width: 150vw; height: 150vw;
+  background: repeating-conic-gradient(from 0deg, rgba(255, 235, 59, 0.25) 0deg 15deg, transparent 15deg 30deg);
+  animation: raysSpin 20s linear infinite;
+  pointer-events: none;
+}
+@keyframes raysSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.jackpot-win-content {
+  position: relative; z-index: 10;
+  background: linear-gradient(180deg, #311b92 0%, #1a0033 100%);
+  border: 0.4vh solid #ffe082;
+  border-radius: 2.5vh;
+  padding: 3vh 4vw;
+  text-align: center;
+  box-shadow: 0 0 5vh rgba(255, 235, 59, 0.6), 0 1vh 3vh rgba(0,0,0,0.9);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  max-width: 520px; width: 85vw;
+}
+.bounce-in {
+  animation: bounceIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.jp-win-crown { font-size: 7vh; animation: pulse 1.2s infinite; margin-bottom: 0.5vh; }
+.jp-win-title {
+  font-size: 5.5vh; font-weight: 900; color: #ffeb3b;
+  text-shadow: 0 0.3vh 0.6vh #000, 0 0 1.5vh rgba(255,235,59,0.8);
+  margin: 0 0 0.5vh 0; letter-spacing: 0.05vw; line-height: 1.1;
+}
+.jp-win-subtext {
+  font-size: 2vh; color: #ffffff; margin-bottom: 1vh;
+  font-weight: 800; text-shadow: 0 0.2vh 0.4vh #000; line-height: 1.2;
+}
+.jp-type-pill {
+  display: inline-block;
+  padding: 0.5vh 2.5vw; border-radius: 1.5vh; font-size: 2.8vh; font-weight: 900;
+  letter-spacing: 0.05vw; margin-bottom: 2vh;
+  box-shadow: 0 0.4vh 0.8vh rgba(0,0,0,0.6); text-shadow: 0 0.2vh 0.4vh #000;
+}
+.jp-type-pill.grand { background: linear-gradient(180deg, #ff1744, #b71c1c); color: #fff; border: 0.25vh solid #ffeb3b; }
+.jp-type-pill.major { background: linear-gradient(180deg, #2196f3, #0d47a1); color: #fff; border: 0.25vh solid #ffeb3b; }
+.jp-type-pill.minor { background: linear-gradient(180deg, #ab47bc, #4a148c); color: #fff; border: 0.25vh solid #ffeb3b; }
+.jp-type-pill.mini { background: linear-gradient(180deg, #4caf50, #1b5e20); color: #fff; border: 0.25vh solid #ffeb3b; }
+
+.jp-win-amount-box {
+  background: linear-gradient(180deg, #ffe082 0%, #ffb300 100%);
+  border: 0.25vh solid #ffffff;
+  border-radius: 1.8vh;
+  padding: 1.2vh 2vw;
+  color: #4a0000; font-size: 3.6vh; font-weight: 900;
+  box-shadow: inset 0 0 1vh rgba(255,255,255,0.8), 0 0.4vh 1vh rgba(0,0,0,0.6);
+  margin-bottom: 2.5vh; width: 90%; letter-spacing: 0.03vw; line-height: 1.2;
+}
+.jp-claim-btn {
+  background: linear-gradient(180deg, #4ef0a8 0%, #00b060 100%);
+  border: 0.3vh solid #ffffff;
+  border-radius: 2vh;
+  color: #ffffff; font-size: 2.4vh; font-weight: 900;
+  padding: 1.2vh 3.5vw; cursor: pointer;
+  box-shadow: 0 0.5vh 1.2vh rgba(0,0,0,0.6), 0 0 1.5vh #4ef0a8;
+  text-shadow: 0 0.2vh 0.4vh #000; letter-spacing: 0.05vw; line-height: 1.1;
+}

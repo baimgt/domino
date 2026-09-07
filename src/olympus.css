@@ -1,0 +1,1106 @@
+/* ========================================================
+   GATES OF OLYMPUS — Premium CSS
+   Greek mythology: purple/orange sky, gold temple columns
+   ======================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Exo+2:wght@400;600;700;900&display=swap');
+
+/* ── ROOT SCREEN ─────────────────────────────────────── */
+.oly-screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: 'Exo 2', sans-serif;
+  background: #1a0a2e;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ── BACKGROUND ─────────────────────────────────────── */
+.oly-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.oly-bg-sky {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, #c2410c 0%, #7e22ce 30%, #2e1065 60%, #0f0520 100%);
+}
+
+.oly-bg-clouds {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 40vw 8vh at 15% 25%, rgba(255,140,0,0.18) 0%, transparent 70%),
+    radial-gradient(ellipse 30vw 6vh at 80% 35%, rgba(255,160,50,0.12) 0%, transparent 70%),
+    radial-gradient(ellipse 50vw 10vh at 50% 18%, rgba(255,100,0,0.10) 0%, transparent 60%);
+  animation: olyClouds 20s ease-in-out infinite alternate;
+}
+
+@keyframes olyClouds {
+  from { transform: translateX(-2vw); }
+  to   { transform: translateX(2vw); }
+}
+
+.oly-bg-col-left,
+.oly-bg-col-right {
+  position: absolute;
+  bottom: 0;
+  width: 12vw;
+  height: 75vh;
+  background: linear-gradient(180deg, #a16207 0%, #ca8a04 30%, #fbbf24 60%, #78350f 100%);
+  border-radius: 1vw 1vw 0 0;
+}
+
+.oly-bg-col-left  { left: 0; box-shadow: inset -0.5vw 0 2vw rgba(0,0,0,0.4), 0.5vw 0 3vw rgba(251,191,36,0.25); }
+.oly-bg-col-right { right: 0; box-shadow: inset 0.5vw 0 2vw rgba(0,0,0,0.4), -0.5vw 0 3vw rgba(251,191,36,0.25); }
+
+/* Column flutes */
+.oly-bg-col-left::before, .oly-bg-col-right::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to right,
+    rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15) 0.5vw,
+    transparent 0.5vw, transparent 1.2vw
+  );
+  border-radius: inherit;
+}
+
+/* Column capital (top ornament) */
+.oly-bg-col-left::after, .oly-bg-col-right::after {
+  content: '';
+  position: absolute;
+  top: -2.5vh;
+  left: -1vw;
+  right: -1vw;
+  height: 4vh;
+  background: linear-gradient(180deg, #fbbf24, #92400e);
+  border-radius: 0.8vw;
+}
+
+.oly-bg-floor {
+  position: absolute;
+  bottom: 0;
+  left: 0; right: 0;
+  height: 10vh;
+  background: linear-gradient(180deg, #451a03 0%, #78350f 50%, #92400e 100%);
+}
+
+/* Particle stars */
+.oly-stars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.oly-star {
+  position: absolute;
+  width: 0.3vw; height: 0.3vw;
+  border-radius: 50%;
+  background: #fff;
+  animation: olyStarBlink 3s ease-in-out infinite;
+}
+@keyframes olyStarBlink {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 1; }
+}
+
+/* ── TOP BAR ─────────────────────────────────────────── */
+.oly-topbar {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.8vh 1.5vw;
+  background: linear-gradient(180deg, rgba(20,5,40,0.95) 0%, rgba(20,5,40,0.7) 100%);
+  border-bottom: 0.2vh solid rgba(251,191,36,0.35);
+}
+
+/* Avatar + Coins */
+.oly-avatar-wrap {
+  position: relative;
+  width: 5vh; height: 5vh;
+}
+.oly-avatar-img {
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  border: 0.2vh solid #fbbf24;
+  object-fit: cover;
+}
+.oly-vip-badge {
+  position: absolute;
+  bottom: -0.5vh; left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, #d97706, #fbbf24);
+  color: #1a0a2e;
+  font-size: 0.9vh;
+  font-weight: 900;
+  padding: 0.1vh 0.6vw;
+  border-radius: 1vh;
+  white-space: nowrap;
+  font-family: 'Cinzel', serif;
+}
+
+.oly-topleft { display: flex; align-items: center; gap: 1vw; }
+.oly-coins-row { display: flex; align-items: center; gap: 0.5vw; }
+.oly-coin-ico { font-size: 2.2vh; }
+.oly-coins-num {
+  color: #fbbf24;
+  font-weight: 700;
+  font-size: 2vh;
+  text-shadow: 0 0 8px rgba(251,191,36,0.6);
+  font-family: 'Cinzel', serif;
+}
+.oly-plus-btn {
+  background: linear-gradient(135deg, #d97706, #fbbf24);
+  border: none; color: #1a0a2e;
+  font-weight: 900; font-size: 2vh;
+  width: 3vh; height: 3vh;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* Top center info */
+.oly-top-center { flex: 1; text-align: center; }
+
+.oly-tumble-win-banner {
+  display: inline-block;
+  padding: 0.3vh 2vw;
+  background: linear-gradient(90deg, rgba(194,65,12,0.8), rgba(124,45,18,0.9), rgba(194,65,12,0.8));
+  border: 0.15vh solid #fbbf24;
+  border-radius: 1vh;
+  color: #fbbf24;
+  font-family: 'Cinzel', serif;
+  font-weight: 900;
+}
+.oly-tumble-label { font-size: 1vh; letter-spacing: 0.2em; opacity: 0.85; }
+.oly-tumble-val {
+  font-size: 2.8vh;
+  text-shadow: 0 0 15px rgba(251,191,36,0.9);
+  animation: olyPulse 0.8s ease-in-out infinite alternate;
+}
+@keyframes olyPulse {
+  from { text-shadow: 0 0 10px rgba(251,191,36,0.6); transform: scale(1); }
+  to   { text-shadow: 0 0 25px rgba(251,191,36,1); transform: scale(1.05); }
+}
+
+/* Top right buttons */
+.oly-topright { display: flex; align-items: center; gap: 0.8vw; }
+.oly-tr-btn {
+  background: rgba(0,0,0,0.5);
+  border: 0.15vh solid rgba(251,191,36,0.4);
+  color: #fbbf24;
+  font-size: 2.2vh;
+  padding: 0.5vh 1vw;
+  border-radius: 0.8vh;
+  cursor: pointer;
+  display: flex; align-items: center; gap: 0.4vw;
+  transition: all 0.2s;
+}
+.oly-tr-btn:hover {
+  background: rgba(251,191,36,0.2);
+  border-color: #fbbf24;
+}
+.oly-tr-label { font-size: 1.2vh; line-height: 1.2; }
+.oly-room-code {
+  background: rgba(0,0,0,0.6);
+  border: 0.15vh solid rgba(251,191,36,0.3);
+  border-radius: 0.8vh;
+  padding: 0.4vh 1.2vw;
+  display: flex; align-items: center; gap: 0.5vw;
+}
+.oly-room-label { font-size: 1vh; color: #d97706; }
+.oly-room-val { font-size: 1.8vh; color: #fff; font-weight: 700; font-family: 'Cinzel', serif; }
+
+/* ── MAIN AREA ───────────────────────────────────────── */
+.oly-main-area {
+  position: relative;
+  z-index: 5;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 1vw;
+  padding: 0.5vh 1vw;
+  overflow: hidden;
+}
+
+/* ── LEFT PANEL ──────────────────────────────────────── */
+.oly-left-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1vh;
+  width: 13vw;
+  flex-shrink: 0;
+}
+
+.oly-buy-spin {
+  background: linear-gradient(135deg, #1e3a8a, #1d4ed8);
+  border: 0.2vh solid #3b82f6;
+  border-radius: 1.5vh;
+  padding: 1.5vh 0.8vw;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 0 15px rgba(59,130,246,0.3);
+}
+.oly-buy-spin:hover { transform: scale(1.04); box-shadow: 0 0 25px rgba(59,130,246,0.6); }
+.oly-bs-title {
+  color: #bfdbfe;
+  font-size: 1.2vh;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  line-height: 1.3;
+  font-family: 'Cinzel', serif;
+}
+.oly-bs-amount {
+  color: #fbbf24;
+  font-size: 2.5vh;
+  font-weight: 900;
+  font-family: 'Cinzel', serif;
+  text-shadow: 0 0 10px rgba(251,191,36,0.7);
+}
+
+.oly-taruhan-panel {
+  background: linear-gradient(135deg, rgba(30,10,60,0.9), rgba(15,5,30,0.95));
+  border: 0.2vh solid rgba(251,191,36,0.4);
+  border-radius: 1.5vh;
+  padding: 1.5vh 0.8vw;
+  text-align: center;
+  backdrop-filter: blur(10px);
+}
+.oly-tp-title {
+  color: #fbbf24;
+  font-size: 1.1vh;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  font-family: 'Cinzel', serif;
+}
+.oly-tp-amount {
+  color: #fff;
+  font-size: 3vh;
+  font-weight: 900;
+  font-family: 'Cinzel', serif;
+}
+.oly-tp-sub, .oly-tp-sub2 {
+  color: rgba(255,255,255,0.6);
+  font-size: 1.1vh;
+  letter-spacing: 0.15em;
+}
+
+/* Toggle */
+.oly-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5vw;
+  margin-top: 1vh;
+  cursor: pointer;
+  padding: 0.5vh 1vw;
+  border-radius: 1vh;
+  font-size: 1.2vh;
+  font-weight: 700;
+  transition: all 0.2s;
+}
+.oly-toggle.on  { background: rgba(34,197,94,0.2); border: 0.15vh solid #22c55e; color: #4ade80; }
+.oly-toggle.off { background: rgba(100,100,100,0.2); border: 0.15vh solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.5); }
+.oly-toggle-knob {
+  width: 2.5vh; height: 2.5vh;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+.oly-toggle.on  .oly-toggle-knob { background: #22c55e; box-shadow: 0 0 8px #22c55e; }
+.oly-toggle.off .oly-toggle-knob { background: rgba(255,255,255,0.3); }
+
+/* Zeus statue decoration */
+.oly-zeus-deco {
+  text-align: center;
+  font-size: 5vh;
+  filter: drop-shadow(0 0 10px rgba(251,191,36,0.5));
+  animation: olyZeusDeco 4s ease-in-out infinite;
+}
+@keyframes olyZeusDeco {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-1vh); }
+}
+
+/* ── GRID AREA ───────────────────────────────────────── */
+.oly-grid-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1vh;
+  position: relative;
+}
+
+.oly-fs-banner {
+  background: linear-gradient(90deg, #7e22ce, #a855f7, #7e22ce);
+  border: 0.2vh solid #c084fc;
+  border-radius: 1vh;
+  color: #fff;
+  font-size: 2vh;
+  font-weight: 900;
+  padding: 0.5vh 3vw;
+  text-align: center;
+  animation: olyFsBanner 1s ease-in-out infinite alternate;
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.1em;
+  box-shadow: 0 0 20px rgba(168,85,247,0.6);
+}
+@keyframes olyFsBanner {
+  from { box-shadow: 0 0 10px rgba(168,85,247,0.4); }
+  to   { box-shadow: 0 0 30px rgba(168,85,247,0.9); }
+}
+
+.oly-grid-frame {
+  position: relative;
+  background: linear-gradient(135deg, rgba(88,28,135,0.85), rgba(30,10,60,0.9));
+  border: 0.3vh solid rgba(251,191,36,0.5);
+  border-radius: 2vh;
+  padding: 0.8vh;
+  box-shadow:
+    0 0 0 0.2vh rgba(251,191,36,0.2),
+    0 0 30px rgba(126,34,206,0.5),
+    inset 0 0 20px rgba(0,0,0,0.4);
+}
+
+/* Golden corner ornaments */
+.oly-grid-frame::before,
+.oly-grid-frame::after {
+  content: '✦';
+  position: absolute;
+  font-size: 2.5vh;
+  color: #fbbf24;
+  text-shadow: 0 0 10px rgba(251,191,36,0.8);
+}
+.oly-grid-frame::before { top: 0.5vh; left: 0.8vw; }
+.oly-grid-frame::after  { top: 0.5vh; right: 0.8vw; }
+
+.oly-grid-inner {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  grid-template-rows: repeat(5, 1fr);
+  gap: 0.4vh;
+}
+
+/* ── GRID CELL ───────────────────────────────────────── */
+.oly-cell {
+  position: relative;
+  width: 9.5vw;
+  height: 10.5vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1vh;
+  overflow: visible;
+}
+
+@media (max-aspect-ratio: 4/3) {
+  .oly-cell { width: 10vw; height: 9vh; }
+}
+
+.oly-cell-spin .oly-tile {
+  animation: olyCellSpin 0.07s steps(2) infinite;
+}
+@keyframes olyCellSpin {
+  from { transform: scaleY(1); }
+  to   { transform: scaleY(0.9); }
+}
+
+/* ── TILE BASE ───────────────────────────────────────── */
+.oly-tile {
+  width: 100%; height: 100%;
+  border-radius: 1vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: transform 0.15s ease;
+  cursor: default;
+}
+.oly-tile-win {
+  animation: olyWinGlow 0.6s ease-in-out infinite alternate;
+}
+@keyframes olyWinGlow {
+  from { box-shadow: 0 0 8px rgba(251,191,36,0.6), 0 0 20px rgba(251,191,36,0.3); transform: scale(1); }
+  to   { box-shadow: 0 0 20px rgba(251,191,36,1),  0 0 40px rgba(251,191,36,0.6); transform: scale(1.05); }
+}
+.oly-tile-explode {
+  animation: olyExplode 0.4s ease-out forwards;
+}
+@keyframes olyExplode {
+  0%   { transform: scale(1); opacity: 1; }
+  50%  { transform: scale(1.3); opacity: 0.7; }
+  100% { transform: scale(0); opacity: 0; }
+}
+
+/* ── SCATTER SYMBOL (ZEUS FACE) ──────────────────────── */
+.oly-sym-scatter {
+  background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 50%, #7c3aed 100%);
+  border: 0.25vh solid #fbbf24;
+  box-shadow: 0 0 15px rgba(251,191,36,0.5), inset 0 0 10px rgba(251,191,36,0.1);
+}
+
+.oly-scatter-bg {
+  width: 100%; height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3vh;
+}
+
+.oly-scatter-face {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2vh;
+  flex: 1;
+  justify-content: center;
+}
+
+/* Zeus beard/hair */
+.oly-sc-crown {
+  width: 60%;
+  height: 20%;
+  background: linear-gradient(180deg, #fbbf24, #d97706);
+  border-radius: 40% 40% 0 0;
+  clip-path: polygon(0 100%, 15% 0, 30% 60%, 50% 0, 70% 60%, 85% 0, 100% 100%);
+}
+.oly-sc-eyes-row { display: flex; gap: 25%; }
+.oly-sc-eye {
+  width: 0.8vh; height: 0.8vh;
+  background: #1e3a8a;
+  border-radius: 50%;
+  box-shadow: 0 0 4px rgba(255,255,255,0.5);
+  border: 0.15vh solid rgba(255,255,255,0.5);
+}
+.oly-sc-beard {
+  width: 75%;
+  height: 35%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(200,200,200,0.7));
+  border-radius: 0 0 40% 40%;
+  clip-path: polygon(0 0, 100% 0, 80% 100%, 60% 70%, 50% 100%, 40% 70%, 20% 100%);
+}
+.oly-scatter-label {
+  position: absolute;
+  bottom: 0.2vh;
+  left: 0; right: 0;
+  text-align: center;
+  color: #fbbf24;
+  font-size: 1vh;
+  font-weight: 900;
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.1em;
+  text-shadow: 0 0 6px rgba(251,191,36,0.8);
+  background: rgba(0,0,0,0.4);
+  border-radius: 0 0 0.8vh 0.8vh;
+}
+
+/* ── MULTIPLIER ORB ──────────────────────────────────── */
+.oly-mult-orb {
+  width: 80%;
+  height: 80%;
+  border-radius: 50%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: olyOrbSpin 4s linear infinite;
+  box-shadow: 0 0 12px rgba(255,255,255,0.4), 0 0 25px rgba(255,255,255,0.2);
+}
+@keyframes olyOrbSpin {
+  from { box-shadow: 0 0 12px rgba(255,255,255,0.4), 0 0 25px rgba(255,255,255,0.2); }
+  50%  { box-shadow: 0 0 20px rgba(255,255,255,0.7), 0 0 40px rgba(255,255,255,0.4); }
+  to   { box-shadow: 0 0 12px rgba(255,255,255,0.4), 0 0 25px rgba(255,255,255,0.2); }
+}
+.oly-mult-lightning {
+  position: absolute;
+  inset: 10%;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  animation: olyLightning 1.5s ease-in-out infinite;
+}
+@keyframes olyLightning {
+  0%, 100% { transform: scale(0.8); opacity: 0.4; }
+  50% { transform: scale(1.1); opacity: 0.8; }
+}
+.oly-mult-val {
+  position: relative;
+  color: #fff;
+  font-size: 2.5vh;
+  font-weight: 900;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+  font-family: 'Cinzel', serif;
+  z-index: 1;
+}
+
+/* ── GEM SYMBOLS (HIGH VALUE) ────────────────────────── */
+.oly-sym-hv {
+  background: linear-gradient(135deg, rgba(88,28,135,0.7), rgba(30,10,60,0.8));
+  border: 0.2vh solid rgba(251,191,36,0.5);
+  box-shadow: inset 0 0 8px rgba(251,191,36,0.1);
+}
+.oly-hv-frame {
+  width: 90%; height: 90%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+/* Crown (high-1) */
+.oly-crown {
+  font-size: 5.5vh;
+  filter: drop-shadow(0 0 8px rgba(251,191,36,0.8));
+  animation: olySymFloat 3s ease-in-out infinite;
+}
+
+/* Chalice (high-2) */
+.oly-chalice {
+  font-size: 5vh;
+  filter: drop-shadow(0 0 8px rgba(147,51,234,0.8));
+  animation: olySymFloat 3.5s ease-in-out infinite;
+}
+
+/* Ring (high-3) */
+.oly-ring-sym {
+  font-size: 5vh;
+  filter: drop-shadow(0 0 8px rgba(59,130,246,0.8));
+  animation: olySymFloat 4s ease-in-out infinite;
+}
+
+/* Potion (high-4) */
+.oly-potion {
+  font-size: 5vh;
+  filter: drop-shadow(0 0 8px rgba(34,197,94,0.7));
+  animation: olySymFloat 2.8s ease-in-out infinite;
+}
+
+@keyframes olySymFloat {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-0.4vh) scale(1.03); }
+}
+
+/* ── GEM STAR SYMBOLS (LOW/MID VALUE) ────────────────── */
+.oly-sym-gem {
+  background: rgba(15, 5, 30, 0.5);
+  border: 0.15vh solid rgba(255,255,255,0.15);
+}
+.oly-star-wrap {
+  position: relative;
+  width: 78%;
+  height: 78%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.oly-star-sq {
+  position: absolute;
+  width: 60%;
+  height: 60%;
+  border-radius: 12%;
+}
+.oly-star-sq0  { transform: rotate(0deg); }
+.oly-star-sq45 { transform: rotate(45deg); }
+.oly-gem-circle {
+  width: 65%;
+  height: 65%;
+  border-radius: 50%;
+  position: absolute;
+  z-index: 2;
+  box-shadow: inset -1px -1px 3px rgba(0,0,0,0.4), 0 0 8px rgba(255,255,255,0.2);
+}
+.oly-gem-hi {
+  position: absolute;
+  top: 15%; left: 18%;
+  width: 30%; height: 25%;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.55);
+  transform: rotate(-25deg);
+}
+.oly-gem-lo {
+  position: absolute;
+  bottom: 10%; right: 10%;
+  width: 30%; height: 25%;
+  border-radius: 50%;
+}
+
+/* ── RIGHT PANEL (ZEUS CHARACTER) ───────────────────── */
+.oly-right-panel {
+  width: 14vw;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  position: relative;
+}
+
+.oly-zeus-char {
+  position: relative;
+  width: 100%;
+  text-align: center;
+  animation: olyZeusFloat 5s ease-in-out infinite;
+}
+@keyframes olyZeusFloat {
+  0%, 100% { transform: translateY(0) rotate(-1deg); }
+  50% { transform: translateY(-2vh) rotate(1deg); }
+}
+
+.oly-zeus-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 80%, rgba(251,191,36,0.25) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.oly-zeus-body {
+  position: relative;
+  z-index: 1;
+  font-size: 8vh;
+  filter: drop-shadow(0 0 15px rgba(251,191,36,0.5));
+  line-height: 1;
+}
+
+/* Zeus lightning bolt */
+.oly-zeus-bolt {
+  position: absolute;
+  top: 20%; right: -2vw;
+  font-size: 4vh;
+  animation: olyBolt 1.5s ease-in-out infinite;
+  filter: drop-shadow(0 0 10px rgba(251,191,36,0.9));
+}
+@keyframes olyBolt {
+  0%, 100% { transform: translateY(0) rotate(5deg); opacity: 0.7; }
+  50% { transform: translateY(-1vh) rotate(-5deg); opacity: 1; }
+}
+
+/* ── BOTTOM BAR ──────────────────────────────────────── */
+.oly-bottom-bar {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 0.8vw;
+  padding: 0.8vh 1.5vw;
+  background: linear-gradient(180deg, rgba(20,5,40,0.97) 0%, #0f0520 100%);
+  border-top: 0.25vh solid rgba(251,191,36,0.4);
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.6);
+}
+
+.oly-bot-left {
+  display: flex;
+  align-items: center;
+  gap: 0.6vw;
+  flex: 1;
+}
+
+.oly-bot-btn {
+  background: linear-gradient(135deg, #d97706, #92400e);
+  border: 0.15vh solid #fbbf24;
+  border-radius: 1vh;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  font-weight: 700;
+}
+.oly-bot-btn:hover { transform: scale(1.08); }
+.oly-bot-btn:active { transform: scale(0.95); }
+
+.oly-btn-chat, .oly-btn-info {
+  width: 5vh; height: 5vh;
+  border-radius: 1vh;
+  font-size: 2.2vh;
+}
+.oly-btn-info {
+  font-family: 'Cinzel', serif;
+  font-style: italic;
+  font-size: 2.5vh;
+}
+
+.oly-minus, .oly-plus-bet {
+  width: 4.5vh; height: 5vh;
+  font-size: 3vh;
+  font-weight: 900;
+}
+
+.oly-bet-box {
+  min-width: 12vw;
+  background: rgba(0,0,0,0.6);
+  border: 0.15vh solid rgba(251,191,36,0.4);
+  border-radius: 1vh;
+  padding: 0.3vh 1.5vw;
+  text-align: center;
+}
+.oly-bet-label {
+  color: rgba(251,191,36,0.7);
+  font-size: 1.2vh;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+}
+.oly-bet-val {
+  color: #fff;
+  font-size: 2.2vh;
+  font-weight: 900;
+  font-family: 'Cinzel', serif;
+}
+
+/* Bot center - WIN */
+.oly-bot-center { flex: 1; display: flex; justify-content: center; }
+.oly-win-banner {
+  min-width: 18vw;
+  background: linear-gradient(135deg, rgba(88,28,135,0.8), rgba(30,10,60,0.9));
+  border: 0.2vh solid rgba(168,85,247,0.5);
+  border-radius: 1.5vh;
+  padding: 0.4vh 2vw;
+  text-align: center;
+}
+.oly-win-label {
+  color: rgba(192,132,252,0.9);
+  font-size: 1.2vh;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+}
+.oly-win-val {
+  color: #fff;
+  font-size: 2.5vh;
+  font-weight: 900;
+  font-family: 'Cinzel', serif;
+  text-shadow: 0 0 10px rgba(168,85,247,0.6);
+}
+
+/* Bot right */
+.oly-bot-right { display: flex; align-items: center; gap: 0.6vw; }
+
+.oly-maxbet-btn {
+  background: linear-gradient(135deg, #7e22ce, #6d28d9);
+  border: 0.15vh solid #a855f7;
+  border-radius: 1vh;
+  color: #fff;
+  font-size: 1.3vh;
+  font-weight: 900;
+  line-height: 1.3;
+  padding: 0.5vh 1.2vw;
+  cursor: pointer;
+  letter-spacing: 0.1em;
+  transition: all 0.15s;
+  font-family: 'Cinzel', serif;
+}
+.oly-maxbet-btn:hover { background: linear-gradient(135deg, #9333ea, #7c3aed); transform: scale(1.05); }
+
+.oly-speed-btn {
+  background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+  border: 0.15vh solid rgba(255,255,255,0.3);
+  border-radius: 1vh;
+  color: #fff;
+  font-size: 1.8vh;
+  font-weight: 900;
+  padding: 0.5vh 1.2vw;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: 'Cinzel', serif;
+}
+.oly-speed-btn:hover { border-color: #fbbf24; color: #fbbf24; }
+
+/* SPIN BUTTON */
+.oly-spin-btn {
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 50%, #14532d 100%);
+  border: 0.3vh solid #4ade80;
+  border-radius: 1.5vh;
+  color: #fff;
+  padding: 0.5vh 2.5vw;
+  cursor: pointer;
+  text-align: center;
+  min-width: 16vw;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.15s;
+  box-shadow: 0 0 20px rgba(74,222,128,0.3), inset 0 0.2vh 0 rgba(255,255,255,0.2);
+}
+.oly-spin-btn::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%; right: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  transition: all 0.4s;
+}
+.oly-spin-btn:hover::before { left: 100%; right: -100%; }
+.oly-spin-btn:hover {
+  transform: scale(1.04);
+  box-shadow: 0 0 30px rgba(74,222,128,0.6);
+}
+.oly-spin-btn:active { transform: scale(0.97); }
+.oly-spin-btn.oly-spin-anim {
+  background: linear-gradient(135deg, #b45309, #d97706, #b45309);
+  border-color: #fbbf24;
+  box-shadow: 0 0 20px rgba(251,191,36,0.4);
+  animation: olySpinBtnPulse 0.6s ease-in-out infinite alternate;
+}
+@keyframes olySpinBtnPulse {
+  from { box-shadow: 0 0 15px rgba(251,191,36,0.3); }
+  to   { box-shadow: 0 0 30px rgba(251,191,36,0.7); }
+}
+.oly-spin-title {
+  font-size: 3vh;
+  font-weight: 900;
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.1em;
+  line-height: 1.1;
+}
+.oly-spin-sub {
+  font-size: 1.1vh;
+  font-weight: 600;
+  opacity: 0.8;
+  letter-spacing: 0.15em;
+}
+
+/* Auto menu */
+.oly-auto-menu {
+  position: absolute;
+  bottom: 110%;
+  right: 0;
+  background: linear-gradient(135deg, #1e0a3c, #0f0520);
+  border: 0.15vh solid rgba(251,191,36,0.4);
+  border-radius: 1.5vh;
+  padding: 0.8vh;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5vh;
+  z-index: 50;
+  min-width: 14vw;
+}
+.oly-auto-menu button {
+  background: linear-gradient(135deg, rgba(88,28,135,0.6), rgba(30,10,60,0.8));
+  border: 0.1vh solid rgba(168,85,247,0.4);
+  border-radius: 0.8vh;
+  color: #fff;
+  font-size: 1.6vh;
+  font-weight: 700;
+  padding: 0.6vh;
+  cursor: pointer;
+  font-family: 'Cinzel', serif;
+  transition: all 0.15s;
+}
+.oly-auto-menu button:hover {
+  background: rgba(168,85,247,0.3);
+  border-color: #c084fc;
+}
+
+/* ── RULES MODAL ─────────────────────────────────────── */
+.oly-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+.oly-modal {
+  background: linear-gradient(135deg, #1e0a3c, #0f0520);
+  border: 0.2vh solid rgba(251,191,36,0.5);
+  border-radius: 2vh;
+  padding: 2.5vh 2vw;
+  max-width: 60vw;
+  min-width: 50vw;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 0 40px rgba(126,34,206,0.5);
+}
+.oly-rules-page h2 {
+  color: #fbbf24;
+  font-family: 'Cinzel', serif;
+  font-size: 2.5vh;
+  text-align: center;
+  margin: 0 0 2vh;
+  letter-spacing: 0.1em;
+  text-shadow: 0 0 15px rgba(251,191,36,0.5);
+}
+.oly-rules-page p {
+  color: rgba(255,255,255,0.85);
+  font-size: 1.5vh;
+  line-height: 1.7;
+  margin-bottom: 1.5vh;
+}
+.oly-paytable {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8vh;
+}
+.oly-pt-row {
+  display: flex;
+  align-items: center;
+  gap: 1vw;
+  background: rgba(88,28,135,0.3);
+  border: 0.1vh solid rgba(168,85,247,0.3);
+  border-radius: 0.8vh;
+  padding: 0.6vh 1vw;
+}
+.oly-pt-emoji { font-size: 2.5vh; }
+.oly-pt-pays { flex: 1; display: flex; gap: 2vw; font-size: 1.4vh; color: rgba(255,255,255,0.8); }
+
+/* Rules nav */
+.oly-rules-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2vw;
+  margin-top: 2vh;
+}
+.oly-nav-arrow {
+  background: rgba(88,28,135,0.5);
+  border: 0.15vh solid rgba(168,85,247,0.4);
+  border-radius: 50%;
+  color: #fff;
+  font-size: 2vh;
+  width: 4vh; height: 4vh;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.oly-nav-arrow:hover { background: rgba(168,85,247,0.5); }
+.oly-nav-back {
+  background: linear-gradient(135deg, #7e22ce, #6d28d9);
+  border: 0.15vh solid #a855f7;
+  border-radius: 1vh;
+  color: #fff;
+  font-size: 1.5vh;
+  font-weight: 700;
+  padding: 0.6vh 2vw;
+  cursor: pointer;
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.1em;
+  transition: all 0.2s;
+}
+.oly-nav-back:hover { background: linear-gradient(135deg, #9333ea, #7c3aed); }
+
+.oly-rules-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.8vw;
+  margin-top: 1.5vh;
+}
+.oly-dot {
+  width: 1.2vh; height: 1.2vh;
+  border-radius: 50%;
+  background: rgba(168,85,247,0.3);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.oly-dot.active { background: #a855f7; box-shadow: 0 0 8px rgba(168,85,247,0.8); }
+
+/* Win celebration overlay */
+.oly-win-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.oly-win-popup {
+  background: linear-gradient(135deg, rgba(20,5,40,0.97), rgba(88,28,135,0.9));
+  border: 0.3vh solid #fbbf24;
+  border-radius: 3vh;
+  padding: 3vh 5vw;
+  text-align: center;
+  animation: olyWinPopup 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards;
+  box-shadow: 0 0 50px rgba(251,191,36,0.6);
+}
+@keyframes olyWinPopup {
+  from { transform: scale(0.5); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+.oly-win-type {
+  font-size: 4vh;
+  font-weight: 900;
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.2em;
+  text-shadow: 0 0 20px rgba(251,191,36,0.9);
+}
+.oly-win-mega { color: #fbbf24; animation: olyWinMega 0.5s ease-in-out infinite alternate; }
+.oly-win-big  { color: #f9a8d4; }
+.oly-win-nice { color: #a5f3fc; }
+@keyframes olyWinMega {
+  from { text-shadow: 0 0 20px rgba(251,191,36,0.8); transform: scale(1); }
+  to   { text-shadow: 0 0 40px rgba(251,191,36,1), 0 0 80px rgba(255,100,0,0.5); transform: scale(1.05); }
+}
+.oly-win-amount {
+  font-size: 5vh;
+  font-weight: 900;
+  color: #fff;
+  font-family: 'Cinzel', serif;
+  margin-top: 1vh;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+}
+
+/* Scatter indicator overlay (shows scatter count) */
+.oly-scatter-badge {
+  position: absolute;
+  top: -1vh; right: -1vw;
+  background: linear-gradient(135deg, #1d4ed8, #7c3aed);
+  border: 0.2vh solid #fbbf24;
+  border-radius: 50%;
+  width: 3.5vh; height: 3.5vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6vh;
+  font-weight: 900;
+  color: #fbbf24;
+  font-family: 'Cinzel', serif;
+  box-shadow: 0 0 10px rgba(251,191,36,0.5);
+  z-index: 20;
+}
+
+/* Game menu dropdown */
+.oly-menu-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: linear-gradient(135deg, #1e0a3c, #0f0520);
+  border: 0.15vh solid rgba(251,191,36,0.4);
+  border-radius: 1.5vh;
+  padding: 0.5vh;
+  z-index: 200;
+  min-width: 20vw;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+}
+.oly-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1vh 1.5vw;
+  border-radius: 0.8vh;
+  cursor: pointer;
+  color: #fff;
+  font-size: 1.6vh;
+  transition: background 0.15s;
+}
+.oly-menu-item:hover { background: rgba(168,85,247,0.2); }
+.oly-menu-badge {
+  background: rgba(88,28,135,0.6);
+  border: 0.1vh solid rgba(168,85,247,0.5);
+  border-radius: 0.5vh;
+  padding: 0.2vh 0.8vw;
+  font-size: 1.2vh;
+  color: #c084fc;
+  font-weight: 700;
+}

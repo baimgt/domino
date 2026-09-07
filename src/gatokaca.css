@@ -1,0 +1,848 @@
+/* ====================================================
+   GATES OF GATOKACA - Slot Game CSS
+   Reference: Purple temple BG, 6x5 gold-framed grid,
+   gem orb symbols, Gatokaca hero, stone bottom bar
+   ==================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Outfit:wght@400;700;900&display=swap');
+
+.gato-screen {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+  font-family: 'Outfit', sans-serif;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===========================
+   BACKGROUND - Purple temple
+   =========================== */
+.gato-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.gato-bg-sky {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #ce93d8 0%, #9c27b0 15%, #6a1b9a 35%, #4a148c 55%, #3a0b7a 80%, #2d0669 100%);
+}
+/* Atmospheric glow */
+.gato-bg-sky::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 20%, rgba(255,200,100,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse at 20% 70%, rgba(150,50,255,0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 70%, rgba(150,50,255,0.15) 0%, transparent 50%);
+}
+/* Left columns */
+.gato-bg-columns-left {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 18vw;
+  background:
+    repeating-linear-gradient(90deg,
+      transparent 0, transparent 3vw,
+      rgba(180,120,50,0.6) 3vw, rgba(180,120,50,0.6) 4.5vw,
+      transparent 4.5vw, transparent 8vw
+    ),
+    linear-gradient(180deg, rgba(255,200,120,0.2) 0%, rgba(120,60,20,0.4) 100%);
+}
+/* Right columns */
+.gato-bg-columns-right {
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  width: 18vw;
+  background:
+    repeating-linear-gradient(90deg,
+      transparent 0, transparent 3vw,
+      rgba(180,120,50,0.6) 3vw, rgba(180,120,50,0.6) 4.5vw,
+      transparent 4.5vw, transparent 8vw
+    ),
+    linear-gradient(180deg, rgba(255,200,120,0.2) 0%, rgba(120,60,20,0.4) 100%);
+}
+.gato-bg-floor {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 15vh;
+  background: linear-gradient(180deg, transparent 0%, rgba(80,40,10,0.4) 100%);
+}
+
+/* ===========================
+   TOP BAR
+   =========================== */
+.gato-topleft {
+  position: absolute;
+  top: 1vh; left: 1.2vw;
+  z-index: 50;
+  display: flex; align-items: center; gap: 0.8vw;
+}
+.gato-avatar-wrap {
+  position: relative; cursor: pointer;
+}
+.gato-avatar-img {
+  width: 6.5vh; height: 6.5vh;
+  border-radius: 50%;
+  border: 0.3vh solid #ffd700;
+  object-fit: cover;
+  box-shadow: 0 0 1vh rgba(0,0,0,0.7);
+}
+.gato-vip-badge {
+  position: absolute; top: -0.8vh; left: 50%; transform: translateX(-50%);
+  background: linear-gradient(135deg, #b71c1c, #ff1744);
+  color: #fff; font-size: 1vh; font-weight: 900;
+  padding: 0.1vh 0.7vh; border-radius: 1vh;
+  border: 0.15vh solid #ffd700;
+  white-space: nowrap;
+}
+.gato-coins-row {
+  display: flex; align-items: center; gap: 0.5vw;
+  background: rgba(0,0,0,0.5);
+  border: 0.15vh solid rgba(255,215,0,0.4);
+  border-radius: 3vh; padding: 0.4vh 1.5vw 0.4vh 0.6vw;
+}
+.gato-coin-ico { font-size: 2vh; }
+.gato-coins-num { color: #fff; font-size: 2.4vh; font-weight: 800; }
+.gato-plus-btn {
+  background: linear-gradient(180deg, #ffd740, #ff8f00);
+  border: 0.2vh solid #fff; color: #fff;
+  font-size: 2vh; font-weight: 900;
+  width: 3vh; height: 3vh; border-radius: 50%;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: transform 0.1s;
+}
+.gato-plus-btn:active { transform: scale(0.9); }
+
+.gato-top-info {
+  position: absolute;
+  top: 1.5vh; left: 50%; transform: translateX(-50%);
+  z-index: 50;
+  color: #ffe082; font-size: 1.8vh; font-weight: 700;
+  text-shadow: 0 0.2vh 0.5vh rgba(0,0,0,0.8);
+  white-space: nowrap;
+}
+
+.gato-topright {
+  position: absolute;
+  top: 1vh; right: 1.2vw; z-index: 50;
+  display: flex; gap: 0.8vw; align-items: center;
+}
+.gato-tr-btn {
+  background: linear-gradient(180deg, rgba(255,200,100,0.3), rgba(100,50,10,0.5));
+  border: 0.2vh solid rgba(255,200,100,0.6);
+  border-radius: 1.2vh;
+  color: #fff; cursor: pointer;
+  padding: 0.5vh 0.8vw; font-size: 2.2vh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-width: 6.5vh;
+  box-shadow: 0 0.3vh 0.8vh rgba(0,0,0,0.5);
+  transition: transform 0.1s, filter 0.1s;
+}
+.gato-tr-btn:hover { filter: brightness(1.2); }
+.gato-tr-btn:active { transform: scale(0.92); }
+.gato-tr-icon { font-size: 1.8vh; }
+.gato-tr-label { font-size: 1vh; font-weight: 700; line-height: 1.2; color: #ffe082; }
+.gato-tr-room { flex-direction: column; font-size: inherit; }
+
+/* ===========================
+   MAIN AREA LAYOUT
+   =========================== */
+.gato-main-area {
+  position: absolute;
+  top: 8vh; bottom: 12vh;
+  left: 0; right: 0;
+  z-index: 20;
+  display: flex;
+  align-items: stretch;
+  padding: 0 0.8vw;
+  gap: 0.8vw;
+}
+
+/* ===========================
+   LEFT PANEL
+   =========================== */
+.gato-left-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 11vw;
+  gap: 1.2vh;
+  padding-top: 0.5vh;
+}
+
+.gato-buy-spin {
+  background: linear-gradient(180deg, #ffd740 0%, #b8860b 100%);
+  border: 0.25vh solid #fff;
+  border-radius: 1.5vh;
+  padding: 1vh 0.8vw;
+  cursor: pointer;
+  text-align: center;
+  width: 100%;
+  box-shadow: 0 0.5vh 1.2vh rgba(0,0,0,0.6);
+  transition: transform 0.12s, filter 0.12s;
+}
+.gato-buy-spin:hover { filter: brightness(1.15); }
+.gato-buy-spin:active { transform: scale(0.93); }
+.gato-bs-title {
+  color: #4a0000; font-size: 1.2vh; font-weight: 900; line-height: 1.2;
+}
+.gato-bs-amount {
+  color: #4a0000; font-size: 2.2vh; font-weight: 900; margin-top: 0.3vh;
+}
+
+.gato-ransel {
+  background: radial-gradient(circle, #fbc02d 0%, #b8860b 100%);
+  border: 0.25vh solid #fff; border-radius: 50%;
+  width: 8vh; height: 8vh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 0.4vh 1vh rgba(0,0,0,0.6);
+  transition: transform 0.12s, filter 0.12s;
+}
+.gato-ransel:hover { filter: brightness(1.15); }
+.gato-ransel:active { transform: scale(0.92); }
+.gato-ransel-img { font-size: 3.5vh; }
+.gato-ransel-label { font-size: 0.9vh; font-weight: 900; color: #fff; }
+
+.gato-taruhan-panel {
+  background: linear-gradient(180deg, rgba(255,200,80,0.25) 0%, rgba(100,50,10,0.4) 100%);
+  border: 0.2vh solid rgba(255,200,80,0.5);
+  border-radius: 1.2vh;
+  padding: 1vh 0.6vw;
+  width: 100%; text-align: center;
+  box-shadow: 0 0.4vh 1vh rgba(0,0,0,0.5);
+}
+.gato-tp-title { color: #ffe082; font-size: 1.4vh; font-weight: 900; }
+.gato-tp-amount { color: #ffd740; font-size: 2.4vh; font-weight: 900; margin: 0.3vh 0; }
+.gato-tp-sub { color: #ce93d8; font-size: 1.1vh; font-weight: 800; }
+.gato-tp-sub2 { color: #ce93d8; font-size: 1.1vh; font-weight: 800; }
+.gato-tp-sub3 { color: #ffe082; font-size: 0.9vh; margin-top: 0.3vh; }
+
+.gato-toggle {
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 0.8vh; cursor: pointer;
+  background: rgba(0,0,0,0.4); border-radius: 2vh;
+  padding: 0.3vh 0.8vw; gap: 0.5vw;
+  border: 0.15vh solid rgba(255,255,255,0.3);
+  transition: all 0.2s;
+}
+.gato-toggle.on { background: rgba(76,175,80,0.4); }
+.gato-toggle.off { background: rgba(100,100,100,0.3); }
+.gato-toggle span { font-size: 1.2vh; font-weight: 900; color: #fff; }
+.gato-toggle-knob {
+  width: 2vh; height: 2vh; border-radius: 50%;
+  background: #4caf50; box-shadow: 0 0 0.5vh #4caf50;
+}
+.gato-toggle.off .gato-toggle-knob { background: #666; box-shadow: none; }
+
+.gato-lion-statue {
+  font-size: 6vh; filter: sepia(1) saturate(3) hue-rotate(20deg);
+  text-shadow: 0 0.5vh 1vh rgba(0,0,0,0.8);
+  margin-top: auto;
+}
+
+/* ===========================
+   GRID
+   =========================== */
+.gato-grid-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.gato-fs-banner {
+  position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  background: linear-gradient(90deg, #ffd700, #ff8f00, #ffd700);
+  color: #4a0000; font-size: 2.2vh; font-weight: 900;
+  padding: 0.6vh 3vw; border-radius: 3vh;
+  box-shadow: 0 0.5vh 1.5vh rgba(0,0,0,0.6);
+  z-index: 10;
+}
+
+.gato-grid-frame {
+  width: 100%; height: 100%;
+  background: linear-gradient(180deg, rgba(255,200,80,0.15), rgba(80,30,120,0.3));
+  border: 0.4vh solid #b8860b;
+  border-radius: 1.5vh;
+  box-shadow:
+    0 0 3vh rgba(200,150,30,0.4),
+    inset 0 0 3vh rgba(0,0,0,0.5);
+  overflow: hidden;
+  position: relative;
+}
+
+/* Gold corner decorations */
+.gato-grid-frame::before,
+.gato-grid-frame::after {
+  content: '✦';
+  position: absolute;
+  color: #ffd700;
+  font-size: 3vh;
+  z-index: 5;
+  pointer-events: none;
+}
+.gato-grid-frame::before { top: 0.5vh; left: 0.5vw; }
+.gato-grid-frame::after  { top: 0.5vh; right: 0.5vw; }
+
+.gato-grid-inner {
+  position: absolute;
+  inset: 0.4vh 0.3vw;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  grid-template-rows: repeat(5, 1fr);
+  gap: 0.4vh 0.3vw;
+}
+
+/* Cell */
+.gato-cell {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(74, 20, 140, 0.6);
+  border-radius: 0.6vh;
+  border: 0.15vh solid rgba(200,150,50,0.3);
+  overflow: hidden;
+  transition: background 0.2s;
+}
+.gato-cell.gato-cell-spin {
+  animation: cellSpin 0.08s linear infinite;
+}
+@keyframes cellSpin {
+  0%   { transform: translateY(0); }
+  50%  { transform: translateY(-4px); }
+  100% { transform: translateY(0); }
+}
+.gato-cell.gato-cell-spin .gato-tile {
+  filter: blur(3px) brightness(1.1);
+  transform: scaleY(1.05);
+}
+
+/* ===========================
+   TILES
+   =========================== */
+.gato-tile {
+  width: 92%; height: 92%;
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+  transition: transform 0.15s;
+  background: none; border: none; box-shadow: none;
+}
+
+/* Win glow */
+.gato-tile-win::after {
+  content: '';
+  position: absolute; inset: -8%;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: 0 0 2.5vh 1vh rgba(255,215,0,0.9);
+  animation: tileWinPulse 0.5s ease-in-out infinite alternate;
+  pointer-events: none; z-index: 10;
+}
+@keyframes tileWinPulse {
+  0%   { box-shadow: 0 0 1.5vh 0.5vh rgba(255,215,0,0.7); }
+  100% { box-shadow: 0 0 3.5vh 2vh rgba(255,215,0,1), 0 0 6vh 3vh rgba(255,150,0,0.6); }
+}
+.gato-tile-explode { animation: tileBlast 0.4s ease-out forwards; }
+@keyframes tileBlast {
+  0%   { transform: scale(1); opacity: 1; }
+  40%  { transform: scale(1.3); filter: brightness(3) drop-shadow(0 0 1vh #ffd700); }
+  100% { transform: scale(0); opacity: 0; }
+}
+
+/* ===========================
+   8-POINT STAR GEM SYMBOLS
+   =========================== */
+.gato-sym-gem { background: none; border: none; box-shadow: none; }
+.gato-star-wrap {
+  width: 88%; height: 88%;
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+}
+.gato-star-sq {
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, #b8860b 0%, #ffd700 25%, #daa520 50%, #ffd740 75%, #b8860b 100%);
+  border-radius: 12%;
+  box-shadow: 0 0.3vh 0.8vh rgba(0,0,0,0.5), inset 0 0.2vh 0.3vh rgba(255,255,255,0.4);
+}
+.gato-star-sq0  { transform: rotate(0deg); }
+.gato-star-sq45 { transform: rotate(45deg); }
+/* Gold ring */
+.gato-star-wrap::before {
+  content: '';
+  position: absolute; inset: 8%;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ffd700, #b8860b, #ffd700);
+  z-index: 1;
+}
+.gato-gem-circle {
+  position: absolute; inset: 15%;
+  border-radius: 50%; z-index: 2;
+  box-shadow: inset 0 0.3vh 0.5vh rgba(0,0,0,0.4), inset 0 -0.2vh 0.3vh rgba(255,255,255,0.2);
+  overflow: hidden;
+}
+.gato-gem-hi {
+  position: absolute; top: 8%; left: 10%;
+  width: 38%; height: 38%;
+  background: rgba(255,255,255,0.85);
+  border-radius: 50%; filter: blur(1.5px);
+}
+.gato-gem-lo { position: absolute; inset: 0; border-radius: 50%; }
+
+/* ===========================
+   SCATTER (Gatokaca Face)
+   =========================== */
+.gato-sym-scatter { background: none; border: none; box-shadow: none; }
+.gato-scatter-bg {
+  width: 88%; height: 88%;
+  background: linear-gradient(160deg, #1a237e 0%, #283593 35%, #3949ab 65%, #1a237e 100%);
+  border: 0.35vh solid #ffd700;
+  border-radius: 1vh;
+  box-shadow: 0 0 2vh rgba(255,215,0,0.5), inset 0 0.2vh 0.3vh rgba(255,255,255,0.15);
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+  padding: 4% 5% 3%;
+  position: relative; overflow: hidden;
+  gap: 3%;
+}
+.gato-sc-gold-frame {
+  position: absolute; inset: 0.2vh;
+  border: 0.15vh solid rgba(255,215,0,0.35);
+  border-radius: 0.8vh; pointer-events: none;
+}
+.gato-sc-crown {
+  width: 55%; height: 18%;
+  background: linear-gradient(180deg, #ffd700 0%, #ff8f00 60%, #b8860b 100%);
+  clip-path: polygon(0% 100%, 5% 40%, 20% 80%, 35% 0%, 50% 60%, 65% 0%, 80% 80%, 95% 40%, 100% 100%);
+  flex-shrink: 0;
+}
+.gato-sc-face {
+  width: 60%; aspect-ratio: 1;
+  background: radial-gradient(circle at 40% 35%, #a1887f 0%, #6d4c41 55%, #3e2723 100%);
+  border-radius: 45% 45% 38% 38%;
+  border: 0.12vh solid #b8860b;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4%; flex-shrink: 0;
+}
+.gato-sc-eyes { display: flex; gap: 16%; }
+.gato-sc-eye {
+  width: 24%; aspect-ratio: 1;
+  background: radial-gradient(circle, #ffcc02 0%, #e65100 40%, #1a1a1a 100%);
+  border-radius: 50%;
+  box-shadow: 0 0 0.4vh rgba(255,200,0,0.9);
+}
+.gato-sc-nose {
+  width: 28%; height: 10%;
+  background: #3e2723; border-radius: 40% 40% 50% 50%;
+}
+.gato-sc-beard {
+  width: 65%; height: 14%;
+  background: linear-gradient(180deg, #4e342e, #212121);
+  border-radius: 0 0 40% 40%;
+}
+.gato-scatter-label {
+  background: linear-gradient(90deg, #ffd700, #ff8f00, #ffd700);
+  color: #1a0000; font-size: clamp(0.45rem, 1.1vh, 1.3vh);
+  font-weight: 900; padding: 1% 8%; border-radius: 0.3vh;
+  letter-spacing: 0.04em; flex-shrink: 0;
+}
+
+/* ===========================
+   HIGH VALUE FRAME (shared)
+   =========================== */
+.gato-sym-hv { background: none; border: none; box-shadow: none; }
+.gato-hv-frame {
+  width: 88%; height: 88%;
+  background: linear-gradient(135deg, #3b2000 0%, #6d4c00 30%, #3b2000 65%, #5d3800 100%);
+  border: 0.3vh solid #ffd700;
+  border-radius: 1vh;
+  box-shadow: 0 0 2vh rgba(255,200,0,0.4), inset 0 0.2vh 0.3vh rgba(255,255,255,0.2);
+  display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+}
+.gato-hv-frame::before {
+  content: '';
+  position: absolute; inset: 0.2vh;
+  border: 0.1vh solid rgba(255,215,0,0.3);
+  border-radius: 0.7vh;
+}
+/* LAMP */
+.gato-lamp {
+  width: 75%; height: 80%; position: relative;
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.gato-lamp-body {
+  position: absolute; bottom: 8%; left: 12%; right: 12%; height: 55%;
+  background: radial-gradient(ellipse at 40% 35%, #fff9c4 0%, #ffd740 40%, #ff8f00 80%, #b8860b 100%);
+  border-radius: 40% 40% 30% 30%; border: 0.12vh solid #b8860b;
+}
+.gato-lamp-spout {
+  position: absolute; top: 18%; right: 3%; width: 38%; height: 22%;
+  background: linear-gradient(90deg, #ffd740, #b8860b);
+  border-radius: 50% 80% 80% 50%; border: 0.1vh solid #b8860b;
+}
+.gato-lamp-handle {
+  position: absolute; top: 10%; left: 3%; width: 28%; height: 35%;
+  border: 0.3vh solid #ffd700; border-radius: 50%;
+  border-right-color: transparent; border-bottom-color: transparent;
+}
+.gato-lamp-flame {
+  position: absolute; top: 0; left: 38%; width: 24%; height: 28%;
+  background: radial-gradient(ellipse at 50% 80%, #fff176 0%, #ffb300 50%, #e65100 100%);
+  border-radius: 50% 50% 40% 40%;
+  animation: flameDance 0.8s ease-in-out infinite alternate;
+}
+@keyframes flameDance {
+  0%   { transform: scaleX(1) skewX(0deg); }
+  100% { transform: scaleX(0.8) skewX(8deg); }
+}
+/* LION */
+.gato-lion {
+  width: 72%; height: 78%; position: relative;
+}
+.gato-lion-mane {
+  position: absolute; top: 4%; left: 8%; right: 8%; height: 52%;
+  background: radial-gradient(ellipse, #ffd740 0%, #ff8f00 50%, #b8860b 100%);
+  border-radius: 50%; border: 0.12vh solid #b8860b;
+}
+.gato-lion-head {
+  position: absolute; top: 12%; left: 22%; right: 22%; height: 38%;
+  background: radial-gradient(ellipse at 40% 35%, #fff9c4 0%, #ffd740 40%, #ff8f00 80%);
+  border-radius: 50%; border: 0.1vh solid #b8860b;
+}
+.gato-lion-body2 {
+  position: absolute; bottom: 6%; left: 14%; right: 14%; height: 40%;
+  background: linear-gradient(180deg, #ffd740 0%, #b8860b 100%);
+  border-radius: 20% 20% 10% 10%; border: 0.1vh solid #b8860b;
+}
+.gato-lion-paw {
+  position: absolute; bottom: 1%; left: 25%; right: 25%; height: 10%;
+  background: linear-gradient(180deg, #ffd740, #b8860b);
+  border-radius: 30%; border: 0.1vh solid #b8860b;
+}
+/* CRYSTAL */
+.gato-crystal {
+  width: 55%; height: 82%; position: relative;
+  display: flex; align-items: center; justify-content: center;
+}
+.gato-crystal-top {
+  position: absolute; top: 0; left: 20%; right: 20%; height: 30%;
+  background: linear-gradient(180deg, #e3f2fd 0%, #29b6f6 60%, #0288d1 100%);
+  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+  filter: drop-shadow(0 0 0.5vh rgba(41,182,246,0.8));
+}
+.gato-crystal-body {
+  position: absolute; top: 25%; left: 5%; right: 5%; bottom: 0;
+  background: linear-gradient(135deg, #b3e5fc 0%, #29b6f6 40%, #0288d1 70%, #01579b 100%);
+  clip-path: polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%);
+  border: 0.1vh solid #0288d1;
+}
+.gato-crystal-shine {
+  position: absolute; top: 30%; left: 15%; width: 20%; height: 40%;
+  background: rgba(255,255,255,0.65);
+  clip-path: polygon(30% 0%, 70% 0%, 40% 100%, 0% 100%);
+  filter: blur(1px);
+}
+
+/* ===========================
+   MULTIPLIER ORB
+   =========================== */
+.gato-mult-orb {
+  width: 88%; height: 88%;
+  border-radius: 50%;
+  border: 0.3vh solid rgba(255,255,255,0.45);
+  display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+  animation: multOrbPulse 1.8s ease-in-out infinite;
+}
+@keyframes multOrbPulse {
+  0%,100% { filter: brightness(1); }
+  50%     { filter: brightness(1.3) drop-shadow(0 0 0.8vh rgba(150,220,255,1)); }
+}
+.gato-mult-lightning {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(circle at 28% 22%, rgba(255,255,255,0.75) 0%, transparent 42%),
+    radial-gradient(circle at 72% 72%, rgba(255,255,255,0.18) 0%, transparent 38%);
+  border-radius: 50%;
+}
+.gato-mult-val {
+  color: #fff; font-size: clamp(0.75rem, 2.4vh, 2.8vh);
+  font-weight: 900; letter-spacing: -0.03em;
+  text-shadow: 0 0.1vh 0.4vh rgba(0,0,0,0.95), 0 0 0.8vh rgba(0,0,0,0.7);
+  position: relative; z-index: 1;
+}
+
+
+/* ===========================
+   RIGHT PANEL - Gatokaca Hero
+   =========================== */
+.gato-right-panel {
+  width: 10vw;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: flex-end;
+  padding-bottom: 2vh;
+}
+.gato-hero-char {
+  display: flex; flex-direction: column; align-items: center;
+  filter: drop-shadow(0 0 2vh rgba(255,150,0,0.6));
+}
+.gato-hero-crown { font-size: 4vh; }
+.gato-hero-body {
+  display: flex; flex-direction: column; align-items: center;
+  background: linear-gradient(180deg, #5d4037 0%, #3e2723 100%);
+  border: 0.2vh solid #ffd700;
+  border-radius: 1.5vh;
+  padding: 1vh 1vw;
+  margin-top: -1vh;
+}
+.gato-hero-face { font-size: 5vh; }
+.gato-hero-armor { font-size: 3vh; }
+
+/* ===========================
+   BOTTOM BAR
+   =========================== */
+/* ===========================
+   BOTTOM BAR (PRAGMATIC GOLDEN)
+   =========================== */
+.gato-bottom-bar {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 11vh; z-index: 40;
+  background: linear-gradient(180deg, #ffeaa0 0%, #e6a71e 16%, #cb8908 60%, #875402 100%);
+  border-top: 0.35vh solid #fff9df;
+  border-bottom: 0.35vh solid #523101;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 1.5vw;
+  box-shadow: 0 -0.8vh 2.5vh rgba(0,0,0,0.6), inset 0 0.4vh 0.6vh rgba(255,255,255,0.7), inset 0 -0.3vh 0.5vh rgba(0,0,0,0.4);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.gato-bot-left {
+  display: flex; align-items: center; gap: 0.6vw; flex: 0 0 auto;
+}
+.gato-bot-btn {
+  width: 5.6vh; height: 5.4vh;
+  border-radius: 1.1vh;
+  border: 0.22vh solid #6d3a00;
+  background: linear-gradient(180deg, #fffae3 0%, #f7cb59 40%, #c48714 85%, #9e6405 100%);
+  color: #421d01; font-family: serif;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0.4vh 0.8vh rgba(0,0,0,0.4), inset 0 0.2vh 0.3vh #ffffff, inset 0 -0.2vh 0.3vh rgba(0,0,0,0.25);
+  transition: transform 0.1s, filter 0.1s;
+}
+.gato-bot-btn:active, .gato-maxbet-btn:active, .gato-speed-btn:active, .gato-spin-btn:active {
+  transform: scale(0.95) translateY(1px);
+  filter: brightness(0.95);
+}
+.gato-btn-chat { font-size: 2.2vh; }
+.gato-btn-info { font-size: 3.2vh; font-weight: 900; font-family: 'Times New Roman', serif; text-shadow: 0 0.1vh 0.1vh rgba(255,255,255,0.6); }
+.gato-minus { font-size: 3.6vh; font-weight: 900; line-height: 1; }
+.gato-plus-bet { font-size: 3.2vh; font-weight: 900; line-height: 1; }
+
+.gato-bet-box {
+  background: linear-gradient(180deg, #180801 0%, #2e1202 100%);
+  border: 0.22vh solid #6d3a00;
+  border-radius: 1vh;
+  min-width: 14vw; height: 5.4vh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  box-shadow: inset 0 0.3vh 0.8vh rgba(0,0,0,0.9), 0 0.2vh 0.4vh rgba(0,0,0,0.3);
+  padding: 0 0.8vw;
+}
+.gato-bet-label { color: #f7d268; font-size: 1.3vh; font-weight: 900; letter-spacing: 0.06em; line-height: 1.1; font-family: sans-serif; text-shadow: 0 0.1vh 0.2vh #000; }
+.gato-bet-val { color: #fff; font-size: 2.4vh; font-weight: 900; letter-spacing: 0.02em; line-height: 1.1; font-family: sans-serif; text-shadow: 0 0.1vh 0.2vh #000; }
+
+.gato-bot-center { flex: 1; display: flex; align-items: center; justify-content: center; }
+.gato-win-banner {
+  background: linear-gradient(180deg, #7c1ba8 0%, #460566 100%);
+  border: 0.25vh solid #ffdf6d;
+  border-top: none;
+  border-radius: 0 0 1.8vh 1.8vh;
+  min-width: 28vw; height: 7.4vh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  box-shadow: 0 0.6vh 1.5vh rgba(0,0,0,0.7), inset 0 0.3vh 0.6vh rgba(255,255,255,0.4), 0 0 1.5vh rgba(124,27,168,0.4);
+  padding: 0.4vh 2vw; margin-top: -1vh;
+}
+.gato-win-label {
+  color: #e056fd; font-size: 1.5vh; font-weight: 900; letter-spacing: 0.14em;
+  text-transform: uppercase; line-height: 1.1; text-shadow: 0 0 0.8vh rgba(224,86,253,0.9);
+}
+.gato-win-val {
+  color: #ffea79; font-size: 3.6vh; font-weight: 900; font-family: 'Arial Black', Impact, sans-serif;
+  letter-spacing: 0.03em; line-height: 1.1; text-shadow: 0 0.2vh 0.4vh #000, 0 0 1.5vh rgba(255,215,0,0.6);
+}
+
+.gato-bot-right { display: flex; align-items: center; gap: 0.7vw; flex: 0 0 auto; }
+.gato-maxbet-btn {
+  background: linear-gradient(180deg, #fffae3 0%, #f7cb59 40%, #c48714 85%, #9e6405 100%);
+  border: 0.22vh solid #6d3a00;
+  border-radius: 1.1vh;
+  width: 6.6vh; height: 5.4vh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font-size: 1.4vh; font-weight: 900; line-height: 1.1; font-family: serif; color: #421d01;
+  cursor: pointer;
+  box-shadow: 0 0.4vh 0.8vh rgba(0,0,0,0.4), inset 0 0.2vh 0.3vh #ffffff, inset 0 -0.2vh 0.3vh rgba(0,0,0,0.25);
+  text-shadow: 0 0.1vh 0.1vh rgba(255,255,255,0.6);
+}
+
+.gato-speed-btn {
+  background: linear-gradient(180deg, #fffae3 0%, #f7cb59 40%, #c48714 85%, #9e6405 100%);
+  border: 0.22vh solid #6d3a00;
+  border-radius: 1.1vh;
+  width: 6.6vh; height: 5.4vh;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2.4vh; font-weight: 900; font-family: serif; color: #421d01;
+  cursor: pointer;
+  box-shadow: 0 0.4vh 0.8vh rgba(0,0,0,0.4), inset 0 0.2vh 0.3vh #ffffff, inset 0 -0.2vh 0.3vh rgba(0,0,0,0.25);
+  text-shadow: 0 0.1vh 0.1vh rgba(255,255,255,0.6);
+}
+
+.gato-spin-btn {
+  background: linear-gradient(180deg, #2dd69b 0%, #16a075 40%, #0d6d4f 100%);
+  border: 0.28vh solid #ffffff;
+  outline: 0.18vh solid #084330;
+  border-radius: 1.1vh;
+  min-width: 14vw; height: 6.8vh;
+  padding: 0.4vh 1.8vw;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 0.6vh 1.2vh rgba(0,0,0,0.6), inset 0 0.3vh 0.5vh rgba(255,255,255,0.8), inset 0 -0.3vh 0.5vh rgba(0,0,0,0.4);
+}
+.gato-spin-btn.gato-spin-anim {
+  background: linear-gradient(180deg, #ff6b6b 0%, #c0392b 40%, #7a1a12 100%);
+  outline-color: #4a0d08;
+}
+.gato-spin-title {
+  font-family: 'Rye', 'Cinzel', 'Times New Roman', serif, sans-serif;
+  font-size: 3.2vh; font-weight: 900; color: #fff3a1;
+  text-shadow: 0 0.2vh 0.4vh rgba(0,0,0,0.8), 0 0 0.8vh rgba(255,235,59,0.5);
+  letter-spacing: 0.06em; line-height: 1;
+}
+.gato-spin-sub {
+  font-size: 1.1vh; font-weight: 800; color: #ffffff; letter-spacing: 0.04em;
+  text-shadow: 0 0.1vh 0.2vh #000; margin-top: 0.2vh; opacity: 0.95; line-height: 1;
+}
+
+.gato-auto-menu {
+  position: absolute; bottom: 110%; right: 0;
+  background: rgba(20,10,40,0.95);
+  border: 0.2vh solid #ffd700;
+  border-radius: 1.2vh;
+  display: flex; flex-direction: column;
+  padding: 0.8vh; gap: 0.6vh; z-index: 100;
+  min-width: 8vw;
+}
+.gato-auto-menu button {
+  background: linear-gradient(180deg, #ffd740, #ff8f00);
+  border: none; border-radius: 0.6vh;
+  color: #1a1a1a; font-weight: 900; font-size: 2vh;
+  padding: 0.6vh 1vw; cursor: pointer;
+}
+
+/* ===========================
+   RULES MODAL
+   =========================== */
+.gato-modal-overlay {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.88); z-index: 200;
+  display: flex; align-items: center; justify-content: center;
+}
+.gato-modal {
+  background: linear-gradient(180deg, #4a148c 0%, #2d0b60 100%);
+  border: 0.3vh solid rgba(200,150,50,0.8);
+  border-radius: 2vh;
+  width: 85vw; max-width: 950px;
+  max-height: 82vh; overflow-y: auto;
+  padding: 2vh 3vw 2vh;
+  position: relative; color: #fff;
+  box-shadow: 0 1vh 3vh rgba(0,0,0,0.9);
+}
+.gato-rules-page h2 {
+  font-family: 'Cinzel', serif;
+  color: #ffe082; font-size: 2.5vh; font-weight: 900;
+  text-align: center; margin: 0 0 1.5vh 0;
+  border-bottom: 0.15vh solid rgba(255,200,80,0.4); padding-bottom: 1vh;
+}
+.gato-rules-desc {
+  color: #fff; font-size: 1.6vh; text-align: center;
+  line-height: 1.5; margin-bottom: 1.5vh;
+}
+.gato-rules-page p {
+  color: #e0e0e0; font-size: 1.6vh; line-height: 1.6; text-align: center;
+  margin: 0.8vh 0;
+}
+.gato-paytable {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 1vh 2vw;
+}
+.gato-pt-row {
+  display: flex; align-items: center; gap: 1vw;
+  background: rgba(0,0,0,0.3);
+  border: 0.1vh solid rgba(200,150,50,0.3);
+  border-radius: 1vh; padding: 0.8vh 1vw;
+}
+.gato-pt-row.gato-pt-scatter { grid-column: 1 / -1; }
+.gato-pt-emoji { font-size: 3.5vh; }
+.gato-pt-pays { flex: 1; font-size: 1.3vh; color: #ffe082; font-weight: 700; line-height: 1.4; }
+.gato-scatter-pays { margin-right: 1vw; }
+.gato-pt-scatter-desc { font-size: 1.3vh; color: #fff; line-height: 1.5; }
+
+.gato-mult-orbs {
+  display: flex; justify-content: center; gap: 2vw; margin: 1.5vh 0;
+}
+.gato-orb-grn, .gato-orb-blu, .gato-orb-pur, .gato-orb-red {
+  width: 6vh; height: 6vh; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 3.5vh;
+  box-shadow: 0 0 2vh rgba(255,255,255,0.5);
+}
+.gato-orb-grn  { background: radial-gradient(circle, #a5f3a0, #1b5e20); }
+.gato-orb-blu  { background: radial-gradient(circle, #81d4fa, #01579b); }
+.gato-orb-pur  { background: radial-gradient(circle, #ce93d8, #4a148c); }
+.gato-orb-red  { background: radial-gradient(circle, #ef9a9a, #b71c1c); }
+
+/* Pagination nav */
+.gato-rules-nav {
+  display: flex; align-items: center; justify-content: center;
+  gap: 2vw; margin-top: 2vh;
+}
+.gato-nav-arrow {
+  background: linear-gradient(180deg, #b8860b, #7b5900);
+  border: 0.2vh solid #ffd700; border-radius: 50%;
+  width: 5vh; height: 5vh;
+  color: #ffd700; font-size: 2.5vh; font-weight: 900;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: transform 0.1s;
+}
+.gato-nav-arrow:active { transform: scale(0.9); }
+.gato-nav-back {
+  background: linear-gradient(180deg, #c8a000, #7b5900);
+  border: 0.25vh solid #ffd700; border-radius: 1.5vh;
+  padding: 1vh 3vw;
+  color: #fff; font-size: 1.8vh; font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 0.4vh 1vh rgba(0,0,0,0.5);
+  transition: transform 0.1s, filter 0.1s;
+}
+.gato-nav-back:hover { filter: brightness(1.15); }
+.gato-nav-back:active { transform: scale(0.95); }
+
+.gato-rules-dots {
+  display: flex; justify-content: center; gap: 1vw; margin-top: 1vh;
+}
+.gato-dot {
+  width: 1.2vh; height: 1.2vh; border-radius: 50%;
+  background: rgba(255,200,80,0.4); cursor: pointer;
+  transition: all 0.2s;
+}
+.gato-dot.active {
+  background: #ffd700;
+  box-shadow: 0 0 0.8vh #ffd700;
+  transform: scale(1.3);
+}

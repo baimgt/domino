@@ -1,0 +1,626 @@
+/* =====================================================
+   FAFAFA 2 SLOT SCREEN CSS (100% Faithful UI Design)
+   ===================================================== */
+
+.fafafa-screen {
+  width: 100vw;
+  height: 100vh;
+  background-color: #4a0410; 
+  color: white;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  user-select: none;
+}
+
+/* Background Chinese Temple Interior */
+.fafafa-bg-pillars {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: 
+    linear-gradient(180deg, rgba(14, 116, 233, 0.45) 0%, rgba(14, 116, 233, 0) 35%),
+    radial-gradient(ellipse at 50% 20%, #7a0c1e 0%, #30020a 70%, #150004 100%);
+  z-index: 0;
+}
+.fafafa-bg-pillars::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: 
+    linear-gradient(90deg, #3d030c 0%, #7a0c1e 3%, transparent 15%, transparent 85%, #7a0c1e 97%, #3d030c 100%),
+    repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(0,0,0,0.15) 40px, rgba(0,0,0,0.15) 41px);
+  pointer-events: none;
+}
+
+/* Lantern Glows */
+.fafafa-bg-pillars::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 12%; right: 12%; height: 25vh;
+  background: 
+    radial-gradient(circle at 10% 30%, rgba(255, 60, 0, 0.4) 0%, transparent 60%),
+    radial-gradient(circle at 90% 30%, rgba(255, 60, 0, 0.4) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+/* TOP LEFT (Profile & Coins) */
+.fafafa-top-left {
+  position: absolute;
+  top: 1.5vh; left: 1.5vw;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+}
+.fafafa-avatar {
+  position: relative;
+  width: 7vh; height: 7vh;
+  border: 0.3vh solid #ffd700;
+  border-radius: 50%;
+  box-shadow: 0 0.4vh 1vh rgba(0,0,0,0.6);
+  background: radial-gradient(circle, #ffe082, #b8860b);
+  cursor: pointer;
+}
+.fafafa-avatar img {
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.fafafa-vip-badge {
+  position: absolute;
+  bottom: -0.8vh; left: 50%; transform: translateX(-50%);
+  background: linear-gradient(180deg, #ff1744, #b71c1c);
+  color: #fff;
+  font-size: 1.1vh; font-weight: 900;
+  padding: 0.1vh 0.8vh;
+  border-radius: 1vh;
+  border: 0.15vh solid #ffe082;
+  box-shadow: 0 0.2vh 0.4vh rgba(0,0,0,0.5);
+  white-space: nowrap;
+}
+.fafafa-signal-icon {
+  margin-left: 0.5vw;
+  display: flex; gap: 0.15vw; align-items: flex-end; height: 2vh;
+}
+.fafafa-signal-bar {
+  width: 0.3vw; background: #4caf50; border-radius: 0.1vw;
+}
+.fafafa-signal-bar.b1 { height: 35%; }
+.fafafa-signal-bar.b2 { height: 65%; }
+.fafafa-signal-bar.b3 { height: 100%; }
+
+.fafafa-coins-display {
+  background: rgba(15, 5, 8, 0.75);
+  color: #ffffff;
+  font-size: 2.2vh; font-weight: 800;
+  padding: 0.6vh 2.5vw 0.6vh 2.5vw;
+  border-radius: 2vh;
+  margin-left: 0.8vw;
+  border: 0.15vh solid #b8860b;
+  box-shadow: inset 0 0 0.8vh rgba(0,0,0,0.8);
+  letter-spacing: 0.05vw;
+}
+.fafafa-plus-btn {
+  background: radial-gradient(circle, #ffe082 20%, #ffb300 80%);
+  color: #7f0000;
+  width: 3.5vh; height: 3.5vh;
+  border-radius: 50%;
+  display: flex; justify-content: center; align-items: center;
+  font-weight: 900; font-size: 2.5vh;
+  margin-left: -1.2vw;
+  border: 0.2vh solid #ffffff;
+  box-shadow: 0 0.2vh 0.6vh rgba(0,0,0,0.6);
+  cursor: pointer;
+}
+
+/* TOP RIGHT (Icons) */
+.fafafa-top-right {
+  position: absolute;
+  top: 1.5vh; right: 1.5vw;
+  z-index: 30;
+  display: flex;
+  gap: 0.8vw;
+}
+.fafafa-tr-btn {
+  width: 5.8vh; height: 5.8vh;
+  border-radius: 50%;
+  border: 0.2vh solid #ffe082;
+  background: radial-gradient(circle, #b8860b 0%, #4a0410 100%);
+  color: #ffe082;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  box-shadow: 0 0.4vh 1vh rgba(0,0,0,0.6), inset 0 0.2vh 0.5vh rgba(255,255,255,0.3);
+  cursor: pointer;
+  font-weight: bold;
+}
+.fafafa-tr-btn.trophy-btn { font-size: 2.6vh; }
+.fafafa-tr-btn.room-btn span { font-size: 1.4vh; margin-bottom: -0.4vh; }
+.fafafa-tr-btn.room-btn small { font-size: 0.9vh; line-height: 1; text-align: center; color: #ffe082; font-weight: 800; }
+.fafafa-tr-btn.menu-btn { font-size: 2.8vh; }
+
+/* SIDE BUTTONS */
+.fafafa-side-left {
+  position: absolute;
+  top: 25vh; left: 1.5vw;
+  z-index: 30;
+  display: flex; flex-direction: column; gap: 2.5vh;
+}
+.fafafa-side-btn {
+  background: rgba(20, 5, 8, 0.6);
+  border-radius: 1.2vh;
+  padding: 0.8vh;
+  display: flex; flex-direction: column; align-items: center;
+  border: 0.15vh solid #ffe082;
+  cursor: pointer;
+  box-shadow: 0 0.4vh 0.8vh rgba(0,0,0,0.5);
+  width: 6vw;
+}
+.fafafa-side-icon {
+  width: 5.5vh; height: 5.5vh;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffeb3b, #ff8f00);
+  color: #b71c1c;
+  font-size: 3.2vh;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 900;
+  box-shadow: 0 0 1vh rgba(255,235,59,0.8);
+  margin-bottom: 0.4vh;
+}
+.fafafa-side-btn small {
+  color: #ffeb3b; font-size: 1.1vh; font-weight: 900; text-align: center; line-height: 1.2;
+}
+
+.fafafa-side-right-arrow {
+  position: absolute;
+  top: 45vh; right: 0;
+  z-index: 30;
+}
+.fafafa-side-right-arrow button {
+  background: linear-gradient(90deg, #ffe082, #ffb300);
+  border: 0.15vh solid #ffffff;
+  border-right: none;
+  border-radius: 1vh 0 0 1vh;
+  padding: 2.2vh 0.6vw;
+  color: #7f0000;
+  font-size: 2vh;
+  cursor: pointer;
+  box-shadow: -0.3vh 0.3vh 0.6vh rgba(0,0,0,0.5);
+}
+
+/* HEADER LOGO - ORNATE CAI SHEN FA FA FA ARCH */
+.fafafa-header-logo {
+  position: absolute;
+  top: 0; left: 50%; transform: translateX(-50%);
+  width: 36vw; height: 14vh;
+  z-index: 25;
+  background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="gold" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="%23fff59d"/><stop offset="50%" stop-color="%23ffb300"/><stop offset="100%" stop-color="%238d6e63"/></linearGradient><linearGradient id="redText" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="%23ffeb3b"/><stop offset="30%" stop-color="%23d50000"/><stop offset="100%" stop-color="%23880e4f"/></linearGradient></defs><path d="M40 85 Q200 105 360 85 Q320 10 200 10 Q80 10 40 85" fill="url(%23gold)" stroke="%23ffeb3b" stroke-width="4"/><text x="200" y="32" font-family="sans-serif" font-size="16" font-weight="900" fill="%23ffeb3b" text-anchor="middle">財 神</text><text x="200" y="78" font-family="sans-serif" font-size="46" font-weight="900" fill="url(%23redText)" stroke="%23ffeb3b" stroke-width="1.5" text-anchor="middle">發 發 發</text></svg>') no-repeat center top / contain;
+  filter: drop-shadow(0 0.8vh 1vh rgba(0,0,0,0.7));
+  pointer-events: none;
+}
+
+/* MACHINE CONTAINER & FRAME */
+.fafafa-machine-container {
+  flex: 1;
+  position: relative;
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-top: 6vh;
+  padding-bottom: 1vh;
+}
+
+.fafafa-machine {
+  background: linear-gradient(180deg, #ffe082 0%, #b8860b 40%, #ffb300 80%, #ffe082 100%);
+  padding: 1.2vh 1.4vw;
+  border-radius: 1.8vh;
+  border: 0.4vh solid #fff59d;
+  box-shadow: 0 1.5vh 3vh rgba(0,0,0,0.8), inset 0 0 1.5vh rgba(0,0,0,0.7);
+  width: 72vw;
+  max-width: 1080px;
+  height: 60vh;
+  display: flex;
+  position: relative;
+  align-items: center;
+}
+
+/* PAYLINE NUMBERS (COLUMNS FLANKING THE GRID) */
+.fafafa-payline-col {
+  display: flex; flex-direction: column; justify-content: space-around;
+  width: 3.5vh; height: 100%;
+}
+.fafafa-payline-col.left { margin-right: 0.8vw; }
+.fafafa-payline-col.right { margin-left: 0.8vw; }
+
+.fafafa-payline-num {
+  width: 3.4vh; height: 3.4vh;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: #ffffff; font-weight: 900; font-size: 1.9vh;
+  border: 0.25vh solid #ffe082;
+  box-shadow: 0 0.3vh 0.6vh rgba(0,0,0,0.6), inset 0 0.2vh 0.4vh rgba(255,255,255,0.4);
+  text-shadow: 0 0.15vh 0.3vh #000;
+}
+.fafafa-payline-num.p-4 { background: radial-gradient(circle, #ff5252, #b71c1c); }
+.fafafa-payline-num.p-2 { background: radial-gradient(circle, #ff9800, #e65100); }
+.fafafa-payline-num.p-6 { background: radial-gradient(circle, #ffee58, #f57f17); color: #000; text-shadow: none; }
+.fafafa-payline-num.p-8 { background: radial-gradient(circle, #66bb6a, #1b5e20); }
+.fafafa-payline-num.p-1 { background: radial-gradient(circle, #9ccc65, #33691e); }
+.fafafa-payline-num.p-9 { background: radial-gradient(circle, #26c6da, #006064); }
+.fafafa-payline-num.p-7 { background: radial-gradient(circle, #42a5f5, #0d47a1); }
+.fafafa-payline-num.p-3 { background: radial-gradient(circle, #5c6bc0, #1a237e); }
+.fafafa-payline-num.p-5 { background: radial-gradient(circle, #ab47bc, #4a148c); }
+
+/* GRID FRAME */
+.fafafa-grid {
+  flex: 1;
+  height: 100%;
+  background: #fdfdfd;
+  border: 0.35vh solid #8d6e63;
+  border-radius: 0.8vh;
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 0 2vh rgba(0,0,0,0.25);
+}
+
+.fafafa-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border-right: 0.2vh solid #e0e0e0;
+}
+.fafafa-col:last-child { border-right: none; }
+
+.fafafa-cell {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  background: 
+    linear-gradient(180deg, #ffffff 0%, #f4f4f6 100%),
+    repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.015) 10px, rgba(0,0,0,0.015) 20px);
+  border-bottom: 0.2vh solid #e0e0e0;
+  overflow: hidden;
+}
+.fafafa-cell:last-child { border-bottom: none; }
+
+.fafafa-sym {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  font-size: 8.5vh;
+}
+
+/* CUSTOM SYMBOL RENDERING (MATCHING SCREENSHOT) */
+
+/* Wild Red / Wild Blue Tiles */
+.sym-box {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+}
+.wild-tile {
+  width: 85%; height: 85%;
+  border-radius: 0.6vh;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0.3vh 0.6vh rgba(0,0,0,0.3);
+  position: relative;
+}
+.wild-tile.blue-tile {
+  background: radial-gradient(circle, #e0f7fa 0%, #0288d1 60%, #01579b 100%);
+  border: 0.25vh solid #b3e5fc;
+}
+.wild-tile.red-tile {
+  background: radial-gradient(circle, #ffebee 0%, #d32f2f 60%, #b71c1c 100%);
+  border: 0.25vh solid #ffcdd2;
+}
+.fa-char {
+  font-size: 6.5vh; font-weight: 900; color: #ffffff;
+  text-shadow: 0 0.2vh 0.4vh #000, 0 0 1vh #fff;
+  font-family: 'Times New Roman', serif;
+}
+
+/* Grandpa (Red / Blue Deities) */
+.grandpa-circle {
+  width: 82%; height: 82%;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  border: 0.3vh solid #ffe082;
+  box-shadow: 0 0.4vh 0.8vh rgba(0,0,0,0.4);
+}
+.grandpa-circle.red-c {
+  background: radial-gradient(circle, #ff5252, #b71c1c);
+}
+.grandpa-circle.blue-c {
+  background: radial-gradient(circle, #42a5f5, #0d47a1);
+}
+.grandpa-avatar {
+  font-size: 6vh;
+}
+
+/* Ancient Coin */
+.ancient-coin {
+  width: 75%; height: 75%;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffe082 0%, #b8860b 70%, #5d4037 100%);
+  border: 0.3vh solid #ffe082;
+  box-shadow: 0 0.4vh 0.8vh rgba(0,0,0,0.4);
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+}
+.coin-hole {
+  width: 32%; height: 32%;
+  background: #3e2723;
+  border: 0.15vh solid #ffe082;
+}
+
+/* SPINNER MOTION BLUR (DFDC Style) */
+.fafafa-col {
+  transition: transform 0.15s ease-out, filter 0.15s ease-out;
+}
+.fafafa-col.is-spinning {
+  will-change: transform, filter;
+  animation: reelVibe 0.08s linear infinite;
+}
+.fafafa-col.is-spinning .fafafa-sym {
+  filter: blur(4px) brightness(1.1);
+  transform: scaleY(1.08);
+  opacity: 0.9;
+}
+
+@keyframes reelVibe {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+  100% { transform: translateY(0px); }
+}
+
+/* SVG PAYLINES OVERLAY */
+.fafafa-svg-lines {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* BOTTOM BAR WRAPPER & CONTROLS */
+.fafafa-bottombar-wrapper {
+  position: relative;
+  z-index: 20;
+  height: 12.5vh;
+  width: 100%;
+}
+.fafafa-bottombar-bg {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(180deg, #ffe082 0%, #ffb300 40%, #ff8f00 80%, #e65100 100%);
+  border-top: 0.3vh solid #fff59d;
+  border-radius: 3.5vh 3.5vh 0 0;
+  box-shadow: 0 -0.8vh 2vh rgba(0,0,0,0.5), inset 0 0.8vh 0.8vh rgba(255,255,255,0.6);
+}
+.fafafa-bottombar {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  display: flex;
+  padding: 0 2.5vw;
+  align-items: center;
+}
+
+.fbot-left, .fbot-center, .fbot-right {
+  display: flex;
+  align-items: center;
+  gap: 0.8vw;
+}
+.fbot-left { flex: 1; justify-content: flex-start; }
+.fbot-center { flex: 1; justify-content: center; }
+.fbot-right { flex: 1; justify-content: flex-end; }
+
+/* Control Buttons */
+.fbot-icon-btn {
+  width: 5.5vh; height: 5.5vh;
+  border-radius: 1.2vh;
+  border: 0.2vh solid #ffe082;
+  background: linear-gradient(180deg, #5d4037 0%, #3e2723 100%);
+  color: #ffe082;
+  font-size: 2.4vh;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 0.4vh 0.8vh rgba(0,0,0,0.5);
+  display: flex; align-items: center; justify-content: center;
+}
+
+.fbot-bet-btn {
+  width: 4.8vh; height: 4.8vh;
+  border-radius: 1.2vh;
+  border: 0.2vh solid #ffe082;
+  background: linear-gradient(180deg, #5d4037 0%, #3e2723 100%);
+  color: #ffe082;
+  font-size: 2.8vh;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 0.4vh 0.8vh rgba(0,0,0,0.5);
+  display: flex; align-items: center; justify-content: center;
+}
+
+.fbot-bet-display {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: linear-gradient(180deg, #3e2723, #21130d);
+  border: 0.2vh solid #ffe082;
+  border-radius: 1.2vh;
+  padding: 0.4vh 1.8vw;
+  color: #ffffff;
+  box-shadow: inset 0 0 0.8vh #000;
+  min-width: 8vw;
+}
+.fbot-bet-label { font-size: 1.2vh; font-weight: 800; color: #ffe082; }
+.fbot-bet-val { font-size: 2.2vh; font-weight: 900; letter-spacing: 0.05vw; }
+
+/* Status Box */
+.fbot-info {
+  background: linear-gradient(180deg, #8e24aa 0%, #4a148c 100%);
+  border: 0.35vh solid #ffe082;
+  border-radius: 4vh;
+  padding: 1.3vh 3.5vw;
+  color: #ffffff;
+  font-size: 2.1vh;
+  font-weight: 800;
+  box-shadow: 0 0.5vh 1vh rgba(0,0,0,0.5), inset 0 0.5vh 0.8vh rgba(255,255,255,0.3);
+  text-align: center;
+  min-width: 24vw;
+  white-space: nowrap;
+  letter-spacing: 0.03vw;
+}
+
+/* Action Buttons */
+.fbot-maxbet-btn, .fbot-speed-btn {
+  background: linear-gradient(180deg, #fff59d 0%, #fbc02d 100%);
+  border: 0.2vh solid #b8860b;
+  border-radius: 1.2vh;
+  height: 6.8vh;
+  padding: 0 1.2vw;
+  font-size: 1.9vh;
+  font-weight: 900;
+  color: #5d4037;
+  cursor: pointer;
+  box-shadow: 0 0.4vh 0.8vh rgba(0,0,0,0.4);
+  line-height: 1.1;
+}
+
+.fbot-spin-btn {
+  background: linear-gradient(180deg, #4ef0a8 0%, #00b060 50%, #006030 100%);
+  border: 0.3vh solid #ffffff;
+  border-radius: 2vh;
+  height: 8.5vh;
+  padding: 0 2.5vw;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 0.6vh 1.2vh rgba(0,0,0,0.6), inset 0 0.5vh 0.8vh rgba(255,255,255,0.5);
+}
+.fbot-spin-btn.spinning {
+  filter: grayscale(0.3) brightness(0.8);
+}
+
+.fbot-spin-title { 
+  font-size: 3.2vh; font-weight: 900; color: #ffeb3b; 
+  text-shadow: 0 0.2vh 0.4vh #000, 0 0 0.8vh rgba(0,0,0,0.8); 
+  letter-spacing: 0.1vw;
+}
+.fbot-spin-sub { 
+  font-size: 1.1vh; font-weight: 900; color: #e8f5e9; 
+  text-shadow: 0 0.15vh 0.3vh #000;
+  letter-spacing: 0.05vw;
+}
+
+/* AUTO MENU POPUP */
+.fafafa-auto-menu { 
+  position: absolute; bottom: 100%; right: 0; 
+  background: rgba(15, 5, 8, 0.92); 
+  border: 0.2vh solid #ffe082; 
+  border-radius: 1.2vh; 
+  display: flex; flex-direction: column; 
+  padding: 0.8vh; gap: 0.8vh; 
+  margin-bottom: 1vh; 
+  z-index: 100;
+  box-shadow: 0 0.8vh 1.5vh rgba(0,0,0,0.8);
+} 
+.fafafa-auto-menu button { 
+  background: linear-gradient(180deg, #ffe082, #ffb300); 
+  border: 0.15vh solid #ffffff; 
+  border-radius: 0.8vh; 
+  color: #5d4037; 
+  font-weight: 900; font-size: 2.2vh; 
+  cursor: pointer; 
+  padding: 0.5vh 1.2vw; 
+  box-shadow: 0 0.3vh 0.6vh rgba(0,0,0,0.5); 
+}
+
+/* OVERLAYS & MODAL */
+.fafafa-bonus-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  animation: bounceIn 0.5s ease;
+}
+.fafafa-bonus-overlay h1 {
+  font-size: 7vh; color: #ffeb3b; text-shadow: 0 0 2vh #ff0;
+  margin: 0;
+}
+.fafafa-bonus-overlay h2 {
+  font-size: 4.5vh; color: #fff;
+}
+
+@keyframes bounceIn {
+  0% { transform: scale(0.1); opacity: 0; }
+  60% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+.fafafa-freespin-banner {
+  position: absolute;
+  top: 0; left: 50%; transform: translateX(-50%);
+  background: linear-gradient(180deg, #d32f2f, #b71c1c);
+  color: #fff;
+  padding: 0.8vh 2.5vw;
+  border-radius: 0 0 1.8vh 1.8vh;
+  border: 0.25vh solid #ffe082;
+  border-top: none;
+  font-size: 2.5vh;
+  font-weight: 900;
+  z-index: 20;
+  box-shadow: 0 0.8vh 1.5vh rgba(0,0,0,0.6);
+}
+
+.fafafa-rules-modal {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.85);
+  z-index: 150;
+  display: flex; align-items: center; justify-content: center;
+}
+.fafafa-rules-content {
+  background: linear-gradient(180deg, #5c0e22, #30020a);
+  border: 0.35vh solid #ffe082;
+  border-radius: 2vh;
+  width: 75vw; max-width: 850px;
+  max-height: 85vh;
+  padding: 3vh;
+  position: relative;
+  overflow-y: auto;
+  color: #fff;
+  box-shadow: 0 1vh 3vh rgba(0,0,0,0.9);
+}
+.fafafa-rules-close {
+  position: absolute; top: 1.5vh; right: 1.5vh;
+  background: #d32f2f; color: #fff; border: 0.2vh solid #fff;
+  width: 4vh; height: 4vh; border-radius: 50%;
+  font-size: 2vh; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.fafafa-rules-content h2, .fafafa-rules-content h3 {
+  color: #ffe082; text-align: center; text-shadow: 0 0.2vh 0.5vh #000;
+  margin-top: 0;
+}
+.fafafa-paytable {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.2vh;
+  margin-bottom: 2vh;
+}
+.pt-item {
+  background: rgba(0,0,0,0.4);
+  padding: 1vh;
+  border-radius: 1vh;
+  border: 0.1vh solid #ffe082;
+  font-size: 1.7vh;
+  display: flex; align-items: center; gap: 1vw;
+}
+.pt-item span { font-size: 2.8vh; }
