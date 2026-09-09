@@ -5539,7 +5539,7 @@ interface SlotGameDef {
 const SLOT_GAMES: SlotGameDef[] = [
   { id: 'duofugrand',   name: 'DuoFu DuoCai Grand', img: '🧧', jackpot: '99,899,264,448',  players: 22728,  bg: 'linear-gradient(160deg,#f9d976,#e8703a)', locked: true },
   { id: 'wildwest',     name: 'Wild West Gold',     img: '🤠', jackpot: '100,000,000,000', players: 48291,  bg: 'linear-gradient(160deg,#e65100,#4e342e)', locked: false },
-  { id: 'jinjibaoxi',   name: 'Jin Ji Bao Xi',      img: '🏺', jackpot: '2,835,374,165',   players: 184598, bg: 'linear-gradient(160deg,#311b92,#4a148c)', locked: false },
+  { id: 'jinjibaoxi',   name: 'Jin Ji Bao Xi',      img: '/assets/jinji/sym_dragon_gold.png', jackpot: '2,835,374,165',   players: 184598, bg: 'linear-gradient(160deg,#800010,#311b92)', locked: false },
   { id: 'zeus',         name: 'Gates of Olympus',   img: '⚡', jackpot: '5,000,000,000',   players: 320450, bg: 'linear-gradient(160deg,#1a1a6e,#4a0e8f)', locked: false },
   { id: 'fafafa2',      name: 'Fafafa 2',           img: '🐉', jackpot: '10,000,000,000',  players: 104598, bg: 'linear-gradient(160deg,#8b0000,#ff0000)', locked: false },
   { id: 'superace',     name: 'Super Ace',          img: '🃏', jackpot: '200,000,000,000', players: 150598, bg: 'linear-gradient(160deg,#8e44ad,#3a0e5c)', locked: true },
@@ -5695,7 +5695,13 @@ function SlotLobbyScreen({ onBack, onPlaySlot }: { onBack: () => void; onPlaySlo
                   {game.jackpot}
                   <span className="sl-card-jackpot-cardicon">🎴</span>
                 </div>
-                <div className="sl-card-illustration">{game.img}</div>
+                <div className="sl-card-illustration">
+                  {game.img.startsWith('/') ? (
+                    <img src={game.img} alt={game.name} style={{ width: '85%', height: '85%', objectFit: 'contain', filter: 'drop-shadow(0 0.4vh 0.8vh rgba(0,0,0,0.6))' }} />
+                  ) : (
+                    game.img
+                  )}
+                </div>
                 {game.lockText && (
                   <div className="sl-card-locktext">
                     {game.lockText.split('\n').map((l, i) => <div key={i}>{l}</div>)}

@@ -2,10 +2,13 @@
    JIN JI BAO XI (金雞報喜) SLOT SCREEN CSS
    ===================================================== */
 
+/* Import Chinese-style font */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&display=swap');
+
 .jinji-screen {
   width: 100vw;
   height: 100vh;
-  background-color: #12002b;
+  background-color: #1a3a6b;
   color: white;
   display: flex;
   flex-direction: column;
@@ -27,22 +30,42 @@ button:hover, .jinji-side-card:hover, .jinji-avatar:hover, .jinji-plus-btn:hover
   filter: brightness(1.15);
 }
 
-/* Background Night Sky & Temple Bridge Scenery */
+/* Background: Blue Sky Chinese Temple */
 .jinji-bg-sky {
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
   background: 
-    radial-gradient(ellipse at 50% 10%, #4a148c 0%, #1a0033 60%, #0a001a 100%),
-    linear-gradient(180deg, rgba(26, 0, 51, 0.4) 0%, rgba(10, 0, 26, 0.9) 100%);
+    linear-gradient(180deg, 
+      #2d6bb5 0%,
+      #3d82d0 25%,
+      #5498e0 45%,
+      #4a7fc2 65%,
+      #3060a0 80%,
+      #1a4070 100%
+    );
   z-index: 0;
 }
+/* Decorative lanterns / temple silhouette */
 .jinji-bg-sky::before {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
   background: 
-    radial-gradient(circle at 10% 80%, rgba(255, 179, 0, 0.25) 0%, transparent 40%),
-    radial-gradient(circle at 90% 80%, rgba(255, 179, 0, 0.25) 0%, transparent 40%);
+    radial-gradient(ellipse at 15% 95%, rgba(255, 140, 0, 0.35) 0%, transparent 35%),
+    radial-gradient(ellipse at 85% 95%, rgba(255, 140, 0, 0.35) 0%, transparent 35%),
+    radial-gradient(circle at 50% 35%, rgba(100, 180, 255, 0.18) 0%, transparent 55%);
+  pointer-events: none;
+}
+/* Temple building silhouette at bottom */
+.jinji-bg-sky::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 45%;
+  background:
+    radial-gradient(ellipse at 10% 100%, rgba(255, 120, 0, 0.2) 0%, transparent 40%),
+    radial-gradient(ellipse at 90% 100%, rgba(255, 120, 0, 0.2) 0%, transparent 40%),
+    linear-gradient(0deg, rgba(10, 30, 70, 0.5) 0%, transparent 100%);
   pointer-events: none;
 }
 
@@ -90,14 +113,14 @@ button:hover, .jinji-side-card:hover, .jinji-avatar:hover, .jinji-plus-btn:hover
 .jinji-sig-bar.b3 { height: 100%; }
 
 .jinji-coins-display {
-  background: rgba(10, 0, 26, 0.8);
+  background: rgba(0, 0, 0, 0.55);
   color: #ffffff;
   font-size: 2.2vh; font-weight: 800;
   padding: 0.6vh 2.5vw;
   border-radius: 2vh;
   margin-left: 0.8vw;
-  border: 0.15vh solid #b8860b;
-  box-shadow: inset 0 0 0.8vh rgba(0,0,0,0.8);
+  border: 0.15vh solid #ffd700;
+  box-shadow: inset 0 0 0.8vh rgba(0,0,0,0.5);
 }
 .jinji-plus-btn {
   background: radial-gradient(circle, #ffe082 20%, #ffb300 80%);
@@ -123,7 +146,7 @@ button:hover, .jinji-side-card:hover, .jinji-avatar:hover, .jinji-plus-btn:hover
   width: 5.6vh; height: 5.6vh;
   border-radius: 50%;
   border: 0.2vh solid #ffe082;
-  background: radial-gradient(circle, #b8860b 0%, #311b92 100%);
+  background: radial-gradient(circle, #b8860b 0%, #5c3200 100%);
   color: #ffe082;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   box-shadow: 0 0.4vh 1vh rgba(0,0,0,0.6);
@@ -138,29 +161,39 @@ button:hover, .jinji-side-card:hover, .jinji-avatar:hover, .jinji-plus-btn:hover
 .jinji-jackpot-header {
   position: absolute;
   top: 1.2vh; left: 50%; transform: translateX(-50%);
-  width: 58vw; max-width: 850px; height: 12vh;
+  width: 62vw; max-width: 920px; height: 11.5vh;
   z-index: 25;
-  display: grid;
-  grid-template-columns: 1fr 1fr 120px 1fr 1fr;
+  display: flex;
+  flex-direction: row;
   gap: 0.6vw;
-  align-items: center;
+  align-items: stretch;
 }
 
 .jackpot-box {
-  background: linear-gradient(180deg, #28004d 0%, #12002b 100%);
-  border: 0.2vh solid #ffe082;
-  border-radius: 0.8vh;
+  border-radius: 0.5vh;
   padding: 0.4vh 0.8vw;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  box-shadow: 0 0.4vh 0.8vh rgba(0,0,0,0.6);
+  display: flex; flex-direction: row; align-items: center; justify-content: space-between;
+  box-shadow: 0 0.3vh 0.6vh rgba(0,0,0,0.5);
+  border: 0.22vh solid rgba(255,220,80,0.5);
+  flex: 1;
 }
-.jackpot-box.grand { border-color: #f44336; background: linear-gradient(180deg, #b71c1c, #4a0000); }
-.jackpot-box.major { border-color: #2196f3; background: linear-gradient(180deg, #0d47a1, #001538); }
-.jackpot-box.minor { border-color: #ab47bc; background: linear-gradient(180deg, #4a148c, #1a0033); }
-.jackpot-box.mini { border-color: #66bb6a; background: linear-gradient(180deg, #1b5e20, #002200); }
+/* Grand = red bg, Minor = deep red/purple, Major = blue, Mini = green-teal */
+.jackpot-box.grand { background: linear-gradient(90deg, #b71c1c 0%, #7f0000 100%); border-color: #ff7070; }
+.jackpot-box.minor { background: linear-gradient(90deg, #880e4f 0%, #4a0030 100%); border-color: #e91e8c; }
+.jackpot-box.major { background: linear-gradient(90deg, #0d47a1 0%, #062c66 100%); border-color: #5cb8ff; }
+.jackpot-box.mini  { background: linear-gradient(90deg, #1b7b3e 0%, #0c4020 100%); border-color: #70d070; }
 
-.jp-label { font-size: 1.2vh; font-weight: 900; color: #ffe082; letter-spacing: 0.05vw; }
-.jp-val { font-size: 2vh; font-weight: 900; color: #ffffff; text-shadow: 0 0.15vh 0.3vh #000; }
+.jp-label { 
+  font-size: 1.3vh; font-weight: 900; color: #ffe082; letter-spacing: 0.04vw;
+  text-shadow: 0 0.1vh 0.3vh #000;
+  white-space: nowrap;
+}
+.jp-val { 
+  font-size: 1.75vh; font-weight: 900; color: #ffffff; 
+  text-shadow: 0 0.15vh 0.3vh #000;
+  white-space: nowrap;
+  text-align: right;
+}
 
 /* Center Fu Pot */
 .jinji-fu-pot-container {
@@ -168,37 +201,34 @@ button:hover, .jinji-side-card:hover, .jinji-avatar:hover, .jinji-plus-btn:hover
   position: relative;
 }
 .jinji-fu-pot {
-  width: 90px; height: 75px;
-  background: radial-gradient(circle at 50% 30%, #ffeb3b 0%, #ff8f00 40%, #b71c1c 90%);
-  border: 0.3vh solid #ffe082;
-  border-radius: 50% 50% 40% 40%;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  box-shadow: 0 0.6vh 1.5vh rgba(0,0,0,0.7), 0 0 1.5vh rgba(255, 235, 59, 0.6);
+  width: 90px; height: 80px;
+  background: transparent;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
   position: relative;
 }
-.pot-lid { font-size: 3.5vh; margin-top: -1.5vh; filter: drop-shadow(0 0.2vh 0.4vh rgba(0,0,0,0.5)); }
-.pot-coins-overflow { font-size: 1.6vh; animation: pulse 1.5s infinite; }
+.pot-coins-overflow { font-size: 1.5vh; animation: pulse 1.5s infinite; }
 
-/* SIDE BUTTONS */
+/* SIDE BUTTONS (LEFT) */
 .jinji-side-left {
   position: absolute;
-  top: 22vh; left: 1.5vw;
+  top: 22vh; left: 1.2vw;
   z-index: 30;
-  display: flex; flex-direction: column; gap: 1.8vh;
+  display: flex; flex-direction: column; gap: 1.2vh;
 }
 .jinji-side-card {
-  background: linear-gradient(180deg, #4a0000 0%, #1a0000 100%);
-  border: 0.18vh solid #ffe082;
-  border-radius: 1vh;
-  padding: 0.8vh;
-  width: 6vw;
+  background: linear-gradient(180deg, #7b1e1e 0%, #4a0808 100%);
+  border: 0.2vh solid #d4a820;
+  border-radius: 0.8vh;
+  padding: 0.7vh 0.6vw;
+  width: 6.5vw;
+  max-width: 80px;
   display: flex; flex-direction: column; align-items: center;
-  box-shadow: 0 0.4vh 0.8vh rgba(0,0,0,0.6);
+  box-shadow: 0 0.4vh 0.8vh rgba(0,0,0,0.7), inset 0 0 0.5vh rgba(0,0,0,0.5);
   cursor: pointer;
 }
-.side-title { color: #ffe082; font-size: 1.1vh; font-weight: 900; text-align: center; line-height: 1.1; }
-.side-val { color: #ffffff; font-size: 1.6vh; font-weight: 900; margin-top: 0.4vh; }
-.side-icon { font-size: 3vh; }
+.side-title { color: #ffe082; font-size: 1.05vh; font-weight: 900; text-align: center; line-height: 1.15; }
+.side-val { color: #ffffff; font-size: 1.55vh; font-weight: 900; margin-top: 0.3vh; }
+.side-icon { font-size: 2.8vh; }
 .side-sub { color: #ffe082; font-size: 1vh; font-weight: 800; margin-top: 0.2vh; }
 
 .jinji-side-right-arrow {
@@ -206,7 +236,7 @@ button:hover, .jinji-side-card:hover, .jinji-avatar:hover, .jinji-plus-btn:hover
   top: 45vh; right: 0; z-index: 30;
 }
 .jinji-side-right-arrow button {
-  background: linear-gradient(90deg, #ffe082, #ffb300);
+  background: linear-gradient(90deg, #d4a820, #b8860b);
   border: 0.15vh solid #ffffff; border-right: none;
   border-radius: 1vh 0 0 1vh;
   padding: 2.2vh 0.6vw; color: #4a0410; font-size: 2vh; cursor: pointer;
@@ -218,52 +248,101 @@ button:hover, .jinji-side-card:hover, .jinji-avatar:hover, .jinji-plus-btn:hover
   position: relative;
   z-index: 10;
   display: flex; justify-content: center; align-items: center;
-  padding-top: 11vh; padding-bottom: 1vh;
+  padding-top: 12vh; padding-bottom: 1vh;
 }
 
+/* Authentic Chinese ornate frame */
 .jinji-machine {
-  background: linear-gradient(180deg, #ffe082 0%, #b8860b 40%, #8d6e63 80%, #ffe082 100%);
-  padding: 1vh 1vw;
-  border-radius: 1.8vh;
-  border: 0.4vh solid #fff59d;
-  box-shadow: 0 1.5vh 3.5vh rgba(0,0,0,0.9);
-  width: 74vw; max-width: 1100px;
-  height: 60vh;
+  background: linear-gradient(180deg, #d4900a 0%, #b8740a 15%, #8c4a00 85%, #d4900a 100%);
+  padding: 0.8vh 0.8vw;
+  border-radius: 1.5vh;
+  border: 0.45vh solid #f0c040;
+  box-shadow: 
+    0 0 0 0.35vh #8c5500,
+    0 1.5vh 3.5vh rgba(0,0,0,0.9),
+    inset 0 0 1.5vh rgba(255,220,80,0.3);
+  width: 76vw; max-width: 1120px;
+  height: 58vh;
   display: flex; position: relative; align-items: center;
+}
+
+/* Machine inner red glow */
+.jinji-machine::before {
+  content: '';
+  position: absolute;
+  inset: 0.6vh 0.6vw;
+  border: 0.2vh solid rgba(255, 200, 50, 0.3);
+  border-radius: 1.2vh;
+  pointer-events: none;
 }
 
 /* PILLARS */
 .jinji-pillar {
-  width: 4.5vw; height: 100%;
-  background: linear-gradient(180deg, #4a0000, #210000);
-  border: 0.2vh solid #ffe082;
-  border-radius: 0.8vh;
+  width: 4.2vw; height: 100%;
+  background: linear-gradient(180deg, #7a1010, #4a0000);
+  border: 0.2vh solid #d4a820;
+  border-radius: 0.7vh;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   color: #ffe082; font-weight: 900;
-  box-shadow: inset 0 0 1vh #000;
+  box-shadow: inset 0 0 1vh rgba(0,0,0,0.6);
 }
-.left-pillar { margin-right: 0.6vw; }
-.right-pillar { margin-left: 0.6vw; }
+.left-pillar { margin-right: 0.5vw; }
+.right-pillar { margin-left: 0.5vw; }
 
-.pillar-num { font-size: 2.5vh; color: #ffeb3b; }
-.pillar-text { font-size: 1.1vh; writing-mode: vertical-rl; letter-spacing: 0.2vh; margin-top: 1vh; }
-.pillar-title { font-size: 1.1vh; text-align: center; margin-bottom: 1vh; }
-.gold-pays-icons { display: flex; flex-direction: column; gap: 0.8vh; font-size: 2.2vh; }
+.pillar-num { font-size: 2.2vh; color: #ffeb3b; font-weight: 900; }
+.pillar-text { font-size: 1vh; writing-mode: vertical-rl; letter-spacing: 0.25vh; margin-top: 0.8vh; color: #ffca28; }
+.pillar-title { font-size: 1.05vh; text-align: center; margin-bottom: 0.8vh; color: #ffe082; font-weight: 900; }
+.gold-pays-icons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5vh;
+  align-items: center;
+  padding: 0.3vh 0;
+}
+.gold-tier-btn {
+  width: 3.2vw;
+  height: 3.2vw;
+  max-width: 42px;
+  max-height: 42px;
+  border-radius: 50%;
+  background: rgba(20, 0, 10, 0.5);
+  border: 0.2vh solid #5a2010;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0.15vh;
+  transition: all 0.2s ease;
+  opacity: 0.38;
+  filter: grayscale(0.85);
+}
+.gold-tier-btn.active {
+  opacity: 1;
+  filter: grayscale(0) drop-shadow(0 0 0.8vh rgba(255, 215, 0, 0.8));
+  border-color: #ffd700;
+  background: radial-gradient(circle, rgba(255, 215, 0, 0.25), rgba(120, 30, 0, 0.6));
+  transform: scale(1.08);
+}
+.gold-tier-btn img {
+  width: 94%;
+  height: 94%;
+  object-fit: contain;
+}
 
 /* GRID FRAME */
 .jinji-grid {
   flex: 1; height: 100%;
-  background: #3e000c;
-  border: 0.35vh solid #ffe082;
-  border-radius: 0.8vh;
+  background: #780010;
+  border: 0.3vh solid #c85000;
+  border-radius: 0.6vh;
   display: flex; flex-direction: row;
   overflow: hidden; position: relative;
-  box-shadow: inset 0 0 2.5vh rgba(0,0,0,0.6);
+  box-shadow: inset 0 0 2vh rgba(0,0,0,0.6);
 }
 
 .jinji-col {
   flex: 1; display: flex; flex-direction: column;
-  border-right: 0.2vh solid rgba(255, 224, 130, 0.25);
+  border-right: 0.18vh solid rgba(180, 80, 0, 0.5);
   transition: transform 0.15s ease-out, filter 0.15s ease-out;
 }
 .jinji-col:last-child { border-right: none; }
@@ -271,18 +350,18 @@ button:hover, .jinji-side-card:hover, .jinji-avatar:hover, .jinji-plus-btn:hover
 .jinji-cell {
   flex: 1; display: flex; justify-content: center; align-items: center;
   position: relative;
-  background: linear-gradient(180deg, #4a000c 0%, #2b0007 100%);
-  border-bottom: 0.2vh solid rgba(255, 224, 130, 0.2);
+  background: linear-gradient(180deg, #8a0010 0%, #600008 50%, #8a0010 100%);
+  border-bottom: 0.18vh solid rgba(200, 80, 0, 0.4);
   overflow: hidden;
 }
 .jinji-cell:last-child { border-bottom: none; }
 .jinji-cell.win-highlight {
-  animation: winGlow 1s infinite alternate;
+  animation: winGlow 0.9s infinite alternate;
 }
 
 @keyframes winGlow {
-  0% { box-shadow: inset 0 0 1vh #ffeb3b; }
-  100% { box-shadow: inset 0 0 3vh #ffeb3b, 0 0 2vh #ffeb3b; }
+  0% { box-shadow: inset 0 0 1.5vh #ffeb3b; background: linear-gradient(180deg, #a00015 0%, #700010 100%); }
+  100% { box-shadow: inset 0 0 3.5vh #ffeb3b, 0 0 2vh #ffeb3b; background: linear-gradient(180deg, #b50018 0%, #900012 100%); }
 }
 
 /* REEL MOTION BLUR (DFDC Style) */
@@ -306,57 +385,91 @@ button:hover, .jinji-side-card:hover, .jinji-avatar:hover, .jinji-plus-btn:hover
 .jinji-sym-wrapper {
   width: 100%; height: 100%;
   display: flex; align-items: center; justify-content: center;
-  font-size: 7.5vh;
+  position: relative;
 }
-.gold-disc-bg {
-  width: 78%; height: 78%; border-radius: 50%;
-  background: radial-gradient(circle, #ffeb3b, #ff8f00);
-  border: 0.25vh solid #ffe082;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 0.4vh 0.8vh rgba(0,0,0,0.5);
+.jinji-sym-img {
+  width: 90%;
+  height: 90%;
+  object-fit: contain;
+  filter: drop-shadow(0 0.3vh 0.5vh rgba(0,0,0,0.6));
+  transition: transform 0.2s ease, filter 0.2s ease;
+  user-select: none;
 }
-.gold-disc-bg.blue-disc { background: radial-gradient(circle, #42a5f5, #0d47a1); }
-.gold-disc-bg.green-disc { background: radial-gradient(circle, #66bb6a, #1b5e20); }
+.jinji-sym-wrapper.is-gold-sym .jinji-sym-img {
+  filter: drop-shadow(0 0 0.6vh rgba(255, 215, 0, 0.55)) drop-shadow(0 0.3vh 0.5vh rgba(0,0,0,0.8));
+}
+.jinji-cell.win-highlight .jinji-sym-img {
+  animation: symWinAnim 0.7s ease-in-out infinite alternate;
+  filter: drop-shadow(0 0 1.5vh #ffd700) brightness(1.25);
+}
+@keyframes symWinAnim {
+  0% { transform: scale(0.92); }
+  100% { transform: scale(1.14); }
+}
 
-.card-sym {
-  font-size: 7vh; font-weight: 900;
-  font-family: 'Arial Black', sans-serif;
-  text-shadow: 0 0.3vh 0.6vh #000;
+.jinji-wild-badge {
+  position: absolute;
+  bottom: 0.3vh;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, #ff1744 0%, #b71c1c 100%);
+  color: #fff;
+  font-size: 1vh;
+  font-weight: 900;
+  padding: 0.1vh 0.6vh;
+  border-radius: 0.4vh;
+  border: 0.12vh solid #ffe082;
+  box-shadow: 0 0.2vh 0.4vh rgba(0,0,0,0.8);
+  letter-spacing: 0.05vw;
+  z-index: 2;
 }
-.sym-card-a { color: #ffe082; }
-.sym-card-k { color: #ff4081; }
-.sym-card-q { color: #ab47bc; }
-.sym-card-j { color: #29b6f6; }
 
-.wild-pot-badge {
-  background: radial-gradient(circle, #ffeb3b, #ff8f00);
-  border: 0.25vh solid #ffffff;
-  border-radius: 1vh;
-  padding: 0.4vh 0.8vw;
-  display: flex; flex-direction: column; align-items: center;
-  box-shadow: 0 0.4vh 0.8vh rgba(0,0,0,0.6);
+.jinji-fu-pot-img {
+  width: 75px;
+  height: 65px;
+  object-fit: contain;
+  filter: drop-shadow(0 0.4vh 1vh rgba(0,0,0,0.7)) drop-shadow(0 0 1vh rgba(255, 215, 0, 0.7));
+  animation: potBreath 2.5s ease-in-out infinite alternate;
 }
-.wild-pot-badge small { font-size: 1.2vh; font-weight: 900; color: #4a0000; }
+@keyframes potBreath {
+  0% { transform: translateY(0) scale(0.96); }
+  100% { transform: translateY(-3px) scale(1.05); }
+}
 
-.yellow-gem-coin {
-  width: 75%; height: 75%; border-radius: 50%;
-  background: radial-gradient(circle, #fff59d 0%, #fbc02d 60%, #e65100 100%);
-  border: 0.3vh solid #ffffff;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 0 1.5vh #ffeb3b;
+.pick-coin-img {
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+  filter: drop-shadow(0 0.4vh 0.8vh rgba(0,0,0,0.6));
+}
+
+/* FREESPIN BANNER */
+.jinji-freespin-banner {
+  position: absolute;
+  top: -3.5vh;
+  left: 50%; transform: translateX(-50%);
+  background: linear-gradient(90deg, #ff6f00, #f57f17, #ff6f00);
+  color: #ffffff;
+  font-weight: 900; font-size: 2.2vh;
+  padding: 0.5vh 3vw;
+  border-radius: 1.5vh;
+  border: 0.2vh solid #fff59d;
+  box-shadow: 0 0.4vh 1vh rgba(0,0,0,0.7);
+  z-index: 50;
+  white-space: nowrap;
 }
 
 /* BOTTOM BAR WRAPPER & CONTROLS */
 .jinji-bottombar-wrapper {
   position: relative; z-index: 20;
-  height: 12.5vh; width: 100%;
+  height: 13vh; width: 100%;
 }
 .jinji-bottombar-bg {
   position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-  background: linear-gradient(180deg, #ffe082 0%, #ffb300 40%, #ff8f00 80%, #e65100 100%);
-  border-top: 0.3vh solid #fff59d;
+  background: linear-gradient(180deg, #e8a000 0%, #c47800 40%, #a55500 80%, #8c3c00 100%);
+  border-top: 0.35vh solid #f0d060;
   border-radius: 3.5vh 3.5vh 0 0;
-  box-shadow: 0 -0.8vh 2vh rgba(0,0,0,0.5), inset 0 0.8vh 0.8vh rgba(255,255,255,0.6);
+  box-shadow: 0 -0.8vh 2vh rgba(0,0,0,0.5), inset 0 0.8vh 0.8vh rgba(255,255,255,0.25);
 }
 .jinji-bottombar {
   position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -371,47 +484,49 @@ button:hover, .jinji-side-card:hover, .jinji-avatar:hover, .jinji-plus-btn:hover
 .jbot-right { flex: 1; justify-content: flex-end; }
 
 .jbot-icon-btn, .jbot-bet-btn {
-  width: 5.2vh; height: 5.2vh; border-radius: 1.2vh;
-  border: 0.2vh solid #ffe082;
-  background: linear-gradient(180deg, #4a148c 0%, #1a0033 100%);
-  color: #ffe082; font-size: 2.5vh; font-weight: 900; cursor: pointer;
+  width: 5.2vh; height: 5.2vh; border-radius: 1vh;
+  border: 0.2vh solid #fff59d;
+  background: linear-gradient(180deg, #3a0060 0%, #1a0030 100%);
+  color: #ffe082; font-size: 2.4vh; font-weight: 900; cursor: pointer;
   box-shadow: 0 0.4vh 0.8vh rgba(0,0,0,0.5);
   display: flex; align-items: center; justify-content: center;
 }
 
 .jbot-bet-display {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  background: linear-gradient(180deg, #2b0007, #120003);
-  border: 0.2vh solid #ffe082; border-radius: 1.2vh;
-  padding: 0.3vh 1.6vw; color: #ffffff; box-shadow: inset 0 0 0.8vh #000;
+  background: linear-gradient(180deg, #1a0000, #0a0000);
+  border: 0.2vh solid #fff59d; border-radius: 1vh;
+  padding: 0.4vh 1.6vw; color: #ffffff; box-shadow: inset 0 0 0.8vh #000;
+  min-width: 10vw;
 }
-.jbot-bet-label { font-size: 1.1vh; font-weight: 800; color: #ffe082; }
+.jbot-bet-label { font-size: 1.05vh; font-weight: 800; color: #ffe082; }
 .jbot-bet-val { font-size: 2.1vh; font-weight: 900; }
-.jbot-line-bet { font-size: 0.9vh; color: #ffe082; opacity: 0.8; }
+.jbot-line-bet { font-size: 0.85vh; color: #ffca28; opacity: 0.8; }
 
 .jbot-info {
-  background: linear-gradient(180deg, #8e24aa 0%, #4a148c 100%);
-  border: 0.35vh solid #ffe082; border-radius: 4vh;
-  padding: 1.3vh 3.5vw; color: #ffffff; font-size: 2.1vh; font-weight: 800;
-  box-shadow: 0 0.5vh 1vh rgba(0,0,0,0.5); text-align: center; min-width: 24vw;
+  background: linear-gradient(180deg, #6a1a9a 0%, #3d0f5e 100%);
+  border: 0.3vh solid #fff59d; border-radius: 4vh;
+  padding: 1.2vh 3vw; color: #ffffff; font-size: 2vh; font-weight: 800;
+  box-shadow: 0 0.5vh 1vh rgba(0,0,0,0.5); text-align: center; min-width: 22vw;
 }
 
 .jbot-maxbet-btn, .jbot-speed-btn {
-  background: linear-gradient(180deg, #fff59d 0%, #fbc02d 100%);
-  border: 0.2vh solid #b8860b; border-radius: 1.2vh;
-  height: 6.8vh; padding: 0 1.2vw; font-size: 1.9vh; font-weight: 900;
-  color: #4a0000; cursor: pointer; box-shadow: 0 0.4vh 0.8vh rgba(0,0,0,0.4);
+  background: linear-gradient(180deg, #fff59d 0%, #e0a800 100%);
+  border: 0.2vh solid #a07000; border-radius: 1vh;
+  height: 6.8vh; padding: 0 1.2vw; font-size: 1.85vh; font-weight: 900;
+  color: #3a0000; cursor: pointer; box-shadow: 0 0.4vh 0.8vh rgba(0,0,0,0.4);
 }
 
 .jbot-spin-btn {
-  background: linear-gradient(180deg, #4ef0a8 0%, #00b060 50%, #006030 100%);
+  background: linear-gradient(180deg, #5ef0b8 0%, #00c878 40%, #009050 80%, #006030 100%);
   border: 0.3vh solid #ffffff; border-radius: 2vh;
-  height: 8.5vh; padding: 0 2.5vw;
+  height: 8.8vh; padding: 0 2.8vw;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  cursor: pointer; box-shadow: 0 0.6vh 1.2vh rgba(0,0,0,0.6);
+  cursor: pointer;
+  box-shadow: 0 0.6vh 1.5vh rgba(0,0,0,0.6), 0 0 1.5vh rgba(80,255,160,0.4);
 }
-.jbot-spin-title { font-size: 3.2vh; font-weight: 900; color: #ffeb3b; text-shadow: 0 0.2vh 0.4vh #000; }
-.jbot-spin-sub { font-size: 1.1vh; font-weight: 900; color: #e8f5e9; }
+.jbot-spin-title { font-size: 3.4vh; font-weight: 900; color: #ffeb3b; text-shadow: 0 0.2vh 0.4vh #000; }
+.jbot-spin-sub { font-size: 1.05vh; font-weight: 900; color: #d0ffe8; letter-spacing: 0.02vw; }
 
 .jinji-auto-menu {
   position: absolute; bottom: 100%; right: 0;
@@ -454,25 +569,184 @@ button:hover, .jinji-side-card:hover, .jinji-avatar:hover, .jinji-plus-btn:hover
 .pick-coin-card.revealed.minor { background: #ab47bc; color: #fff; }
 .pick-coin-card.revealed.mini { background: #66bb6a; color: #fff; }
 
-/* RULES MODAL */
+/* RULES MODAL (AUTHENTIC ATURAN SCREEN FROM REFERENCE) */
 .jinji-rules-modal {
   position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(0,0,0,0.85); z-index: 150;
+  background: rgba(0,0,0,0.88); z-index: 150;
   display: flex; align-items: center; justify-content: center;
 }
-.jinji-rules-content {
-  background: linear-gradient(180deg, #4a148c, #1a0033);
-  border: 0.35vh solid #ffe082; border-radius: 2vh;
-  width: 75vw; max-width: 850px; max-height: 85vh;
-  padding: 3vh; position: relative; overflow-y: auto; color: #fff;
+.jinji-aturan-screen {
+  background: radial-gradient(circle at 50% 30%, #5a000e 0%, #300007 70%, #150003 100%);
+  border: 0.4vh solid #ffd700;
+  border-radius: 2.2vh;
+  width: 90vw;
+  max-width: 980px;
+  max-height: 90vh;
+  padding: 2vh 2vw;
+  position: relative;
+  overflow-y: auto;
+  color: #fff;
+  box-shadow: 0 1.5vh 4vh rgba(0,0,0,0.95), inset 0 0 3vh rgba(0,0,0,0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 .jinji-rules-close {
   position: absolute; top: 1.5vh; right: 1.5vh;
   background: #d32f2f; color: #fff; border: 0.2vh solid #fff;
-  width: 4vh; height: 4vh; border-radius: 50%; font-size: 2vh; cursor: pointer;
+  width: 4.2vh; height: 4.2vh; border-radius: 50%; font-size: 2.2vh; cursor: pointer;
+  box-shadow: 0 0.3vh 0.6vh rgba(0,0,0,0.6);
+  display: flex; align-items: center; justify-content: center;
 }
-.jinji-paytable {
-  display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.2vh; margin-bottom: 2vh;
+
+/* Ornate Red Ribbon Header */
+.aturan-banner-header {
+  position: relative;
+  margin-bottom: 1.8vh;
+  display: flex;
+  justify-content: center;
+}
+.aturan-banner-title {
+  background: linear-gradient(180deg, #d32f2f 0%, #b71c1c 50%, #7f0000 100%);
+  border: 0.25vh solid #ffe082;
+  border-radius: 1vh;
+  color: #ffe082;
+  font-size: 3vh;
+  font-weight: 900;
+  padding: 0.6vh 4vw;
+  letter-spacing: 0.1vw;
+  box-shadow: 0 0.5vh 1.2vh rgba(0,0,0,0.6), inset 0 0.2vh 0.4vh rgba(255,255,255,0.4);
+  text-shadow: 0 0.2vh 0.4vh #000;
+}
+
+/* 6-box paytable grid */
+.aturan-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.2vh 1vw;
+  width: 100%;
+}
+
+.aturan-card {
+  background: rgba(45, 0, 8, 0.65);
+  border: 0.18vh solid #6b1420;
+  border-radius: 1vh;
+  padding: 1.2vh 0.8vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 1.2vh rgba(0,0,0,0.7);
+}
+.aturan-card.cards-box {
+  padding: 1.2vh 0.4vw;
+}
+
+.aturan-pair {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  justify-content: space-around;
+  align-items: center;
+}
+
+.aturan-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.aturan-sym-img {
+  width: 54px;
+  height: 54px;
+  object-fit: contain;
+  filter: drop-shadow(0 0.3vh 0.6vh rgba(0,0,0,0.7));
+  margin-bottom: 0.6vh;
+}
+.aturan-sym-img.round {
+  border-radius: 50%;
+}
+
+.aturan-pays {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25vh;
+  font-size: 1.45vh;
+  font-weight: 800;
+  color: #ffca28;
+  text-shadow: 0 0.15vh 0.3vh #000;
+  text-align: left;
+}
+.pay-row {
+  display: flex;
+  gap: 0.5vw;
+}
+.pay-row .num {
+  color: #fff;
+  font-weight: 900;
+  min-width: 1.2vw;
+}
+.pay-row .val {
+  color: #ffca28;
+  font-weight: 900;
+}
+
+.aturan-cards-row {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  justify-content: space-around;
+  align-items: center;
+}
+.aturan-card-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.aturan-sym-card {
+  width: 40px;
+  height: 44px;
+  object-fit: contain;
+  filter: drop-shadow(0 0.3vh 0.5vh rgba(0,0,0,0.7));
+  margin-bottom: 0.6vh;
+}
+
+/* Bottom Nav */
+.aturan-bottom-nav {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1vh;
+  margin-top: 1.8vh;
+}
+.aturan-dots {
+  display: flex;
+  gap: 0.6vw;
+}
+.aturan-dots .dot {
+  width: 0.8vh;
+  height: 0.8vh;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+}
+.aturan-dots .dot.active {
+  background: #ffeb3b;
+  box-shadow: 0 0 0.5vh #ffeb3b;
+}
+
+.aturan-back-btn {
+  background: linear-gradient(180deg, #00c853 0%, #007e33 100%);
+  border: 0.22vh solid #ffe082;
+  border-radius: 2vh;
+  color: #ffffff;
+  font-size: 1.8vh;
+  font-weight: 900;
+  padding: 0.8vh 3.5vw;
+  cursor: pointer;
+  letter-spacing: 0.05vw;
+  box-shadow: 0 0.4vh 1vh rgba(0,0,0,0.6);
+  text-shadow: 0 0.15vh 0.3vh #000;
 }
 
 /* ANIMATED JACKPOT WIN CELEBRATION MODAL */
@@ -506,6 +780,15 @@ button:hover, .jinji-side-card:hover, .jinji-avatar:hover, .jinji-plus-btn:hover
 }
 .bounce-in {
   animation: bounceIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes bounceIn {
+  0% { transform: scale(0.3); opacity: 0; }
+  60% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); }
+}
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
 }
 .jp-win-crown { font-size: 7vh; animation: pulse 1.2s infinite; margin-bottom: 0.5vh; }
 .jp-win-title {

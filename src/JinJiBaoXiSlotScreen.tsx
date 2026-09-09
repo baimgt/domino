@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Socket } from 'socket.io-client';
 import './jinjibaoxi.css';
 import GameMenuDropdown from './GameMenuDropdown';
@@ -8,28 +8,26 @@ interface Props {
   socket: Socket | null;
 }
 
-export const JINJI_SYMBOLS: Record<number, { char: string; name: string; label: string }> = {
-  0: { char: '🐉', name: 'dragon', label: 'Naga Emas' },
-  1: { char: '🦅', name: 'phoenix', label: 'Burung Hong' },
-  2: { char: '🐅', name: 'tiger', label: 'Macan Emas' },
-  3: { char: '🐢', name: 'turtle', label: 'Penyu Emas' },
-  4: { char: '🐟', name: 'carp', label: 'Ikan Emas' },
-  5: { char: 'A', name: 'sym-a', label: 'A' },
-  6: { char: 'K', name: 'sym-k', label: 'K' },
-  7: { char: 'Q', name: 'sym-q', label: 'Q' },
-  8: { char: 'J', name: 'sym-j', label: 'J' },
-  9: { char: '🏺', name: 'wild', label: 'WILD' },
-  10: { char: '🪙', name: 'jinji-coin', label: 'COIN' },
+export const JINJI_SYMBOLS: Record<number, { name: string; label: string; goldImg: string; normImg?: string }> = {
+  0: { name: 'dragon', label: 'Naga Emas', goldImg: '/assets/jinji/sym_dragon_gold.png', normImg: '/assets/jinji/sym_dragon_normal.png' },
+  1: { name: 'phoenix', label: 'Burung Hong', goldImg: '/assets/jinji/sym_phoenix_gold.png', normImg: '/assets/jinji/sym_phoenix_normal.png' },
+  2: { name: 'tiger', label: 'Macan Emas', goldImg: '/assets/jinji/sym_tiger_gold.png', normImg: '/assets/jinji/sym_tiger_normal.png' },
+  3: { name: 'turtle', label: 'Penyu Emas', goldImg: '/assets/jinji/sym_turtle_gold.png', normImg: '/assets/jinji/sym_turtle_normal.png' },
+  4: { name: 'carp', label: 'Ikan Emas', goldImg: '/assets/jinji/sym_carp.png' },
+  5: { name: 'sym-a', label: 'A', goldImg: '/assets/jinji/sym_card_a.png' },
+  6: { name: 'sym-k', label: 'K', goldImg: '/assets/jinji/sym_card_k.png' },
+  7: { name: 'sym-q', label: 'Q', goldImg: '/assets/jinji/sym_card_q.png' },
 };
 
 export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
   const [grid, setGrid] = useState<number[][]>([]);
   const [isSpinning, setIsSpinning] = useState(false);
   const [spinningCols, setSpinningCols] = useState<boolean[]>([false, false, false, false, false]);
-  const [betAmount, setBetAmount] = useState(96800);
+  const [betAmount, setBetAmount] = useState(26400);
+  const [goldTier, setGoldTier] = useState<number>(5);
   const [myCoins, setMyCoins] = useState(0);
   const [winAmount, setWinAmount] = useState(0);
-  const [winType, setWinType] = useState<string>('normal');
+  const [, setWinType] = useState<string>('normal');
   const [winningSymbols, setWinningSymbols] = useState<number[]>([]);
   const [freeSpinsLeft, setFreeSpinsLeft] = useState(0);
   const [autoSpins, setAutoSpins] = useState(0);
@@ -96,7 +94,7 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
           for (let r = 0; r < 3; r++) {
             for (let c = 0; c < 5; c++) {
               if (spinningCols[c]) {
-                next[r][c] = Math.floor(Math.random() * 11);
+                next[r][c] = Math.floor(Math.random() * 8);
               }
             }
           }
@@ -185,6 +183,7 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
 
   // Jackpot Pick Mini-Game Initialization
   const initJackpotPickGame = (targetJackpot: string, prizeAmount: number) => {
+    if (prizeAmount) setJackpotWinPrize(prizeAmount);
     const types = ['GRAND', 'MAJOR', 'MINOR', 'MINI'];
     const cards = [targetJackpot, targetJackpot, targetJackpot];
     while (cards.length < 12) {
@@ -243,72 +242,63 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
 
   doSpinRef.current = doSpin;
 
+  const lineBetMultiplier = goldTier === 5 ? 88 : goldTier === 4 ? 78 : goldTier === 3 ? 68 : goldTier === 2 ? 38 : 18;
+  const lineBetUnit = Math.max(1, Math.round(betAmount / lineBetMultiplier));
+
   const renderSymbolComponent = (symId: number) => {
+    let src = '/assets/jinji/sym_card_a.png';
+    let alt = 'Symbol';
+    let isGold = false;
+
     switch (symId) {
       case 0: // Dragon
-        return (
-          <div className="jinji-sym-wrapper sym-dragon">
-            <span className="jinji-icon">🐉</span>
-          </div>
-        );
+        isGold = goldTier >= 5;
+        src = isGold ? '/assets/jinji/sym_dragon_gold.png' : '/assets/jinji/sym_dragon_normal.png';
+        alt = isGold ? 'Naga Emas' : 'Naga';
+        break;
       case 1: // Phoenix
-        return (
-          <div className="jinji-sym-wrapper sym-phoenix">
-            <div className="gold-disc-bg">
-              <span>🦅</span>
-            </div>
-          </div>
-        );
+        isGold = goldTier >= 4;
+        src = isGold ? '/assets/jinji/sym_phoenix_gold.png' : '/assets/jinji/sym_phoenix_normal.png';
+        alt = isGold ? 'Burung Hong Emas' : 'Burung Hong';
+        break;
       case 2: // Tiger
-        return (
-          <div className="jinji-sym-wrapper sym-tiger">
-            <div className="gold-disc-bg blue-disc">
-              <span>🐅</span>
-            </div>
-          </div>
-        );
+        isGold = goldTier >= 3;
+        src = isGold ? '/assets/jinji/sym_tiger_gold.png' : '/assets/jinji/sym_tiger_normal.png';
+        alt = isGold ? 'Macan Emas' : 'Macan';
+        break;
       case 3: // Turtle
-        return (
-          <div className="jinji-sym-wrapper sym-turtle">
-            <div className="gold-disc-bg green-disc">
-              <span>🐢</span>
-            </div>
-          </div>
-        );
+        isGold = goldTier >= 2;
+        src = isGold ? '/assets/jinji/sym_turtle_gold.png' : '/assets/jinji/sym_turtle_normal.png';
+        alt = isGold ? 'Penyu Emas' : 'Penyu';
+        break;
       case 4: // Carp
-        return (
-          <div className="jinji-sym-wrapper sym-carp">
-            <span>🐟</span>
-          </div>
-        );
+        isGold = true;
+        src = '/assets/jinji/sym_carp.png';
+        alt = 'Ikan Emas';
+        break;
       case 5: // A
-        return <div className="jinji-sym-wrapper card-sym sym-card-a">A</div>;
+        src = '/assets/jinji/sym_card_a.png';
+        alt = 'A';
+        break;
       case 6: // K
-        return <div className="jinji-sym-wrapper card-sym sym-card-k">K</div>;
+        src = '/assets/jinji/sym_card_k.png';
+        alt = 'K';
+        break;
       case 7: // Q
-        return <div className="jinji-sym-wrapper card-sym sym-card-q">Q</div>;
-      case 8: // J
-        return <div className="jinji-sym-wrapper card-sym sym-card-j">J</div>;
-      case 9: // Wild
-        return (
-          <div className="jinji-sym-wrapper sym-wild">
-            <div className="wild-pot-badge">
-              <span>🏺</span>
-              <small>WILD</small>
-            </div>
-          </div>
-        );
-      case 10: // Coin
-        return (
-          <div className="jinji-sym-wrapper sym-jinji-coin">
-            <div className="yellow-gem-coin">
-              <span>🪙</span>
-            </div>
-          </div>
-        );
+        src = '/assets/jinji/sym_card_q.png';
+        alt = 'Q';
+        break;
       default:
-        return <div className="jinji-sym-wrapper card-sym">A</div>;
+        src = '/assets/jinji/sym_card_a.png';
+        alt = 'A';
+        break;
     }
+
+    return (
+      <div className={`jinji-sym-wrapper sym-${symId} ${isGold ? 'is-gold-sym' : ''}`}>
+        <img src={src} alt={alt} className="jinji-sym-img" draggable={false} />
+      </div>
+    );
   };
 
   return (
@@ -358,42 +348,47 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
 
       {/* TOP JACKPOT BANNER & FU POT */}
       <div className="jinji-jackpot-header">
-        <div className="jackpot-box grand">
-          <span className="jp-label">GRAND</span>
-          <span className="jp-val">{jackpotGrand.toLocaleString('id-ID')}</span>
-        </div>
-        <div className="jackpot-box minor">
-          <span className="jp-label">MINOR</span>
-          <span className="jp-val">{jackpotMinor.toLocaleString('id-ID')}</span>
-        </div>
-
-        {/* Center Fu Pot */}
-        <div className="jinji-fu-pot-container">
-          <div className="jinji-fu-pot">
-            <span className="pot-lid">🏺</span>
-            <span className="pot-coins-overflow">✨🪙✨</span>
+        {/* Left column: GRAND + MINOR stacked */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4vh', flex: 2 }}>
+          <div className="jackpot-box grand">
+            <span className="jp-label">GRAND</span>
+            <span className="jp-val">{jackpotGrand.toLocaleString('id-ID')}</span>
+          </div>
+          <div className="jackpot-box minor">
+            <span className="jp-label">MINOR</span>
+            <span className="jp-val">{jackpotMinor.toLocaleString('id-ID')}</span>
           </div>
         </div>
 
-        <div className="jackpot-box major">
-          <span className="jp-label">MAJOR</span>
-          <span className="jp-val">{jackpotMajor.toLocaleString('id-ID')}</span>
+        {/* Center Fu Pot */}
+        <div className="jinji-fu-pot-container" style={{ flex: 1 }}>
+          <div className="jinji-fu-pot">
+            <img src="/assets/jinji/jinji_fu_pot.png" alt="Fu Pot" className="jinji-fu-pot-img" />
+          </div>
         </div>
-        <div className="jackpot-box mini">
-          <span className="jp-label">MINI</span>
-          <span className="jp-val">{jackpotMini.toLocaleString('id-ID')}</span>
+
+        {/* Right column: MAJOR + MINI stacked */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4vh', flex: 2 }}>
+          <div className="jackpot-box major">
+            <span className="jp-label">MAJOR</span>
+            <span className="jp-val">{jackpotMajor.toLocaleString('id-ID')}</span>
+          </div>
+          <div className="jackpot-box mini">
+            <span className="jp-label">MINI</span>
+            <span className="jp-val">{jackpotMini.toLocaleString('id-ID')}</span>
+          </div>
         </div>
       </div>
 
       {/* SIDE BUTTONS */}
       <div className="jinji-side-left">
         <div className="jinji-side-card" onClick={() => alert('Step By Step')}>
-          <span className="side-title">STEP<br/>BY STEP</span>
-          <span className="side-val">4.84M</span>
+          <span style={{ fontSize: '1vh', fontWeight: 900, color: '#ffe082', textAlign: 'center', lineHeight: 1.1 }}>STEP<br/>BY STEP</span>
+          <span style={{ fontSize: '1.6vh', fontWeight: 900, color: '#ffffff', marginTop: '0.3vh' }}>1.32M</span>
         </div>
         <div className="jinji-side-card free-spin" onClick={() => alert('Beli Free Spin')}>
-          <span className="side-title">8 SPIN<br/>GRATIS</span>
-          <span className="side-val">4.84M</span>
+          <span style={{ fontSize: '1.1vh', fontWeight: 900, color: '#ffd700', textAlign: 'center', lineHeight: 1.1 }}>8 SPIN<br/>GRATIS</span>
+          <span style={{ fontSize: '1.6vh', fontWeight: 900, color: '#ffffff', marginTop: '0.3vh' }}>1.32M</span>
         </div>
         <div className="jinji-side-card ransel" onClick={() => alert('Ransel Item')}>
           <span className="side-icon">🎒</span>
@@ -443,11 +438,41 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
           <div className="jinji-pillar right-pillar">
             <span className="pillar-title">GOLD PAYS</span>
             <div className="gold-pays-icons">
-              <span>🐉</span>
-              <span>🦅</span>
-              <span>🐅</span>
-              <span>🐢</span>
-              <span>🐟</span>
+              <button 
+                className={`gold-tier-btn ${goldTier >= 5 ? 'active' : ''}`}
+                onClick={() => setGoldTier(goldTier === 5 ? 4 : 5)}
+                title="Gold Dragon (5 Gold)"
+              >
+                <img src="/assets/jinji/sym_dragon_gold.png" alt="Dragon" />
+              </button>
+              <button 
+                className={`gold-tier-btn ${goldTier >= 4 ? 'active' : ''}`}
+                onClick={() => setGoldTier(goldTier === 4 ? 3 : 4)}
+                title="Gold Phoenix (4 Gold)"
+              >
+                <img src="/assets/jinji/sym_phoenix_gold.png" alt="Phoenix" />
+              </button>
+              <button 
+                className={`gold-tier-btn ${goldTier >= 3 ? 'active' : ''}`}
+                onClick={() => setGoldTier(goldTier === 3 ? 2 : 3)}
+                title="Gold Tiger (3 Gold)"
+              >
+                <img src="/assets/jinji/sym_tiger_gold.png" alt="Tiger" />
+              </button>
+              <button 
+                className={`gold-tier-btn ${goldTier >= 2 ? 'active' : ''}`}
+                onClick={() => setGoldTier(goldTier === 2 ? 1 : 2)}
+                title="Gold Turtle (2 Gold)"
+              >
+                <img src="/assets/jinji/sym_turtle_gold.png" alt="Turtle" />
+              </button>
+              <button 
+                className={`gold-tier-btn ${goldTier >= 1 ? 'active' : ''}`}
+                onClick={() => setGoldTier(1)}
+                title="Gold Carp (1 Gold)"
+              >
+                <img src="/assets/jinji/sym_carp.png" alt="Carp" />
+              </button>
             </div>
           </div>
         </div>
@@ -460,13 +485,13 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
           <div className="jbot-left">
             <button className="jbot-icon-btn" onClick={() => alert('Chat')}>💬</button>
             <button className="jbot-icon-btn" onClick={() => setShowRules(true)}>i</button>
-            <button className="jbot-bet-btn" onClick={() => setBetAmount(b => Math.max(9680, b - 9680))}>-</button>
+            <button className="jbot-bet-btn" onClick={() => setBetAmount(b => Math.max(lineBetMultiplier * 50, b - lineBetMultiplier * 50))}>-</button>
             <div className="jbot-bet-display">
               <div className="jbot-bet-label">BET</div>
               <div className="jbot-bet-val">{betAmount.toLocaleString('id-ID')}</div>
-              <div className="jbot-line-bet">LINE BET: 1,100x88</div>
+              <div className="jbot-line-bet">LINE BET: {lineBetUnit.toLocaleString('id-ID')}x{lineBetMultiplier}</div>
             </div>
-            <button className="jbot-bet-btn" onClick={() => setBetAmount(b => Math.min(9680000, b + 9680))}>+</button>
+            <button className="jbot-bet-btn" onClick={() => setBetAmount(b => Math.min(lineBetMultiplier * 10000, b + lineBetMultiplier * 50))}>+</button>
           </div>
 
           <div className="jbot-center">
@@ -476,7 +501,7 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
           </div>
 
           <div className="jbot-right">
-            <button className="jbot-maxbet-btn" onClick={() => setBetAmount(9680000)}>
+            <button className="jbot-maxbet-btn" onClick={() => setBetAmount(lineBetMultiplier * 3000)}>
               MAX<br/>BET
             </button>
             <button className="jbot-speed-btn" onClick={() => setSpinSpeed(s => s === 1 ? 2 : s === 2 ? 3 : 1)}>
@@ -541,7 +566,7 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
                     {isRevealed ? (
                       <span className="card-type-text">{cardType}</span>
                     ) : (
-                      <span className="coin-front">🪙</span>
+                      <img src="/assets/jinji/sym_coin.png" alt="Coin" className="pick-coin-img" draggable={false} />
                     )}
                   </div>
                 );
@@ -572,23 +597,164 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
         </div>
       )}
 
-      {/* RULES MODAL */}
+      {/* RULES MODAL (AUTHENTIC ATURAN SCREEN FROM REFERENCE) */}
       {showRules && (
-        <div className="jinji-rules-modal">
-          <div className="jinji-rules-content">
+        <div className="jinji-rules-modal" onClick={() => setShowRules(false)}>
+          <div className="jinji-aturan-screen" onClick={(e) => e.stopPropagation()}>
             <button className="jinji-rules-close" onClick={() => setShowRules(false)}>✖</button>
-            <h2>ATURAN & PEMBAYARAN - JIN JI BAO XI</h2>
-            <div className="jinji-paytable">
-              <div className="pt-item">🐉 <strong>Naga Emas</strong>: 5 = 1000x, 4 = 200x, 3 = 50x</div>
-              <div className="pt-item">🦅 <strong>Burung Hong</strong>: 5 = 600x, 4 = 150x, 3 = 40x</div>
-              <div className="pt-item">🐅 <strong>Macan Emas</strong>: 5 = 400x, 4 = 100x, 3 = 30x</div>
-              <div className="pt-item">🐢 <strong>Penyu Emas</strong>: 5 = 200x, 4 = 50x, 3 = 20x</div>
-              <div className="pt-item">🐟 <strong>Ikan Emas</strong>: 5 = 100x, 4 = 30x, 3 = 10x</div>
-              <div className="pt-item">🏺 <strong>WILD (Pot)</strong>: Menggantikan semua simbol & memicu Fu Pot Jackpot.</div>
-              <div className="pt-item">🪙 <strong>Koin Jin Ji</strong>: 6+ Koin memicu Free Games / Top Up Bonus.</div>
+            
+            {/* Top Ornate Banner Ribbon */}
+            <div className="aturan-banner-header">
+              <div className="aturan-banner-title">ATURAN</div>
             </div>
-            <h3>243 REEL WAYS</h3>
-            <p>Simbol identik pada kolom bersebelahan dari kiri ke kanan dihitung sebagai kemenangan mutlak!</p>
+
+            {/* 6 Paytable Cards */}
+            <div className="aturan-grid">
+              {/* Box 1: Dragon */}
+              <div className="aturan-card">
+                <div className="aturan-pair">
+                  <div className="aturan-col">
+                    <img src="/assets/jinji/sym_dragon_gold.png" alt="Gold Dragon" className="aturan-sym-img" />
+                    <div className="aturan-pays">
+                      <div className="pay-row"><span className="num">5</span> <span className="val">{(lineBetUnit * 250).toLocaleString('id-ID')}</span></div>
+                      <div className="pay-row"><span className="num">4</span> <span className="val">{(lineBetUnit * 60).toLocaleString('id-ID')}</span></div>
+                      <div className="pay-row"><span className="num">3</span> <span className="val">{(lineBetUnit * 20).toLocaleString('id-ID')}</span></div>
+                    </div>
+                  </div>
+                  <div className="aturan-col">
+                    <img src="/assets/jinji/sym_dragon_normal.png" alt="Normal Dragon" className="aturan-sym-img" />
+                    <div className="aturan-pays">
+                      <div className="pay-row"><span className="num">5</span> <span className="val">{(lineBetUnit * 20).toLocaleString('id-ID')}</span></div>
+                      <div className="pay-row"><span className="num">4</span> <span className="val">{(lineBetUnit * 10).toLocaleString('id-ID')}</span></div>
+                      <div className="pay-row"><span className="num">3</span> <span className="val">{(lineBetUnit * 5).toLocaleString('id-ID')}</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Box 2: Phoenix */}
+              <div className="aturan-card">
+                <div className="aturan-pair">
+                  <div className="aturan-col">
+                    <img src="/assets/jinji/sym_phoenix_gold.png" alt="Gold Phoenix" className="aturan-sym-img" />
+                    <div className="aturan-pays">
+                      <div className="pay-row"><span className="num">5</span> <span className="val">{(lineBetUnit * 200).toLocaleString('id-ID')}</span></div>
+                      <div className="pay-row"><span className="num">4</span> <span className="val">{(lineBetUnit * 50).toLocaleString('id-ID')}</span></div>
+                      <div className="pay-row"><span className="num">3</span> <span className="val">{(lineBetUnit * 15).toLocaleString('id-ID')}</span></div>
+                    </div>
+                  </div>
+                  <div className="aturan-col">
+                    <img src="/assets/jinji/sym_phoenix_normal.png" alt="Normal Phoenix" className="aturan-sym-img" />
+                    <div className="aturan-pays">
+                      <div className="pay-row"><span className="num">5</span> <span className="val">{(lineBetUnit * 20).toLocaleString('id-ID')}</span></div>
+                      <div className="pay-row"><span className="num">4</span> <span className="val">{(lineBetUnit * 10).toLocaleString('id-ID')}</span></div>
+                      <div className="pay-row"><span className="num">3</span> <span className="val">{(lineBetUnit * 5).toLocaleString('id-ID')}</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Box 3: Tiger */}
+              <div className="aturan-card">
+                <div className="aturan-pair">
+                  <div className="aturan-col">
+                    <img src="/assets/jinji/sym_tiger_gold.png" alt="Gold Tiger" className="aturan-sym-img round" />
+                    <div className="aturan-pays">
+                      <div className="pay-row"><span className="num">5</span> <span className="val">{(lineBetUnit * 150).toLocaleString('id-ID')}</span></div>
+                      <div className="pay-row"><span className="num">4</span> <span className="val">{(lineBetUnit * 25).toLocaleString('id-ID')}</span></div>
+                      <div className="pay-row"><span className="num">3</span> <span className="val">{(lineBetUnit * 15).toLocaleString('id-ID')}</span></div>
+                    </div>
+                  </div>
+                  <div className="aturan-col">
+                    <img src="/assets/jinji/sym_tiger_normal.png" alt="Normal Tiger" className="aturan-sym-img" />
+                    <div className="aturan-pays">
+                      <div className="pay-row"><span className="num">5</span> <span className="val">{(lineBetUnit * 20).toLocaleString('id-ID')}</span></div>
+                      <div className="pay-row"><span className="num">4</span> <span className="val">{(lineBetUnit * 10).toLocaleString('id-ID')}</span></div>
+                      <div className="pay-row"><span className="num">3</span> <span className="val">{(lineBetUnit * 5).toLocaleString('id-ID')}</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Box 4: Turtle */}
+              <div className="aturan-card">
+                <div className="aturan-pair">
+                  <div className="aturan-col">
+                    <img src="/assets/jinji/sym_turtle_gold.png" alt="Gold Turtle" className="aturan-sym-img round" />
+                    <div className="aturan-pays">
+                      <div className="pay-row"><span className="num">5</span> <span className="val">{(lineBetUnit * 100).toLocaleString('id-ID')}</span></div>
+                      <div className="pay-row"><span className="num">4</span> <span className="val">{(lineBetUnit * 20).toLocaleString('id-ID')}</span></div>
+                      <div className="pay-row"><span className="num">3</span> <span className="val">{(lineBetUnit * 10).toLocaleString('id-ID')}</span></div>
+                    </div>
+                  </div>
+                  <div className="aturan-col">
+                    <img src="/assets/jinji/sym_turtle_normal.png" alt="Normal Turtle" className="aturan-sym-img" />
+                    <div className="aturan-pays">
+                      <div className="pay-row"><span className="num">5</span> <span className="val">{(lineBetUnit * 20).toLocaleString('id-ID')}</span></div>
+                      <div className="pay-row"><span className="num">4</span> <span className="val">{(lineBetUnit * 10).toLocaleString('id-ID')}</span></div>
+                      <div className="pay-row"><span className="num">3</span> <span className="val">{(lineBetUnit * 5).toLocaleString('id-ID')}</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Box 5: Carp */}
+              <div className="aturan-card single">
+                <div className="aturan-col" style={{ width: '100%' }}>
+                  <img src="/assets/jinji/sym_carp.png" alt="Carp" className="aturan-sym-img" />
+                  <div className="aturan-pays">
+                    <div className="pay-row"><span className="num">5</span> <span className="val">{(lineBetUnit * 50).toLocaleString('id-ID')}</span></div>
+                    <div className="pay-row"><span className="num">4</span> <span className="val">{(lineBetUnit * 15).toLocaleString('id-ID')}</span></div>
+                    <div className="pay-row"><span className="num">3</span> <span className="val">{(lineBetUnit * 10).toLocaleString('id-ID')}</span></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Box 6: Cards A, Q, K */}
+              <div className="aturan-card cards-box">
+                <div className="aturan-cards-row">
+                  <div className="aturan-card-item">
+                    <img src="/assets/jinji/sym_card_a.png" alt="A" className="aturan-sym-card" />
+                    <div className="aturan-pays">
+                      <div className="pay-row"><span className="num">5</span> <span className="val">{(lineBetUnit * 10).toLocaleString('id-ID')}</span></div>
+                      <div className="pay-row"><span className="num">4</span> <span className="val">{(lineBetUnit * 8).toLocaleString('id-ID')}</span></div>
+                      <div className="pay-row"><span className="num">3</span> <span className="val">{(lineBetUnit * 5).toLocaleString('id-ID')}</span></div>
+                    </div>
+                  </div>
+                  <div className="aturan-card-item">
+                    <img src="/assets/jinji/sym_card_q.png" alt="Q" className="aturan-sym-card" />
+                    <div className="aturan-pays">
+                      <div className="pay-row"><span className="num">5</span> <span className="val">{(lineBetUnit * 10).toLocaleString('id-ID')}</span></div>
+                      <div className="pay-row"><span className="num">4</span> <span className="val">{(lineBetUnit * 8).toLocaleString('id-ID')}</span></div>
+                      <div className="pay-row"><span className="num">3</span> <span className="val">{(lineBetUnit * 5).toLocaleString('id-ID')}</span></div>
+                    </div>
+                  </div>
+                  <div className="aturan-card-item">
+                    <img src="/assets/jinji/sym_card_k.png" alt="K" className="aturan-sym-card" />
+                    <div className="aturan-pays">
+                      <div className="pay-row"><span className="num">5</span> <span className="val">{(lineBetUnit * 10).toLocaleString('id-ID')}</span></div>
+                      <div className="pay-row"><span className="num">4</span> <span className="val">{(lineBetUnit * 8).toLocaleString('id-ID')}</span></div>
+                      <div className="pay-row"><span className="num">3</span> <span className="val">{(lineBetUnit * 5).toLocaleString('id-ID')}</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Nav: Dots & Kembali Ke Game */}
+            <div className="aturan-bottom-nav">
+              <div className="aturan-dots">
+                <span className="dot active"></span>
+                <span className="dot"></span>
+                <span className="dot"></span>
+                <span className="dot"></span>
+                <span className="dot"></span>
+                <span className="dot"></span>
+              </div>
+              <button className="aturan-back-btn" onClick={() => setShowRules(false)}>
+                ◀ KEMBALI KE GAME ▶
+              </button>
+            </div>
           </div>
         </div>
       )}
