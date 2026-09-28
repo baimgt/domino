@@ -46,6 +46,22 @@ interface SpinState { x: number; y: number; }
 // orbitR = current spiral distance from pocket center; orbitAngle = current orbit angle
 interface SinkingBall { id: number; x: number; y: number; px: number; py: number; progress: number; color: string; rollAngle: number; orbitR: number; orbitAngle: number; }
 
+export const POOL_ROOMS = [
+  { id: 'london',  name: 'London Pub',      entry: 50000,   prize: 100000,   city: 'London',    flag: '🇬🇧', tier: 'Pemula', minLevel: 1,  bg: 'linear-gradient(135deg, #1e3a8a, #1d4ed8)' },
+  { id: 'sydney',  name: 'Sydney Marina',   entry: 250000,  prize: 500000,   city: 'Sydney',    flag: '🇦🇺', tier: 'Menengah', minLevel: 3, bg: 'linear-gradient(135deg, #065f46, #059669)' },
+  { id: 'jakarta', name: 'Jakarta Club',    entry: 1000000, prize: 2000000,  city: 'Jakarta',   flag: '🇮🇩', tier: 'Pro', minLevel: 5,      bg: 'linear-gradient(135deg, #7c2d12, #ea580c)' },
+  { id: 'tokyo',   name: 'Tokyo Arena',     entry: 5000000, prize: 10000000, city: 'Tokyo',     flag: '🇯🇵', tier: 'Master', minLevel: 10,  bg: 'linear-gradient(135deg, #581c87, #9333ea)' },
+  { id: 'vegas',   name: 'Las Vegas VIP',   entry: 25000000,prize: 50000000, city: 'Las Vegas', flag: '🇺🇸', tier: 'Raja', minLevel: 20,    bg: 'linear-gradient(135deg, #831843, #db2777)' },
+];
+
+const OPPONENT_LIST = [
+  { name: 'Mike', level: 46, avatar: 'https://i.pravatar.cc/100?img=68' },
+  { name: 'Sarah', level: 52, avatar: 'https://i.pravatar.cc/100?img=44' },
+  { name: 'Budi_Pro', level: 39, avatar: 'https://i.pravatar.cc/100?img=12' },
+  { name: 'Alex_8Ball', level: 61, avatar: 'https://i.pravatar.cc/100?img=60' },
+  { name: 'David_Pool', level: 48, avatar: 'https://i.pravatar.cc/100?img=33' }
+];
+
 // ═══════════════════════════════════════════════════════════════
 //  RACK POSITIONS
 // ═══════════════════════════════════════════════════════════════
@@ -888,6 +904,7 @@ function PowerSlider({ power, onChange }: { power: number; onChange: (v: number)
 //  MAIN SCREEN
 // ═══════════════════════════════════════════════════════════════
 export default function BilliardScreen({ onBack }: { onBack: () => void }) {
+  const username         = localStorage.getItem('domino_username') || '';
   const canvasRef        = useRef<HTMLCanvasElement>(null);
   const ballsRef         = useRef<Ball[]>(createBalls());
   const animRef          = useRef(0);
@@ -909,13 +926,64 @@ export default function BilliardScreen({ onBack }: { onBack: () => void }) {
   const [pocketedBalls, setPocketedBalls] = useState<number[]>([]);
   const [winner, setWinner]           = useState<'player'|'ai'|null>(null);
   const [message, setMessage]         = useState('🎱 Klik meja untuk mengarahkan tembakan');
-  const [showBet, setShowBet]         = useState(true);
-  const [bet, setBet]                 = useState(100000);
-  const [coins, setCoins]             = useState(0);
+  const [showBet, setShowBet]         = useState(false);
+  const [bet, setBet]                 = useState(50000);
+  const [coins, setCoins]             = useState(10000000);
   const [showHelp, setShowHelp]       = useState(false);
   const [showMenu, setShowMenu]       = useState(false);
   const [soundOn, setSoundOn]         = useState(true);
   const [effectOn, setEffectOn]       = useState(true);
+  const [gameStep, setGameStep]         = useState<'room_select' | 'matching' | 'playing'>('room_select');
+  const [selectedRoom, setSelectedRoom] = useState(POOL_ROOMS[0]);
+  const [opponent, setOpponent]         = useState(OPPONENT_LIST[0]);
+  const [matchStatus, setMatchStatus]   = useState('🔍 Mencari Lawan Berdasarkan Skill...');
+  const [matchCountdown, setMatchCountdown] = useState<number | null>(null);
+  const [matchingAvatar, setMatchingAvatar] = useState(OPPONENT_LIST[0].avatar);
+
+  const handleSelectRoom = (room: typeof POOL_ROOMS[0]) => {
+    if (coins < room.entry) {
+      alert('Koin Anda tidak cukup untuk masuk room ini!');
+      return;
+    }
+    setSelectedRoom(room);
+    setBet(room.entry);
+    setGameStep('matching');
+    setMatchStatus('🔍 Mencari Lawan Berdasarkan Skill...');
+    setMatchCountdown(null);
+
+    let cycleCount = 0;
+    const interval = setInterval(() => {
+      cycleCount++;
+      const randomOpp = OPPONENT_LIST[Math.floor(Math.random() * OPPONENT_LIST.length)];
+      setMatchingAvatar(randomOpp.avatar);
+      if (cycleCount >= 14) {
+        clearInterval(interval);
+        const finalOpp = OPPONENT_LIST[Math.floor(Math.random() * OPPONENT_LIST.length)];
+        setOpponent(finalOpp);
+        setMatchingAvatar(finalOpp.avatar);
+        setMatchStatus(`⚡ MUSUH DITEMUKAN: ${finalOpp.name} (Lvl ${finalOpp.level})!`);
+
+        let count = 3;
+        setMatchCountdown(count);
+        const countInterval = setInterval(() => {
+          count--;
+          if (count <= 0) {
+            clearInterval(countInterval);
+            setCoins(c => Math.max(0, c - room.entry));
+            ballsRef.current = createBalls();
+            setPocketedBalls([]);
+            setWinner(null);
+            setTurn('player');
+            setPlayerGroup(null);
+            setMessage(`🎱 Permainan Dimulai! Taruhan: 🪙 ${room.entry.toLocaleString('id-ID')}`);
+            setGameStep('playing');
+          } else {
+            setMatchCountdown(count);
+          }
+        }, 800);
+      }
+    }, 120);
+  };
 
   // Refs for closures
   const turnRef        = useRef(turn);
@@ -1026,6 +1094,47 @@ export default function BilliardScreen({ onBack }: { onBack: () => void }) {
       if (curTurn === 'ai') scheduleAI();
     }
   }, [scheduleAI]);
+
+  // ── Render / Game Loop ───────────────────────────────
+  useEffect(() => {
+    let animId: number;
+    const loop = () => {
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          const balls = ballsRef.current;
+          const wasMoving = isMovingRef.current;
+          const stillMoving = physicsStep(
+            balls,
+            pocketedThisTurnRef.current,
+            particlesRef.current,
+            sinkingBallsRef.current,
+            spinRef.current,
+            cueBallJustShot
+          );
+          isMovingRef.current = stillMoving;
+
+          if (wasMoving && !stillMoving) {
+            handleTurnEnd();
+          }
+
+          drawScene(
+            ctx,
+            balls,
+            aimTargetRef.current,
+            powerRef.current,
+            isAimModeRef.current,
+            particlesRef.current,
+            sinkingBallsRef.current
+          );
+        }
+      }
+      animId = requestAnimationFrame(loop);
+    };
+    animId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(animId);
+  }, [handleTurnEnd]);
 
   // ── Draw loop ────────────────────────────────────────
   const drawLoop = useCallback(() => {
@@ -1170,41 +1279,209 @@ export default function BilliardScreen({ onBack }: { onBack: () => void }) {
       (grp === 'stripe' ? STRIPE_SET.has(id) : !STRIPE_SET.has(id)));
   };
 
-  return (
-    <div className="billiard-screen billiard-fullscreen">
-      {/* ── HEADER OVERLAY ── */}
-      <div className="bl-header bl-header-overlay">
-        <button className="bl-back-btn" onClick={onBack}>← Kembali</button>
-        <div className="bl-title">🎱 8-Ball Pool</div>
-        <div className="bl-header-right" style={{ position: 'relative' }}>
+  if (gameStep === 'room_select') {
+    return (
+      <div className="billiard-screen pool8-room-screen">
+        <div className="pool8-room-header">
+          <button className="bl-back-btn-rich" onClick={onBack}>« Lobi</button>
+          <div className="pool8-room-title">🎱 PILIH ROOM TARUHAN 8-BALL POOL</div>
           <div className="bl-coins-badge">🪙 {coins.toLocaleString('id-ID')}</div>
-          <button className="bl-help-btn" onClick={() => setShowMenu(v => !v)}>≡</button>
+        </div>
 
-          <GameMenuDropdown
-            isOpen={showMenu}
-            onClose={() => setShowMenu(false)}
-            items={[
-              { id: 'lobi', icon: '🚪', label: 'Lobi', onClick: () => { setShowMenu(false); onBack(); } },
-              { id: 'restart', icon: '🔄', label: 'Mulai Ulang', onClick: () => { setShowMenu(false); ballsRef.current = createBalls(); setPocketedBalls([]); setWinner(null); setTurn('player'); setPlayerGroup(null); setMessage('🎱 Permainan baru dimulai!'); } },
-              { id: 'suara', icon: '🔊', label: 'Suara', badge: soundOn ? 'ON' : 'OFF', onClick: () => setSoundOn(v => !v) },
-              { id: 'efek', icon: '✨', label: 'Efek', badge: effectOn ? 'ON' : 'OFF', onClick: () => setEffectOn(v => !v) },
-              { id: 'bantuan', icon: '❓', label: 'Bantuan', onClick: () => { setShowMenu(false); setShowHelp(true); } }
-            ]}
-          />
+        <div className="pool8-room-grid">
+          {POOL_ROOMS.map(room => (
+            <div
+              key={room.id}
+              className={`pool8-room-card ${coins < room.entry ? 'disabled' : ''}`}
+              style={{ '--card-bg': room.bg } as React.CSSProperties}
+              onClick={() => handleSelectRoom(room)}
+            >
+              {/* Background gradient */}
+              <div className="pool8-rc-bg" style={{ background: room.bg }} />
+
+              {/* Top Row: Flag badge + Tier badge */}
+              <div className="pool8-rc-top-row">
+                <span className="pool8-rc-flag-badge">{room.flag}</span>
+                <span className={`pool8-rc-tier-badge tier-${room.tier.toLowerCase()}`}>{room.tier}</span>
+              </div>
+
+              {/* Room Name */}
+              <div className="pool8-rc-name">{room.name}</div>
+              <div className="pool8-rc-city">📍 {room.city} • Min Lvl {room.minLevel}</div>
+
+              {/* Divider */}
+              <div className="pool8-rc-divider" />
+
+              {/* Prize Info */}
+              <div className="pool8-rc-stats">
+                <div className="pool8-rc-stat-item">
+                  <span className="pool8-rc-stat-label">Biaya</span>
+                  <span className="pool8-rc-stat-val entry">🪙 {room.entry.toLocaleString('id-ID')}</span>
+                </div>
+                <div className="pool8-rc-stat-sep">|</div>
+                <div className="pool8-rc-stat-item">
+                  <span className="pool8-rc-stat-label">Hadiah</span>
+                  <span className="pool8-rc-stat-val prize">🪙 {room.prize.toLocaleString('id-ID')}</span>
+                </div>
+              </div>
+
+              {/* Action Button */}
+              <button
+                className={`pool8-rc-btn ${coins < room.entry ? 'locked' : ''}`}
+                disabled={coins < room.entry}
+              >
+                {coins < room.entry ? '🔒 Koin Kurang' : '▶ MASUK'}
+              </button>
+            </div>
+          ))}
         </div>
       </div>
+    );
+  }
 
-      {/* ── TURN BAR OVERLAY ── */}
-      <div className="bl-turn-bar bl-turn-overlay">
-        <div className={`bl-player-card ${turn === 'player' ? 'active' : ''}`}>
-          <span>😊 Anda</span>
-          {playerGroup && <span className={`bl-gbadge ${playerGroup}`}>{playerGroup === 'solid' ? '● Solid' : '◑ Stripe'}</span>}
+  if (gameStep === 'matching') {
+    return (
+      <div className="billiard-screen pool8-matching-screen">
+        <div className="pool8-matching-overlay">
+          <div className="pool8-matching-title">🎱 8-BALL POOL MATCHMAKING</div>
+
+          <div className="pool8-vs-animation">
+            <div className="pool8-match-player">
+              <div className="pool8-match-avatar gold-border">
+                <img src="https://i.pravatar.cc/100?img=33" alt="Player 1" />
+              </div>
+              <div className="pool8-match-name">{username || 'Emely'}</div>
+              <div className="pool8-match-lvl purple-star">★ 43</div>
+            </div>
+
+            <div className="pool8-match-vs-wheel">
+              <div className="pool8-vs-glow" />
+              <div className="pool8-vs-txt">VS</div>
+            </div>
+
+            <div className="pool8-match-player">
+              <div className="pool8-match-avatar purple-border">
+                <img src={matchingAvatar} alt="Opponent" />
+              </div>
+              <div className="pool8-match-name">
+                {matchStatus.includes('MUSUH DITEMUKAN') ? opponent.name : '???'}
+              </div>
+              <div className="pool8-match-lvl blue-star">
+                ★ {matchStatus.includes('MUSUH DITEMUKAN') ? opponent.level : '??'}
+              </div>
+            </div>
+          </div>
+
+          <div className="pool8-matching-status">{matchStatus}</div>
+          {matchCountdown !== null && (
+            <div className="pool8-match-countdown">
+              MATCH START IN: <span>{matchCountdown}</span>
+            </div>
+          )}
+
+          <div className="pool8-match-prize-info">
+            Tabel: <b>{selectedRoom.name}</b> • Total Hadiah: <b>🪙 {selectedRoom.prize.toLocaleString('id-ID')}</b>
+          </div>
         </div>
-        <div className="bl-msg">{message}</div>
-        <div className={`bl-player-card ${turn === 'ai' ? 'active' : ''} right`}>
-          {aiGroup && <span className={`bl-gbadge ${aiGroup}`}>{aiGroup === 'solid' ? '● Solid' : '◑ Stripe'}</span>}
-          <span>🤖 AI</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="billiard-screen billiard-fullscreen">
+      {/* ── 8 BALL POOL TOP VERSUS HEADER ── */}
+      <div className="bl-header-overlay pool8-header">
+        {/* Left Menu Button */}
+        <button className="pool8-menu-btn" onClick={() => setShowMenu(v => !v)}>
+          <span>☰</span>
+        </button>
+
+        {/* Player 1 Box (Left) */}
+        <div className={`pool8-player-box left ${turn === 'player' ? 'active-turn' : ''}`}>
+          <div className="pool8-star-badge purple-star">
+            <span className="star-ico">★</span>
+            <span className="star-num">43</span>
+          </div>
+          <div className="pool8-player-info">
+            <div className="pool8-name-row">
+              <span className="pool8-chat-btn" onClick={() => alert('Fitur Chat')}>💬</span>
+              <span className="pool8-player-name">{username || 'Emely'}</span>
+            </div>
+            <div className="pool8-pocketed-balls">
+              {(playerGroup === 'stripe' ? [9,10,11,12,13,14,15] : [1,2,3,4,5,6,7]).map(id => {
+                const isPocketed = pocketedBalls.includes(id);
+                return (
+                  <div key={id} className={`pool8-mini-ball ball-${id} ${isPocketed ? 'pocketed' : ''}`}>
+                    <span>{id}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
+
+        {/* Center VS & Coins Box */}
+        <div className="pool8-vs-box">
+          <div className="pool8-avatar gold-border">
+            <img src="https://i.pravatar.cc/100?img=33" alt="Player 1" />
+          </div>
+          <div className="pool8-coins-box">
+            <div className="pool8-coins-icon">🪙🪙</div>
+            <div className="pool8-coins-val">{selectedRoom.prize.toLocaleString('id-ID')}</div>
+          </div>
+          <div className="pool8-avatar purple-border">
+            <img src={opponent.avatar} alt="Player 2" />
+          </div>
+        </div>
+
+        {/* Player 2 Box (Right - AI) */}
+        <div className={`pool8-player-box right ${turn === 'ai' ? 'active-turn' : ''}`}>
+          <div className="pool8-player-info align-right">
+            <div className="pool8-name-row">
+              <span className="pool8-player-name">{opponent.name} (AI)</span>
+            </div>
+            <div className="pool8-pocketed-balls">
+              {(playerGroup === 'solid' ? [9,10,11,12,13,14,15] : [1,2,3,4,5,6,7]).map(id => {
+                const isPocketed = pocketedBalls.includes(id);
+                return (
+                  <div key={id} className={`pool8-mini-ball ball-${id} ${isPocketed ? 'pocketed' : ''}`}>
+                    <span>{id}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <div className="pool8-star-badge blue-star">
+            <span className="star-ico">★</span>
+            <span className="star-num">{opponent.level}</span>
+          </div>
+        </div>
+
+        {/* Top Right Cue Spin Target Control Button */}
+        <div className="pool8-cue-spin-target" onClick={() => setShowSpinPopup(v => !v)}>
+          <div className="pool8-cs-circle">
+            <div
+              className="pool8-cs-dot"
+              style={{
+                left: `${50 + spin.x * 38}%`,
+                top: `${50 - spin.y * 38}%`
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Game Menu Dropdown */}
+        <GameMenuDropdown
+          isOpen={showMenu}
+          onClose={() => setShowMenu(false)}
+          items={[
+            { id: 'lobi', icon: '🚪', label: 'Lobi', onClick: () => { setShowMenu(false); onBack(); } },
+            { id: 'restart', icon: '🔄', label: 'Mulai Ulang', onClick: () => { setShowMenu(false); ballsRef.current = createBalls(); setPocketedBalls([]); setWinner(null); setTurn('player'); setPlayerGroup(null); setMessage('🎱 Permainan baru dimulai!'); } },
+            { id: 'suara', icon: '🔊', label: 'Suara', badge: soundOn ? 'ON' : 'OFF', onClick: () => setSoundOn(v => !v) },
+            { id: 'efek', icon: '✨', label: 'Efek', badge: effectOn ? 'ON' : 'OFF', onClick: () => setEffectOn(v => !v) },
+            { id: 'bantuan', icon: '❓', label: 'Bantuan', onClick: () => { setShowMenu(false); setShowHelp(true); } }
+          ]}
+        />
       </div>
 
       {/* ── CANVAS (fills full screen) ── */}

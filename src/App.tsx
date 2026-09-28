@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import './App.css';
+import './slot-modal.css';
 import { io, Socket } from 'socket.io-client';
 import { PixiSlotGame } from './PixiSlotGame';
 import FafafaSlotScreen from './FafafaSlotScreen';
@@ -9,6 +10,7 @@ import GatesOfGatokacaSlotScreen from './GatesOfGatokacaSlotScreen';
 import ZeusSlotScreen from './ZeusSlotScreen';
 import CandyRushSlotScreen from './CandyRushSlotScreen';
 import WildWestSlotScreen from './WildWestSlotScreen';
+import FiveLionsSlotScreen from './FiveLionsSlotScreen';
 import BilliardScreen from './BilliardScreen';
 import GameMenuDropdown from './GameMenuDropdown';
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
@@ -146,19 +148,19 @@ function LoginScreen({ onLoginSuccess }: { onLoginSuccess: () => void }) {
   const handleSocialLogin = async (platform: string) => {
     setIsLoggingIn(true);
     let username = '';
-    
+
     try {
       if (platform === 'Google') {
         // Attempt Native Google Login
         const user = await GoogleAuth.signIn();
-        username = `Google_${user.name || user.givenName || Math.floor(Math.random()*9999)}`;
+        username = `Google_${user.name || user.givenName || Math.floor(Math.random() * 9999)}`;
       } else if (platform === 'Facebook') {
         // Attempt Native Facebook Login
         const FACEBOOK_PERMISSIONS = ['email', 'public_profile'];
         const result = await FacebookLogin.login({ permissions: FACEBOOK_PERMISSIONS });
         if (result.accessToken) {
           const profile = await FacebookLogin.getProfile({ fields: ['name'] });
-          username = `FB_${profile.name || Math.floor(Math.random()*9999)}`;
+          username = `FB_${profile.name || Math.floor(Math.random() * 9999)}`;
         } else {
           throw new Error('Facebook Login failed or cancelled');
         }
@@ -167,7 +169,7 @@ function LoginScreen({ onLoginSuccess }: { onLoginSuccess: () => void }) {
       console.warn(`${platform} Native Login failed or not configured, using fallback.`, error);
       // FALLBACK: Since the developer hasn't set up the keys or we are on web without config,
       // fallback to the prompt so the app doesn't crash and remains testable.
-      const defaultName = platform === 'Google' ? `Google_${Math.floor(Math.random()*9999)}` : `FB_${Math.floor(Math.random()*9999)}`;
+      const defaultName = platform === 'Google' ? `Google_${Math.floor(Math.random() * 9999)}` : `FB_${Math.floor(Math.random() * 9999)}`;
       const promptUsername = prompt(`[FALLBACK MODE]\nNative ${platform} keys missing.\nMasukkan nama akun ${platform} Anda:`, defaultName);
       if (!promptUsername) {
         setIsLoggingIn(false);
@@ -194,7 +196,7 @@ function LoginScreen({ onLoginSuccess }: { onLoginSuccess: () => void }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: sanitizedUsername, coins: 6000000, rp: 0, score: 50 })
       });
-      
+
       if (res.ok) {
         localStorage.setItem('domino_username', sanitizedUsername);
         onLoginSuccess();
@@ -269,10 +271,10 @@ function LoginScreen({ onLoginSuccess }: { onLoginSuccess: () => void }) {
 // MODAL PENGATURAN
 // =====================================================
 function PengaturanModal({ onClose, onLogout }: { onClose: () => void; onLogout: () => void }) {
-  const [bgm, setBgm]   = useState(() => localStorage.getItem('set_bgm') !== 'off');
-  const [sfx, setSfx]   = useState(() => localStorage.getItem('set_sfx') !== 'off');
+  const [bgm, setBgm] = useState(() => localStorage.getItem('set_bgm') !== 'off');
+  const [sfx, setSfx] = useState(() => localStorage.getItem('set_sfx') !== 'off');
   const [anim, setAnim] = useState(() => localStorage.getItem('set_anim') !== 'off');
-  const [showDel, setShowDel] = useState<'cache'|'data'|'akun'|null>(null);
+  const [showDel, setShowDel] = useState<'cache' | 'data' | 'akun' | null>(null);
 
   const toggle = (key: string, val: boolean, setter: (v: boolean) => void) => {
     setter(!val);
@@ -284,18 +286,18 @@ function PengaturanModal({ onClose, onLogout }: { onClose: () => void; onLogout:
   };
 
   const doHapusCache = () => {
-    ['domino_friends','domino_avatar','set_bgm','set_sfx','set_anim'].forEach(k => localStorage.removeItem(k));
+    ['domino_friends', 'domino_avatar', 'set_bgm', 'set_sfx', 'set_anim'].forEach(k => localStorage.removeItem(k));
     setShowDel(null);
   };
   const doHapusData = () => { localStorage.clear(); setShowDel(null); onLogout(); };
   const doHapusAkun = () => {
     const u = localStorage.getItem('domino_username');
-    if (u) fetch(`${API_URL}/users/${u}`, { method: 'DELETE' }).catch(() => {});
+    if (u) fetch(`${API_URL}/users/${u}`, { method: 'DELETE' }).catch(() => { });
     localStorage.clear(); setShowDel(null); onLogout();
   };
 
   return (
-    <div className="modal-overlay tm-overlay-fade" style={{zIndex:1200}} onClick={onClose}>
+    <div className="modal-overlay tm-overlay-fade" style={{ zIndex: 1200 }} onClick={onClose}>
       <div className="peng-box tm-box-bounce" onClick={e => e.stopPropagation()}>
         <div className="peng-header">
           <span>🌴</span><span className="peng-header-title">Pengaturan</span><span>🌴</span>
@@ -304,14 +306,14 @@ function PengaturanModal({ onClose, onLogout }: { onClose: () => void; onLogout:
 
         <div className="peng-toggle-row">
           {([
-            { label:'BGM', icon:'🎵', val:bgm, key:'set_bgm', set:setBgm },
-            { label:'Efek Suara', icon:'🔊', val:sfx, key:'set_sfx', set:setSfx },
-            { label:'Animasi Login', icon:'▶', val:anim, key:'set_anim', set:setAnim },
+            { label: 'BGM', icon: '🎵', val: bgm, key: 'set_bgm', set: setBgm },
+            { label: 'Efek Suara', icon: '🔊', val: sfx, key: 'set_sfx', set: setSfx },
+            { label: 'Animasi Login', icon: '▶', val: anim, key: 'set_anim', set: setAnim },
           ] as const).map((item: any) => (
             <div className="peng-toggle-col" key={item.key}>
-              <button className={`peng-toggle-btn g-btn-press ${item.val?'on':'off'}`}
+              <button className={`peng-toggle-btn g-btn-press ${item.val ? 'on' : 'off'}`}
                 onClick={() => toggle(item.key, item.val, item.set)}>
-                <span className="peng-toggle-state">{item.val?'ON':'OFF'}</span>
+                <span className="peng-toggle-state">{item.val ? 'ON' : 'OFF'}</span>
                 <span className="peng-toggle-icon">{item.icon}</span>
               </button>
               <span className="peng-toggle-label">{item.label}</span>
@@ -337,7 +339,7 @@ function PengaturanModal({ onClose, onLogout }: { onClose: () => void; onLogout:
 
         <div className="peng-footer">
           <span className="peng-link" onClick={() => alert('Data Anda dilindungi dan tidak dijual ke pihak ketiga.')}>Kebijakan Privasi</span>
-          <span style={{color:'rgba(255,255,255,0.4)'}}> dan </span>
+          <span style={{ color: 'rgba(255,255,255,0.4)' }}> dan </span>
           <span className="peng-link" onClick={() => alert('Gunakan game ini secara bertanggung jawab untuk hiburan.')}>Ketentuan Layanan</span>
         </div>
 
@@ -345,17 +347,17 @@ function PengaturanModal({ onClose, onLogout }: { onClose: () => void; onLogout:
           <div className="peng-confirm-overlay" onClick={() => setShowDel(null)}>
             <div className="peng-confirm-box" onClick={e => e.stopPropagation()}>
               <div className="peng-confirm-title">
-                {showDel==='cache'?'🗑️ Hapus Cache?':showDel==='data'?'📁 Hapus Data?':'⚠️ Hapus Akun?'}
+                {showDel === 'cache' ? '🗑️ Hapus Cache?' : showDel === 'data' ? '📁 Hapus Data?' : '⚠️ Hapus Akun?'}
               </div>
               <div className="peng-confirm-msg">
-                {showDel==='cache'&&'Cache akan dihapus. Data login tetap tersimpan.'}
-                {showDel==='data'&&'Semua data lokal akan dihapus. Anda akan logout.'}
-                {showDel==='akun'&&'Akun Anda akan dihapus PERMANEN dan tidak dapat dipulihkan!'}
+                {showDel === 'cache' && 'Cache akan dihapus. Data login tetap tersimpan.'}
+                {showDel === 'data' && 'Semua data lokal akan dihapus. Anda akan logout.'}
+                {showDel === 'akun' && 'Akun Anda akan dihapus PERMANEN dan tidak dapat dipulihkan!'}
               </div>
-              <div style={{display:'flex',gap:'2vw',justifyContent:'center'}}>
+              <div style={{ display: 'flex', gap: '2vw', justifyContent: 'center' }}>
                 <button className="peng-conf-cancel g-btn-press" onClick={() => setShowDel(null)}>Batal</button>
                 <button className="peng-conf-ok g-btn-press"
-                  onClick={showDel==='cache'?doHapusCache:showDel==='data'?doHapusData:doHapusAkun}>
+                  onClick={showDel === 'cache' ? doHapusCache : showDel === 'data' ? doHapusData : doHapusAkun}>
                   Ya, Lanjutkan
                 </button>
               </div>
@@ -386,25 +388,25 @@ const RULES_DATA: Record<string, string> = {
 // =====================================================
 function CSModal({ onClose }: { onClose: () => void }) {
   return (
-    <div className="modal-overlay tm-overlay-fade" style={{zIndex:1200}} onClick={onClose}>
-      <div className="peng-box tm-box-bounce" style={{maxWidth:'55vw'}} onClick={e => e.stopPropagation()}>
+    <div className="modal-overlay tm-overlay-fade" style={{ zIndex: 1200 }} onClick={onClose}>
+      <div className="peng-box tm-box-bounce" style={{ maxWidth: '55vw' }} onClick={e => e.stopPropagation()}>
         <div className="peng-header">
           <span>💬</span><span className="peng-header-title">Customer Service</span><span>💬</span>
         </div>
         <button className="peng-close g-btn-press" onClick={onClose}>✖</button>
-        <div style={{padding:'2vh 2vw',display:'flex',flexDirection:'column',gap:'1.5vh'}}>
+        <div style={{ padding: '2vh 2vw', display: 'flex', flexDirection: 'column', gap: '1.5vh' }}>
           {[
-            {icon:'💬', label:'WhatsApp CS', val:'Hubungi →', color:'#2ecc71', action:()=>alert('WhatsApp CS: +62-800-DOMINO')},
-            {icon:'✈️', label:'Telegram', val:'Hubungi →', color:'#3498db', action:()=>alert('Telegram: @DominoHGI_CS')},
-            {icon:'📧', label:'Email Support', val:'Kirim Email →', color:'#f1c40f', action:()=>alert('Email: support@dominohgi.com')},
-            {icon:'🕐', label:'Jam Operasional', val:'08.00 – 22.00', color:'rgba(255,255,255,0.6)', action:()=>{}},
-          ].map((item,i) => (
-            <div key={i} className="peng-update-row" style={{cursor:'pointer'}} onClick={item.action}>
+            { icon: '💬', label: 'WhatsApp CS', val: 'Hubungi →', color: '#2ecc71', action: () => alert('WhatsApp CS: +62-800-DOMINO') },
+            { icon: '✈️', label: 'Telegram', val: 'Hubungi →', color: '#3498db', action: () => alert('Telegram: @DominoHGI_CS') },
+            { icon: '📧', label: 'Email Support', val: 'Kirim Email →', color: '#f1c40f', action: () => alert('Email: support@dominohgi.com') },
+            { icon: '🕐', label: 'Jam Operasional', val: '08.00 – 22.00', color: 'rgba(255,255,255,0.6)', action: () => { } },
+          ].map((item, i) => (
+            <div key={i} className="peng-update-row" style={{ cursor: 'pointer' }} onClick={item.action}>
               <span>{item.icon} <b>{item.label}</b></span>
-              <span className="peng-version" style={{color:item.color}}>{item.val}</span>
+              <span className="peng-version" style={{ color: item.color }}>{item.val}</span>
             </div>
           ))}
-          <div style={{textAlign:'center',color:'rgba(255,255,255,0.45)',fontSize:'1.5vh',marginTop:'1vh'}}>
+          <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.45)', fontSize: '1.5vh', marginTop: '1vh' }}>
             Kami siap membantu Anda 7 hari seminggu
           </div>
         </div>
@@ -485,11 +487,11 @@ function OtherProfileModal({ username, onClose, onAddFriend, onSendCoins }: { us
     const valPts = angles.map((a, i) => `${center + vals[i] * radius * Math.sin(a)},${center - vals[i] * radius * Math.cos(a)}`).join(' ');
 
     return (
-      <div className="pm-radar-wrapper" style={{width: '20vh', height: '20vh'}}>
+      <div className="pm-radar-wrapper" style={{ width: '20vh', height: '20vh' }}>
         <svg width="100%" height="100%" viewBox="0 0 100 100">
           <polygon points={bgPts} fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.3)" strokeWidth="0.5" />
           {angles.map((a, i) => (
-             <line key={i} x1={center} y1={center} x2={center + radius * Math.sin(a)} y2={center - radius * Math.cos(a)} stroke="rgba(255,255,255,0.2)" strokeWidth="0.5" />
+            <line key={i} x1={center} y1={center} x2={center + radius * Math.sin(a)} y2={center - radius * Math.cos(a)} stroke="rgba(255,255,255,0.2)" strokeWidth="0.5" />
           ))}
           <polygon points={valPts} fill="rgba(241,196,15,0.6)" stroke="#f1c40f" strokeWidth="1.5" />
         </svg>
@@ -508,7 +510,7 @@ function OtherProfileModal({ username, onClose, onAddFriend, onSendCoins }: { us
   return (
     <div className="modal-overlay tm-overlay-fade" style={{ zIndex: 1500 }} onClick={onClose}>
       <div className="op-box tm-box-bounce" onClick={e => e.stopPropagation()}>
-        <button className="tm-close-btn g-btn-press" style={{top: '-1vh', right: '-1vw'}} onClick={onClose}>✖</button>
+        <button className="tm-close-btn g-btn-press" style={{ top: '-1vh', right: '-1vw' }} onClick={onClose}>✖</button>
         <div className="op-header">KARTU PEMAIN</div>
 
         <div className="op-body">
@@ -534,17 +536,17 @@ function OtherProfileModal({ username, onClose, onAddFriend, onSendCoins }: { us
             </div>
             <div className="op-stat-row">
               <span className="op-stat-lbl">Win Rate</span>
-              <span className="op-stat-val" style={{color: '#2ecc71'}}>{winRate}%</span>
+              <span className="op-stat-val" style={{ color: '#2ecc71' }}>{winRate}%</span>
             </div>
             <div className="op-stat-row">
               <span className="op-stat-lbl">Win Streak</span>
-              <span className="op-stat-val" style={{color: '#f1c40f'}}>{stats.winStreak}</span>
+              <span className="op-stat-val" style={{ color: '#f1c40f' }}>{stats.winStreak}</span>
             </div>
           </div>
 
           {/* Kanan: Radar Ability */}
           <div className="op-radar-card">
-            <div className="op-stat-lbl" style={{marginBottom: '1vh', textAlign: 'center'}}>Grafik Kemampuan</div>
+            <div className="op-stat-lbl" style={{ marginBottom: '1vh', textAlign: 'center' }}>Grafik Kemampuan</div>
             {renderRadar()}
           </div>
         </div>
@@ -552,7 +554,7 @@ function OtherProfileModal({ username, onClose, onAddFriend, onSendCoins }: { us
         {/* Action Button di bawah */}
         <div className="op-actions">
           {isSelf ? (
-            <div style={{color: 'rgba(255,255,255,0.6)', fontStyle: 'italic', fontSize: '2vh'}}>Ini adalah profil Anda</div>
+            <div style={{ color: 'rgba(255,255,255,0.6)', fontStyle: 'italic', fontSize: '2vh' }}>Ini adalah profil Anda</div>
           ) : isFriend ? (
             <button className="op-action-btn send g-btn-press" onClick={() => { onClose(); onSendCoins?.(profile.username); }}>
               💸 Kirim Uang (Koin)
@@ -633,10 +635,10 @@ function TemanModal({ defaultTab = 'Teman', onViewProfile, onClose }: { defaultT
       // Separate friends, incoming requests, and recommendations
       const friendProfiles = allUsers.filter((u: any) => myFriendsList.includes(u.username));
       const requestProfiles = allUsers.filter((u: any) => myRequestsList.includes(u.username));
-      
+
       // Recommendation: not a friend, hasn't sent a request to us, and we haven't sent a request to them
-      const recProfiles = allUsers.filter((u: any) => 
-        !myFriendsList.includes(u.username) && 
+      const recProfiles = allUsers.filter((u: any) =>
+        !myFriendsList.includes(u.username) &&
         !myRequestsList.includes(u.username) &&
         !u.friendRequests?.includes(myUsername)
       );
@@ -821,7 +823,7 @@ function TemanModal({ defaultTab = 'Teman', onViewProfile, onClose }: { defaultT
       if (friends.length === 0) {
         return (
           <div className="tm-empty-state tm-fade-in">
-            <div className="tm-empty-icon"><span style={{fontSize: '8vh'}}>😢</span></div>
+            <div className="tm-empty-icon"><span style={{ fontSize: '8vh' }}>😢</span></div>
             <div className="tm-empty-text">Anda belum memiliki teman.</div>
             <button className="tm-add-btn g-btn-press" onClick={() => setActiveTab('Rekomendasi')}>Cari Teman</button>
           </div>
@@ -832,14 +834,14 @@ function TemanModal({ defaultTab = 'Teman', onViewProfile, onClose }: { defaultT
           {friends.map(f => (
             <div className="tm-list-item" key={f.username}>
               <div className="tm-li-left">
-                <span className="tm-li-avatar g-btn-press" style={{cursor: 'pointer'}} onClick={() => onViewProfile(f.username)}>🐸</span>
+                <span className="tm-li-avatar g-btn-press" style={{ cursor: 'pointer' }} onClick={() => onViewProfile(f.username)}>🐸</span>
                 <div>
                   <div className="tm-li-name">{f.username}</div>
                   <div className="tm-li-id">Koin: {formatCoins(f.coins)}</div>
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '1vw' }}>
-                <button className="tm-action-btn g-btn-press" style={{background: 'linear-gradient(180deg, #e67e22, #d35400)'}} onClick={() => setTransferTarget({ username: f.username })}>Kirim Uang</button>
+                <button className="tm-action-btn g-btn-press" style={{ background: 'linear-gradient(180deg, #e67e22, #d35400)' }} onClick={() => setTransferTarget({ username: f.username })}>Kirim Uang</button>
                 <button className="tm-action-btn delete g-btn-press" onClick={() => handleDeleteFriend(f.username)}>Hapus</button>
               </div>
             </div>
@@ -852,9 +854,9 @@ function TemanModal({ defaultTab = 'Teman', onViewProfile, onClose }: { defaultT
       return (
         <div className="tm-list-container tm-fade-in">
           <div className="tm-search-row">
-            <input 
-              type="text" 
-              placeholder="Cari Username Pemain..." 
+            <input
+              type="text"
+              placeholder="Cari Username Pemain..."
               value={searchId}
               onChange={e => setSearchId(e.target.value)}
               className="tm-input"
@@ -865,7 +867,7 @@ function TemanModal({ defaultTab = 'Teman', onViewProfile, onClose }: { defaultT
             recommendations.map(r => (
               <div className="tm-list-item" key={r.username}>
                 <div className="tm-li-left">
-                  <span className="tm-li-avatar g-btn-press" style={{cursor: 'pointer'}} onClick={() => onViewProfile(r.username)}>🐸</span>
+                  <span className="tm-li-avatar g-btn-press" style={{ cursor: 'pointer' }} onClick={() => onViewProfile(r.username)}>🐸</span>
                   <div>
                     <div className="tm-li-name">{r.username}</div>
                     <div className="tm-li-id">Koin: {formatCoins(r.coins)}</div>
@@ -888,7 +890,7 @@ function TemanModal({ defaultTab = 'Teman', onViewProfile, onClose }: { defaultT
         return (
           <div className="tm-empty-state tm-fade-in">
             <div className="tm-empty-icon">
-              <span style={{fontSize: '8vh'}}>🐸</span>
+              <span style={{ fontSize: '8vh' }}>🐸</span>
               <div className="tm-zzz">Zzz...</div>
             </div>
             <div className="tm-empty-text">Tidak ada permintaan teman baru.</div>
@@ -908,7 +910,7 @@ function TemanModal({ defaultTab = 'Teman', onViewProfile, onClose }: { defaultT
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '1vw' }}>
-                <button className="tm-action-btn g-btn-press" style={{background: 'linear-gradient(180deg, #2ecc71, #27ae60)'}} onClick={() => handleAcceptRequest(r.username)}>Terima</button>
+                <button className="tm-action-btn g-btn-press" style={{ background: 'linear-gradient(180deg, #2ecc71, #27ae60)' }} onClick={() => handleAcceptRequest(r.username)}>Terima</button>
                 <button className="tm-action-btn delete g-btn-press" onClick={() => handleDeclineRequest(r.username)}>Tolak</button>
               </div>
             </div>
@@ -919,7 +921,7 @@ function TemanModal({ defaultTab = 'Teman', onViewProfile, onClose }: { defaultT
     if (activeTab === 'History') {
       return (
         <div className="tm-empty-state tm-fade-in">
-          <div className="tm-empty-icon"><span style={{fontSize: '8vh'}}>📜</span></div>
+          <div className="tm-empty-icon"><span style={{ fontSize: '8vh' }}>📜</span></div>
           <div className="tm-empty-text">Belum ada riwayat pertandingan.</div>
         </div>
       );
@@ -927,7 +929,7 @@ function TemanModal({ defaultTab = 'Teman', onViewProfile, onClose }: { defaultT
     // Default empty state for other tabs
     return (
       <div className="tm-empty-state tm-fade-in">
-        <div className="tm-empty-icon"><span style={{fontSize: '8vh'}}>🏝️</span></div>
+        <div className="tm-empty-icon"><span style={{ fontSize: '8vh' }}>🏝️</span></div>
         <div className="tm-empty-text">Belum ada data untuk {activeTab}.</div>
       </div>
     );
@@ -947,7 +949,7 @@ function TemanModal({ defaultTab = 'Teman', onViewProfile, onClose }: { defaultT
           {/* Sidebar */}
           <div className="tm-sidebar">
             {tabs.map(tab => (
-              <button 
+              <button
                 key={tab.id}
                 className={`tm-sidebar-btn g-btn-press ${activeTab === tab.id ? 'active' : ''}`}
                 onClick={() => setActiveTab(tab.id)}
@@ -968,9 +970,9 @@ function TemanModal({ defaultTab = 'Teman', onViewProfile, onClose }: { defaultT
       {transferTarget && (
         <div className="modal-overlay tm-overlay-fade" style={{ zIndex: 1200 }} onClick={() => setTransferTarget(null)}>
           <div className="tm-transfer-popup tm-box-bounce" onClick={e => e.stopPropagation()}>
-            <button className="tm-close-btn g-btn-press" style={{top: '-1vh', right: '-1vw'}} onClick={() => setTransferTarget(null)}>✖</button>
+            <button className="tm-close-btn g-btn-press" style={{ top: '-1vh', right: '-1vw' }} onClick={() => setTransferTarget(null)}>✖</button>
             <div className="modal-title">KIRIM UANG (KOIN)</div>
-            
+
             <div className="tm-transfer-body">
               {/* Animated Floating Coins */}
               <div className="tm-transfer-coin-flow">
@@ -980,17 +982,17 @@ function TemanModal({ defaultTab = 'Teman', onViewProfile, onClose }: { defaultT
               </div>
 
               <div className="tm-transfer-info-card">
-                <div style={{fontSize: '2.5vh', color: '#fff', fontWeight: 'bold'}}>
-                  Kirim ke: <span style={{color: '#f1c40f'}}>{transferTarget.username}</span>
+                <div style={{ fontSize: '2.5vh', color: '#fff', fontWeight: 'bold' }}>
+                  Kirim ke: <span style={{ color: '#f1c40f' }}>{transferTarget.username}</span>
                 </div>
-                <div style={{fontSize: '1.8vh', color: 'rgba(255,255,255,0.7)', marginTop: '0.5vh'}}>
-                  Koin Anda: <span style={{color: '#2ecc71', fontWeight: 'bold'}}>{formatCoins(myCoins)}</span>
+                <div style={{ fontSize: '1.8vh', color: 'rgba(255,255,255,0.7)', marginTop: '0.5vh' }}>
+                  Koin Anda: <span style={{ color: '#2ecc71', fontWeight: 'bold' }}>{formatCoins(myCoins)}</span>
                 </div>
               </div>
 
               {/* Amount Input */}
               <div className="tm-input-group">
-                <input 
+                <input
                   type="number"
                   placeholder="0"
                   value={transferAmount}
@@ -1004,8 +1006,8 @@ function TemanModal({ defaultTab = 'Teman', onViewProfile, onClose }: { defaultT
               {/* Quick Select Buttons */}
               <div className="tm-quick-amount-grid">
                 {[100000, 500000, 1000000, 5000000, 10000000].map(val => (
-                  <button 
-                    key={val} 
+                  <button
+                    key={val}
                     className="tm-quick-btn g-btn-press"
                     onClick={() => {
                       const current = parseInt(transferAmount, 10) || 0;
@@ -1015,7 +1017,7 @@ function TemanModal({ defaultTab = 'Teman', onViewProfile, onClose }: { defaultT
                     +{formatCoins(val)}
                   </button>
                 ))}
-                <button 
+                <button
                   className="tm-quick-btn clear g-btn-press"
                   onClick={() => setTransferAmount('')}
                 >
@@ -1025,14 +1027,14 @@ function TemanModal({ defaultTab = 'Teman', onViewProfile, onClose }: { defaultT
 
               {/* Transfer Actions */}
               <div className="tm-transfer-actions">
-                <button 
-                  className="tm-transfer-cancel-btn g-btn-press" 
+                <button
+                  className="tm-transfer-cancel-btn g-btn-press"
                   onClick={() => { setTransferTarget(null); setTransferAmount(''); }}
                 >
                   Batal
                 </button>
-                <button 
-                  className="tm-transfer-submit-btn g-btn-press tm-pulse-btn" 
+                <button
+                  className="tm-transfer-submit-btn g-btn-press tm-pulse-btn"
                   onClick={handleExecuteTransfer}
                 >
                   🚀 Kirim Sekarang
@@ -1104,7 +1106,7 @@ function InboxModal({ onClose, onViewProfile }: { onClose: () => void; onViewPro
     setLoading(true);
     try {
       // Seed welcome jika pertama kali
-      await fetch(`${API_URL}/inbox/seed-welcome/${myUsername}`, { method: 'POST' }).catch(() => {});
+      await fetch(`${API_URL}/inbox/seed-welcome/${myUsername}`, { method: 'POST' }).catch(() => { });
       // Ambil inbox
       const res = await fetch(`${API_URL}/inbox/${myUsername}`);
       if (res.ok) {
@@ -1127,7 +1129,7 @@ function InboxModal({ onClose, onViewProfile }: { onClose: () => void; onViewPro
   useEffect(() => { fetchData(); }, []);
 
   const markRead = async (id: string) => {
-    await fetch(`${API_URL}/inbox/read/${id}`, { method: 'POST' }).catch(() => {});
+    await fetch(`${API_URL}/inbox/read/${id}`, { method: 'POST' }).catch(() => { });
     setMessages(prev => prev.map(m => m._id === id ? { ...m, isRead: true } : m));
   };
 
@@ -1135,17 +1137,17 @@ function InboxModal({ onClose, onViewProfile }: { onClose: () => void; onViewPro
     await fetch(`${API_URL}/inbox/read-all`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: myUsername })
-    }).catch(() => {});
+    }).catch(() => { });
     setMessages(prev => prev.map(m => ({ ...m, isRead: true })));
   };
 
   const deleteMsg = async (id: string) => {
-    await fetch(`${API_URL}/inbox/${id}`, { method: 'DELETE' }).catch(() => {});
+    await fetch(`${API_URL}/inbox/${id}`, { method: 'DELETE' }).catch(() => { });
     setMessages(prev => prev.filter(m => m._id !== id));
   };
 
   const clearAll = async () => {
-    await fetch(`${API_URL}/inbox/clear/${myUsername}`, { method: 'DELETE' }).catch(() => {});
+    await fetch(`${API_URL}/inbox/clear/${myUsername}`, { method: 'DELETE' }).catch(() => { });
     setMessages([]);
   };
 
@@ -1168,7 +1170,7 @@ function InboxModal({ onClose, onViewProfile }: { onClose: () => void; onViewPro
             body: `Anda dan ${requester} sekarang berteman. Selamat bermain bersama!`,
             icon: '👥'
           })
-        }).catch(() => {});
+        }).catch(() => { });
         // Refresh inbox
         const inboxRes = await fetch(`${API_URL}/inbox/${myUsername}`);
         if (inboxRes.ok) { const d = await inboxRes.json(); setMessages(d.messages || []); }
@@ -1528,16 +1530,474 @@ function KirimKoinModal({ onClose, onCoinsTransferred, onOpenShop }: { onClose: 
 }
 
 // =====================================================
-// DAILY BONUS MODAL
+// AJAK TEMAN MODAL
+// =====================================================
+function AjakTemanModal({ onClose }: { onClose: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const myUsername = localStorage.getItem('domino_username') || 'Guest';
+  const referralLink = `${window.location.origin}/ref/${myUsername}`;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(referralLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content glass-panel" style={{ width: '450px', padding: '0' }}>
+        {/* Header */}
+        <div style={{
+          background: 'linear-gradient(to right, #4a00e0, #8e2de2)',
+          padding: '20px',
+          borderTopLeftRadius: '15px',
+          borderTopRightRadius: '15px',
+          position: 'relative'
+        }}>
+          <h2 style={{ margin: 0, color: 'white', textAlign: 'center', fontSize: '24px', textShadow: '1px 1px 3px rgba(0,0,0,0.5)' }}>
+            🤝 AJAK TEMAN
+          </h2>
+          <button className="close-btn" onClick={onClose} style={{ position: 'absolute', top: '15px', right: '15px' }}>✕</button>
+        </div>
+
+        {/* Body */}
+        <div style={{ padding: '30px', textAlign: 'center', color: '#fff' }}>
+          <div style={{ fontSize: '50px', marginBottom: '15px' }}>🎁</div>
+          <h3 style={{ margin: '0 0 10px 0', color: '#ffd700', fontSize: '20px' }}>Dapatkan 1.000.000 Koin!</h3>
+          <p style={{ margin: '0 0 25px 0', fontSize: '15px', color: '#ccc', lineHeight: '1.5' }}>
+            Bagikan link referral Anda ke teman. Setiap teman yang mendaftar dan bermain akan memberikan Anda bonus koin!
+          </p>
+
+          <div style={{
+            background: 'rgba(0,0,0,0.5)',
+            border: '1px solid rgba(255,255,255,0.2)',
+            borderRadius: '10px',
+            padding: '15px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '20px'
+          }}>
+            <span style={{ fontFamily: 'monospace', color: '#4ade80', fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginRight: '10px' }}>
+              {referralLink}
+            </span>
+            <button 
+              onClick={handleCopy}
+              style={{
+                background: copied ? '#4ade80' : 'linear-gradient(to right, #00b4db, #0083b0)',
+                color: copied ? '#000' : '#fff',
+                border: 'none',
+                padding: '8px 15px',
+                borderRadius: '5px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                transition: 'all 0.3s'
+              }}
+            >
+              {copied ? 'Tersalin! ✅' : 'SALIN'}
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '15px' }}>
+            <button 
+              style={{
+                background: '#1877F2',
+                color: 'white',
+                border: 'none',
+                padding: '10px 20px',
+                borderRadius: '25px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+              onClick={() => alert('Membuka Facebook...')}
+            >
+              <span>f</span> Share
+            </button>
+            <button 
+              style={{
+                background: '#25D366',
+                color: 'white',
+                border: 'none',
+                padding: '10px 20px',
+                borderRadius: '25px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+              onClick={() => alert('Membuka WhatsApp...')}
+            >
+              <span>💬</span> WhatsApp
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =====================================================
+// TEMAN ONLINE MODAL
+// =====================================================
+type FriendEntry = {
+  username: string;
+  avatar?: string;
+  coins?: number;
+  vipLevel?: number;
+  isOnline?: boolean;
+};
+
+function FriendModal({ onClose, onOpenKirimKoin, socket }: {
+  onClose: () => void;
+  onOpenKirimKoin?: (to?: string) => void;
+  socket?: any;
+}) {
+  const myUsername = localStorage.getItem('domino_username') || '';
+  const [tab, setTab] = useState<'teman' | 'request' | 'cari'>('teman');
+  const [friends, setFriends] = useState<FriendEntry[]>([]);
+  const [requests, setRequests] = useState<FriendEntry[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<FriendEntry[]>([]);
+  const [onlineSet, setOnlineSet] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(true);
+  const [actionMsg, setActionMsg] = useState<string | null>(null);
+  const [searching, setSearching] = useState(false);
+
+  const showMsg = (msg: string) => {
+    setActionMsg(msg);
+    setTimeout(() => setActionMsg(null), 2500);
+  };
+
+  const loadProfile = async () => {
+    if (!myUsername) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/profile/${myUsername}`);
+      if (res.ok) {
+        const data = await res.json();
+        const friendUsernames: string[] = data.friends || [];
+        const reqUsernames: string[] = data.friendRequests || [];
+
+        // Load full profile of friends
+        const fDetails = await Promise.all(
+          friendUsernames.map(u =>
+            fetch(`${API_URL}/profile/${u}`).then(r => r.ok ? r.json() : { username: u }).catch(() => ({ username: u }))
+          )
+        );
+        setFriends(fDetails);
+
+        // Load profiles of requesters
+        const rDetails = await Promise.all(
+          reqUsernames.map(u =>
+            fetch(`${API_URL}/profile/${u}`).then(r => r.ok ? r.json() : { username: u }).catch(() => ({ username: u }))
+          )
+        );
+        setRequests(rDetails);
+
+        // Ask socket for online status
+        if (socket) {
+          socket.emit('get-online-friends', { friendUsernames });
+        }
+      }
+    } catch { /* ignore */ }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => {
+    loadProfile();
+  }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+    const onOnlineFriends = ({ onlineFriends }: { onlineFriends: string[] }) => {
+      setOnlineSet(new Set(onlineFriends));
+    };
+    const onOnlineUpdate = ({ onlineUsers }: { onlineUsers: string[] }) => {
+      // Update online status for our friends
+      setOnlineSet(prev => {
+        const newSet = new Set<string>();
+        const currentFriendNames = friends.map(f => f.username);
+        onlineUsers.forEach(u => { if (currentFriendNames.includes(u)) newSet.add(u); });
+        return newSet;
+      });
+    };
+    socket.on('online-friends-result', onOnlineFriends);
+    socket.on('online-users-update', onOnlineUpdate);
+    return () => {
+      socket.off('online-friends-result', onOnlineFriends);
+      socket.off('online-users-update', onOnlineUpdate);
+    };
+  }, [socket, friends]);
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+    setSearching(true);
+    try {
+      const res = await fetch(`${API_URL}/users?exclude=${myUsername}`);
+      if (res.ok) {
+        const all: FriendEntry[] = await res.json();
+        const q = searchQuery.toLowerCase();
+        const filtered = all.filter(u => u.username.toLowerCase().includes(q));
+        setSearchResults(filtered);
+      }
+    } catch { /* ignore */ }
+    finally { setSearching(false); }
+  };
+
+  const handleAddFriend = async (target: string) => {
+    try {
+      const res = await fetch(`${API_URL}/friends/add`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: myUsername, friendUsername: target })
+      });
+      const data = await res.json();
+      showMsg(data.message || data.error || 'Permintaan terkirim!');
+    } catch { showMsg('Gagal mengirim permintaan.'); }
+  };
+
+  const handleAccept = async (requester: string) => {
+    try {
+      const res = await fetch(`${API_URL}/friends/accept`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: myUsername, requesterUsername: requester })
+      });
+      const data = await res.json();
+      showMsg(data.message || 'Pertemanan diterima!');
+      loadProfile();
+    } catch { showMsg('Gagal menerima pertemanan.'); }
+  };
+
+  const handleDecline = async (requester: string) => {
+    try {
+      await fetch(`${API_URL}/friends/decline`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: myUsername, requesterUsername: requester })
+      });
+      showMsg('Permintaan ditolak.');
+      loadProfile();
+    } catch { showMsg('Gagal menolak.'); }
+  };
+
+  const handleRemoveFriend = async (target: string) => {
+    if (!confirm(`Hapus ${target} dari daftar teman?`)) return;
+    try {
+      await fetch(`${API_URL}/friends/remove`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: myUsername, friendUsername: target })
+      });
+      showMsg(`${target} dihapus dari daftar teman.`);
+      loadProfile();
+    } catch { showMsg('Gagal menghapus teman.'); }
+  };
+
+  const onlineFriends = friends.filter(f => onlineSet.has(f.username));
+  const offlineFriends = friends.filter(f => !onlineSet.has(f.username));
+
+  const fmtCoins = (n?: number) => {
+    if (!n) return '0';
+    if (n >= 1000000000) return (n / 1000000000).toFixed(1) + 'B';
+    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+    if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+    return n.toString();
+  };
+
+  const FriendCard = ({ f, showRemove = false }: { f: FriendEntry; showRemove?: boolean }) => (
+    <div className="fm-friend-card" style={{ background: onlineSet.has(f.username) ? 'rgba(74,222,128,0.08)' : 'rgba(255,255,255,0.04)' }}>
+      <div className="fm-friend-avatar">
+        <span style={{ fontSize: '28px' }}>{f.avatar && f.avatar.startsWith('/') ? '🎮' : (f.avatar || '🐸')}</span>
+        <div className={`fm-online-dot ${onlineSet.has(f.username) ? 'online' : 'offline'}`} />
+      </div>
+      <div className="fm-friend-info">
+        <div className="fm-friend-name">{f.username}</div>
+        <div className="fm-friend-meta">
+          🪙 {fmtCoins(f.coins)} · {f.vipLevel ? `VIP ${f.vipLevel}` : 'Non-VIP'}
+          {onlineSet.has(f.username) && <span className="fm-online-badge">● Online</span>}
+        </div>
+      </div>
+      <div className="fm-friend-actions">
+        {onOpenKirimKoin && (
+          <button className="fm-btn fm-btn-gift" title="Kirim Koin" onClick={() => { onClose(); onOpenKirimKoin?.(f.username); }}>🎁</button>
+        )}
+        {showRemove && (
+          <button className="fm-btn fm-btn-remove" title="Hapus Teman" onClick={() => handleRemoveFriend(f.username)}>✕</button>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="modal-overlay" style={{ zIndex: 9000 }}>
+      <div className="fm-modal">
+        {/* Header */}
+        <div className="fm-header">
+          <div className="fm-header-left">
+            <span className="fm-header-icon">👥</span>
+            <div>
+              <div className="fm-header-title">TEMAN ONLINE</div>
+              <div className="fm-header-sub">{onlineFriends.length} online · {friends.length} teman total</div>
+            </div>
+          </div>
+          <button className="fm-close-btn" onClick={onClose}>✕</button>
+        </div>
+
+        {/* Toast */}
+        {actionMsg && (
+          <div className="fm-toast">{actionMsg}</div>
+        )}
+
+        {/* Tabs */}
+        <div className="fm-tabs">
+          <button className={`fm-tab ${tab === 'teman' ? 'active' : ''}`} onClick={() => setTab('teman')}>
+            👫 Teman {friends.length > 0 && <span className="fm-tab-badge">{friends.length}</span>}
+          </button>
+          <button className={`fm-tab ${tab === 'request' ? 'active' : ''}`} onClick={() => setTab('request')}>
+            🔔 Permintaan {requests.length > 0 && <span className="fm-tab-badge fm-badge-red">{requests.length}</span>}
+          </button>
+          <button className={`fm-tab ${tab === 'cari' ? 'active' : ''}`} onClick={() => setTab('cari')}>
+            🔍 Cari Pemain
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="fm-content">
+          {loading ? (
+            <div className="fm-loading">
+              <div className="fm-spinner" />
+              <div>Memuat data teman...</div>
+            </div>
+          ) : (
+            <>
+              {/* ---- TAB TEMAN ---- */}
+              {tab === 'teman' && (
+                <div>
+                  {friends.length === 0 ? (
+                    <div className="fm-empty">
+                      <div style={{ fontSize: '50px' }}>👤</div>
+                      <div>Belum ada teman. Cari pemain di tab "Cari Pemain"!</div>
+                    </div>
+                  ) : (
+                    <>
+                      {onlineFriends.length > 0 && (
+                        <>
+                          <div className="fm-section-label">🟢 Online Sekarang ({onlineFriends.length})</div>
+                          {onlineFriends.map(f => <FriendCard key={f.username} f={f} showRemove />)}
+                        </>
+                      )}
+                      {offlineFriends.length > 0 && (
+                        <>
+                          <div className="fm-section-label" style={{ color: '#888' }}>⚫ Offline ({offlineFriends.length})</div>
+                          {offlineFriends.map(f => <FriendCard key={f.username} f={f} showRemove />)}
+                        </>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* ---- TAB REQUEST ---- */}
+              {tab === 'request' && (
+                <div>
+                  {requests.length === 0 ? (
+                    <div className="fm-empty">
+                      <div style={{ fontSize: '50px' }}>🔔</div>
+                      <div>Tidak ada permintaan pertemanan baru.</div>
+                    </div>
+                  ) : (
+                    requests.map(r => (
+                      <div key={r.username} className="fm-friend-card">
+                        <div className="fm-friend-avatar">
+                          <span style={{ fontSize: '28px' }}>{r.avatar && !r.avatar.startsWith('/') ? r.avatar : '🐸'}</span>
+                          <div className="fm-online-dot offline" />
+                        </div>
+                        <div className="fm-friend-info">
+                          <div className="fm-friend-name">{r.username}</div>
+                          <div className="fm-friend-meta">🪙 {fmtCoins(r.coins)}</div>
+                        </div>
+                        <div className="fm-friend-actions">
+                          <button className="fm-btn fm-btn-accept" onClick={() => handleAccept(r.username)}>✓ Terima</button>
+                          <button className="fm-btn fm-btn-remove" onClick={() => handleDecline(r.username)}>✕</button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+
+              {/* ---- TAB CARI ---- */}
+              {tab === 'cari' && (
+                <div>
+                  <div className="fm-search-bar">
+                    <input
+                      type="text"
+                      className="fm-search-input"
+                      placeholder="Cari username pemain..."
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleSearch()}
+                    />
+                    <button className="fm-btn fm-btn-search" onClick={handleSearch} disabled={searching}>
+                      {searching ? '...' : '🔍 Cari'}
+                    </button>
+                  </div>
+                  {searchResults.length === 0 && searchQuery && !searching && (
+                    <div className="fm-empty">
+                      <div>Tidak ada pemain dengan username "{searchQuery}" ditemukan.</div>
+                    </div>
+                  )}
+                  {searchResults.map(r => {
+                    const isFriend = friends.some(f => f.username === r.username);
+                    return (
+                      <div key={r.username} className="fm-friend-card">
+                        <div className="fm-friend-avatar">
+                          <span style={{ fontSize: '28px' }}>{r.avatar && !r.avatar.startsWith('/') ? r.avatar : '🐸'}</span>
+                          <div className={`fm-online-dot ${onlineSet.has(r.username) ? 'online' : 'offline'}`} />
+                        </div>
+                        <div className="fm-friend-info">
+                          <div className="fm-friend-name">{r.username}</div>
+                          <div className="fm-friend-meta">
+                            🪙 {fmtCoins(r.coins)} · {r.vipLevel ? `VIP ${r.vipLevel}` : 'Non-VIP'}
+                            {onlineSet.has(r.username) && <span className="fm-online-badge">● Online</span>}
+                          </div>
+                        </div>
+                        <div className="fm-friend-actions">
+                          {isFriend ? (
+                            <span style={{ color: '#4ade80', fontSize: '12px', fontWeight: 'bold' }}>✓ Teman</span>
+                          ) : (
+                            <button className="fm-btn fm-btn-add" onClick={() => handleAddFriend(r.username)}>+ Tambah</button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =====================================================
 // =====================================================
 
 function DailyBonusModal({ onClose, onBonusClaimed }: { onClose: () => void; onBonusClaimed?: (newCoins: number) => void }) {
   const myUsername = localStorage.getItem('domino_username') || '';
-  const [loading, setLoading]   = useState(true);
+  const [loading, setLoading] = useState(true);
   const [canClaim, setCanClaim] = useState(false);
   const [claiming, setClaiming] = useState(false);
-  const [alert, setAlert]       = useState<string | null>(null);
-  const [claimed, setClaimed]   = useState(false);
+  const [alert, setAlert] = useState<string | null>(null);
+  const [claimed, setClaimed] = useState(false);
   const [lastClaim, setLastClaim] = useState<string | null>(null);
 
   const fetchStatus = async () => {
@@ -1869,23 +2329,23 @@ function TokoModal({ onClose, onProfileUpdated, onOpenKirimKoin }: { onClose: ()
                   </div>
                 </div>
                 <div className="vip-perks-row">
-                  <div className={`vip-perk-box ${ (profile?.vipLevel || 0) === 0 ? 'active' : ''}`}>
+                  <div className={`vip-perk-box ${(profile?.vipLevel || 0) === 0 ? 'active' : ''}`}>
                     <div className="vpb-title">VIP 0 (Non-VIP)</div>
                     <div className="vpb-limit red">❌ Kirim Koin Dikunci</div>
                     <div className="vpb-desc">Beli paket VIP di bawah untuk membuka fitur kirim koin.</div>
                   </div>
-                  <div className={`vip-perk-box ${ (profile?.vipLevel || 0) === 1 ? 'active' : ''}`}>
+                  <div className={`vip-perk-box ${(profile?.vipLevel || 0) === 1 ? 'active' : ''}`}>
                     <div className="vpb-title">⭐️ VIP 1 (Bronze)</div>
                     <div className="vpb-limit gold">🎁 Kirim s/d 100K/Hari</div>
                     <div className="vpb-desc">Bisa kirim hingga 100.000 koin per hari.</div>
                   </div>
-                  <div className={`vip-perk-box ${ (profile?.vipLevel || 0) >= 2 ? 'active' : ''}`}>
+                  <div className={`vip-perk-box ${(profile?.vipLevel || 0) >= 2 ? 'active' : ''}`}>
                     <div className="vpb-title">🚀 VIP 2+ (Sultan)</div>
                     <div className="vpb-limit green">🔥 TANPA BATASAN</div>
                     <div className="vpb-desc">Kirim koin UNLIMITED setiap hari!</div>
                   </div>
                 </div>
-                { (profile?.vipLevel || 0) > 0 && (
+                {(profile?.vipLevel || 0) > 0 && (
                   <button className="toko-kirim-action-btn" onClick={() => { onClose(); onOpenKirimKoin?.(); }}>
                     🎁 BUKA FITUR KIRIM KOIN SEKARANG
                   </button>
@@ -1985,7 +2445,7 @@ function TokoModal({ onClose, onProfileUpdated, onOpenKirimKoin }: { onClose: ()
 // GARDU SCREEN
 // =====================================================
 function GarduScreen({ onBack, onViewProfile }: { onBack: () => void; onViewProfile: (username: string) => void }) {
-  const [temanModalState, setTemanModalState] = useState<{isOpen: boolean, tab: string}>({isOpen: false, tab: 'Teman'});
+  const [temanModalState, setTemanModalState] = useState<{ isOpen: boolean, tab: string }>({ isOpen: false, tab: 'Teman' });
 
   return (
     <div className="screen-wrapper gardu-bg">
@@ -1997,40 +2457,40 @@ function GarduScreen({ onBack, onViewProfile }: { onBack: () => void; onViewProf
           </button>
           <span className="g-title">Gardu</span>
         </div>
-        
+
         <div className="g-center-hgi">
           <div className="g-hgi-badge">HGI</div>
         </div>
       </div>
-      
+
       {/* Main Cards Area */}
       <div className="g-cards-container">
         {/* Card 1: Gardu */}
-        <button className="g-card g-card-side g-anim-slideup" style={{animationDelay: '0.1s'}}>
+        <button className="g-card g-card-side g-anim-slideup" style={{ animationDelay: '0.1s' }}>
           <div className="g-card-inner">
-            <div className="g-card-bg" style={{background: 'linear-gradient(135deg, #d2b4de, #8e44ad)'}}>
-               <span className="g-card-emoji" style={{transform: 'scale(1.2) translateY(1vh)'}}>🐸</span>
+            <div className="g-card-bg" style={{ background: 'linear-gradient(135deg, #d2b4de, #8e44ad)' }}>
+              <span className="g-card-emoji" style={{ transform: 'scale(1.2) translateY(1vh)' }}>🐸</span>
             </div>
             <div className="g-card-title">Gardu</div>
           </div>
         </button>
 
         {/* Card 2: Buat Kamar (Center, slightly larger) */}
-        <button className="g-card g-card-center g-anim-slideup" style={{animationDelay: '0.2s'}}>
+        <button className="g-card g-card-center g-anim-slideup" style={{ animationDelay: '0.2s' }}>
           <div className="g-card-inner">
-            <div className="g-card-bg" style={{background: 'linear-gradient(135deg, #f5b7b1, #e74c3c)'}}>
-               <span className="g-card-emoji" style={{transform: 'scale(1.4) translateY(2vh)'}}>🧍‍♀️</span>
+            <div className="g-card-bg" style={{ background: 'linear-gradient(135deg, #f5b7b1, #e74c3c)' }}>
+              <span className="g-card-emoji" style={{ transform: 'scale(1.4) translateY(2vh)' }}>🧍‍♀️</span>
             </div>
             <div className="g-card-title">Buat Kamar</div>
           </div>
         </button>
 
         {/* Card 3: Join Kamar */}
-        <button className="g-card g-card-side g-anim-slideup" style={{animationDelay: '0.3s'}}>
+        <button className="g-card g-card-side g-anim-slideup" style={{ animationDelay: '0.3s' }}>
           <div className="g-card-inner">
-            <div className="g-card-bg" style={{background: 'linear-gradient(135deg, #a9cce3, #2980b9)'}}>
-               <span className="g-card-emoji" style={{transform: 'scale(1.2) translateY(1vh)'}}>🧍‍♂️</span>
-               <div className="g-join-tag">JOIN</div>
+            <div className="g-card-bg" style={{ background: 'linear-gradient(135deg, #a9cce3, #2980b9)' }}>
+              <span className="g-card-emoji" style={{ transform: 'scale(1.2) translateY(1vh)' }}>🧍‍♂️</span>
+              <div className="g-join-tag">JOIN</div>
             </div>
             <div className="g-card-title">Join Kamar</div>
           </div>
@@ -2039,20 +2499,20 @@ function GarduScreen({ onBack, onViewProfile }: { onBack: () => void; onViewProf
 
       {/* Bottom Buttons */}
       <div className="g-bottom-bar">
-        <button className="g-btn-small g-btn-press g-anim-slideup" style={{animationDelay: '0.4s'}} onClick={() => setTemanModalState({isOpen: true, tab: 'History'})}>
-          <span className="g-btn-icon" style={{color: '#f1c40f'}}>📋</span> History
+        <button className="g-btn-small g-btn-press g-anim-slideup" style={{ animationDelay: '0.4s' }} onClick={() => setTemanModalState({ isOpen: true, tab: 'History' })}>
+          <span className="g-btn-icon" style={{ color: '#f1c40f' }}>📋</span> History
         </button>
-        <button className="g-btn-small g-btn-press g-anim-slideup" style={{animationDelay: '0.5s'}} onClick={() => setTemanModalState({isOpen: true, tab: 'Teman'})}>
-          <span className="g-btn-icon" style={{color: '#f39c12'}}>👥</span> Teman
+        <button className="g-btn-small g-btn-press g-anim-slideup" style={{ animationDelay: '0.5s' }} onClick={() => setTemanModalState({ isOpen: true, tab: 'Teman' })}>
+          <span className="g-btn-icon" style={{ color: '#f39c12' }}>👥</span> Teman
         </button>
       </div>
 
       {/* Modals */}
       {temanModalState.isOpen && (
-        <TemanModal 
-          defaultTab={temanModalState.tab} 
+        <TemanModal
+          defaultTab={temanModalState.tab}
           onViewProfile={onViewProfile}
-          onClose={() => setTemanModalState({isOpen: false, tab: 'Teman'})} 
+          onClose={() => setTemanModalState({ isOpen: false, tab: 'Teman' })}
         />
       )}
     </div>
@@ -2073,11 +2533,11 @@ function VIPLoginAnimationOverlay({ username, onComplete }: { username: string; 
   return (
     <div className="login-anim-overlay" onClick={onComplete}>
       <div className="login-anim-rays" />
-      
+
       {Array.from({ length: 12 }).map((_, i) => (
-        <div 
-          key={i} 
-          className="login-anim-coin" 
+        <div
+          key={i}
+          className="login-anim-coin"
           style={{
             animationDelay: `${(i * 0.12).toFixed(2)}s`,
             left: `${15 + ((i * 7) % 70)}vw`,
@@ -2112,19 +2572,19 @@ function AvatarSelectionModal({ currentAvatar, onSelect, onClose }: { currentAva
       <div className="modal-box" style={{ minWidth: '40vw' }} onClick={e => e.stopPropagation()}>
         <div className="modal-title">Pilih Avatar</div>
         <div className="avatar-grid">
-           {avatars.map(a => (
-             <div 
-               key={a} 
-               className={`avatar-grid-item ${selected === a ? 'selected' : ''}`}
-               onClick={() => setSelected(a)}
-             >
-               {a}
-             </div>
-           ))}
+          {avatars.map(a => (
+            <div
+              key={a}
+              className={`avatar-grid-item ${selected === a ? 'selected' : ''}`}
+              onClick={() => setSelected(a)}
+            >
+              {a}
+            </div>
+          ))}
         </div>
         <div style={{ display: 'flex', gap: '2vw', justifyContent: 'center', marginTop: '3vh' }}>
           <button className="modal-close-btn cancel" onClick={onClose}>Batal</button>
-          <button className="modal-close-btn" style={{background: 'linear-gradient(135deg, #27ae60, #1e8449)'}} onClick={() => onSelect(selected)}>Simpan</button>
+          <button className="modal-close-btn" style={{ background: 'linear-gradient(135deg, #27ae60, #1e8449)' }} onClick={() => onSelect(selected)}>Simpan</button>
         </div>
       </div>
     </div>
@@ -2208,7 +2668,7 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onClose }: 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, amount: rewardCoins })
-      }).catch(() => {});
+      }).catch(() => { });
     }
 
     setClaimToast({ title: titleStr, amount: rewardCoins });
@@ -2295,7 +2755,7 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onClose }: 
     const size = 100, center = size / 2, radius = size / 2.5;
     const angles = [0, 72, 144, 216, 288].map(deg => (deg * Math.PI) / 180);
     const vals = [stats.radar.domino, stats.radar.poker, stats.radar.santai, stats.radar.slot, stats.radar.ludo];
-    
+
     const bgPts = angles.map(a => `${center + radius * Math.sin(a)},${center - radius * Math.cos(a)}`).join(' ');
     const valPts = angles.map((a, i) => `${center + vals[i] * radius * Math.sin(a)},${center - vals[i] * radius * Math.cos(a)}`).join(' ');
 
@@ -2304,7 +2764,7 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onClose }: 
         <svg width="100%" height="100%" viewBox="0 0 100 100">
           <polygon points={bgPts} fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.3)" strokeWidth="0.5" />
           {angles.map((a, i) => (
-             <line key={i} x1={center} y1={center} x2={center + radius * Math.sin(a)} y2={center - radius * Math.cos(a)} stroke="rgba(255,255,255,0.2)" strokeWidth="0.5" />
+            <line key={i} x1={center} y1={center} x2={center + radius * Math.sin(a)} y2={center - radius * Math.cos(a)} stroke="rgba(255,255,255,0.2)" strokeWidth="0.5" />
           ))}
           <polygon points={valPts} fill="rgba(241,196,15,0.6)" stroke="#f1c40f" strokeWidth="1.5" />
         </svg>
@@ -2337,7 +2797,7 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onClose }: 
                     <span className="pm-prestasi-reward-tag">{p.rewardText}</span>
                   </div>
                   <div className="pm-prestasi-desc">{p.desc}</div>
-                  
+
                   <div className="pm-prestasi-progress-bar-bg">
                     <div className="pm-prestasi-progress-fill" style={{ width: `${pct}%` }} />
                   </div>
@@ -2447,7 +2907,7 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onClose }: 
             <div className="pm-stat-item"><div className="pm-stat-label">Win Streak</div><div className="pm-stat-val">{stats.winStreak}</div></div>
           </div>
           <div className="pm-stats-col pm-radar-col">
-            <div className="pm-stat-label" style={{marginBottom: '1vh', fontSize: '1.6vh'}}>Kemampuan Master</div>
+            <div className="pm-stat-label" style={{ marginBottom: '1vh', fontSize: '1.6vh' }}>Kemampuan Master</div>
             {renderRadar()}
           </div>
         </div>
@@ -2469,19 +2929,19 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onClose }: 
           </div>
 
           {/* VIP & Prestasi */}
-          <div className="pm-vip-prestasi-box pm-anim-bump" style={{animationDelay: '0.1s', flex: 1}}>
+          <div className="pm-vip-prestasi-box pm-anim-bump" style={{ animationDelay: '0.1s', flex: 1 }}>
             <div className="pm-vp-item" style={{ flex: 1, justifyContent: 'center' }}>
               <div className="pm-vp-icon vip-icon">V</div>
-              <div className="pm-vp-text">VIP<br/><span>0/10K</span></div>
+              <div className="pm-vp-text">VIP<br /><span>0/10K</span></div>
             </div>
             <div className="pm-vp-item" style={{ flex: 1, justifyContent: 'center' }}>
               <div className="pm-vp-icon prestasi-icon">💎</div>
-              <div className="pm-vp-text">Prestasi<br/><span>0</span></div>
+              <div className="pm-vp-text">Prestasi<br /><span>0</span></div>
             </div>
           </div>
 
           {/* Stats Row */}
-          <div className="pm-stats-row pm-anim-bump" style={{animationDelay: '0.2s', flex: 2}}>
+          <div className="pm-stats-row pm-anim-bump" style={{ animationDelay: '0.2s', flex: 2 }}>
             <div className="pm-stats-col" style={{ flex: 1, justifyContent: 'center' }}>
               <div className="pm-stat-item">
                 <div className="pm-stat-label">Jumlah Ronde</div>
@@ -2504,7 +2964,7 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onClose }: 
         </div>
 
         {/* RIGHT COLUMN */}
-        <div className="pm-right pm-anim-bump" style={{animationDelay: '0.3s', flex: '0 0 32%', height: '100%', justifyContent: 'center'}}>
+        <div className="pm-right pm-anim-bump" style={{ animationDelay: '0.3s', flex: '0 0 32%', height: '100%', justifyContent: 'center' }}>
           <div className="pm-avatar-area">
             <div className="pm-avatar-circle pm-hover-glow">
               <span className="pm-avatar-emoji">{avatarEmoji}</span>
@@ -2515,11 +2975,11 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onClose }: 
 
           <div className="pm-info-list">
             <div className="pm-info-row pm-hover-glow">
-              <span className="pm-info-icon" style={{color: '#3498db'}}>♂</span>
+              <span className="pm-info-icon" style={{ color: '#3498db' }}>♂</span>
               <span className="pm-info-text">{profile?.username || 'Guest'}</span>
             </div>
             <div className="pm-info-row pm-hover-glow">
-              <span className="pm-info-icon" style={{color: '#f1c40f'}}>🪙</span>
+              <span className="pm-info-icon" style={{ color: '#f1c40f' }}>🪙</span>
               <span className="pm-info-text">{formatCoins(profile?.coins || 0)}</span>
             </div>
             <div className="pm-info-row pm-hover-glow">
@@ -2527,11 +2987,11 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onClose }: 
               <span className="pm-info-text">{formatCoins(profile?.rp || 0)}</span>
             </div>
             <div className="pm-info-row pm-hover-glow">
-              <span className="pm-info-icon" style={{color: '#9b59b6'}}>💎</span>
+              <span className="pm-info-icon" style={{ color: '#9b59b6' }}>💎</span>
               <span className="pm-info-text">0</span>
             </div>
           </div>
-          
+
           <div className="pm-login-days">Login: 1 hari</div>
         </div>
       </div>
@@ -2691,14 +3151,14 @@ function RulesModal({ onClose, initialCategory }: { onClose: () => void; initial
                   <div className="rm-text-line">Jumlah pemain: 3-4 orang</div>
                   <div className="rm-text-line">Pada awal permainan setiap orang akan mendapatkan 5 kartu.</div>
 
-                  <div className="rm-section-head" style={{marginTop:'1.5vh'}}>【Main】</div>
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Main】</div>
                   <div className="rm-text-line">Klik 2 kali atau geser untuk memainkan kartu.</div>
 
-                  <div className="rm-section-head" style={{marginTop:'1.5vh'}}>【Peraturan】</div>
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Peraturan】</div>
                   <div className="rm-text-line">1. Sistem akan menentukan secara acak pemain yang akan mengeluarkan kartu terlebih dahulu, setelah itu pemain mengeluarkan kartu sesuai arah jarum jam.</div>
                   <div className="rm-text-line">2. Untuk mengeluarkan kartu, nilai salah satu ujung kartu harus sama dengan ekor/kepala kartu yang ada di meja. Pemain wajib mengeluarkan kartu bila ada kartu yang bisa dikeluarkan.</div>
                   <div className="rm-text-line">3. Jika pemain tidak memiliki kartu yang bisa dikeluarkan dan masih ada tumpukan kartu di meja, pemain harus mengambil kartu sampai mendapat kartu yang bisa dikeluarkan. Jika pemain tidak dapat mengeluarkan kartu, maka harus membayar pemain yang mengeluarkan kartu sebelumnya. Kemudian giliran pemain selanjutnya untuk mengeluarkan kartu.</div>
-                  <div className="rm-text-line" style={{marginTop:'1vh'}}>4. Permainan berakhir jika kartu seorang pemain sudah habis, atau jika semua pemain tidak bisa mengeluarkan kartu lagi (Dead-End).</div>
+                  <div className="rm-text-line" style={{ marginTop: '1vh' }}>4. Permainan berakhir jika kartu seorang pemain sudah habis, atau jika semua pemain tidak bisa mengeluarkan kartu lagi (Dead-End).</div>
                 </div>
               )}
 
@@ -2717,25 +3177,25 @@ function RulesModal({ onClose, initialCategory }: { onClose: () => void; initial
                   <div className="rm-section-head">【Kartu Pemenang】</div>
                   <div className="rm-text-line">Kartu pemenang (kartu yang terakhir dikeluarkan oleh pemenang) terbagi menjadi dua jenis: Kartu kembar (nilai atas dan bawahnya sama) dan kartu biasa (nilai atas dan bawahnya berbeda).</div>
 
-                  <div className="rm-section-head" style={{marginTop:'1.5vh'}}>【Lewat】</div>
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Lewat】</div>
                   <div className="rm-text-line">Sewaktu tidak ada kartu yang bisa dikeluarkan, Anda harus membayar kepada pemain sebelumnya sebesar 1x nilai bet.</div>
 
-                  <div className="rm-section-head" style={{marginTop:'1.5vh'}}>【Single】</div>
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Single】</div>
                   <div className="rm-text-line">Pada kondisi Dead-End, maka pemenang mendapat bet*1.</div>
 
-                  <div className="rm-section-head" style={{marginTop:'1.5vh'}}>【Double】</div>
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Double】</div>
                   <div className="rm-text-line">Apabila kartu terakhir pemenang adalah kartu biasa dan hanya dapat tersambung di bagian atas atau bawah, maka pemenang mendapat bet*2.</div>
 
-                  <div className="rm-section-head" style={{marginTop:'1.5vh'}}>【Triple】</div>
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Triple】</div>
                   <div className="rm-text-line">Apabila kartu terakhir pemenang adalah kartu kembar dan hanya dapat tersambung di bagian atas atau bawah, maka pemenang mendapat bet*3.</div>
 
-                  <div className="rm-section-head" style={{marginTop:'1.5vh'}}>【Quartet】</div>
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Quartet】</div>
                   <div className="rm-text-line">Apabila kartu pemenang adalah kartu biasa dan dapat tersambung di bagian atas dan bawah, maka pemenang mendapat bet*4.</div>
 
-                  <div className="rm-section-head" style={{marginTop:'1.5vh'}}>【Quintet】</div>
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Quintet】</div>
                   <div className="rm-text-line">Apabila kartu pemenang adalah kartu kembar dan dapat tersambung di bagian atas dan bawah, nilai maka pemenang mendapat bet*5.</div>
 
-                  <div className="rm-section-head" style={{marginTop:'1.5vh'}}>【Skor Kalah】</div>
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Skor Kalah】</div>
                   <div className="rm-text-line">Bet * nilai jenis kemenangan * nilai total kartu ditangan.</div>
                 </div>
               )}
@@ -2748,18 +3208,18 @@ function RulesModal({ onClose, initialCategory }: { onClose: () => void; initial
                   <div className="rm-text-line">Jumlah pemain: 4 orang, dibagi menjadi 2 tim</div>
                   <div className="rm-text-line">Pada awal permainan setiap orang akan mendapatkan 7 kartu.</div>
 
-                  <div className="rm-section-head" style={{marginTop:'1.5vh'}}>【Pencocokan Tim】</div>
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Pencocokan Tim】</div>
                   <div className="rm-text-line">1. Pemain yang membentuk tim akan dicocokkan dengan pemain lain yang juga membentuk tim.</div>
                   <div className="rm-text-line">2. Pemain yang bermain single akan dicocokkan dengan pemain single lainnya.</div>
 
-                  <div className="rm-section-head" style={{marginTop:'1.5vh'}}>【Cara Bermain】</div>
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Cara Bermain】</div>
                   <div className="rm-text-line">1. Klik 2 kali atau geser untuk memainkan kartu.</div>
                   <div className="rm-text-line">2. Pemain bermain secara bergiliran berlawanan arah jarum jam.</div>
 
-                  <div className="rm-section-head" style={{marginTop:'1.5vh'}}>【Peraturan】</div>
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Peraturan】</div>
                   <div className="rm-text-line">1. Pemain yang memiliki kartu balak 6 harus memulai permainan dan wajib memainkan kartu tersebut terlebih dahulu.</div>
                   <div className="rm-text-line">2. Pemain yang lewat akan membayar Bet*0.1.</div>
-                  <div className="rm-text-line" style={{marginTop:'1vh'}}>3. Pemain yang kartunya habis terlebih dahulu disebut Domi.</div>
+                  <div className="rm-text-line" style={{ marginTop: '1vh' }}>3. Pemain yang kartunya habis terlebih dahulu disebut Domi.</div>
                 </div>
               )}
 
@@ -2770,7 +3230,7 @@ function RulesModal({ onClose, initialCategory }: { onClose: () => void; initial
                   <div className="rm-text-line">2. Tim pemain yang kartunya habis terlebih dahulu akan menang.</div>
                   <div className="rm-text-line">3. Ketika kedua sisi kartu terkunci, pemain dengan jumlah titik kartu yang paling kecil akan menang.</div>
 
-                  <div className="rm-section-head" style={{marginTop:'1.5vh'}}>【Domi Kandang】</div>
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Domi Kandang】</div>
                   <div className="rm-text-line">Terjadi ketika kedua sisi kartu terkunci dan permainan tidak dapat dilanjutkan lagi.</div>
                   <div className="rm-text-line">• Pengunci akan menang ketika jumlah titik kartu pengunci lebih kecil dari lawan.</div>
                   <div className="rm-text-line">• Lawan pengunci akan menang ketika jumlah titik kartu pengunci sama atau seri dengan lawan.</div>
@@ -2783,23 +3243,23 @@ function RulesModal({ onClose, initialCategory }: { onClose: () => void; initial
                   <div className="rm-section-head">【Domi Biasa】</div>
                   <div className="rm-text-line">Bet*1: Terjadi ketika domi satu sisi menggunakan kartu biasa.</div>
 
-                  <div className="rm-section-head" style={{marginTop:'1.5vh'}}>【Domi Balak】</div>
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Domi Balak】</div>
                   <div className="rm-text-line">Bet*2: Terjadi ketika domi satu sisi menggunakan kartu balak.</div>
 
-                  <div className="rm-section-head" style={{marginTop:'1.5vh'}}>【Domi Kandang】</div>
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Domi Kandang】</div>
                   <div className="rm-text-line">Terjadi ketika kedua sisi kartu terkunci dan permainan tidak dapat dilanjutkan lagi.</div>
                   <div className="rm-text-line">• Bet*2 untuk pengunci: Terjadi ketika jumlah titik kartu pengunci lebih kecil dari lawan.</div>
                   <div className="rm-text-line">• Bet*1 untuk lawan pengunci: Terjadi ketika jumlah titik kartu pengunci sama atau seri dengan lawan.</div>
                   <div className="rm-text-line">• Bet*3 untuk lawan pengunci: Terjadi ketika jumlah titik kartu pengunci kartu lebih besar dari salah satu atau semua lawan.</div>
 
-                  <div className="rm-section-head" style={{marginTop:'1.5vh'}}>【Domi Ceki】</div>
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Domi Ceki】</div>
                   <div className="rm-text-line">Terjadi ketika kartu terakhir pemain yang domi sama dengan kedua sisi ujung kartu di meja.</div>
                   <div className="rm-text-line">• Ceki Biasa (Bet*2): Kedua sisi kartu belum habis di tangan lawan atau kawan.</div>
                   <div className="rm-text-line">• Ceki Habis (Bet*3): Kedua sisi kartu habis baik di tangan lawan dan di tangan kawan.</div>
                   <div className="rm-text-line">• Ceki Balak (Bet*3): Domi menggunakan kartu balak dan kedua sisi kartu belum habis.</div>
                   <div className="rm-text-line">• Ceki Palang (Bet*4): Domi menggunakan kartu balak dan kedua sisi kartu habis.</div>
 
-                  <div className="rm-section-head" style={{marginTop:'1.5vh'}}>【Hadiah & Kekalahan】</div>
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Hadiah & Kekalahan】</div>
                   <div className="rm-text-line">Tim yang menang akan membagi rata koin yang dimenangkan.</div>
                   <div className="rm-text-line">Kekalahan = Bet × Jenis Kemenangan</div>
                 </div>
@@ -2813,15 +3273,15 @@ function RulesModal({ onClose, initialCategory }: { onClose: () => void; initial
                   <div className="rm-text-line">Jumlah pemain: 2-4 orang</div>
                   <div className="rm-text-line">Pada awal permainan setiap orang akan mendapatkan 7 kartu.</div>
 
-                  <div className="rm-section-head" style={{marginTop:'1.5vh'}}>【Main】</div>
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Main】</div>
                   <div className="rm-text-line">Klik 2 kali atau geser untuk memainkan kartu.</div>
 
-                  <div className="rm-section-head" style={{marginTop:'1.5vh'}}>【Peraturan】</div>
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Peraturan】</div>
                   <div className="rm-text-line">1. Kartu Wild akan ditampilkan di awal.</div>
                   <div className="rm-text-line">2. Sistem akan menentukan secara acak pemain yang akan mengeluarkan kartu terlebih dahulu, pemain selanjutnya didasarkan pada arah jarum jam.</div>
                   <div className="rm-text-line">3. Nilai atas atau bawah kartu harus sama dengan ekor/kepala kartu dengan yang ada dimeja. Kartu wajib dikeluarkan jika dapat dikeluarkan. Jika tidak dapat mengeluarkan, maka membayar pemain yang mengeluarkan kartu sebelumnya, kemudian pemain selanjutnya dapat mengeluarkan kartu.</div>
                   <div className="rm-text-line">4. Jika pemain memegang kartu wild di tangannya, ia harus memainkan kartu wild ketika tidak ada kartu normal lainnya untuk dimainkan.</div>
-                  <div className="rm-text-line" style={{marginTop:'1vh'}}>5. Sewaktu kartu seorang pemain sudah habis, atau sewaktu setiap pemain sudah tidak dapat mengeluarkan kartu (Dead-end), permainan berakhir.</div>
+                  <div className="rm-text-line" style={{ marginTop: '1vh' }}>5. Sewaktu kartu seorang pemain sudah habis, atau sewaktu setiap pemain sudah tidak dapat mengeluarkan kartu (Dead-end), permainan berakhir.</div>
                 </div>
               )}
 
@@ -2841,25 +3301,25 @@ function RulesModal({ onClose, initialCategory }: { onClose: () => void; initial
                   <div className="rm-section-head">【Kartu Pemenang】</div>
                   <div className="rm-text-line">Kartu pemenang (kartu yang terakhir dikeluarkan oleh pemenang) terbagi menjadi dua jenis: Kartu kembar - nilai atas dan bawahnya sama; Kartu biasa - nilai atas dan bawahnya berbeda.</div>
 
-                  <div className="rm-section-head" style={{marginTop:'1.5vh'}}>【Lewat】</div>
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Lewat】</div>
                   <div className="rm-text-line">Sewaktu tidak ada kartu yang cocok, anda harus membayar kepada pemain sebelumnya sebesar 1x nilai Bet.</div>
 
-                  <div className="rm-section-head" style={{marginTop:'1.5vh'}}>【Single】</div>
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Single】</div>
                   <div className="rm-text-line">Pada kondisi Dead-End, nilai multiplier adalah 1.</div>
 
-                  <div className="rm-section-head" style={{marginTop:'1.5vh'}}>【Double】</div>
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Double】</div>
                   <div className="rm-text-line">Kalau kartu pemenang memiliki nilai atas dan bawah yang berbeda dan hanya dapat tersambung dibagian atas atau bawah, nilai multipliernya 2.</div>
 
-                  <div className="rm-section-head" style={{marginTop:'1.5vh'}}>【Triple】</div>
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Triple】</div>
                   <div className="rm-text-line">Kalau kartu pemenang adalah kartu kembar, hanya tersambung dibagian atas atau bawah, nilai multipliernya 3.</div>
 
-                  <div className="rm-section-head" style={{marginTop:'1.5vh'}}>【Quartet】</div>
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Quartet】</div>
                   <div className="rm-text-line">Kalau kartu pemenang adalah kartu biasa, bagian atas dan bawah tersambung, nilai multipliernya 4.</div>
 
-                  <div className="rm-section-head" style={{marginTop:'1.5vh'}}>【Quintet】</div>
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Quintet】</div>
                   <div className="rm-text-line">Kalau kartu pemenang adalah kartu kembar, bagian atas dan bawahnya tersambung, nilai multipliernya 5.</div>
 
-                  <div className="rm-section-head" style={{marginTop:'1.5vh'}}>【Skor Kekalahan】</div>
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Skor Kekalahan】</div>
                   <div className="rm-text-line">Bet*multiplier</div>
                 </div>
               )}
@@ -2872,13 +3332,13 @@ function RulesModal({ onClose, initialCategory }: { onClose: () => void; initial
                   <div className="rm-text-line">Jumlah pemain: 2-4 orang</div>
                   <div className="rm-text-line">Pada awal permainan setiap orang akan mendapatkan 7 kartu.</div>
 
-                  <div className="rm-section-head" style={{marginTop:'1.5vh'}}>【Main】</div>
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Main】</div>
                   <div className="rm-text-line">Klik 2 kali atau geser untuk memainkan kartu.</div>
 
-                  <div className="rm-section-head" style={{marginTop:'1.5vh'}}>【Peraturan】</div>
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Peraturan】</div>
                   <div className="rm-text-line">1. Sistem akan menentukan secara acak pemain yang akan mengeluarkan kartu terlebih dahulu, setelah itu pemain mengeluarkan kartu sesuai arah jarum jam.</div>
                   <div className="rm-text-line">2. Untuk mengeluarkan kartu, nilai salah satu ujung kartu harus sama dengan ekor/kepala kartu yang ada di meja. Pemain wajib mengeluarkan kartu bila ada kartu yang bisa dikeluarkan. Jika pemain tidak dapat mengeluarkan kartu, maka harus membayar pemain yang mengeluarkan kartu sebelumnya. Kemudian giliran pemain selanjutnya untuk mengeluarkan kartu.</div>
-                  <div className="rm-text-line" style={{marginTop:'1vh'}}>Permainan berakhir jika kartu seorang pemain sudah habis, atau jika semua pemain tidak bisa mengeluarkan kartu lagi (Dead-End).</div>
+                  <div className="rm-text-line" style={{ marginTop: '1vh' }}>Permainan berakhir jika kartu seorang pemain sudah habis, atau jika semua pemain tidak bisa mengeluarkan kartu lagi (Dead-End).</div>
                 </div>
               )}
 
@@ -2898,29 +3358,163 @@ function RulesModal({ onClose, initialCategory }: { onClose: () => void; initial
                   <div className="rm-text-line">Kartu pemenang (kartu yang terakhir dikeluarkan oleh pemenang) terbagi menjadi dua jenis:</div>
                   <div className="rm-text-line">Kartu kembar (nilai atas dan bawahnya sama) dan kartu biasa (nilai atas dan bawahnya berbeda).</div>
 
-                  <div className="rm-section-head" style={{marginTop:'1.5vh'}}>【Lewat】</div>
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Lewat】</div>
                   <div className="rm-text-line">Sewaktu tidak ada kartu yang bisa dikeluarkan, Anda harus membayar kepada pemain sebelumnya sebesar 1x nilai bet.</div>
 
-                  <div className="rm-section-head" style={{marginTop:'1.5vh'}}>【Single】</div>
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Single】</div>
                   <div className="rm-text-line">Pada kondisi Dead-End, maka pemenang mendapat bet*1.</div>
 
-                  <div className="rm-section-head" style={{marginTop:'1.5vh'}}>【Double】</div>
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Double】</div>
                   <div className="rm-text-line">Apabila kartu terakhir pemenang adalah kartu biasa dan hanya dapat tersambung di bagian atas atau bawah, maka pemenang mendapat bet*2.</div>
 
-                  <div className="rm-section-head" style={{marginTop:'1.5vh'}}>【Triple】</div>
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Triple】</div>
                   <div className="rm-text-line">Apabila kartu terakhir pemenang adalah kartu kembar dan hanya dapat tersambung di bagian atas atau bawah, maka pemenang mendapat bet*3.</div>
 
-                  <div className="rm-section-head" style={{marginTop:'1.5vh'}}>【Quartet】</div>
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Quartet】</div>
                   <div className="rm-text-line">Apabila kartu pemenang adalah kartu biasa dan dapat tersambung di bagian atas dan bawah, maka pemenang mendapat bet*4.</div>
 
-                  <div className="rm-section-head" style={{marginTop:'1.5vh'}}>【Quintet】</div>
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Quintet】</div>
                   <div className="rm-text-line">Apabila kartu pemenang adalah kartu kembar dan dapat tersambung di bagian atas dan bawah, nilai maka pemenang mendapat bet*5.</div>
 
-                  <div className="rm-section-head" style={{marginTop:'1.5vh'}}>【Skor Kalah】</div>
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Skor Kalah】</div>
                   <div className="rm-text-line">Bet*nilai jenis kemenangan.</div>
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =====================================================
+// SLOT GAMES DEFINITION & POPUP
+// =====================================================
+interface SlotGameDef {
+  id: string;
+  name: string;
+  img: string;
+  jackpot: string;
+  players: number;
+  bg: string;
+  locked: boolean;
+  lockText?: string;
+}
+
+const SLOT_GAMES: SlotGameDef[] = [
+  { id: 'duofugrand', name: 'DuoFu DuoCai Grand', img: '🧧', jackpot: '99,899,264,448', players: 22728, bg: 'linear-gradient(160deg,#f9d976,#e8703a)', locked: true },
+  { id: 'wildwest', name: 'Wild West Gold', img: '🤠', jackpot: '100,000,000,000', players: 48291, bg: 'linear-gradient(160deg,#e65100,#4e342e)', locked: false },
+  { id: 'jinjibaoxi', name: 'Jin Ji Bao Xi', img: '/assets/jinji/sym_dragon_gold.png', jackpot: '2,835,374,165', players: 184598, bg: 'linear-gradient(160deg,#800010,#311b92)', locked: false },
+  { id: 'zeus', name: 'Gates of Olympus', img: '⚡', jackpot: '5,000,000,000', players: 320450, bg: 'linear-gradient(160deg,#1a1a6e,#4a0e8f)', locked: false },
+  { id: 'fafafa2', name: 'Fafafa 2', img: '🐉', jackpot: '10,000,000,000', players: 104598, bg: 'linear-gradient(160deg,#8b0000,#ff0000)', locked: false },
+  { id: 'superace', name: 'Super Ace', img: '🃏', jackpot: '200,000,000,000', players: 150598, bg: 'linear-gradient(160deg,#8e44ad,#3a0e5c)', locked: true },
+  { id: 'speedwinner', name: 'Speed Winner', img: '🏎️', jackpot: '100,000,000,000', players: 59273, bg: 'linear-gradient(160deg,#2c3e50,#0f1c2e)', locked: true },
+  { id: '5lions', name: '5 Lions Megaways', img: '/assets/fivelions/sym_phoenix.png', jackpot: '200,000,000,000', players: 156431, bg: 'linear-gradient(160deg,#172c72,#050b24)', locked: false },
+  { id: 'yingcaishen', name: 'Ying Cai Shen', img: '🧙', jackpot: '176,000,000,000', players: 12181, bg: 'linear-gradient(160deg,#b91d47,#5c0e22)', locked: true, lockText: 'Terbuka pada\nLV7' },
+  { id: 'candyrush', name: 'Candy Rush', img: '🍬', jackpot: '100,000,000,000', players: 13680, bg: 'linear-gradient(160deg,#ff80ab,#c2185b)', locked: false },
+  { id: 'richmine', name: 'Rich Mine Blast', img: '⛏️', jackpot: '19,978,165,368', players: 29740, bg: 'linear-gradient(160deg,#8a5a2c,#4a2c0e)', locked: true },
+  { id: 'mahjong2', name: 'Mahjong Ways 2', img: '/assets/mahjong2/sym_fa.png', jackpot: '100,000,000,000', players: 161974, bg: 'linear-gradient(160deg,#27ae60,#145a32)', locked: false },
+  { id: 'gatotkaca', name: 'Gates of Gatotkaca 1000', img: '/assets/gatokaca/sym_scatter.png', jackpot: '100,000,000,000', players: 39464, bg: 'linear-gradient(160deg,#f39c12,#8a4b0e)', locked: false },
+];
+
+function AjakTemanModal({ onClose }: { onClose: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const refCode = "DMN-992X8A";
+  
+  const handleCopy = () => {
+    navigator.clipboard.writeText(refCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="modal-box" style={{ maxWidth: 400, textAlign: 'center', position: 'relative', animation: 'tmBoxBounce 0.35s ease' }}>
+        <button className="modal-close-btn" style={{ position: 'absolute', top: 12, right: 12, width: 32, height: 32, padding: 0, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', fontSize: 18, cursor: 'pointer' }} onClick={onClose}>×</button>
+        <div style={{ fontSize: 56, marginBottom: 10, filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.5))' }}>🎁</div>
+        <div className="modal-title" style={{ color: '#f1c40f', fontSize: 24, fontWeight: 'bold', marginBottom: 8 }}>AJAK TEMAN</div>
+        <div className="modal-message" style={{ marginBottom: 20, fontSize: 14, color: 'rgba(255,255,255,0.8)' }}>
+          Undang temanmu bermain dan dapatkan <b>1.000.000 Koin</b> secara instan untuk setiap teman yang mendaftar!
+        </div>
+        
+        <div style={{ background: 'rgba(0,0,0,0.3)', padding: '15px', borderRadius: 12, marginBottom: 20, border: '1px solid rgba(241,196,15,0.2)' }}>
+          <div style={{ fontSize: 12, color: '#aaa', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 }}>Kode Referral Kamu:</div>
+          <div style={{ fontSize: 28, fontWeight: 'bold', color: '#f1c40f', letterSpacing: 4 }}>{refCode}</div>
+        </div>
+
+        <button 
+          onClick={handleCopy}
+          style={{ width: '100%', padding: '14px', borderRadius: 12, background: copied ? '#2ecc71' : 'linear-gradient(90deg, #f1c40f, #f39c12)', color: copied ? '#fff' : '#000', border: 'none', fontWeight: 'bold', fontSize: 16, cursor: 'pointer', transition: '0.2s', boxShadow: '0 4px 12px rgba(241,196,15,0.3)' }}
+        >
+          {copied ? '✅ Berhasil Disalin!' : '📋 Salin Kode'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SlotGamesModal({ onClose, onPlaySlot }: { onClose: () => void, onPlaySlot: (gameId: string) => void }) {
+  const handleCardClick = (game: SlotGameDef) => {
+    if (game.locked) return;
+    onPlaySlot(game.id);
+  };
+
+  // Split into two rows for nicer horizontal carousel feel
+  // all games in one grid
+  const allGames = SLOT_GAMES;
+
+  const renderCard = (game: SlotGameDef) => (
+    <div
+      key={game.id}
+      className={`sl-card ${game.locked ? 'sl-card-locked' : ''} g-btn-press`}
+      style={{ background: game.bg }}
+      onClick={() => handleCardClick(game)}
+    >
+      {game.locked && <div className="sl-card-lock-overlay">🔒{'\n'}{game.lockText || 'Terkunci'}</div>}
+      <div className="sl-card-jackpot">{game.jackpot}</div>
+      <div className="sl-card-img-wrapper">
+        {game.img.startsWith('/') || game.img.startsWith('http') ? (
+          <img src={game.img} alt={game.name} className="sl-card-img" />
+        ) : (
+          <div className="sl-card-emoji">{game.img}</div>
+        )}
+      </div>
+      <div>
+        <div className="sl-card-name">{game.name}</div>
+        <div className="sl-card-players">👤 {game.players.toLocaleString()}</div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="slot-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="slot-modal-container">
+        <button className="slot-modal-close" onClick={onClose}>×</button>
+
+        <div className="slot-modal-header">
+          <h2>🎰 PILIH MESIN SLOT</h2>
+          <p>Pilih game favoritmu</p>
+        </div>
+
+        <div className="slot-modal-scroll-area">
+          {/* Hero / Featured card */}
+          <div className="slot-section-label">🔥 Featured</div>
+          <div className="slot-modal-hero g-btn-press" onClick={() => onPlaySlot('duofuduocai')}>
+            <div className="sl-hero-jackpot-box">
+              <div className="sl-hero-badge">⭐ FEATURED</div>
+              <span className="sl-jackpot-label">Jackpot</span>
+              <span className="sl-jackpot-val">3,514,456,714</span>
+              <div className="sl-hero-players">👤 411,890 main</div>
+            </div>
+            <div className="sl-hero-mascot">👶🏻</div>
+            <div className="sl-hero-title">DUOFU<br />DUOCAI</div>
+          </div>
+
+          {/* All games in stacked grid */}
+          <div className="slot-section-label" style={{ marginTop: 14 }}>🎮 Semua Game</div>
+          <div className="slot-modal-cards-row">
+            {allGames.map(renderCard)}
           </div>
         </div>
       </div>
@@ -2949,6 +3543,8 @@ function HomeScreen({ onLogout, onNavigate }: { onLogout: () => void; onNavigate
   const [canClaimBonus, setCanClaimBonus] = useState(false);
   const [showToko, setShowToko] = useState(false);
   const [showKirimKoin, setShowKirimKoin] = useState(false);
+  const [showSlotPopup, setShowSlotPopup] = useState(false);
+  const [showAjakTeman, setShowAjakTeman] = useState(false);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('domino_username');
@@ -2956,17 +3552,17 @@ function HomeScreen({ onLogout, onNavigate }: { onLogout: () => void; onNavigate
     fetch(`${API_URL}/profile/${savedUser}`)
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d) setProfile(d); })
-      .catch(() => {});
+      .catch(() => { });
     // Check inbox unread count
     fetch(`${API_URL}/inbox/${savedUser}`)
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d) setInboxUnread(d.unreadCount ?? 0); })
-      .catch(() => {});
+      .catch(() => { });
     // Check daily bonus status
     fetch(`${API_URL}/bonus/status/${savedUser}`)
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d) setCanClaimBonus(!!d.canClaim); })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const fmtCoins = (n: number) => {
@@ -2991,38 +3587,48 @@ function HomeScreen({ onLogout, onNavigate }: { onLogout: () => void; onNavigate
 
   // Ikon kanan atas
   const topRightIcons = [
-    { label: 'Tukar',   emoji: '🔄', msg: 'Tukar koin Anda dengan hadiah menarik!' },
+    { label: 'Tukar', emoji: '🔄', msg: 'Tukar koin Anda dengan hadiah menarik!' },
     { label: 'Bagikan', emoji: '📤', msg: 'Bagikan game ini ke teman-teman Anda!' },
-    { label: 'Bonus',   emoji: '🎁', msg: 'Klaim bonus harian Anda!', hasNotif: canClaimBonus },
-    { label: 'VIP',     emoji: '👑', msg: 'Upgrade ke VIP untuk keuntungan eksklusif!' },
-    { label: 'Masuk',   emoji: '🎯', msg: 'Event login berhadiah!', hasNotif: true },
-    { label: 'Event',   emoji: '🎪', msg: 'Ikuti event spesial dan menangkan hadiah besar!' },
+    { label: 'Bonus', emoji: '🎁', msg: 'Klaim bonus harian Anda!', hasNotif: canClaimBonus },
+    { label: 'VIP', emoji: '👑', msg: 'Upgrade ke VIP untuk keuntungan eksklusif!' },
+    { label: 'Masuk', emoji: '🎯', msg: 'Event login berhadiah!', hasNotif: true },
+    { label: 'Event', emoji: '🎪', msg: 'Ikuti event spesial dan menangkan hadiah besar!' },
   ];
 
   // Mode game di grid kanan
   const games = [
     { name: 'Kamar Biasa', emoji: '🐸', bg: 'linear-gradient(135deg,#4fc3f7,#0288d1)', tag: '' },
-    { name: 'Domino QQ',   emoji: '🀱', bg: 'linear-gradient(135deg,#f9a825,#e65100)', tag: '' },
-    { name: 'Lainnya',     emoji: '🎮', bg: 'linear-gradient(135deg,#ab47bc,#6a1b9a)', tag: '' },
-    { name: 'Poker & Remi',emoji: '♠️', bg: 'linear-gradient(135deg,#ef5350,#b71c1c)', tag: 'Event' },
-    { name: 'Billiard',    emoji: '🎱', bg: 'linear-gradient(135deg,#1b5e20,#004d40)', tag: 'New!' },
-    { name: 'Slot',        emoji: '🎰', bg: 'linear-gradient(135deg,#ffa726,#e65100)', tag: '' },
+    { name: 'Domino QQ', emoji: '🀱', bg: 'linear-gradient(135deg,#f9a825,#e65100)', tag: '' },
+    { name: 'Lainnya', emoji: '🎮', bg: 'linear-gradient(135deg,#ab47bc,#6a1b9a)', tag: '' },
+    { name: 'Poker & Remi', emoji: '♠️', bg: 'linear-gradient(135deg,#ef5350,#b71c1c)', tag: 'Event' },
+    { name: 'Billiard', emoji: '🎱', bg: 'linear-gradient(135deg,#1b5e20,#004d40)', tag: 'New!' },
+    { name: 'Slot', emoji: '🎰', bg: 'linear-gradient(135deg,#ffa726,#e65100)', tag: '' },
   ];
 
   // Ikon bawah
   const botIcons = [
-    { label: 'VIP',      emoji: '👑', msg: 'Keuntungan eksklusif anggota VIP!', hasNotif: false },
-    { label: 'Brankas',  emoji: '🏦', msg: 'Top up Rp 10.000 untuk membuka Brankas!', hasNotif: false },
-    { label: 'Item',     emoji: '🎒', msg: 'Koleksi item dan skin Anda.', hasNotif: false },
-    { label: 'Peringkat',emoji: '⭐', msg: 'Lihat peringkat pemain terbaik!', hasNotif: false },
-    { label: 'Hadiah',   emoji: '🎀', msg: 'Ada hadiah menunggu Anda!', hasNotif: canClaimBonus, rpBadge: true },
-    { label: 'Berita',   emoji: '📰', msg: 'Baca berita dan update terbaru.', hasNotif: false },
-    { label: 'Gardu',    emoji: '⚡', msg: 'Pusat layanan dan dukungan.', hasNotif: false },
-    { label: 'Inbox',    emoji: '✉️', msg: 'Kotak pesan Anda.', hasNotif: inboxUnread > 0 },
+    { label: 'VIP', emoji: '👑', msg: 'Keuntungan eksklusif anggota VIP!', hasNotif: false },
+    { label: 'Brankas', emoji: '🏦', msg: 'Top up Rp 10.000 untuk membuka Brankas!', hasNotif: false },
+    { label: 'Item', emoji: '🎒', msg: 'Koleksi item dan skin Anda.', hasNotif: false },
+    { label: 'Peringkat', emoji: '⭐', msg: 'Lihat peringkat pemain terbaik!', hasNotif: false },
+    { label: 'Hadiah', emoji: '🎀', msg: 'Ada hadiah menunggu Anda!', hasNotif: canClaimBonus, rpBadge: true },
+    { label: 'Berita', emoji: '📰', msg: 'Baca berita dan update terbaru.', hasNotif: false },
+    { label: 'Gardu', emoji: '⚡', msg: 'Pusat layanan dan dukungan.', hasNotif: false },
+    { label: 'Inbox', emoji: '✉️', msg: 'Kotak pesan Anda.', hasNotif: inboxUnread > 0 },
   ];
 
   return (
     <div className="screen-wrapper home-bg">
+      {/* ===== VIDEO BACKGROUND ===== */}
+      <video
+        className="lobby-video-bg"
+        src="/assets/loby/loby.mp4"
+        autoPlay
+        muted
+        loop
+        playsInline
+      />
+
       {modal && <Modal title={modal.title} message={modal.message} onClose={() => setModal(null)} />}
 
       {/* Pengaturan Modal */}
@@ -3039,10 +3645,10 @@ function HomeScreen({ onLogout, onNavigate }: { onLogout: () => void; onNavigate
 
       {/* Avatar Selection Modal */}
       {showAvatarSelect && (
-        <AvatarSelectionModal 
-          currentAvatar={avatarEmoji} 
-          onSelect={handleSaveAvatar} 
-          onClose={() => setShowAvatarSelect(false)} 
+        <AvatarSelectionModal
+          currentAvatar={avatarEmoji}
+          onSelect={handleSaveAvatar}
+          onClose={() => setShowAvatarSelect(false)}
         />
       )}
 
@@ -3065,6 +3671,9 @@ function HomeScreen({ onLogout, onNavigate }: { onLogout: () => void; onNavigate
         />
       )}
 
+      {/* Ajak Teman Modal */}
+      {showAjakTeman && <AjakTemanModal onClose={() => setShowAjakTeman(false)} />}
+
       {/* Toko (Shop) Modal */}
       {showToko && (
         <TokoModal
@@ -3076,7 +3685,7 @@ function HomeScreen({ onLogout, onNavigate }: { onLogout: () => void; onNavigate
               fetch(`${API_URL}/profile/${savedUser}`)
                 .then(r => r.ok ? r.json() : null)
                 .then(d => { if (d) { setProfile(d); if (d.avatar) setAvatarEmoji(d.avatar); } })
-                .catch(() => {});
+                .catch(() => { });
             }
           }}
         />
@@ -3093,7 +3702,7 @@ function HomeScreen({ onLogout, onNavigate }: { onLogout: () => void; onNavigate
               fetch(`${API_URL}/profile/${savedUser}`)
                 .then(r => r.ok ? r.json() : null)
                 .then(d => { if (d) setProfile(d); })
-                .catch(() => {});
+                .catch(() => { });
             }
           }}
         />
@@ -3121,198 +3730,324 @@ function HomeScreen({ onLogout, onNavigate }: { onLogout: () => void; onNavigate
         </div>
       )}
 
-      {/* ===== TOP BAR ===== */}
-      <div className="hb-topbar">
-        {/* Kiri: avatar + koin */}
-        <div className="hb-profile">
-          <div className="hb-avatar" onClick={() => setShowProfile(true)}>
-            <span className="hb-avatar-emoji">{avatarEmoji}</span>
-            <div className="hb-avatar-ring" />
+      {/* ===== TOP BAR (V3) ===== */}
+      <div className="home-topbar-v3">
+        {/* Kiri: Avatar + User Info + VIP 3 */}
+        <div className="ht-user-block">
+          <div className="ht-avatar" onClick={() => setShowProfile(true)}>
+            <span className="ht-avatar-img">{avatarEmoji}</span>
+            <div className="ht-avatar-ring" />
           </div>
-          <div className="hb-user-info">
-            <span className="hb-username">{profile?.username ?? '...'}</span>
-            <div className="hb-coins-row">
-              <span className="hb-coin-icon">🪙</span>
-              <span className="hb-coin-val">{fmtCoins(profile?.coins ?? 0)}</span>
-              <button className="hb-coin-plus" onClick={() => setShowToko(true)}>+</button>
-            </div>
-            <div className="hb-rp-row">
-              <span className="hb-rp-label">Rp</span>
-              <span className="hb-rp-val">{fmtCoins(profile?.rp ?? 0)}</span>
-            </div>
+          <div className="ht-user-meta">
+            <div className="ht-username">{profile?.username ?? 'Gamerstore'}</div>
+            <div className="ht-userid">ID: {profile?.id ?? '12345678'}</div>
           </div>
-          <button className="hb-aktivitas-btn" onClick={() => pop('Aktivitas', 'Selesaikan misi harian untuk mendapatkan koin ekstra!')}>
-            <span style={{ fontSize: '3.5vh' }}>📋</span>
-            <span className="hb-aktivitas-label">Aktivitas</span>
-          </button>
-          <button className="hb-aktivitas-btn" style={{ background: 'linear-gradient(135deg, #10b981, #047857)' }} onClick={() => setShowKirimKoin(true)}>
-            <span style={{ fontSize: '3.5vh' }}>🎁</span>
-            <span className="hb-aktivitas-label">Kirim Koin</span>
-          </button>
+          <div className="ht-vip-pill" onClick={() => setShowKirimKoin(true)}>
+            <span>VIP 3</span>
+          </div>
         </div>
 
-        {/* Kanan: ikon menu */}
-        <div className="hb-top-icons">
-          {topRightIcons.map((ic, i) => (
-            <button className="hb-top-icon-btn" key={i} onClick={() => {
-              if (ic.label === 'Bonus') {
-                setShowDailyBonus(true);
-              } else if (ic.label === 'VIP') {
-                setShowKirimKoin(true);
-              } else {
-                pop(ic.label, ic.msg);
-              }
-            }}>
-              {ic.hasNotif && <div className="hb-notif-dot" />}
-              <div className="hb-top-icon-img">{ic.emoji}</div>
-              <span className="hb-top-icon-label">{ic.label}</span>
-            </button>
-          ))}
-          {/* Menu button bulat merah + Dropdown */}
-          <div className="hb-menu-wrapper">
-            <button className="hb-menu-btn" onClick={() => setShowRightSidebar(v => !v)}>≡</button>
-            <div className={`hb-right-sidebar ${showRightSidebar ? 'open' : ''}`}>
-              <div className="hb-rs-item" onClick={() => { setShowRightSidebar(false); setShowKirimKoin(true); }}>
-                <span className="hb-rs-icon">🎁</span>
-                <span className="hb-rs-label" style={{fontSize:'1vh'}}>Kirim Koin</span>
-              </div>
-              <div className="hb-rs-item" onClick={() => { setShowRightSidebar(false); setShowCS(true); }}>
-                <span className="hb-rs-icon">💬</span>
-                <span className="hb-rs-label" style={{fontSize:'1vh'}}>CS</span>
-              </div>
-              <div className="hb-rs-item" onClick={() => { setShowRightSidebar(false); setShowRules(true); }}>
-                <span className="hb-rs-icon">📖</span>
-                <span className="hb-rs-label" style={{fontSize:'1vh'}}>Rules</span>
-              </div>
-              <div className="hb-rs-item" onClick={() => { setShowRightSidebar(false); setShowPengaturan(true); }}>
-                <span className="hb-rs-icon">⚙️</span>
-                <span className="hb-rs-label" style={{fontSize:'1vh'}}>Setting</span>
-              </div>
-              <div className="hb-rs-item" onClick={() => { setShowRightSidebar(false); setShowRules(true); }}>
-                <span className="hb-rs-icon">❓</span>
-                <span className="hb-rs-label" style={{fontSize:'1vh'}}>Help</span>
-              </div>
-              <div className="hb-rs-item" onClick={() => { setShowRightSidebar(false); pop('Keamanan Akun', 'Akun Anda aman dan terlindungi dengan enkripsi penuh.'); }}>
-                <span className="hb-rs-icon">🔒</span>
-                <span className="hb-rs-label" style={{fontSize:'1vh'}}>Aman</span>
-              </div>
-              <div className="hb-rs-divider" />
-              <div className="hb-rs-item logout" onClick={() => { setShowRightSidebar(false); setShowLogout(true); }}>
-                <span className="hb-rs-icon">🚪</span>
-                <span className="hb-rs-label">Keluar</span>
-              </div>
-            </div>
-          </div>
-          {showRightSidebar && <div className="hb-rs-backdrop" onClick={() => setShowRightSidebar(false)} />}
+        {/* Tengah: Koin Display */}
+        <div className="ht-coins-block">
+          <span className="ht-coin-ico">🪙</span>
+          <span className="ht-coin-val">{(profile?.coins ?? 1234567890).toLocaleString('id-ID')}</span>
+          <button className="ht-coin-plus" onClick={() => setShowToko(true)}>+</button>
         </div>
+
+        {/* Kanan: Quick Actions (Event, Inbox, Ranking, Setting, TOP UP) */}
+        <div className="ht-actions-block">
+          <button className="ht-act-btn" onClick={() => pop('Event', 'Ikuti event spesial berhadiah!')}>
+            {/* Gift/Event icon */}
+            <svg className="ht-act-ico-svg" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M20 6h-2.18c.07-.26.18-.5.18-.75C18 3.89 16.96 3 15.75 3c-.89 0-1.6.42-2.05 1.07L12 6.03l-1.7-1.96C9.85 3.42 9.14 3 8.25 3 7.04 3 6 3.89 6 5.25c0 .25.11.49.18.75H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-1.5c.41 0 .75.34.75.75S15.41 6 15 6c-.41 0-.75-.34-.75-.75s.34-.75.75-.75zM9 5.25c0-.41.34-.75.75-.75s.75.34.75.75S10.16 6 9.75 6c-.41 0-.75-.34-.75-.75zm3 7.75l-4-4h8l-4 4z" />
+            </svg>
+            <span className="ht-act-lbl">Event</span>
+          </button>
+          <button className="ht-act-btn" onClick={() => setShowInbox(true)}>
+            {inboxUnread > 0 && <div className="ht-notif-dot" />}
+            {/* Inbox/Mail icon */}
+            <svg className="ht-act-ico-svg" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
+            </svg>
+            <span className="ht-act-lbl">Inbox</span>
+          </button>
+          <button className="ht-act-btn" onClick={() => pop('Ranking', 'Peringkat pemain teratas!')}>
+            {/* Crown/Ranking icon */}
+            <svg className="ht-act-ico-svg" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z" />
+            </svg>
+            <span className="ht-act-lbl">Ranking</span>
+          </button>
+          <button className="ht-act-btn" onClick={() => setShowPengaturan(true)}>
+            {/* Settings/Gear icon */}
+            <svg className="ht-act-ico-svg" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
+            </svg>
+            <span className="ht-act-lbl">Setting</span>
+          </button>
+
+          {/* Glowing TOP UP Button — gold/coin style */}
+          <button className="ht-topup-btn" onClick={() => setShowToko(true)}>
+            {/* Coin stack SVG icon */}
+            <svg className="ht-topup-ico-svg" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05.82 1.87 2.65 1.87 1.96 0 2.4-.98 2.4-1.59 0-.83-.44-1.61-2.67-2.14-2.48-.6-4.18-1.62-4.18-3.67 0-1.72 1.39-2.84 3.11-3.21V4h2.67v1.95c1.86.45 2.79 1.86 2.85 3.39H14.3c-.05-1.11-.64-1.87-2.22-1.87-1.5 0-2.4.68-2.4 1.64 0 .84.65 1.39 2.67 1.91s4.18 1.39 4.18 3.91c-.01 1.83-1.38 2.83-3.12 3.16z" />
+            </svg>
+            <span className="ht-topup-txt">TOP UP</span>
+          </button>
+
+          <button className="ht-menu-burger" onClick={() => setShowRightSidebar(v => !v)}>≡</button>
+        </div>
+
+        {/* Right Sidebar Dropdown */}
+        <div className={`hb-right-sidebar ${showRightSidebar ? 'open' : ''}`}>
+          <div className="hb-rs-item" onClick={() => { setShowRightSidebar(false); setShowKirimKoin(true); }}>
+            <span className="hb-rs-icon">🎁</span>
+            <span className="hb-rs-label">Kirim Koin</span>
+          </div>
+          <div className="hb-rs-item" onClick={() => { setShowRightSidebar(false); setShowCS(true); }}>
+            <span className="hb-rs-icon">💬</span>
+            <span className="hb-rs-label">CS</span>
+          </div>
+          <div className="hb-rs-item" onClick={() => { setShowRightSidebar(false); setShowRules(true); }}>
+            <span className="hb-rs-icon">📖</span>
+            <span className="hb-rs-label">Rules</span>
+          </div>
+          <div className="hb-rs-item logout" onClick={() => { setShowRightSidebar(false); setShowLogout(true); }}>
+            <span className="hb-rs-icon">🚪</span>
+            <span className="hb-rs-label">Keluar</span>
+          </div>
+        </div>
+        {showRightSidebar && <div className="hb-rs-backdrop" onClick={() => setShowRightSidebar(false)} />}
       </div>
 
-      {/* ===== MAIN BODY ===== */}
-      <div className="hb-body">
+      {/* ===== MAIN BODY V3 ===== */}
+      <div className="home-body-v3">
 
-        {/* Sidebar kiri: TURNAMEN DOMINO */}
-        <div className="hb-left-sidebar">
-          <div className="hb-tournament-banner">
-            <span className="hb-tournament-text">TURNAMEN DOMINO</span>
-          </div>
-        </div>
-
-        {/* Card fitur kiri: Ludo */}
-        <div className="hb-left-card" onClick={() => pop('Ludo Santai Rilis', 'Mode Ludo spesial tersedia sekarang!')}>
-          <div className="hb-left-card-img">🎲</div>
-          <div className="hb-left-card-label">Ludo Santai Rilis</div>
-        </div>
-
-        {/* Karakter tengah + Turnamen */}
-        <div className="hb-center-area">
-          <div className="hb-character">
-            <span className="hb-char-emoji">🧍‍♀️</span>
-          </div>
-          <button className="hb-tournament-btn" onClick={() => pop('Turnamen', 'Ikuti turnamen HGI berhadiah jutaan rupiah!')}>
-            <div className="hb-trophy-img">🏆</div>
-            <span className="hb-tournament-btn-label">Turnamen</span>
+        {/* SIDEBAR KIRI (Beranda, Turnamen, Misi, Hadiah, VIP) */}
+        {/* SIDEBAR KIRI (Beranda, Turnamen, Misi, Hadiah, VIP) */}
+        <div className="home-sidebar-v3">
+          <button className="hs-nav-btn active">
+            <span className="hs-nav-ico">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" /></svg>
+            </span>
+            <span className="hs-nav-lbl">Beranda</span>
           </button>
-          {/* Tooltip Brankas */}
-          <div className="hb-tooltip-brankas">
-            Top up Rp 10.000 untuk<br />membuka Brankas!
+          <button className="hs-nav-btn" onClick={() => pop('Turnamen', 'Ikuti turnamen resmi berhadiah!')}>
+            <span className="hs-nav-ico">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0011 15.9V19H7v2h10v-2h-4v-3.1a5.01 5.01 0 003.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM7 10.82C5.84 10.4 5 9.3 5 8V7h2v3.82zM19 8c0 1.3-.84 2.4-2 2.82V7h2v1z" /></svg>
+            </span>
+            <span className="hs-nav-lbl">Turnamen</span>
+          </button>
+          <button className="hs-nav-btn" onClick={() => pop('Misi', 'Selesaikan misi harian!')}>
+            <span className="hs-nav-ico">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm-2 14l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z" /></svg>
+            </span>
+            <span className="hs-nav-lbl">Misi</span>
+          </button>
+          <button className="hs-nav-btn" onClick={() => setShowDailyBonus(true)}>
+            {canClaimBonus && <div className="hs-notif-dot" />}
+            <span className="hs-nav-ico">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3-1.05 0-1.96.54-2.5 1.35l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 11 8.76l1-1.36 1 1.36L15.38 12 17 10.83 14.92 8H20v6z" /></svg>
+            </span>
+            <span className="hs-nav-lbl">Hadiah</span>
+          </button>
+          <button className="hs-nav-btn" onClick={() => setShowKirimKoin(true)}>
+            <span className="hs-nav-ico">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l-3.09 8H2l6.18 4.77L5.82 22 12 17.27 18.18 22l-2.36-7.23L22 10h-6.91L12 2z" /></svg>
+            </span>
+            <span className="hs-nav-lbl">VIP</span>
+          </button>
+        </div>
+
+        {/* CENTER CONTENT AREA */}
+        <div className="home-center-v3">
+
+          {/* GOLD RIBBON BANNER HEADER */}
+          <div className="home-ribbon-banner">
+            <div className="hrb-title">PLAY MORE 👑 WIN BIGGER</div>
+            <div className="hrb-sub">SATU APLIKASI • EMPAT PERMAINAN SERU</div>
+          </div>
+
+          {/* 4 FEATURED GAME CARDS ROW — VIDEO BG */}
+          <div className="home-cards-row-v3">
+
+            {/* CARD 1: SLOT */}
+            <div className="home-game-card-v3 card-slot" onClick={() => setShowSlotPopup(true)}>
+              <div className="hgc-video-wrapper">
+                <video className="hgc-bg-video" autoPlay loop muted playsInline>
+                  <source src="/assets/loby/1000137987.mp4" type="video/mp4" />
+                </video>
+                <div className="hgc-video-overlay slot-overlay" />
+              </div>
+              <div className="hgc-shine" />
+              <div className="hgc-info">
+                <div className="hgc-badge badge-slot">🔥 HOT</div>
+                <div className="hgc-title title-slot">SLOT</div>
+                <div className="hgc-sub">SPIN • JACKPOT • BIG WIN</div>
+              </div>
+            </div>
+
+            {/* CARD 2: BILLAR */}
+            <div className="home-game-card-v3 card-billar" onClick={() => onNavigate('billiard-game')}>
+              <div className="hgc-video-wrapper">
+                <video className="hgc-bg-video" autoPlay loop muted playsInline>
+                  <source src="/assets/loby/qq.mp4" type="video/mp4" />
+                </video>
+                <div className="hgc-video-overlay billar-overlay" />
+              </div>
+              <div className="hgc-shine" />
+              <div className="hgc-info">
+                <div className="hgc-badge badge-billar">⭐ NEW</div>
+                <div className="hgc-title title-billar">BILLAR</div>
+                <div className="hgc-sub">MAIN • LATIH SKILL • JADI JUARA</div>
+              </div>
+            </div>
+
+            {/* CARD 3: QIUQIU */}
+            <div className="home-game-card-v3 card-qiuqiu" onClick={() => onNavigate('qiuqiu-game')}>
+              <div className="hgc-video-wrapper">
+                <video className="hgc-bg-video" autoPlay loop muted playsInline>
+                  <source src="/assets/loby/1000137997.mp4" type="video/mp4" />
+                </video>
+                <div className="hgc-video-overlay qiuqiu-overlay" />
+              </div>
+              <div className="hgc-shine" />
+              <div className="hgc-info">
+                <div className="hgc-badge badge-qiuqiu">💰 JACKPOT</div>
+                <div className="hgc-title title-qiuqiu">QIUQIU</div>
+                <div className="hgc-sub">STRATEGI • FOKUS • MENANG</div>
+              </div>
+            </div>
+
+            {/* CARD 4: DOMINO */}
+            <div className="home-game-card-v3 card-domino" onClick={() => onNavigate('kamar-lobby', 'Biasa')}>
+              <div className="hgc-video-wrapper">
+                <video className="hgc-bg-video" autoPlay loop muted playsInline>
+                  <source src="/assets/loby/1000138010.mp4" type="video/mp4" />
+                </video>
+                <div className="hgc-video-overlay domino-overlay" />
+              </div>
+              <div className="hgc-shine" />
+              <div className="hgc-info">
+                <div className="hgc-badge badge-domino">🐉 EPIC</div>
+                <div className="hgc-title title-domino">DOMINO</div>
+                <div className="hgc-sub">SANTAI • SERU • PENUH STRATEGI</div>
+              </div>
+            </div>
+
+          </div>
+
+          {/* BOTTOM 3 FEATURE BANNERS — ENHANCED */}
+          <div className="home-feature-banners-v3">
+
+            {/* Left: DAILY BONUS */}
+            <div className="hfb-card hfb-bonus" onClick={() => setShowDailyBonus(true)}>
+              <div className="hfb-img-wrap">
+                <img src="/assets/loby/chest_bonus.jpg" alt="Daily Bonus" className="hfb-img" />
+              </div>
+              <div className="hfb-text">
+                <div className="hfb-title hfb-gold-bright">DAILY BONUS</div>
+                <div className="hfb-sub">Login Setiap Hari</div>
+                <div className="hfb-sub">Dapatkan Hadiah Menarik</div>
+              </div>
+            </div>
+
+            {/* Center: TURNAMEN */}
+            <div className="hfb-card hfb-turnamen" onClick={() => pop('Turnamen', 'Ikuti turnamen dan dapatkan hadiah hingga 100M koin!')}>
+              <div className="hfb-img-wrap">
+                <img src="/assets/loby/golden_trophy.jpg" alt="Turnamen" className="hfb-img" />
+              </div>
+              <div className="hfb-text">
+                <div className="hfb-title hfb-gold-bright">TURNAMEN</div>
+                <div className="hfb-sub">Ikuti Turnamen</div>
+                <div className="hfb-sub">Menangkan Hadiah Fantastis</div>
+                <button className="hfb-btn red-btn">IKUTI SEKARANG</button>
+              </div>
+            </div>
+
+            {/* Right: AJAK TEMAN */}
+            <div className="hfb-card hfb-ajak" onClick={() => setShowAjakTeman(true)}>
+              <div className="hfb-img-wrap">
+                <img src="/assets/loby/gift_boxes.jpg" alt="Ajak Teman" className="hfb-img" />
+              </div>
+              <div className="hfb-text">
+                <div className="hfb-title hfb-gold-bright">AJAK TEMAN</div>
+                <div className="hfb-sub">Dapatkan Bonus Koin</div>
+                <div className="hfb-sub">Tanpa Batas</div>
+                <button className="hfb-btn green-btn">AJAK SEKARANG</button>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* ===== BOTTOM BAR V3 ===== */}
+      <div className="home-bottombar-v3">
+        {/* Background Shapes for Slanted effect */}
+        <div className="hb3-border" />
+        <div className="hb3-bg" />
+
+        <div className="hb3-nav-left">
+          <button className="hb3-nav-btn active">
+            <span className="hb3-ico">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" /></svg>
+            </span>
+            <span className="hb3-lbl">Beranda</span>
+          </button>
+          <button className="hb3-nav-btn" onClick={() => pop('Teman', 'Daftar teman online Anda.')}>
+            <span className="hb3-ico">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" /></svg>
+            </span>
+            <span className="hb3-lbl">Teman</span>
+          </button>
+          <button className="hb3-nav-btn" onClick={() => pop('Chat', 'Ruang percakapan komunitas.')}>
+            <span className="hb3-ico">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 9H6V9h12v2zm0-3H6V6h12v2z" /></svg>
+            </span>
+            <span className="hb3-lbl">Chat</span>
+          </button>
+          <button className="hb3-nav-btn" onClick={() => pop('Leaderboard', 'Peringkat klasemen pemain.')}>
+            <span className="hb3-ico">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v2c0 2.21 1.79 4 4 4 .19 0 .37-.02.55-.05C8.36 12.59 10 14 12 14s3.64-1.41 4.45-3.05c.18.03.36.05.55.05 2.21 0 4-1.79 4-4V5c0-1.1-.9-2-2-2zm-2 4H7V5h10v2zm-5 5c-1.1 0-2-.9-2-2h4c0 1.1-.9 2-2 2zm7-5h-2v2c0 1.1-.9 2-2 2-.19 0-.37-.02-.55-.05C15.64 8.59 14 7 12 7s-3.64 1.41-4.45 3.05c-.18.03-.36.05-.55.05-1.1 0-2-.9-2-2V7H5V5h14v2zm-5 13v-3h-4v3H8v2h8v-2h-2z" /></svg>
+            </span>
+            <span className="hb3-lbl">Leaderboard</span>
+          </button>
+          <button className="hb3-nav-btn" onClick={() => setShowToko(true)}>
+            <span className="hb3-ico">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z" /></svg>
+            </span>
+            <span className="hb3-lbl">Toko</span>
+          </button>
+        </div>
+        <div className="hb3-nav-right">
+          <div className="hb3-slogan-slash"></div>
+          <div className="hb3-slogan">
+            <div>GOOD GAME</div>
+            <div>GOOD FRIENDS</div>
           </div>
         </div>
-
-        {/* Grid game kanan: 2 baris x 3 kolom */}
-        <div className="hb-game-grid">
-          {games.map((g, i) => (
-            <button 
-              className="hb-game-card" 
-              key={i} 
-              onClick={() => {
-                if (g.name === 'Kamar Biasa') {
-                  onNavigate('kamar-lobby', 'Biasa');
-                } else if (g.name === 'Domino QQ') {
-                  onNavigate('qiuqiu-game');
-                } else if (g.name === 'Lainnya') {
-                  onNavigate('kamar-lobby', 'Wild');
-                } else if (g.name === 'Billiard') {
-                  onNavigate('billiard-game');
-                } else if (g.name === 'Slot') {
-                  onNavigate('slot-lobby');
-                } else {
-                  pop(g.name, `Mode ${g.name} siap dimainkan!`);
-                }
-              }}
-            >
-              {g.tag && <div className="hb-game-tag">{g.tag}</div>}
-              <div className="hb-game-icon-box" style={{ background: g.bg }}>
-                <span className="hb-game-emoji">{g.emoji}</span>
-              </div>
-              <span className="hb-game-name">{g.name}</span>
-            </button>
-          ))}
-        </div>
-
       </div>
-
-      {/* ===== BOTTOM BAR ===== */}
-      <div className="hb-bottombar">
-        {/* Tombol TOKO besar di kiri */}
-        <button className="hb-toko-btn" onClick={() => setShowToko(true)}>
-          <span className="hb-toko-emoji">🛒</span>
-          <span className="hb-toko-label">TOKO</span>
-        </button>
-
-        {/* Ikon-ikon tengah */}
-        <div className="hb-bot-icons">
-          {botIcons.map((ic, i) => (
-            <button 
-              className="hb-bot-icon-btn" 
-              key={i} 
-              onClick={() => {
-                if(ic.label === 'Gardu') {
-                  onNavigate('gardu');
-                } else if (ic.label === 'Inbox') {
-                  setShowInbox(true);
-                } else if (ic.label === 'Hadiah' || ic.label === 'Bonus') {
-                  setShowDailyBonus(true);
-                } else if (ic.label === 'VIP') {
-                  setShowKirimKoin(true);
-                } else {
-                  pop(ic.label, ic.msg);
-                }
-              }}
-            >
-              {ic.hasNotif && <div className="hb-notif-dot" />}
-              {ic.rpBadge && <div className="hb-rp-badge">Rp</div>}
-              <div className="hb-bot-icon-emoji">{ic.emoji}</div>
-              <span className="hb-bot-icon-label">{ic.label}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Tombol MULAI besar di kanan */}
-        <button className="hb-mulai-btn" onClick={() => onNavigate('kamar-lobby', '5 Kartu')}>
-          <span className="hb-mulai-title">MULAI</span>
-          <span className="hb-mulai-sub">Kamar Biasa »</span>
-        </button>
-      </div>
+      {/* SLOT GAMES POPUP MODAL */}
+      {showSlotPopup && (
+        <SlotGamesModal 
+          onClose={() => setShowSlotPopup(false)} 
+          onPlaySlot={(gameId) => {
+            setShowSlotPopup(false);
+            if (gameId === 'duofuduocai') onNavigate('slot-game');
+            else if (gameId === 'zeus') onNavigate('zeus-game');
+            else if (gameId === 'fafafa2') onNavigate('fafafa-game');
+            else if (gameId === 'jinjibaoxi') onNavigate('jinji-game');
+            else if (gameId === 'mahjong2') onNavigate('mahjong2-game');
+            else if (gameId === 'gatotkaca') onNavigate('gatokaca-game');
+            else if (gameId === 'candyrush') onNavigate('candy-game');
+            else if (gameId === 'wildwest') onNavigate('wildwest-game');
+            else if (gameId === '5lions') onNavigate('fivelions-game');
+          }}
+        />
+      )}
 
     </div>
   );
@@ -3409,8 +4144,8 @@ function DominoTile({ left, right, onClick, isPlayable, isSelected, isBack = fal
 
   return (
     <div className={`domino-3d-wrapper ${isRotated ? 'rotated' : ''} ${isSmall ? 'small' : ''} ${isFlipping3D ? 'flip-3d' : ''}`}>
-      <div 
-        className={`domino-tile ${isPlayable ? 'playable' : ''} ${isSelected ? 'selected' : ''} g-btn-press`} 
+      <div
+        className={`domino-tile ${isPlayable ? 'playable' : ''} ${isSelected ? 'selected' : ''} g-btn-press`}
         onClick={onClick}
       >
         <div className="domino-gloss" />
@@ -3441,19 +4176,19 @@ function InviteTeammateModal({ onClose, onSendInvite, myUsername }: { onClose: (
           setUsersList(list.filter((u: any) => u.username !== myUsername));
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [myUsername]);
 
   return (
-    <div className="modal-overlay tm-overlay-fade" style={{zIndex: 1300}} onClick={onClose}>
-      <div className="peng-box tm-box-bounce" style={{maxWidth: '52vw'}} onClick={e => e.stopPropagation()}>
+    <div className="modal-overlay tm-overlay-fade" style={{ zIndex: 1300 }} onClick={onClose}>
+      <div className="peng-box tm-box-bounce" style={{ maxWidth: '52vw' }} onClick={e => e.stopPropagation()}>
         <div className="peng-header">
           <span>👥</span><span className="peng-header-title">Undang Teman Setim (Partner 2v2)</span><span>👥</span>
         </div>
         <button className="peng-close g-btn-press" onClick={onClose}>✖</button>
 
-        <div style={{padding: '2vh 2vw', display: 'flex', flexDirection: 'column', gap: '1.5vh'}}>
-          <div style={{display: 'flex', gap: '1vw'}}>
+        <div style={{ padding: '2vh 2vw', display: 'flex', flexDirection: 'column', gap: '1.5vh' }}>
+          <div style={{ display: 'flex', gap: '1vw' }}>
             <input
               type="text"
               placeholder="Ketik username teman..."
@@ -3482,26 +4217,26 @@ function InviteTeammateModal({ onClose, onSendInvite, myUsername }: { onClose: (
             </button>
           </div>
 
-          <div style={{fontSize: '1.5vh', color: '#f1c40f', fontWeight: 'bold', marginTop: '1vh'}}>
+          <div style={{ fontSize: '1.5vh', color: '#f1c40f', fontWeight: 'bold', marginTop: '1vh' }}>
             Pilih Dari Daftar Pemain / Teman Online:
           </div>
 
-          <div style={{maxHeight: '30vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1vh'}}>
+          <div style={{ maxHeight: '30vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1vh' }}>
             {usersList.length === 0 ? (
-              <div style={{color: '#aaa', textAlign: 'center', padding: '2vh'}}>Belum ada pemain lain registered.</div>
+              <div style={{ color: '#aaa', textAlign: 'center', padding: '2vh' }}>Belum ada pemain lain registered.</div>
             ) : (
               usersList.map((u: any) => (
-                <div key={u.username} className="peng-update-row" style={{justifyContent: 'space-between', alignItems: 'center'}}>
-                  <div style={{display: 'flex', alignItems: 'center', gap: '1vw'}}>
-                    <span style={{fontSize: '2.5vh'}}>🐸</span>
+                <div key={u.username} className="peng-update-row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1vw' }}>
+                    <span style={{ fontSize: '2.5vh' }}>🐸</span>
                     <div>
-                      <div style={{fontWeight: 'bold', color: '#fff'}}>{u.username}</div>
-                      <div style={{fontSize: '1.2vh', color: '#aaa'}}>Koin: {u.coins ? u.coins.toLocaleString() : 0}</div>
+                      <div style={{ fontWeight: 'bold', color: '#fff' }}>{u.username}</div>
+                      <div style={{ fontSize: '1.2vh', color: '#aaa' }}>Koin: {u.coins ? u.coins.toLocaleString() : 0}</div>
                     </div>
                   </div>
                   <button
                     className="victory-action-btn g-btn-press restart"
-                    style={{padding: '0.5vh 1.5vw', fontSize: '1.3vh'}}
+                    style={{ padding: '0.5vh 1.5vw', fontSize: '1.3vh' }}
                     onClick={() => onSendInvite(u.username)}
                   >
                     Undang +
@@ -3519,11 +4254,11 @@ function InviteTeammateModal({ onClose, onSendInvite, myUsername }: { onClose: (
 // =====================================================
 // NOTIFIKASI MELAYANG KEREN (Floating Toast Notification)
 // =====================================================
-function FloatingToastNotification({ 
-  message, 
-  onClose 
-}: { 
-  message: string; 
+function FloatingToastNotification({
+  message,
+  onClose
+}: {
+  message: string;
   onClose: () => void;
 }) {
   useEffect(() => {
@@ -3568,15 +4303,15 @@ function JoinTeamCodeModal({ onClose, onJoinCode }: { onClose: () => void; onJoi
   const digits = code.padEnd(6, '').split('');
 
   return (
-    <div className="modal-overlay tm-overlay-fade" style={{zIndex: 1350}} onClick={onClose}>
-      <div className="peng-box tm-box-bounce" style={{maxWidth: '46vw', textAlign: 'center', border: '2px solid #f1c40f'}} onClick={e => e.stopPropagation()}>
-        <div className="peng-header" style={{background: 'linear-gradient(180deg, #d35400, #a04000)'}}>
+    <div className="modal-overlay tm-overlay-fade" style={{ zIndex: 1350 }} onClick={onClose}>
+      <div className="peng-box tm-box-bounce" style={{ maxWidth: '46vw', textAlign: 'center', border: '2px solid #f1c40f' }} onClick={e => e.stopPropagation()}>
+        <div className="peng-header" style={{ background: 'linear-gradient(180deg, #d35400, #a04000)' }}>
           <span>🔑</span><span className="peng-header-title">MASUK DENGAN KODE TIM (6 DIGIT)</span><span>🔑</span>
         </div>
         <button className="peng-close g-btn-press" onClick={onClose}>✖</button>
 
-        <div style={{padding: '2.5vh 2vw', display: 'flex', flexDirection: 'column', gap: '2vh', alignItems: 'center'}}>
-          <div style={{color: '#ddd', fontSize: '1.6vh', fontWeight: 600}}>
+        <div style={{ padding: '2.5vh 2vw', display: 'flex', flexDirection: 'column', gap: '2vh', alignItems: 'center' }}>
+          <div style={{ color: '#ddd', fontSize: '1.6vh', fontWeight: 600 }}>
             Masukkan 6 digit Kode Lobby Tim milik teman Anda:
           </div>
 
@@ -3604,10 +4339,10 @@ function JoinTeamCodeModal({ onClose, onJoinCode }: { onClose: () => void; onJoi
             })}
           </div>
 
-          <div style={{display: 'flex', gap: '1.5vw', marginTop: '1vh'}}>
+          <div style={{ display: 'flex', gap: '1.5vw', marginTop: '1vh' }}>
             <button
               className="victory-action-btn g-btn-press restart"
-              style={{padding: '1.2vh 3.5vw', fontSize: '1.8vh', background: 'linear-gradient(180deg, #f39c12, #d35400)', border: '1.5px solid #f1c40f'}}
+              style={{ padding: '1.2vh 3.5vw', fontSize: '1.8vh', background: 'linear-gradient(180deg, #f39c12, #d35400)', border: '1.5px solid #f1c40f' }}
               onClick={() => {
                 if (code.length === 6) {
                   onJoinCode(code);
@@ -3620,7 +4355,7 @@ function JoinTeamCodeModal({ onClose, onJoinCode }: { onClose: () => void; onJoi
             </button>
             <button
               className="victory-action-btn g-btn-press close"
-              style={{padding: '1.2vh 2.5vw', fontSize: '1.8vh'}}
+              style={{ padding: '1.2vh 2.5vw', fontSize: '1.8vh' }}
               onClick={onClose}
             >
               Batal
@@ -3637,19 +4372,19 @@ function JoinTeamCodeModal({ onClose, onJoinCode }: { onClose: () => void; onJoi
 // =====================================================
 function InvitePendingModal({ targetUser, onCancel }: { targetUser: string; onCancel: () => void }) {
   return (
-    <div className="modal-overlay tm-overlay-fade" style={{zIndex: 1350}}>
-      <div className="peng-box tm-box-bounce" style={{maxWidth: '45vw', textAlign: 'center'}} onClick={e => e.stopPropagation()}>
+    <div className="modal-overlay tm-overlay-fade" style={{ zIndex: 1350 }}>
+      <div className="peng-box tm-box-bounce" style={{ maxWidth: '45vw', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
         <div className="peng-header">
           <span>✉️</span><span className="peng-header-title">Mengundang Pemain...</span><span>✉️</span>
         </div>
-        <div style={{padding: '2.5vh 2vw', display: 'flex', flexDirection: 'column', gap: '2vh', alignItems: 'center'}}>
-          <div style={{fontSize: '3.5vh', animation: 'spin 2s linear infinite'}}>⌛</div>
-          <div style={{fontSize: '1.8vh', color: '#fff'}}>
-            Undangan telah dikirim ke <b style={{color: '#f1c40f'}}>{targetUser}</b>.
+        <div style={{ padding: '2.5vh 2vw', display: 'flex', flexDirection: 'column', gap: '2vh', alignItems: 'center' }}>
+          <div style={{ fontSize: '3.5vh', animation: 'spin 2s linear infinite' }}>⌛</div>
+          <div style={{ fontSize: '1.8vh', color: '#fff' }}>
+            Undangan telah dikirim ke <b style={{ color: '#f1c40f' }}>{targetUser}</b>.
             <br />
-            <span style={{fontSize: '1.4vh', color: '#aaa'}}>Menunggu respon konfirmasi teman...</span>
+            <span style={{ fontSize: '1.4vh', color: '#aaa' }}>Menunggu respon konfirmasi teman...</span>
           </div>
-          <button className="victory-action-btn g-btn-press close" style={{padding: '0.8vh 2.5vw', fontSize: '1.5vh'}} onClick={onCancel}>
+          <button className="victory-action-btn g-btn-press close" style={{ padding: '0.8vh 2.5vw', fontSize: '1.5vh' }} onClick={onCancel}>
             Batal Undangan ✕
           </button>
         </div>
@@ -3661,12 +4396,12 @@ function InvitePendingModal({ targetUser, onCancel }: { targetUser: string; onCa
 // =====================================================
 // MODAL KONFIRMASI KELUAR LOBBY (VIP Exit Confirm Modal)
 // =====================================================
-function ExitConfirmModal({ 
-  onConfirm, 
+function ExitConfirmModal({
+  onConfirm,
   onCancel,
   hasPartner
-}: { 
-  onConfirm: () => void; 
+}: {
+  onConfirm: () => void;
   onCancel: () => void;
   hasPartner: boolean;
 }) {
@@ -3710,14 +4445,14 @@ function ExitConfirmModal({
 // =====================================================
 // KOMPONEN KAMAR LOBBY (Soccer/Stadium Theme)
 // =====================================================
-function KamarLobbyScreen({ 
-  onBack, 
-  onPlayRoom, 
-  category: initialCategory, 
+function KamarLobbyScreen({
+  onBack,
+  onPlayRoom,
+  category: initialCategory,
   setCategory: setGlobalCategory,
   socket
-}: { 
-  onBack: () => void; 
+}: {
+  onBack: () => void;
   onPlayRoom: (room: Room) => void;
   category: 'Biasa' | 'Bet' | 'Wild' | 'Domino Partner' | '5 Kartu' | 'Tantangan';
   setCategory: (cat: any) => void;
@@ -3760,7 +4495,7 @@ function KamarLobbyScreen({
     fetch(`${API_URL}/profile/${myUsername}`)
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d) setProfile(d); })
-      .catch(() => {});
+      .catch(() => { });
   }, [myUsername]);
 
   // Real-time Socket listeners for team invite & team code
@@ -3982,19 +4717,19 @@ function KamarLobbyScreen({
 
       {/* Incoming Team Invitation Pop-up Banner */}
       {incomingInvite && (
-        <div className="modal-overlay tm-overlay-fade" style={{zIndex: 1400}}>
-          <div className="peng-box tm-box-bounce" style={{maxWidth: '45vw', textAlign: 'center'}} onClick={e => e.stopPropagation()}>
+        <div className="modal-overlay tm-overlay-fade" style={{ zIndex: 1400 }}>
+          <div className="peng-box tm-box-bounce" style={{ maxWidth: '45vw', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
             <div className="peng-header">
               <span>📩</span><span className="peng-header-title">Undangan Tim Partner</span><span>📩</span>
             </div>
-            <div style={{padding: '2.5vh 2vw', fontSize: '1.8vh', color: '#fff'}}>
-              Pemain <b style={{color: '#f1c40f'}}>{incomingInvite.fromUsername}</b> mengundang Anda untuk menjadi teman setim di Mode Domino Partner (2 v 2)!
+            <div style={{ padding: '2.5vh 2vw', fontSize: '1.8vh', color: '#fff' }}>
+              Pemain <b style={{ color: '#f1c40f' }}>{incomingInvite.fromUsername}</b> mengundang Anda untuk menjadi teman setim di Mode Domino Partner (2 v 2)!
             </div>
-            <div style={{display: 'flex', gap: '2vw', justifyContent: 'center', marginBottom: '2vh'}}>
-              <button className="victory-action-btn g-btn-press restart" style={{padding: '1vh 3vw', fontSize: '1.6vh'}} onClick={handleAcceptInvite}>
+            <div style={{ display: 'flex', gap: '2vw', justifyContent: 'center', marginBottom: '2vh' }}>
+              <button className="victory-action-btn g-btn-press restart" style={{ padding: '1vh 3vw', fontSize: '1.6vh' }} onClick={handleAcceptInvite}>
                 Terima ✅
               </button>
-              <button className="victory-action-btn g-btn-press close" style={{padding: '1vh 3vw', fontSize: '1.6vh'}} onClick={handleDeclineInvite}>
+              <button className="victory-action-btn g-btn-press close" style={{ padding: '1vh 3vw', fontSize: '1.6vh' }} onClick={handleDeclineInvite}>
                 Tolak ✕
               </button>
             </div>
@@ -4014,7 +4749,7 @@ function KamarLobbyScreen({
       {/* Top Navigation Bar */}
       <div className="lob-topbar-rich">
         <button className="lob-back-btn-rich g-btn-press" onClick={handleBackPress}>«</button>
-        
+
         {/* Coins display */}
         <div className="lob-pill-card coins">
           <span className="lob-pill-icon">🪙</span>
@@ -4097,7 +4832,7 @@ function KamarLobbyScreen({
 
                     {/* Slot 2: Teammate or Invite */}
                     {partnerTeammate ? (
-                      <div className="lob-team-member-rich" style={{position: 'relative', border: '1.5px solid #2ecc71', background: 'rgba(46, 204, 113, 0.15)', borderRadius: '12px', padding: '0.8vh'}}>
+                      <div className="lob-team-member-rich" style={{ position: 'relative', border: '1.5px solid #2ecc71', background: 'rgba(46, 204, 113, 0.15)', borderRadius: '12px', padding: '0.8vh' }}>
                         <button
                           style={{
                             position: 'absolute',
@@ -4122,8 +4857,8 @@ function KamarLobbyScreen({
                           ✕
                         </button>
                         <div className="lob-team-avatar-rich">🐢</div>
-                        <div className="lob-team-name-rich" style={{color: '#2ecc71'}}>{partnerTeammate.substring(0, 8)}..</div>
-                        <div className="lob-team-sub-rich" style={{color: '#2ecc71', fontWeight: 'bold'}}>✅ Siap Bermain</div>
+                        <div className="lob-team-name-rich" style={{ color: '#2ecc71' }}>{partnerTeammate.substring(0, 8)}..</div>
+                        <div className="lob-team-sub-rich" style={{ color: '#2ecc71', fontWeight: 'bold' }}>✅ Siap Bermain</div>
                         <div className="lob-team-sub-rich">Teman Setim</div>
                       </div>
                     ) : (
@@ -4140,7 +4875,7 @@ function KamarLobbyScreen({
                       <div className="vip-code-label-badge">
                         <span>🔑</span> KODE LOBBY TIM VIP
                       </div>
-                      <div style={{display: 'flex', gap: '0.5vw'}}>
+                      <div style={{ display: 'flex', gap: '0.5vw' }}>
                         {teamCode ? (
                           <button className="vip-code-action-btn g-btn-press" onClick={() => { navigator.clipboard.writeText(teamCode); showAlert(`📋 Kode Tim ${teamCode} berhasil tersalin!`); }}>
                             📋 Salin
@@ -4171,11 +4906,11 @@ function KamarLobbyScreen({
                     </div>
                   </div>
 
-                  <div className="lob-team-actions-rich" style={{marginTop: '1.2vh'}}>
+                  <div className="lob-team-actions-rich" style={{ marginTop: '1.2vh' }}>
                     <button className="lob-team-btn join g-btn-press" onClick={() => handleSelectRoom({ id: 'partner_250k', name: 'Partner 250K', entryFee: 250000, entryLabel: '250K', coinsRange: '1M+', playersCount: 437004 })}>
                       {partnerTeammate ? 'Main Tim (2v2)' : 'Cari Tim'}
                     </button>
-                    <button className="lob-team-btn single g-btn-press" style={{background: 'linear-gradient(180deg, #8e44ad, #5e2750)'}} onClick={() => setShowJoinCodeModal(true)}>
+                    <button className="lob-team-btn single g-btn-press" style={{ background: 'linear-gradient(180deg, #8e44ad, #5e2750)' }} onClick={() => setShowJoinCodeModal(true)}>
                       Kode Tim 🔑
                     </button>
                   </div>
@@ -4191,7 +4926,7 @@ function KamarLobbyScreen({
                 const colorClasses = ['c-gold', 'c-orange', 'c-pink', 'c-purple'];
                 const cardColor = colorClasses[idx % colorClasses.length];
                 return (
-                  <div 
+                  <div
                     key={room.id}
                     className={`lob-rich-card g-btn-press ${cardColor} ${idx === 0 ? 'selected-glow' : ''}`}
                     onClick={() => handleSelectRoom(room)}
@@ -4224,8 +4959,8 @@ function KamarLobbyScreen({
       <div className="lob-trophy-model" />
 
       {/* Bottom Mulai Button */}
-      <button 
-        className="lob-mulai-btn-glowing g-btn-press" 
+      <button
+        className="lob-mulai-btn-glowing g-btn-press"
         onClick={() => {
           const defaultRooms = LOBBY_ROOMS[category === 'Domino Partner' ? '5 Kartu' : category];
           if (defaultRooms && defaultRooms[0]) {
@@ -4255,7 +4990,7 @@ function WaitingRoomScreen({
   onBack: () => void;
 }) {
   const [countdown, setCountdown] = useState(20);
-  const [players, setPlayers] = useState<{username: string; isBot: boolean}[]>([]);
+  const [players, setPlayers] = useState<{ username: string; isBot: boolean }[]>([]);
   const [dots, setDots] = useState('');
   const myUsername = localStorage.getItem('domino_username') || '';
 
@@ -4326,7 +5061,7 @@ function WaitingRoomScreen({
     <div className="screen-wrapper waiting-room-bg">
       {/* Animated background particles */}
       <div className="wr-particles">
-        {Array.from({length: 12}).map((_, i) => (
+        {Array.from({ length: 12 }).map((_, i) => (
           <div key={i} className="wr-particle" style={{
             left: `${Math.random() * 100}%`,
             animationDelay: `${Math.random() * 5}s`,
@@ -4402,14 +5137,14 @@ function WaitingRoomScreen({
 // =====================================================
 type Tile = [number, number];
 
-function DominoPlayScreen({ 
-  room, 
+function DominoPlayScreen({
+  room,
   gameId,
   socket,
-  onBack, 
-  onUpdateCoins 
-}: { 
-  room: Room; 
+  onBack,
+  onUpdateCoins
+}: {
+  room: Room;
   gameId: string;
   socket: Socket | null;
   onBack: () => void;
@@ -4504,7 +5239,7 @@ function DominoPlayScreen({
     fetch(`${API_URL}/profile/${myUsername}`)
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d) setProfile(d); })
-      .catch(() => {});
+      .catch(() => { });
   }, [myUsername]);
 
   // Listen for game state updates
@@ -4552,7 +5287,7 @@ function DominoPlayScreen({
         fetch(`${API_URL}/profile/${myUsername}`)
           .then(r => r.ok ? r.json() : null)
           .then(d => { if (d) setProfile(d); })
-          .catch(() => {});
+          .catch(() => { });
         onUpdateCoins(isWin
           ? `🏆 Selamat! Anda menang +${myCoinChange.toLocaleString()} koin!`
           : `😢 Anda kalah ${Math.abs(myCoinChange).toLocaleString()} koin.`
@@ -4631,20 +5366,20 @@ function DominoPlayScreen({
   const isPlayableOnBoard = (tile: Tile) => {
     if (!tile || tile.length < 2) return false;
     if (isBoardEmpty || board.length === 0) return true; // First move on empty board: any tile is playable!
-    
+
     // Effective left & right ends with board fallback
     const effLeft = leftEnd ?? (board.length > 0 ? board[0].left : null);
     const effRight = rightEnd ?? (board.length > 0 ? board[board.length - 1].right : null);
 
     if (effLeft === null || effRight === null) return true;
-    
+
     const [a, b] = tile;
     return a === effLeft || b === effLeft || a === effRight || b === effRight;
   };
 
   // Player must play if they can. They can only pass (pay) if they have NO playable card.
   const canPass = isMyTurn && status === 'playing' && myHand.length > 0 && !myHand.some(t => isPlayableOnBoard(t));
-  
+
   // Calculate payment amount for UI display
   const myPipSum = myHand.reduce((s, t) => s + (t[0] || 0) + (t[1] || 0), 0);
   const fee = room.entryFee || 1000;
@@ -4655,7 +5390,7 @@ function DominoPlayScreen({
     if (isMyTurn && canPass && status === 'playing' && !isPassing) {
       setIsPassing(true);
       setPayNotification(`💸 Tidak ada kartu yang cocok! Otomatis membayar ${payAmount.toLocaleString()} koin...`);
-      
+
       const timer = setTimeout(() => {
         if (socket && socket.connected) {
           socket.emit('pass-turn', { gameId });
@@ -4686,11 +5421,11 @@ function DominoPlayScreen({
     if (!isMyTurn) return;
     const tile = myHand[idx];
     if (!isPlayableOnBoard(tile)) return;
-    
+
     setSelectedCardIdx(idx);
 
     const [a, b] = tile;
-    
+
     // First move or single-match: play immediately
     if (isBoardEmpty) {
       socket?.emit('play-card', { gameId, tile, side: 'right' });
@@ -4755,8 +5490,8 @@ function DominoPlayScreen({
             <svg className="gs-timer-ring" viewBox="0 0 44 44">
               <circle cx="22" cy="22" r="20" className="gs-timer-track" />
               <circle cx="22" cy="22" r="20" className="gs-timer-fill"
-                strokeDasharray={`${2*Math.PI*20}`}
-                strokeDashoffset={`${2*Math.PI*20*(1-timerFraction)}`}
+                strokeDasharray={`${2 * Math.PI * 20}`}
+                strokeDashoffset={`${2 * Math.PI * 20 * (1 - timerFraction)}`}
               />
             </svg>
           )}
@@ -4765,7 +5500,7 @@ function DominoPlayScreen({
         </div>
         <div className="gs-seat-name">{player.username.substring(0, 10)}</div>
         {player.isBankrupt ? (
-          <div className="gs-seat-coins" style={{color: '#e74c3c', fontWeight: 'bold'}}>💥 BANGKRUT</div>
+          <div className="gs-seat-coins" style={{ color: '#e74c3c', fontWeight: 'bold' }}>💥 BANGKRUT</div>
         ) : (
           <div className="gs-seat-coins">🪙 Meja: {player.tableStack.toLocaleString()}</div>
         )}
@@ -4782,7 +5517,7 @@ function DominoPlayScreen({
         )}
         {/* Card backs */}
         <div className={`gs-card-backs ${position}`}>
-          {Array.from({length: Math.min(player.cardCount, 4)}).map((_, i) => (
+          {Array.from({ length: Math.min(player.cardCount, 4) }).map((_, i) => (
             <div key={i} className="gs-mini-back" style={{
               transform: `rotate(${(i - 1.5) * 8}deg) translateY(${-i * 1}px)`
             }} />
@@ -4839,24 +5574,24 @@ function DominoPlayScreen({
       <div className="table-header">
         <button className="lob-back-btn g-btn-press" onClick={() => { socket?.emit('leave-room', { gameId }); onBack(); }}>«</button>
         <div className="table-room-title">
-          {room.name} — <span style={{color: '#f1c40f'}}>{room.entryLabel}</span>
+          {room.name} — <span style={{ color: '#f1c40f' }}>{room.entryLabel}</span>
         </div>
 
         {/* Card Tracker Widget */}
         <div className="table-card-tracker">
           <div className="tracker-pill" title="Kartu yang sudah dimainkan di meja">
             <span className="tracker-icon">🀱</span>
-            <span>Meja: <b style={{color: '#f1c40f'}}>{board.length}/28</b></span>
+            <span>Meja: <b style={{ color: '#f1c40f' }}>{board.length}/28</b></span>
           </div>
           {cardsInDrawPile > 0 && (
             <div className="tracker-pill" title="Sisa kartu di tumpukan / bumbung">
               <span className="tracker-icon">📦</span>
-              <span>Bumbung: <b style={{color: '#2ecc71'}}>{cardsInDrawPile}</b></span>
+              <span>Bumbung: <b style={{ color: '#2ecc71' }}>{cardsInDrawPile}</b></span>
             </div>
           )}
         </div>
 
-        <div style={{display:'flex',gap:'1vh',alignItems:'center',position:'relative'}}>
+        <div style={{ display: 'flex', gap: '1vh', alignItems: 'center', position: 'relative' }}>
           <div className="table-coins-display">
             🪙 Meja: {mySeatPlayer?.tableStack ? mySeatPlayer.tableStack.toLocaleString() : '...'}
           </div>
@@ -4887,16 +5622,16 @@ function DominoPlayScreen({
         {/* Central Played Tiles Chain */}
         <div className="table-center-chain">
           {gameState?.isPartnerMode && (
-            <div style={{textAlign: 'center', marginBottom: '0.8vh'}}>
-              <div className="gs-wild-badge-pill" style={{background: 'linear-gradient(180deg, #2980b9, #8e44ad)'}}>
+            <div style={{ textAlign: 'center', marginBottom: '0.8vh' }}>
+              <div className="gs-wild-badge-pill" style={{ background: 'linear-gradient(180deg, #2980b9, #8e44ad)' }}>
                 👥 DOMINO PARTNER (2 vs 2) — 🔄 Berlawanan Arah Jarum Jam
               </div>
             </div>
           )}
           {gameState?.isWildMode && gameState?.wildTile && (
-            <div style={{textAlign: 'center', marginBottom: '0.8vh'}}>
+            <div style={{ textAlign: 'center', marginBottom: '0.8vh' }}>
               <div className="gs-wild-badge-pill">
-                🃏 KARTU WILD: <span style={{color: '#f1c40f', fontWeight: 'bold'}}>[{gameState.wildTile[0]}, {gameState.wildTile[1]}]</span>
+                🃏 KARTU WILD: <span style={{ color: '#f1c40f', fontWeight: 'bold' }}>[{gameState.wildTile[0]}, {gameState.wildTile[1]}]</span>
               </div>
             </div>
           )}
@@ -4914,12 +5649,12 @@ function DominoPlayScreen({
               {board.map((item: any, idx: number) => {
                 const isDouble = item.left === item.right;
                 return (
-                  <DominoTile 
-                    key={`${item.left}-${item.right}-${idx}`} 
-                    left={item.left} 
-                    right={item.right} 
-                    isRotated={!isDouble} 
-                    isSmall={true} 
+                  <DominoTile
+                    key={`${item.left}-${item.right}-${idx}`}
+                    left={item.left}
+                    right={item.right}
+                    isRotated={!isDouble}
+                    isSmall={true}
                   />
                 );
               })}
@@ -4941,13 +5676,13 @@ function DominoPlayScreen({
           <div className="victory-overlay">
             <div className="victory-box tm-box-bounce">
               <div className={`victory-title ${(gameState?.isPartnerMode ? (winner % 2 === mySeat % 2) : (winner === mySeat)) ? 'win' : 'lose'}`}>
-                {gameState?.isPartnerMode 
+                {gameState?.isPartnerMode
                   ? ((winner % 2 === mySeat % 2) ? '🏆 TIM ANDA MENANG!' : '😢 TIM ANDA KALAH!')
                   : (winner === mySeat ? '🏆 MENANG!' : '😢 KALAH!')}
               </div>
               <div className="victory-message">
                 <div className="victory-winner-text">
-                  Pemenang: <span style={{color: '#f1c40f', fontWeight: 'bold'}}>{gameState.players[winner]?.username}</span>
+                  Pemenang: <span style={{ color: '#f1c40f', fontWeight: 'bold' }}>{gameState.players[winner]?.username}</span>
                 </div>
                 <div className="victory-sub-desc">
                   {winType === 'bankruptcy' ? '💥 Semua lawan BANGKRUT!' : winType === 'block' ? '🔴 Dead-End — jumlah titik terkecil menang.' : '✅ Kartu habis!'}
@@ -4993,8 +5728,8 @@ function DominoPlayScreen({
               <svg className="gs-timer-ring me" viewBox="0 0 44 44">
                 <circle cx="22" cy="22" r="20" className="gs-timer-track" />
                 <circle cx="22" cy="22" r="20" className="gs-timer-fill"
-                  strokeDasharray={`${2*Math.PI*20}`}
-                  strokeDashoffset={`${2*Math.PI*20*(1-turnTimer/30)}`}
+                  strokeDasharray={`${2 * Math.PI * 20}`}
+                  strokeDashoffset={`${2 * Math.PI * 20 * (1 - turnTimer / 30)}`}
                 />
               </svg>
             )}
@@ -5003,7 +5738,7 @@ function DominoPlayScreen({
           <div className="gs-me-text">
             <div className="gs-me-name">{myUsername.substring(0, 10)}..</div>
             {mySeatPlayer?.isBankrupt ? (
-              <div className="gs-me-coins" style={{color: '#e74c3c', fontWeight: 'bold'}}>💥 BANGKRUT</div>
+              <div className="gs-me-coins" style={{ color: '#e74c3c', fontWeight: 'bold' }}>💥 BANGKRUT</div>
             ) : (
               <div className="gs-me-coins">🪙 Meja: {(mySeatPlayer?.tableStack ?? 0).toLocaleString()}</div>
             )}
@@ -5096,11 +5831,11 @@ function DominoPlayScreen({
           <div className="gs-stats-header">Titik Sisa</div>
           {gameState.players.map((p: any) => (
             <div key={p.username} className="gs-stats-row">
-              <span style={{fontSize:'1.2vh'}}>{p.username.substring(0,7)}</span>
+              <span style={{ fontSize: '1.2vh' }}>{p.username.substring(0, 7)}</span>
               <span className="gs-stats-val">⚫{p.pipSum}</span>
             </div>
           ))}
-          <div className="gs-stats-row gs-stats-dim" style={{marginTop:'0.5vh'}}>
+          <div className="gs-stats-row gs-stats-dim" style={{ marginTop: '0.5vh' }}>
             <span>Timer</span>
             <span className={`gs-stats-val ${turnTimer <= 10 ? 'urgent' : ''}`}>{turnTimer}s</span>
           </div>
@@ -5116,7 +5851,7 @@ function DominoPlayScreen({
 function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket | null }) {
   const [profile, setProfile] = useState<any>(null);
   const myUsername = localStorage.getItem('domino_username') || '';
-  
+
   const numRows = 3;
   const numCols = 5;
   const [grid, setGrid] = useState<number[][]>(
@@ -5144,7 +5879,7 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
     // 0-5: green text symbols (9, 10, J, Q, K, A)
     // 6: Chinese coin, 7: Gold ingots, 8: Ship, 9: Fu symbol, 10: Wild/Dragon
     const greenSyms: Record<number, string> = { 0: '9', 1: '10', 2: 'J', 3: 'Q', 4: 'K', 5: 'A' };
-    
+
     if (symVal <= 5) {
       return <span className="dfdc-sym-green">{greenSyms[symVal]}</span>;
     }
@@ -5184,7 +5919,7 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
     fetch(`${API_URL}/profile/${myUsername}`)
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d) setProfile(d); })
-      .catch(() => {});
+      .catch(() => { });
   }, [myUsername]);
 
   // Spin animation effect
@@ -5216,7 +5951,7 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
     const handleSpinResult = (data: any) => {
       let stopTime = 0;
       const delayPerCol = 350 / spinSpeed;
-      
+
       for (let c = 0; c < numCols; c++) {
         const col = c;
         setTimeout(() => {
@@ -5385,7 +6120,7 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
             </div>
 
             {/* PIXIJS WebGL Canvas for Reels */}
-            <PixiSlotGame 
+            <PixiSlotGame
               grid={grid}
               isSpinning={isSpinning}
               spinningCols={spinningCols}
@@ -5419,8 +6154,8 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
 
       {/* ===== FLOATING SPEEDER WIDGET ===== */}
       <div className="dfdc-speeder-widget">
-        <button 
-          className="dfdc-speeder-btn g-btn-press" 
+        <button
+          className="dfdc-speeder-btn g-btn-press"
           onClick={() => setShowSpeedMenu(!showSpeedMenu)}
         >
           {spinSpeed > 1 ? `⚡ ${spinSpeed}x` : 'SPEED'}
@@ -5428,8 +6163,8 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
         {showSpeedMenu && (
           <div className="dfdc-speeder-menu">
             {[1, 2, 3, 4, 5].map(spd => (
-              <button 
-                key={spd} 
+              <button
+                key={spd}
                 className={spinSpeed === spd ? 'active' : ''}
                 onClick={() => { setSpinSpeed(spd); setShowSpeedMenu(false); }}
               >
@@ -5456,18 +6191,18 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
           <button className="dfdc-bet-plus g-btn-press" onClick={() => changeBet(1)}>+</button>
         </div>
 
-       
+
         <div className="dfdc-center-text">
           <span className="dfdc-scroll-text">Rejeki melimpah &nbsp;✨&nbsp; Duo Fu Duo Cai &nbsp;🐉&nbsp; Keberuntungan menanti Anda!</span>
         </div>
 
-      
+
         <button className="dfdc-max-btn g-btn-press" onClick={() => setBetAmount(20000000)}>
           MAX
           <span className="dfdc-max-sub">BET</span>
         </button>
 
-      
+
         <div style={{ position: 'relative', display: 'flex' }}>
           {showAutoMenu && (
             <div className="dfdc-auto-menu">
@@ -5499,7 +6234,7 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
             }}
             onClick={() => {
               if (isSpinning) {
-               
+
                 setAutoSpinCount(0);
               } else if (autoSpinCount > 0) {
                 setAutoSpinCount(0);
@@ -5524,33 +6259,7 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
 // =====================================================
 
 
-interface SlotGameDef {
-  id: string;
-  name: string;
-  img: string;
-  jackpot: string;
-  players: number;
-  bg: string;
-  locked: boolean;
-  lockText?: string;
-}
 
-
-const SLOT_GAMES: SlotGameDef[] = [
-  { id: 'duofugrand',   name: 'DuoFu DuoCai Grand', img: '🧧', jackpot: '99,899,264,448',  players: 22728,  bg: 'linear-gradient(160deg,#f9d976,#e8703a)', locked: true },
-  { id: 'wildwest',     name: 'Wild West Gold',     img: '🤠', jackpot: '100,000,000,000', players: 48291,  bg: 'linear-gradient(160deg,#e65100,#4e342e)', locked: false },
-  { id: 'jinjibaoxi',   name: 'Jin Ji Bao Xi',      img: '/assets/jinji/sym_dragon_gold.png', jackpot: '2,835,374,165',   players: 184598, bg: 'linear-gradient(160deg,#800010,#311b92)', locked: false },
-  { id: 'zeus',         name: 'Gates of Olympus',   img: '⚡', jackpot: '5,000,000,000',   players: 320450, bg: 'linear-gradient(160deg,#1a1a6e,#4a0e8f)', locked: false },
-  { id: 'fafafa2',      name: 'Fafafa 2',           img: '🐉', jackpot: '10,000,000,000',  players: 104598, bg: 'linear-gradient(160deg,#8b0000,#ff0000)', locked: false },
-  { id: 'superace',     name: 'Super Ace',          img: '🃏', jackpot: '200,000,000,000', players: 150598, bg: 'linear-gradient(160deg,#8e44ad,#3a0e5c)', locked: true },
-  { id: 'speedwinner',  name: 'Speed Winner',       img: '🏎️', jackpot: '100,000,000,000', players: 59273,  bg: 'linear-gradient(160deg,#2c3e50,#0f1c2e)', locked: true },
-  { id: '5lions',       name: '5 Lions',            img: '🦁', jackpot: '200,000,000,000', players: 56431,  bg: 'linear-gradient(160deg,#f5c451,#c78b17)', locked: true },
-  { id: 'yingcaishen',  name: 'Ying Cai Shen',      img: '🧙', jackpot: '176,000,000,000', players: 12181,  bg: 'linear-gradient(160deg,#b91d47,#5c0e22)', locked: true, lockText: 'Terbuka pada\nLV7' },
-  { id: 'candyrush',    name: 'Candy Rush',         img: '🍬', jackpot: '100,000,000,000', players: 13680,  bg: 'linear-gradient(160deg,#ff80ab,#c2185b)', locked: false },
-  { id: 'richmine',     name: 'Rich Mine Blast',    img: '⛏️', jackpot: '19,978,165,368',  players: 29740,  bg: 'linear-gradient(160deg,#8a5a2c,#4a2c0e)', locked: true },
-  { id: 'mahjong2',     name: 'Mahjong Ways 2',     img: '🀄', jackpot: '100,000,000,000', players: 161974, bg: 'linear-gradient(160deg,#27ae60,#145a32)', locked: false },
-  { id: 'gatotkaca',    name: 'Gatot Kaca 1000',    img: '👳', jackpot: '100,000,000,000', players: 39464,  bg: 'linear-gradient(160deg,#f39c12,#8a4b0e)', locked: false },
-];
 
 function SlotLobbyScreen({ onBack, onPlaySlot }: { onBack: () => void; onPlaySlot: (gameId: string) => void }) {
   const [profile, setProfile] = useState<any>(null);
@@ -5587,7 +6296,7 @@ function SlotLobbyScreen({ onBack, onPlaySlot }: { onBack: () => void; onPlaySlo
     fetch(`${API_URL}/profile/${myUsername}`)
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d) setProfile(d); })
-      .catch(() => {});
+      .catch(() => { });
   }, [myUsername]);
 
   const [promoTime, setPromoTime] = useState(34 * 3600 + 26 * 60 + 38);
@@ -5655,7 +6364,7 @@ function SlotLobbyScreen({ onBack, onPlaySlot }: { onBack: () => void; onPlaySlo
       <div className="sl-body">
         {/* Left icon rail */}
         <div className="sl-rail">
-          <button className="sl-rail-btn g-btn-press active" onClick={() => {}}>🔥</button>
+          <button className="sl-rail-btn g-btn-press active" onClick={() => { }}>🔥</button>
           <button className="sl-rail-btn g-btn-press" onClick={onBack}>🏠</button>
           <button className="sl-rail-btn g-btn-press" onClick={() => alert('Event kalender segera hadir!')}>📅</button>
           <button className="sl-rail-btn g-btn-press" onClick={() => alert('Favorit Anda tersimpan di sini.')}>❤️</button>
@@ -5675,7 +6384,7 @@ function SlotLobbyScreen({ onBack, onPlaySlot }: { onBack: () => void; onPlaySlo
         </div>
 
         {/* Grid */}
-        <div 
+        <div
           className={`sl-grid-wrap ${isDragging ? 'sl-dragging' : ''}`}
           ref={scrollRef}
           onMouseDown={handleMouseDown}
@@ -5757,13 +6466,13 @@ function SlotLobbyScreen({ onBack, onPlaySlot }: { onBack: () => void; onPlaySlo
 type QiuTile = [number, number];
 
 const FULL_DOMINO_DECK: QiuTile[] = [
-  [0,0], [0,1], [0,2], [0,3], [0,4], [0,5], [0,6],
-  [1,1], [1,2], [1,3], [1,4], [1,5], [1,6],
-  [2,2], [2,3], [2,4], [2,5], [2,6],
-  [3,3], [3,4], [3,5], [3,6],
-  [4,4], [4,5], [4,6],
-  [5,5], [5,6],
-  [6,6]
+  [0, 0], [0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [0, 6],
+  [1, 1], [1, 2], [1, 3], [1, 4], [1, 5], [1, 6],
+  [2, 2], [2, 3], [2, 4], [2, 5], [2, 6],
+  [3, 3], [3, 4], [3, 5], [3, 6],
+  [4, 4], [4, 5], [4, 6],
+  [5, 5], [5, 6],
+  [6, 6]
 ];
 
 const getQiuPips = (t: QiuTile) => t[0] + t[1];
@@ -5780,7 +6489,7 @@ interface QiuEvaluation {
 const evaluateQiuHand = (hand: QiuTile[]): QiuEvaluation => {
   if (!hand || hand.length < 4) {
     const s = hand && hand.length >= 2 ? getQiuPairScore(hand[0], hand[1]) : 0;
-    return { rank: 1, title: `${s} : ?`, leftScore: s, rightScore: 0, bestPairs: [hand[0]||[0,0], hand[1]||[0,0], hand[2]||[0,0], [0,0]] };
+    return { rank: 1, title: `${s} : ?`, leftScore: s, rightScore: 0, bestPairs: [hand[0] || [0, 0], hand[1] || [0, 0], hand[2] || [0, 0], [0, 0]] };
   }
 
   const [t1, t2, t3, t4] = hand;
@@ -5884,7 +6593,7 @@ function QiuQiuGameScreen({ onBack, socket }: { onBack: () => void; socket: Sock
 
   // Deck & Deal State
   const [deck, setDeck] = useState<QiuTile[]>([]);
-  
+
   const [currentBetTarget, setCurrentBetTarget] = useState(100000);
 
   const [showMenu, setShowMenu] = useState(false);
@@ -5922,12 +6631,12 @@ function QiuQiuGameScreen({ onBack, socket }: { onBack: () => void; socket: Sock
 
     const shuffled = [...FULL_DOMINO_DECK].sort(() => Math.random() - 0.5);
     const newSeats = [
-      { id: 0, name: myUsername, coins: 1900000, avatar: avatarEmoji, isDealer: false, badge: 'Cek', currentBet: 100000, turn: true, score: '9 : 7', hand: [shuffled.pop() || [0,0], shuffled.pop() || [0,0], shuffled.pop() || [0,0], shuffled.pop() || [0,0]], folded: false },
-      { id: 1, name: BOT_POOLS[0].name, coins: BOT_POOLS[0].coins, avatar: BOT_POOLS[0].avatar, isDealer: true, badge: 'Cek', currentBet: 100000, turn: false, score: '9 : 1', hand: [shuffled.pop() || [0,0], shuffled.pop() || [0,0], shuffled.pop() || [0,0], shuffled.pop() || [0,0]], folded: false },
-      { id: 2, name: BOT_POOLS[1].name, coins: BOT_POOLS[1].coins, avatar: BOT_POOLS[1].avatar, isDealer: false, badge: 'Cek', currentBet: 100000, turn: false, score: '8 : 2', hand: [shuffled.pop() || [0,0], shuffled.pop() || [0,0], shuffled.pop() || [0,0], shuffled.pop() || [0,0]], folded: false },
-      { id: 3, name: BOT_POOLS[2].name, coins: BOT_POOLS[2].coins, avatar: BOT_POOLS[2].avatar, isDealer: false, badge: 'Balik', currentBet: 0, turn: false, score: '9 : 5', hand: [shuffled.pop() || [0,0], shuffled.pop() || [0,0], shuffled.pop() || [0,0], shuffled.pop() || [0,0]], folded: true },
-      { id: 4, name: BOT_POOLS[3].name, coins: BOT_POOLS[3].coins, avatar: BOT_POOLS[3].avatar, isDealer: false, badge: 'Cek', currentBet: 100000, turn: false, score: '7 : 6', hand: [shuffled.pop() || [0,0], shuffled.pop() || [0,0], shuffled.pop() || [0,0], shuffled.pop() || [0,0]], folded: false },
-      { id: 5, name: BOT_POOLS[4].name, coins: BOT_POOLS[4].coins, avatar: BOT_POOLS[4].avatar, isDealer: false, badge: 'Cek', currentBet: 100000, turn: false, score: '7 : 3', hand: [shuffled.pop() || [0,0], shuffled.pop() || [0,0], shuffled.pop() || [0,0], shuffled.pop() || [0,0]], folded: false },
+      { id: 0, name: myUsername, coins: 1900000, avatar: avatarEmoji, isDealer: false, badge: 'Cek', currentBet: 100000, turn: true, score: '9 : 7', hand: [shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0]], folded: false },
+      { id: 1, name: BOT_POOLS[0].name, coins: BOT_POOLS[0].coins, avatar: BOT_POOLS[0].avatar, isDealer: true, badge: 'Cek', currentBet: 100000, turn: false, score: '9 : 1', hand: [shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0]], folded: false },
+      { id: 2, name: BOT_POOLS[1].name, coins: BOT_POOLS[1].coins, avatar: BOT_POOLS[1].avatar, isDealer: false, badge: 'Cek', currentBet: 100000, turn: false, score: '8 : 2', hand: [shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0]], folded: false },
+      { id: 3, name: BOT_POOLS[2].name, coins: BOT_POOLS[2].coins, avatar: BOT_POOLS[2].avatar, isDealer: false, badge: 'Balik', currentBet: 0, turn: false, score: '9 : 5', hand: [shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0]], folded: true },
+      { id: 4, name: BOT_POOLS[3].name, coins: BOT_POOLS[3].coins, avatar: BOT_POOLS[3].avatar, isDealer: false, badge: 'Cek', currentBet: 100000, turn: false, score: '7 : 6', hand: [shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0]], folded: false },
+      { id: 5, name: BOT_POOLS[4].name, coins: BOT_POOLS[4].coins, avatar: BOT_POOLS[4].avatar, isDealer: false, badge: 'Cek', currentBet: 100000, turn: false, score: '7 : 3', hand: [shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0]], folded: false },
     ];
 
     setSeats(newSeats);
@@ -5987,18 +6696,18 @@ function QiuQiuGameScreen({ onBack, socket }: { onBack: () => void; socket: Sock
 
   // 6 Players seating state matching screenshots
   const [seats, setSeats] = useState<any[]>([
-    { id: 0, name: myUsername, coins: 1900000, avatar: avatarEmoji, isDealer: false, badge: 'Cek', currentBet: 100000, turn: true, score: '9 : 7', hand: [[6,3], [0,0], [5,4], [0,0]], folded: false },
-    { id: 1, name: 'CPH2773', coins: 1900000, avatar: '🐯', isDealer: true, badge: 'Cek', currentBet: 100000, turn: false, score: '9 : 1', hand: [[6,6], [1,6], [5,2], [0,4]], folded: false },
-    { id: 2, name: 'Infinix X669..', coins: 1400000, avatar: '👩', isDealer: false, badge: 'Cek', currentBet: 100000, turn: false, score: '8 : 2', hand: [[5,3], [0,0], [4,4], [0,4]], folded: false },
-    { id: 3, name: '23021RAA2Y', coins: 16350000, avatar: '🧔‍♂️', isDealer: false, badge: 'Balik', currentBet: 0, turn: false, score: '9 : 5', hand: [[6,5], [4,4], [3,2], [0,0]], folded: true },
-    { id: 4, name: '23053RN0..', coins: 1900000, avatar: '👨‍🦱', isDealer: false, badge: 'Cek', currentBet: 100000, turn: false, score: '7 : 6', hand: [[4,3], [0,0], [3,3], [0,0]], folded: false },
-    { id: 5, name: 'V2043', coins: 800000, avatar: '👩‍🦰', isDealer: false, badge: 'Cek', currentBet: 100000, turn: false, score: '7 : 3', hand: [[5,2], [0,0], [2,1], [0,0]], folded: false },
+    { id: 0, name: myUsername, coins: 1900000, avatar: avatarEmoji, isDealer: false, badge: 'Cek', currentBet: 100000, turn: true, score: '9 : 7', hand: [[6, 3], [0, 0], [5, 4], [0, 0]], folded: false },
+    { id: 1, name: 'CPH2773', coins: 1900000, avatar: '🐯', isDealer: true, badge: 'Cek', currentBet: 100000, turn: false, score: '9 : 1', hand: [[6, 6], [1, 6], [5, 2], [0, 4]], folded: false },
+    { id: 2, name: 'Infinix X669..', coins: 1400000, avatar: '👩', isDealer: false, badge: 'Cek', currentBet: 100000, turn: false, score: '8 : 2', hand: [[5, 3], [0, 0], [4, 4], [0, 4]], folded: false },
+    { id: 3, name: '23021RAA2Y', coins: 16350000, avatar: '🧔‍♂️', isDealer: false, badge: 'Balik', currentBet: 0, turn: false, score: '9 : 5', hand: [[6, 5], [4, 4], [3, 2], [0, 0]], folded: true },
+    { id: 4, name: '23053RN0..', coins: 1900000, avatar: '👨‍🦱', isDealer: false, badge: 'Cek', currentBet: 100000, turn: false, score: '7 : 6', hand: [[4, 3], [0, 0], [3, 3], [0, 0]], folded: false },
+    { id: 5, name: 'V2043', coins: 800000, avatar: '👩‍🦰', isDealer: false, badge: 'Cek', currentBet: 100000, turn: false, score: '7 : 3', hand: [[5, 2], [0, 0], [2, 1], [0, 0]], folded: false },
   ]);
 
   // Helper to format currency labels
   const formatBetLabel = (n: number) => {
     if (!n) return '0';
-    if (n >= 1000000) return (n / 1000000).toFixed(1).replace('.0','') + 'M';
+    if (n >= 1000000) return (n / 1000000).toFixed(1).replace('.0', '') + 'M';
     if (n >= 1000) return (n / 1000).toFixed(0) + 'K';
     return n.toString();
   };
@@ -6104,10 +6813,10 @@ function QiuQiuGameScreen({ onBack, socket }: { onBack: () => void; socket: Sock
 
     const shuffled = [...FULL_DOMINO_DECK].sort(() => Math.random() - 0.5);
     const newSeats = seats.map((seat, i) => {
-      const tile1 = shuffled.pop() || [0,0];
-      const tile2 = shuffled.pop() || [0,0];
-      const tile3 = shuffled.pop() || [0,0];
-      const tile4 = shuffled.pop() || [0,0];
+      const tile1 = shuffled.pop() || [0, 0];
+      const tile2 = shuffled.pop() || [0, 0];
+      const tile3 = shuffled.pop() || [0, 0];
+      const tile4 = shuffled.pop() || [0, 0];
       const isMeStanding = (i === 0 && isStanding);
       return {
         ...seat,
@@ -6353,7 +7062,7 @@ function QiuQiuGameScreen({ onBack, socket }: { onBack: () => void; socket: Sock
         <div className="qq-jackpot-header">
           <span className="qq-jp-title">🌴 JACKPOT</span>
           <div className="qq-jp-counter">
-            {['0','0','1','3','0','1'].map((d, i) => (
+            {['0', '0', '1', '3', '0', '1'].map((d, i) => (
               <span key={i} className="qq-jp-digit">{d}</span>
             ))}
           </div>
@@ -6452,7 +7161,7 @@ function QiuQiuGameScreen({ onBack, socket }: { onBack: () => void; socket: Sock
         {/* Showdown Revealed Cards for Opponent */}
         {phase === 'showdown' && !seats[5]?.folded && (
           <div className="qq-opponent-showdown-hand">
-            <div className="qq-score-pill-header" style={{fontSize: '1.2vh', padding: '0.1vh 0.8vw'}}>
+            <div className="qq-score-pill-header" style={{ fontSize: '1.2vh', padding: '0.1vh 0.8vw' }}>
               {evaluateQiuHand(seats[5].hand).title}
             </div>
             <div className="qq-opponent-tiles-mini">
@@ -6485,7 +7194,7 @@ function QiuQiuGameScreen({ onBack, socket }: { onBack: () => void; socket: Sock
         {/* Showdown Revealed Cards for Opponent */}
         {phase === 'showdown' && !seats[1]?.folded && (
           <div className="qq-opponent-showdown-hand">
-            <div className="qq-score-pill-header" style={{fontSize: '1.2vh', padding: '0.1vh 0.8vw'}}>
+            <div className="qq-score-pill-header" style={{ fontSize: '1.2vh', padding: '0.1vh 0.8vw' }}>
               {evaluateQiuHand(seats[1].hand).title}
             </div>
             <div className="qq-opponent-tiles-mini">
@@ -6517,7 +7226,7 @@ function QiuQiuGameScreen({ onBack, socket }: { onBack: () => void; socket: Sock
         {/* Showdown Revealed Cards for Opponent */}
         {phase === 'showdown' && !seats[2]?.folded && (
           <div className="qq-opponent-showdown-hand">
-            <div className="qq-score-pill-header" style={{fontSize: '1.2vh', padding: '0.1vh 0.8vw'}}>
+            <div className="qq-score-pill-header" style={{ fontSize: '1.2vh', padding: '0.1vh 0.8vw' }}>
               {evaluateQiuHand(seats[2].hand).title}
             </div>
             <div className="qq-opponent-tiles-mini">
@@ -6549,7 +7258,7 @@ function QiuQiuGameScreen({ onBack, socket }: { onBack: () => void; socket: Sock
         {/* Showdown Revealed Cards for Opponent */}
         {phase === 'showdown' && !seats[3]?.folded && (
           <div className="qq-opponent-showdown-hand">
-            <div className="qq-score-pill-header" style={{fontSize: '1.2vh', padding: '0.1vh 0.8vw'}}>
+            <div className="qq-score-pill-header" style={{ fontSize: '1.2vh', padding: '0.1vh 0.8vw' }}>
               {evaluateQiuHand(seats[3].hand).title}
             </div>
             <div className="qq-opponent-tiles-mini">
@@ -6581,7 +7290,7 @@ function QiuQiuGameScreen({ onBack, socket }: { onBack: () => void; socket: Sock
         {/* Showdown Revealed Cards for Opponent */}
         {phase === 'showdown' && !seats[4]?.folded && (
           <div className="qq-opponent-showdown-hand">
-            <div className="qq-score-pill-header" style={{fontSize: '1.2vh', padding: '0.1vh 0.8vw'}}>
+            <div className="qq-score-pill-header" style={{ fontSize: '1.2vh', padding: '0.1vh 0.8vw' }}>
               {evaluateQiuHand(seats[4].hand).title}
             </div>
             <div className="qq-opponent-tiles-mini">
@@ -6637,10 +7346,10 @@ function QiuQiuGameScreen({ onBack, socket }: { onBack: () => void; socket: Sock
 
       {/* Player's Own Cards & Score Pills (Bottom Center) */}
       {!isStanding && (() => {
-        const h0 = seats[0]?.hand?.[0] || [0,0];
-        const h1 = seats[0]?.hand?.[1] || [0,0];
-        const h2 = seats[0]?.hand?.[2] || [0,0];
-        const h3 = seats[0]?.hand?.[3] || [0,0];
+        const h0 = seats[0]?.hand?.[0] || [0, 0];
+        const h1 = seats[0]?.hand?.[1] || [0, 0];
+        const h2 = seats[0]?.hand?.[2] || [0, 0];
+        const h3 = seats[0]?.hand?.[3] || [0, 0];
 
         const leftVal = (getQiuPips(h0) + getQiuPips(h1)) % 10;
         const rightVal = (getQiuPips(h2) + getQiuPips(h3)) % 10;
@@ -6648,12 +7357,12 @@ function QiuQiuGameScreen({ onBack, socket }: { onBack: () => void; socket: Sock
         return (
           <div className="qq-hand-container">
             {/* Score Pill Header */}
-            <div className="qq-score-pill-header g-btn-press" onClick={handleSwapNext} style={{cursor: 'pointer'}}>
+            <div className="qq-score-pill-header g-btn-press" onClick={handleSwapNext} style={{ cursor: 'pointer' }}>
               <span>{leftVal}</span> : <span>{phase === 'round1_bet' ? '?' : rightVal}</span>
             </div>
 
             {/* Tiles Row (Click any tile to swap pair combinations "tukar ke sebelah") */}
-            <div className="qq-tiles-row g-btn-press" onClick={handleSwapNext} style={{cursor: 'pointer'}}>
+            <div className="qq-tiles-row g-btn-press" onClick={handleSwapNext} style={{ cursor: 'pointer' }}>
               <DominoTile left={h0[0]} right={h0[1]} isFlipping3D={isFlipping3D} />
               <DominoTile left={h1[0]} right={h1[1]} isFlipping3D={isFlipping3D} />
               <DominoTile left={h2[0]} right={h2[1]} isFlipping3D={isFlipping3D} />
@@ -6716,9 +7425,9 @@ function QiuQiuGameScreen({ onBack, socket }: { onBack: () => void; socket: Sock
           margin: '0.5vh 0'
         }}>
           {playerTurnTimer <= 3 ? (
-            <span>⚠️ WAKTU HAMPIR HABIS! <span style={{fontSize: '2vh', color: '#ffea00'}}>{playerTurnTimer}s</span></span>
+            <span>⚠️ WAKTU HAMPIR HABIS! <span style={{ fontSize: '2vh', color: '#ffea00' }}>{playerTurnTimer}s</span></span>
           ) : (
-            <span>⏳ Giliran Anda: <span style={{fontSize: '1.8vh', color: '#e74c3c'}}>{playerTurnTimer}s</span></span>
+            <span>⏳ Giliran Anda: <span style={{ fontSize: '1.8vh', color: '#e74c3c' }}>{playerTurnTimer}s</span></span>
           )}
         </div>
       )}
@@ -6769,7 +7478,7 @@ function App() {
   // Lobby states
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [lobbyCategory, setLobbyCategory] = useState<'Biasa' | 'Bet' | 'Wild' | 'Domino Partner' | '5 Kartu' | 'Tantangan'>('5 Kartu');
-  
+
   // Online multiplayer states
   const [gameId, setGameId] = useState<string | null>(null);
   const socketRef = useRef<Socket | null>(null);
@@ -6803,7 +7512,7 @@ function App() {
   };
 
   const handleOpenTransferFromProfile = (username: string) => {
-     setTransferTarget({ username });
+    setTransferTarget({ username });
   };
 
   const handleNavigate = (targetScreen: any, categoryOverride?: any) => {
@@ -6886,7 +7595,7 @@ function App() {
   };
 
   if (screen === 'loading') return <LoadingScreen onFinish={t => setScreen(t)} />;
-  if (screen === 'login')   return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
+  if (screen === 'login') return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
 
   return (
     <>
@@ -6901,7 +7610,7 @@ function App() {
         <GarduScreen onBack={() => setScreen('home')} onViewProfile={setViewingProfile} />
       )}
       {screen === 'kamar-lobby' && (
-        <KamarLobbyScreen 
+        <KamarLobbyScreen
           onBack={() => setScreen('home')}
           onPlayRoom={(room) => {
             setSelectedRoom(room);
@@ -6936,10 +7645,10 @@ function App() {
       {screen === 'home' && (
         <HomeScreen onLogout={() => setScreen('login')} onNavigate={handleNavigate} />
       )}
-      
+
       {screen === 'slot-lobby' && (
-        <SlotLobbyScreen 
-          onBack={() => setScreen('home')} 
+        <SlotLobbyScreen
+          onBack={() => setScreen('home')}
           onPlaySlot={(gameId) => {
             if (gameId === 'duofuduocai') setScreen('slot-game');
             else if (gameId === 'zeus') setScreen('zeus-game');
@@ -6949,12 +7658,13 @@ function App() {
             else if (gameId === 'gatotkaca') setScreen('gatokaca-game');
             else if (gameId === 'candyrush') setScreen('candy-game');
             else if (gameId === 'wildwest') setScreen('wildwest-game');
+            else if (gameId === '5lions') setScreen('fivelions-game');
           }}
         />
       )}
 
       {screen === 'slot-game' && (
-        <SlotGameScreen 
+        <SlotGameScreen
           onBack={() => setScreen('slot-lobby')}
           socket={socketRef.current}
         />
@@ -7009,6 +7719,13 @@ function App() {
         />
       )}
 
+      {screen === 'fivelions-game' && (
+        <FiveLionsSlotScreen
+          onBack={() => setScreen('slot-lobby')}
+          socket={socketRef.current}
+        />
+      )}
+
       {screen === 'qiuqiu-game' && (
         <QiuQiuGameScreen
           onBack={() => setScreen('home')}
@@ -7024,9 +7741,9 @@ function App() {
 
       {/* Other Profile Modal */}
       {viewingProfile && (
-        <OtherProfileModal 
-          username={viewingProfile} 
-          onClose={() => setViewingProfile(null)} 
+        <OtherProfileModal
+          username={viewingProfile}
+          onClose={() => setViewingProfile(null)}
           onAddFriend={handleSendRequestFromProfile}
           onSendCoins={handleOpenTransferFromProfile}
         />
@@ -7036,7 +7753,7 @@ function App() {
       {transferTarget && (
         <div className="modal-overlay tm-overlay-fade" style={{ zIndex: 1600 }} onClick={() => { setTransferTarget(null); setTransferAmount(''); }}>
           <div className="tm-transfer-popup tm-box-bounce" onClick={e => e.stopPropagation()}>
-            <button className="tm-close-btn g-btn-press" style={{top: '-1vh', right: '-1vw'}} onClick={() => { setTransferTarget(null); setTransferAmount(''); }}>✖</button>
+            <button className="tm-close-btn g-btn-press" style={{ top: '-1vh', right: '-1vw' }} onClick={() => { setTransferTarget(null); setTransferAmount(''); }}>✖</button>
             <div className="modal-title">KIRIM UANG (KOIN)</div>
             <div className="tm-transfer-body">
               <div className="tm-transfer-coin-flow">
@@ -7045,12 +7762,12 @@ function App() {
                 <span className="tm-floating-coin c3">🪙</span>
               </div>
               <div className="tm-transfer-info-card">
-                <div style={{fontSize: '2.5vh', color: '#fff', fontWeight: 'bold'}}>
-                  Kirim ke: <span style={{color: '#f1c40f'}}>{transferTarget.username}</span>
+                <div style={{ fontSize: '2.5vh', color: '#fff', fontWeight: 'bold' }}>
+                  Kirim ke: <span style={{ color: '#f1c40f' }}>{transferTarget.username}</span>
                 </div>
               </div>
               <div className="tm-input-group">
-                <input 
+                <input
                   type="number"
                   placeholder="0"
                   value={transferAmount}
@@ -7062,8 +7779,8 @@ function App() {
               </div>
               <div className="tm-quick-amount-grid">
                 {[100000, 500000, 1000000, 5000000, 10000000].map(val => (
-                  <button 
-                    key={val} 
+                  <button
+                    key={val}
                     className="tm-quick-btn g-btn-press"
                     onClick={() => {
                       const current = parseInt(transferAmount, 10) || 0;

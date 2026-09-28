@@ -1,0 +1,356 @@
+/* =====================================================
+   SLOT GAMES MODAL POPUP — Stacked Grid Layout
+   ===================================================== */
+.slot-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.80);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: pmFadeIn 0.25s ease;
+  padding: 16px;
+}
+
+.slot-modal-container {
+  width: 100%;
+  max-width: 1350px;
+  max-height: 88vh;
+  background: linear-gradient(145deg, #0e0503, #1c0a03);
+  border: 2px solid rgba(241, 196, 15, 0.6);
+  border-radius: 24px;
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.95),
+    0 0 0 1px rgba(241, 196, 15, 0.08),
+    inset 0 0 40px rgba(241, 196, 15, 0.04);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  animation: tmBoxBounce 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* ---- CLOSE BUTTON ---- */
+.slot-modal-close {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 20px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: transform 0.2s, background 0.2s, color 0.2s;
+  line-height: 1;
+}
+.slot-modal-close:hover {
+  transform: scale(1.15) rotate(90deg);
+  background: rgba(241, 196, 15, 0.18);
+  color: #f1c40f;
+}
+
+/* ---- HEADER ---- */
+.slot-modal-header {
+  text-align: center;
+  padding: 22px 20px 16px;
+  background: linear-gradient(90deg, transparent, rgba(241, 196, 15, 0.07), transparent);
+  border-bottom: 1px solid rgba(241, 196, 15, 0.18);
+  flex-shrink: 0;
+}
+.slot-modal-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 900;
+  color: #f1c40f;
+  text-shadow: 0 2px 10px rgba(241, 196, 15, 0.5);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+.slot-modal-header p {
+  margin: 5px 0 0;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 1px;
+}
+
+/* ---- SCROLLABLE CONTENT AREA ---- */
+.slot-modal-scroll-area {
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 18px 20px 20px;
+  flex: 1;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(241, 196, 15, 0.3) transparent;
+}
+.slot-modal-scroll-area::-webkit-scrollbar {
+  width: 5px;
+}
+.slot-modal-scroll-area::-webkit-scrollbar-track {
+  background: transparent;
+}
+.slot-modal-scroll-area::-webkit-scrollbar-thumb {
+  background: rgba(241, 196, 15, 0.3);
+  border-radius: 10px;
+}
+
+/* ---- SECTION LABEL ---- */
+.slot-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.38);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 10px;
+}
+
+/* ---- HERO FEATURED CARD ---- */
+.slot-modal-hero {
+  width: 100%;
+  height: 150px;
+  background: linear-gradient(160deg, #d32f2f, #7f0000);
+  border-radius: 18px;
+  border: 2px solid #ffca28;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(241, 196, 15, 0.12);
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 18px;
+  transition: transform 0.22s, box-shadow 0.22s;
+  box-sizing: border-box;
+}
+.slot-modal-hero:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 16px 40px rgba(241, 196, 15, 0.25);
+}
+.slot-modal-hero::before {
+  content: "";
+  position: absolute;
+  top: -60%; left: -60%; width: 220%; height: 220%;
+  background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 60%);
+  animation: smRotateGlow 10s linear infinite;
+  pointer-events: none;
+}
+
+.sl-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(241, 196, 15, 0.18);
+  border: 1px solid rgba(241, 196, 15, 0.5);
+  border-radius: 20px;
+  padding: 3px 12px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #f1c40f;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  width: fit-content;
+  margin-bottom: 6px;
+}
+.sl-hero-jackpot-box {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  z-index: 2;
+}
+.sl-jackpot-label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.sl-jackpot-val {
+  font-size: 22px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 0 14px rgba(241, 196, 15, 0.8);
+  line-height: 1.1;
+}
+.sl-hero-players {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  z-index: 2;
+}
+.sl-hero-mascot {
+  font-size: 80px;
+  filter: drop-shadow(0 8px 12px rgba(0,0,0,0.7));
+  line-height: 1;
+  z-index: 2;
+}
+.sl-hero-title {
+  font-size: 20px;
+  font-weight: 900;
+  color: #f1c40f;
+  text-align: center;
+  line-height: 1.1;
+  text-shadow: 0 3px 6px rgba(0,0,0,0.9);
+  z-index: 2;
+  min-width: 100px;
+}
+
+/* ---- GAME CARDS — HORIZONTAL SCROLL (2 ROWS) ---- */
+.slot-modal-cards-row {
+  display: grid;
+  grid-template-rows: repeat(2, 1fr);
+  grid-auto-flow: column;
+  grid-auto-columns: 240px;
+  gap: 12px;
+  margin-bottom: 18px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 16px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(241, 196, 15, 0.4) transparent;
+}
+.slot-modal-cards-row::-webkit-scrollbar {
+  height: 8px;
+}
+.slot-modal-cards-row::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+}
+.slot-modal-cards-row::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, rgba(241, 196, 15, 0.3), rgba(241, 196, 15, 0.6));
+  border-radius: 10px;
+}
+
+/* ---- INDIVIDUAL CARD ---- */
+.sl-card {
+  border-radius: 14px;
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.55);
+  transition: transform 0.22s, box-shadow 0.22s, border-color 0.22s;
+  gap: 10px;
+  min-height: 200px;
+  justify-content: space-between;
+}
+.sl-card:hover:not(.sl-card-locked) {
+  transform: translateY(-5px) scale(1.03);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.75), 0 0 0 2px rgba(241, 196, 15, 0.55);
+  border-color: #f1c40f;
+}
+
+/* Locked state */
+.sl-card-locked {
+  cursor: not-allowed;
+}
+.sl-card-lock-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-weight: bold;
+  font-size: 11px;
+  color: #fff;
+  z-index: 5;
+  border-radius: 13px;
+  gap: 4px;
+}
+
+.sl-card-jackpot {
+  background: rgba(0, 0, 0, 0.5);
+  color: #f1c40f;
+  font-size: 13px;
+  font-weight: 900;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(241, 196, 15, 0.3);
+  width: 100%;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+.sl-card-img-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+.sl-card-img {
+  max-width: 85%;
+  max-height: 85px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6));
+}
+.sl-card-emoji {
+  font-size: 56px;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+}
+.sl-card-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  text-align: center;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+  line-height: 1.2;
+}
+.sl-card-players {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* ---- SCROLL HINT (hidden in grid mode) ---- */
+.slot-scroll-hint {
+  display: none;
+}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width: 600px) {
+  .slot-modal-cards-row {
+    grid-auto-columns: 120px;
+    gap: 9px;
+  }
+  .slot-modal-container {
+    max-width: 100%;
+    max-height: 92vh;
+  }
+  .slot-modal-hero {
+    height: 120px;
+  }
+  .sl-hero-mascot { font-size: 54px; }
+  .sl-jackpot-val { font-size: 17px; }
+  .sl-hero-title  { font-size: 15px; }
+}
+
+/* ---- ANIMATIONS ---- */
+@keyframes pmFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes tmBoxBounce {
+  from { opacity: 0; transform: scale(0.88) translateY(24px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes smRotateGlow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}

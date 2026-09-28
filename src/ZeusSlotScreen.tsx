@@ -688,9 +688,7 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
 
  
         <div className="zeus-right-panel">
-          <div className="zeus-floating-character">
-            <img src="/assets/zeus_character_clean.png" alt="Zeus" className="zeus-mascot-img" />
-          </div>
+          
         </div>
       </div>
 

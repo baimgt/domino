@@ -24,12 +24,13 @@
   inset: 0;
   z-index: 0;
   overflow: hidden;
+  background: url('/assets/zeus/bg_olympus.jpg') no-repeat center center / cover;
 }
 
 .oly-bg-sky {
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at 50% 0%, #c2410c 0%, #7e22ce 30%, #2e1065 60%, #0f0520 100%);
+  pointer-events: none;
 }
 
 .oly-bg-clouds {

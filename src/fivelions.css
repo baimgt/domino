@@ -1,0 +1,1517 @@
+/* =====================================================
+   5 LIONS MEGAWAYS™ (五獅 MEGAWAYS) SLOT SCREEN CSS
+   100% FAITHFUL REPLICA OF REFERENCE SCREENSHOT
+   ===================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Noto+Serif+SC:wght@700;900&family=Outfit:wght@600;700;800;900&display=swap');
+
+:root {
+  --fl-gold-grad: linear-gradient(180deg, #fff2a3 0%, #ffd700 35%, #d4af37 60%, #8a6a12 100%);
+  --fl-blue-bg: #0b1338;
+  --fl-blue-card: linear-gradient(180deg, #162456 0%, #0d1538 100%);
+  --fl-purple-card: linear-gradient(180deg, #2b0442 0%, #150122 100%);
+  --fl-red-card: linear-gradient(180deg, #580313 0%, #300109 100%);
+}
+
+.fivelions-screen {
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--fl-blue-bg);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  font-family: 'Outfit', 'Segoe UI', Arial, sans-serif;
+  user-select: none;
+}
+
+/* =====================================================
+   ROYAL BLUE CHINESE CLOUD BACKGROUND
+   ===================================================== */
+.fivelions-bg {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image: radial-gradient(circle at 50% 40%, #172c72 0%, #0c1847 60%, #050b24 100%);
+  z-index: 0;
+}
+.fivelions-bg::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image: 
+    radial-gradient(circle at 20% 30%, rgba(0, 184, 212, 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(212, 175, 55, 0.15) 0%, transparent 40%);
+  pointer-events: none;
+}
+
+/* =====================================================
+   TOP LEFT CORNER (Profile, Balance, Plus)
+   ===================================================== */
+.fivelions-top-left {
+  position: absolute;
+  top: 1.2vh; left: 1.2vw;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 0.6vw;
+}
+
+.fivelions-avatar {
+  width: 6.5vh; height: 6.5vh;
+  border: 0.28vh solid #ffd700;
+  border-radius: 50%;
+  box-shadow: 0 0.4vh 1vh rgba(0,0,0,0.7);
+  background: radial-gradient(circle, #ffe082, #b8860b);
+  cursor: pointer;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.fivelions-avatar img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+
+.fivelions-signal {
+  display: flex;
+  gap: 0.2vw;
+  align-items: flex-end;
+  height: 2.2vh;
+}
+.sig-bar {
+  width: 0.35vw;
+  background: #00e676;
+  border-radius: 0.15vw;
+}
+.sig-bar.b1 { height: 35%; }
+.sig-bar.b2 { height: 70%; }
+.sig-bar.b3 { height: 100%; }
+
+.fivelions-coins-display {
+  background: linear-gradient(180deg, rgba(15, 23, 60, 0.95) 0%, rgba(5, 10, 30, 0.95) 100%);
+  color: #ffd700;
+  font-size: 2.4vh;
+  font-weight: 900;
+  padding: 0.5vh 1.6vw 0.5vh 3.2vw;
+  border-radius: 3vh;
+  border: 0.2vh solid #d4af37;
+  box-shadow: 0 0.4vh 1vh rgba(0,0,0,0.6);
+  position: relative;
+}
+.fivelions-coins-display::before {
+  content: '🪙';
+  position: absolute;
+  left: 0.6vw; top: 50%;
+  transform: translateY(-50%);
+  font-size: 2.4vh;
+}
+
+.fivelions-plus-btn {
+  width: 4.6vh; height: 4.6vh;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff59d 0%, #fbc02d 50%, #f57f17 100%);
+  border: 0.22vh solid #ffffff;
+  color: #5d4037;
+  font-size: 3vh;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* =====================================================
+   TOP CENTER: ORNATE ROOF PLAQUE "5 LIONS MEGAWAYS™"
+   ===================================================== */
+.fivelions-header-plaque-container {
+  position: absolute;
+  top: 0.5vh;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  gap: 1.5vw;
+}
+
+/* Left Megaways Counter Box */
+.fivelions-megaways-box {
+  background: linear-gradient(180deg, #4a040b 0%, #1a0003 100%);
+  border: 0.22vh solid #ffd700;
+  border-radius: 0.8vh;
+  padding: 0.4vh 1.2vw;
+  text-align: center;
+  box-shadow: 0 0.4vh 1vh rgba(0,0,0,0.7);
+}
+.mw-label {
+  font-size: 1.2vh;
+  font-weight: 900;
+  color: #ffd700;
+  letter-spacing: 0.05vw;
+}
+.mw-val {
+  font-size: 2.2vh;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+/* Center Title Plaque */
+.fivelions-title-plaque {
+  background: linear-gradient(180deg, #b71c1c 0%, #5d000a 60%, #2b0004 100%);
+  border: 0.35vh solid #ffd700;
+  border-radius: 2vh;
+  padding: 0.6vh 3vw;
+  display: flex;
+  align-items: center;
+  gap: 1vw;
+  box-shadow: 0 0.8vh 2vh rgba(0,0,0,0.85), 0 0 1.5vh rgba(255, 215, 0, 0.4);
+}
+.lion-statue {
+  font-size: 4vh;
+  filter: drop-shadow(0 0.2vh 0.4vh rgba(0,0,0,0.8));
+}
+.title-text-wrap {
+  text-align: center;
+}
+.main-title {
+  font-family: 'Cinzel', serif;
+  font-size: 4.5vh;
+  font-weight: 900;
+  color: #ffd700;
+  margin: 0;
+  line-height: 1;
+  text-shadow: 0 0.3vh 0.6vh rgba(0,0,0,0.9), 0 0 1.5vh #ff8f00;
+  letter-spacing: 0.1vw;
+}
+.sub-title {
+  font-size: 1.6vh;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 0.2vw;
+  margin-top: -0.2vh;
+}
+
+/* Right Sun Orb */
+.fivelions-sun-orb {
+  width: 6.5vh; height: 6.5vh;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff176 0%, #fbc02d 40%, #e65100 100%);
+  border: 0.25vh solid #ffd700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3.5vh;
+  box-shadow: 0 0 2vh rgba(255, 215, 0, 0.8);
+  animation: sunOrbPulse 3s ease-in-out infinite alternate;
+}
+@keyframes sunOrbPulse {
+  0% { transform: scale(1); filter: drop-shadow(0 0 1vh #ffd700); }
+  100% { transform: scale(1.08); filter: drop-shadow(0 0 2.5vh #ff8f00); }
+}
+
+/* =====================================================
+   TOP RIGHT CORNER (Ganti room, Menu)
+   ===================================================== */
+.fivelions-top-right {
+  position: absolute;
+  top: 1.2vh; right: 1.2vw;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 0.6vw;
+}
+.fivelions-tr-btn {
+  background: radial-gradient(circle at 30% 30%, #ffd54f 0%, #ffb300 50%, #ff8f00 100%);
+  border: 0.22vh solid #ffe082;
+  border-radius: 50%;
+  width: 6.4vh; height: 6.4vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3e2723;
+  cursor: pointer;
+  box-shadow: 0 0.4vh 0.8vh rgba(0,0,0,0.6);
+  padding: 0;
+}
+.fivelions-tr-btn.room-btn {
+  width: auto;
+  border-radius: 2vh;
+  padding: 0.4vh 1vw;
+  gap: 0.4vw;
+}
+
+/* =====================================================
+   LEFT SIDE FLOATING CONTROL BADGES
+   ===================================================== */
+.fivelions-side-left {
+  position: absolute;
+  left: 1vw; top: 16vh;
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  gap: 2.2vh;
+  width: 8vw;
+  max-width: 120px;
+}
+.fivelions-side-badge {
+  background: linear-gradient(180deg, #4a040b 0%, #1a0003 100%);
+  border: 0.22vh solid #ffd700;
+  border-radius: 1.2vh;
+  padding: 0.8vh 0.6vw;
+  text-align: center;
+  box-shadow: 0 0.5vh 1vh rgba(0,0,0,0.7);
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.fivelions-side-badge:hover {
+  transform: scale(1.05);
+}
+
+.buy-spin-card .badge-hdr {
+  font-size: 1.3vh;
+  font-weight: 900;
+  color: #ffd700;
+  line-height: 1.15;
+}
+.buy-spin-card .badge-val {
+  font-size: 2.6vh;
+  font-weight: 900;
+  color: #ffffff;
+  margin-top: 0.4vh;
+}
+
+.double-chance-card .badge-hdr {
+  font-size: 1.2vh;
+  font-weight: 900;
+  color: #ffd700;
+  line-height: 1.15;
+}
+.double-chance-card .badge-sub {
+  font-size: 1vh;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0.3vh 0;
+}
+.ante-switch {
+  background: #333;
+  border-radius: 1.5vh;
+  padding: 0.2vh 0.4vw;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.ante-switch.on { background: #43a047; }
+.switch-knob {
+  width: 1.6vh; height: 1.6vh;
+  border-radius: 50%;
+  background: white;
+}
+.switch-txt {
+  font-size: 1.2vh;
+  font-weight: 900;
+  color: white;
+}
+
+.ransel-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.ransel-icon { font-size: 3vh; }
+.ransel-badge small { font-size: 1.1vh; font-weight: 900; color: #ffd700; }
+
+/* =====================================================
+   SLOT MACHINE FRAME & REELS (6 COLUMNS)
+   ===================================================== */
+.fivelions-machine-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 10;
+  margin-top: 6vh;
+  margin-bottom: 11vh;
+}
+
+.fivelions-machine-frame {
+  position: relative;
+  background: linear-gradient(180deg, #d4af37 0%, #aa8418 35%, #5d4037 80%, #ffd700 100%);
+  padding: 0.8vh 0.6vw;
+  border-radius: 1.8vh;
+  border: 0.35vh solid #ffe082;
+  box-shadow: 0 1vh 3vh rgba(0,0,0,0.85);
+}
+
+.fivelions-pillar-left,
+.fivelions-pillar-right {
+  position: absolute;
+  top: -1.2vh;
+  bottom: -1.2vh;
+  width: 1.4vw;
+  background: linear-gradient(90deg, #d4af37 0%, #fff2a3 40%, #aa8418 70%, #5d4037 100%);
+  border: 0.22vh solid #ffe082;
+  box-shadow: 0 0.5vh 1vh rgba(0,0,0,0.7);
+  z-index: 20;
+  border-radius: 0.6vh;
+}
+.fivelions-pillar-left { left: -1.2vw; }
+.fivelions-pillar-right { right: -1.2vw; }
+
+.fivelions-grid {
+  display: flex;
+  background: #0d0118;
+  border: 0.25vh solid #d4af37;
+  border-radius: 1vh;
+  overflow: hidden;
+  height: 61.5vh;
+  max-height: 585px;
+}
+
+.fivelions-col {
+  display: flex;
+  flex-direction: column;
+  border-right: 0.18vh solid rgba(212, 175, 55, 0.45);
+  flex: 1;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+.fivelions-col:last-child { border-right: none; }
+
+.fivelions-reel-track {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  will-change: transform;
+  transform: translateY(0);
+}
+
+/* NO BLUR - Smooth continuous 1-grid downward scroll without elongating container */
+.fivelions-col.is-spinning {
+  filter: none !important;
+}
+
+.fivelions-col.is-spinning .fivelions-reel-track {
+  animation: reelGridScrollDown var(--spin-duration, 0.25s) linear infinite;
+}
+
+@keyframes reelGridScrollDown {
+  0% {
+    transform: translateY(-102.5vh);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+/* Realistic mechanical bounce on reel stop */
+.fivelions-col.is-stopped .fivelions-reel-track {
+  animation: reelLandBounce 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.25);
+}
+
+@keyframes reelLandBounce {
+  0% {
+    transform: translateY(-16px);
+  }
+  70% {
+    transform: translateY(3px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.fivelions-cell {
+  width: 10.2vw;
+  height: 20.5vh;
+  max-width: 165px;
+  max-height: 195px;
+  border-bottom: 0.18vh solid rgba(212, 175, 55, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 50%, #2b0442 0%, #160124 70%, #0d0017 100%);
+  box-sizing: border-box;
+  padding: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 1:1 Aspect Ratio Cell (Standard 1-Row) */
+.fivelions-cell.span-1 {
+  height: 20.5vh;
+  max-height: 195px;
+}
+
+/* 9:16 Tall Aspect Ratio Cell (2-Row Multi-Span) */
+.fivelions-cell.span-2 {
+  height: 41vh;
+  max-height: 390px;
+  background: radial-gradient(ellipse at 50% 50%, #3d055e 0%, #1f0130 65%, #0e0017 100%);
+  border: 0.22vh solid rgba(255, 215, 0, 0.6);
+  box-shadow: inset 0 0 1.5vh rgba(0, 0, 0, 0.8);
+}
+.fivelions-cell.span-2::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image: radial-gradient(circle at 50% 30%, rgba(255, 215, 0, 0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.fivelions-col .fivelions-cell:last-child { border-bottom: none; }
+
+.fivelions-cell.is-winning {
+  box-shadow: inset 0 0 1.5vh #ffd700, 0 0 2vh #ffab00;
+  border: 0.22vh solid #ffd700;
+  animation: flWinGlow 0.8s ease-in-out infinite alternate;
+}
+@keyframes flWinGlow {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.04); }
+}
+
+.fivelions-cell-inner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  padding: 2% 2%;
+  box-sizing: border-box;
+}
+
+
+
+/* ============================================================
+   BASE SYMBOL IMAGE - SHARED PROPERTIES
+   ============================================================ */
+.fivelions-sym-img {
+  display: block;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  transition: transform 0.15s ease-out;
+}
+
+/* ============================================================
+   FRAMED ANIMAL SYMBOLS (Phoenix, Dragon, Frog, Fish, Turtle)
+   — contain with small breathing room, NOT cover-cropped
+   ============================================================ */
+.fivelions-sym-img.sym-phoenix,
+.fivelions-sym-img.sym-dragon,
+.fivelions-sym-img.sym-frog,
+.fivelions-sym-img.sym-fish,
+.fivelions-sym-img.sym-turtle {
+  width: 95%;
+  height: 95%;
+  max-width: 95%;
+  max-height: 95%;
+  object-fit: contain; /* Preserve full bingkai frame, no over-cropping */
+  filter: drop-shadow(0 0.4vh 0.8vh rgba(0, 0, 0, 0.7));
+  margin: auto;
+}
+
+/* Animals in 2-row (9:16) span cells — slight zoom for presence */
+.fivelions-cell.span-2 .fivelions-sym-img.sym-phoenix,
+.fivelions-cell.span-2 .fivelions-sym-img.sym-dragon,
+.fivelions-cell.span-2 .fivelions-sym-img.sym-frog,
+.fivelions-cell.span-2 .fivelions-sym-img.sym-fish,
+.fivelions-cell.span-2 .fivelions-sym-img.sym-turtle {
+  width: 92%;
+  height: 92%;
+  max-width: 92%;
+  max-height: 92%;
+  object-fit: contain;
+  filter: drop-shadow(0 0.6vh 1.2vh rgba(0, 0, 0, 0.8));
+  margin: auto;
+}
+
+/* ============================================================
+   CARD ROYAL LETTERS + SPECIAL (A, K, Q, J, 10, Wild, Scatter)
+   — ALWAYS centered on decorative background, NEVER cropped
+   ============================================================ */
+.fivelions-sym-img.sym-a,
+.fivelions-sym-img.sym-k,
+.fivelions-sym-img.sym-q,
+.fivelions-sym-img.sym-j,
+.fivelions-sym-img.sym-10,
+.fivelions-sym-img.sym-wild,
+.fivelions-sym-img.sym-scatter {
+  width: 78%;
+  height: 78%;
+  max-width: 80%;
+  max-height: 80%;
+  object-fit: contain; /* NEVER gepeng, always proportional */
+  margin: auto;
+  filter: drop-shadow(0 0.5vh 1vh rgba(0, 0, 0, 0.95)) drop-shadow(0 0 0.8vh rgba(255, 215, 0, 0.35));
+}
+
+/* Letters in 2-row span cells (9:16) — slightly smaller ratio to breathe in tall bg */
+.fivelions-cell.span-2 .fivelions-sym-img.sym-a,
+.fivelions-cell.span-2 .fivelions-sym-img.sym-k,
+.fivelions-cell.span-2 .fivelions-sym-img.sym-q,
+.fivelions-cell.span-2 .fivelions-sym-img.sym-j,
+.fivelions-cell.span-2 .fivelions-sym-img.sym-10 {
+  width: 65%;
+  height: 60%;
+  max-width: 68%;
+  max-height: 65%;
+  object-fit: contain;
+  margin: auto;
+  filter: drop-shadow(0 0.8vh 1.5vh rgba(0, 0, 0, 0.95)) drop-shadow(0 0 1.2vh rgba(255, 215, 0, 0.5));
+}
+
+/* Decorative inner glow background for letter cells (1:1 and 9:16) */
+.fivelions-cell:has(.sym-a) .fivelions-cell-inner,
+.fivelions-cell:has(.sym-k) .fivelions-cell-inner,
+.fivelions-cell:has(.sym-q) .fivelions-cell-inner,
+.fivelions-cell:has(.sym-j) .fivelions-cell-inner,
+.fivelions-cell:has(.sym-10) .fivelions-cell-inner {
+  background: radial-gradient(ellipse at 50% 50%, rgba(255, 215, 0, 0.08) 0%, transparent 70%);
+}
+
+
+
+/* VIP UPGRADE TOAST POPUP */
+.fivelions-vip-toast {
+  position: absolute;
+  bottom: 11.5vh;
+  left: 20vw;
+  z-index: 50;
+  background: linear-gradient(180deg, #3e2723 0%, #1b0000 100%);
+  border: 0.22vh solid #ffd700;
+  border-radius: 1.2vh;
+  padding: 0.8vh 1.4vw;
+  display: flex;
+  align-items: center;
+  gap: 1vw;
+  box-shadow: 0 0.6vh 1.5vh rgba(0,0,0,0.8);
+}
+.fivelions-vip-toast span {
+  font-size: 1.6vh;
+  font-weight: 800;
+  color: #ffffff;
+}
+.vip-upgrade-btn {
+  background: linear-gradient(180deg, #43a047 0%, #1b5e20 100%);
+  border: 0.18vh solid #a5d6a7;
+  border-radius: 0.8vh;
+  color: white;
+  font-size: 1.6vh;
+  font-weight: 900;
+  padding: 0.4vh 1vw;
+  cursor: pointer;
+}
+
+/* FREE SPINS BANNER */
+.fivelions-freespin-banner {
+  position: absolute;
+  top: -4.5vh;
+  background: linear-gradient(180deg, #ffd700 0%, #ff8f00 100%);
+  color: #3e2723;
+  padding: 0.6vh 2.5vw;
+  border-radius: 2vh;
+  border: 0.22vh solid #ffffff;
+  font-weight: 900;
+  font-size: 2.2vh;
+  box-shadow: 0 0.5vh 1.5vh rgba(255, 215, 0, 0.6);
+}
+
+/* =====================================================
+   BOTTOM CONTROL BAR (HIGGS DOMINO AUTHENTIC)
+   ===================================================== */
+.fivelions-bottombar-wrapper {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 10.5vh;
+  z-index: 40;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(180deg, #ffe082 0%, #ffa000 20%, #d84315 75%, #4e1d00 100%);
+  border-top: 3px solid #fff3b0;
+  box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.7), inset 0 2px 4px rgba(255, 255, 255, 0.8);
+  padding: 0 0.5vw;
+  box-sizing: border-box;
+}
+
+.fbot-scroll-handle {
+  width: 3.5vw;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.scroll-svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+}
+
+.fivelions-bottombar {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1vw;
+  box-sizing: border-box;
+}
+
+.fbot-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5vw;
+}
+
+/* 3D METALLIC GOLD BUTTONS */
+.fbot-gold-btn {
+  width: 5.8vh;
+  height: 5.8vh;
+  border-radius: 1.2vh;
+  background: linear-gradient(180deg, #fff5be 0%, #ffca36 30%, #e08c00 70%, #994f00 100%);
+  border: 2.2px solid #5e2d00;
+  color: #4a1c00;
+  font-family: 'Times New Roman', Georgia, serif;
+  font-size: 2.8vh;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.5), inset 0 1.5px 1.5px rgba(255, 255, 255, 0.9);
+  transition: transform 0.1s ease, filter 0.1s ease;
+  user-select: none;
+}
+
+.fbot-gold-btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.fbot-gold-btn:active {
+  transform: translateY(1px);
+  filter: brightness(0.95);
+}
+
+.fbot-chat-icon {
+  width: 3vh;
+  height: 3vh;
+}
+
+.fbot-bet-display {
+  background: linear-gradient(180deg, #1f1005 0%, #0d0501 100%);
+  border: 2.2px solid #6b3a00;
+  border-radius: 1.2vh;
+  padding: 0.3vh 1.2vw;
+  min-width: 11vw;
+  text-align: center;
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.8), 0 2px 4px rgba(0,0,0,0.4);
+}
+
+.fbot-bet-label {
+  font-size: 1.2vh;
+  font-weight: 900;
+  color: #d4af37;
+  font-family: 'Times New Roman', Georgia, serif;
+  letter-spacing: 0.5px;
+}
+
+.fbot-bet-val {
+  font-size: 2.2vh;
+  font-weight: 900;
+  color: #c4b896;
+  font-family: system-ui, sans-serif;
+}
+
+.fbot-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 1vw;
+}
+
+.fbot-purple-pill {
+  background: linear-gradient(180deg, #c026d3 0%, #9333ea 40%, #6b21a8 80%, #4c1d95 100%);
+  border: 2.5px solid #facc15;
+  border-radius: 1.6vh;
+  padding: 0.8vh 3vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.7), inset 0 2px 3px rgba(255,255,255,0.6);
+  transform: skewX(-8deg);
+}
+
+.fbot-purple-text {
+  transform: skewX(8deg);
+  font-family: 'Times New Roman', Georgia, serif;
+  font-size: 2.8vh;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 1px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+}
+
+.fbot-win-glow {
+  color: #ffea00;
+  text-shadow: 0 0 10px #ffea00, 0 2px 4px #000;
+}
+
+.fbot-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5vw;
+}
+
+.fbot-maxbet-btn {
+  flex-direction: column;
+  line-height: 1;
+  font-size: 1.6vh;
+  padding: 0.2vh 0.8vw;
+  height: 5.8vh;
+  width: auto;
+}
+
+.fbot-speed-btn {
+  font-size: 2.2vh;
+  padding: 0 0.8vw;
+  height: 5.8vh;
+  width: auto;
+}
+
+/* SPIN & TUTUP BUTTONS */
+.fbot-spin-btn {
+  background: linear-gradient(180deg, #5EEAD4 0%, #14B8A6 30%, #0D9488 65%, #042F2E 100%);
+  border: 2.5px solid #042F2E;
+  border-radius: 1.4vh;
+  height: 6.8vh;
+  padding: 0 2.2vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.7), inset 0 2px 3px rgba(255,255,255,0.8);
+  transform: skewX(-6deg);
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.fbot-spin-btn:hover {
+  filter: brightness(1.15);
+  transform: skewX(-6deg) scale(1.03);
+}
+
+.fbot-spin-btn:active {
+  transform: skewX(-6deg) scale(0.97);
+}
+
+.fbot-spin-title {
+  transform: skewX(6deg);
+  font-family: 'Cinzel', 'Times New Roman', Georgia, serif;
+  font-size: 3.5vh;
+  font-weight: 900;
+  color: #ffe57f;
+  letter-spacing: 1.5px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9), 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.fbot-tutup-btn {
+  background: linear-gradient(180deg, #38bdf8 0%, #0284c7 35%, #0369a1 70%, #0c4a6e 100%);
+  border: 2.5px solid #082f49;
+  border-radius: 1.4vh;
+  height: 6.8vh;
+  padding: 0 2.2vw;
+  color: #ffe57f;
+  font-family: 'Cinzel', 'Times New Roman', Georgia, serif;
+  font-size: 3.2vh;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.7), inset 0 2px 3px rgba(255,255,255,0.8);
+  transform: skewX(-6deg);
+  text-shadow: 0 2px 4px rgba(0,0,0,0.9), 0 0 10px rgba(255, 215, 0, 0.5);
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.fbot-tutup-btn:hover {
+  filter: brightness(1.15);
+  transform: skewX(-6deg) scale(1.03);
+}
+
+/* =====================================================
+   5 LIONS FREE GAME PICKER MODAL
+   ===================================================== */
+.fivelions-picker-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.88);
+  z-index: 95;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.fivelions-picker-box {
+  background: linear-gradient(180deg, #300109 0%, #150004 100%);
+  border: 0.35vh solid #ffd700;
+  border-radius: 2.5vh;
+  padding: 3vh 3vw;
+  text-align: center;
+  max-width: 1000px;
+  width: 90vw;
+  box-shadow: 0 1vh 3vh rgba(0,0,0,0.9), 0 0 3vh rgba(255, 215, 0, 0.5);
+}
+.picker-title {
+  font-family: 'Cinzel', serif;
+  font-size: 3.8vh; font-weight: 900; color: #ffd700;
+  margin-bottom: 2.5vh;
+}
+.picker-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5vw;
+}
+.picker-card {
+  border-radius: 1.6vh;
+  padding: 2vh 1vw;
+  cursor: pointer;
+  border: 0.25vh solid #ffd700;
+  transition: transform 0.2s, filter 0.2s;
+  box-shadow: 0 0.6vh 1.2vh rgba(0,0,0,0.6);
+}
+.picker-card:hover { transform: scale(1.06); filter: brightness(1.2); }
+.picker-card.red { background: linear-gradient(180deg, #b71c1c, #4a0007); }
+.picker-card.blue { background: linear-gradient(180deg, #0d47a1, #001538); }
+.picker-card.green { background: linear-gradient(180deg, #1b5e20, #052408); }
+.picker-card.purple { background: linear-gradient(180deg, #4a148c, #1d003b); }
+.picker-card.gold { background: linear-gradient(180deg, #ff8f00, #543900); }
+.picker-card.mystery { background: linear-gradient(180deg, #37474f, #102027); }
+
+.card-lion-icon { font-size: 5vh; }
+.card-spins { font-size: 2.4vh; font-weight: 900; color: #ffffff; margin: 1vh 0 0.5vh 0; }
+.card-mults { font-size: 1.8vh; font-weight: 800; color: #ffd700; }
+
+/* AUTO SPIN & SPEED POPUP MENUS */
+.fivelions-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+}
+
+.fivelions-auto-menu, .fivelions-speed-menu {
+  position: absolute;
+  bottom: 7.5vh;
+  right: 0;
+  background: linear-gradient(180deg, #3b0764 0%, #1e0038 100%);
+  border: 2px solid #ffd700;
+  border-radius: 1.6vh;
+  padding: 1.2vh 1.2vw;
+  z-index: 100;
+  width: 18vw;
+  min-width: 200px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8), 0 0 12px rgba(255, 215, 0, 0.4);
+  animation: popupSlideUp 0.15s ease-out;
+}
+
+.fivelions-speed-menu {
+  right: 0;
+  background: linear-gradient(180deg, #4a2800 0%, #241000 100%);
+  border-color: #ffe082;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8), 0 0 12px rgba(255, 224, 130, 0.4);
+}
+
+@keyframes popupSlideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fivelions-menu-header {
+  font-family: 'Times New Roman', Georgia, serif;
+  font-size: 1.75vh;
+  font-weight: 900;
+  color: #ffd700;
+  text-align: center;
+  margin-bottom: 1vh;
+  letter-spacing: 0.5px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.fivelions-auto-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.8vh 0.6vw;
+}
+
+.fivelions-auto-grid button {
+  background: linear-gradient(180deg, #ab47bc 0%, #6a1b9a 100%);
+  border: 1.5px solid #e1bee7;
+  border-radius: 1vh;
+  color: #ffffff;
+  font-size: 2.2vh;
+  font-weight: 900;
+  padding: 0.8vh 0;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+  transition: transform 0.1s ease, filter 0.1s ease;
+}
+
+.fivelions-auto-grid button:hover {
+  filter: brightness(1.2);
+  transform: scale(1.05);
+}
+
+.fivelions-speed-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.8vh 0.6vw;
+}
+
+.fivelions-speed-grid button {
+  background: linear-gradient(180deg, #ffb300 0%, #ff8f00 50%, #e65100 100%);
+  border: 1.5px solid #fff8e1;
+  border-radius: 1vh;
+  color: #ffffff;
+  font-size: 2vh;
+  font-weight: 900;
+  padding: 0.6vh 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+  transition: transform 0.1s ease, filter 0.1s ease;
+}
+
+.fivelions-speed-grid button small {
+  font-size: 1.2vh;
+  font-weight: 600;
+  color: #fff8e1;
+}
+
+.fivelions-speed-grid button.active {
+  background: linear-gradient(180deg, #00e676 0%, #00a152 100%);
+  border-color: #b9f6ca;
+  box-shadow: 0 0 10px #00e676;
+}
+
+.fivelions-speed-grid button:hover {
+  filter: brightness(1.15);
+  transform: scale(1.05);
+}
+
+/* ============================================================
+   RULES MODAL (5 PAGES - PRAGMATIC 5 LIONS STYLE)
+   ============================================================ */
+.fivelions-rules-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 10.5vh;
+  background: radial-gradient(circle at 50% 50%, #0c154a 0%, #060b29 100%), rgba(3, 8, 43, 0.98);
+  z-index: 35;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5vh 3vw 1.2vh 3vw;
+  box-sizing: border-box;
+  color: #ffffff;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  user-select: none;
+}
+
+.fivelions-rules-content {
+  width: 100%;
+  max-width: 1300px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.fivelions-rules-title {
+  font-family: 'Cinzel', 'Times New Roman', serif;
+  font-size: 3.2vh;
+  font-weight: 900;
+  color: #ffe600;
+  text-shadow: 0 0 12px rgba(255, 230, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.9);
+  letter-spacing: 2px;
+  margin: 0 0 1vh 0;
+  text-align: center;
+}
+
+.fivelions-rules-body {
+  width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.fivelions-rules-page {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* PAGE 1: PAYTABLE */
+.rules-subheader {
+  font-size: 2.1vh;
+  color: #ffffff;
+  text-align: center;
+  font-weight: 500;
+  margin-bottom: 2.5vh;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.rules-syms-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1.5vw;
+  width: 100%;
+  max-width: 1100px;
+  margin-bottom: 2vh;
+}
+
+.rules-sym-card {
+  display: flex;
+  align-items: center;
+  gap: 0.8vw;
+}
+
+.sym-frame {
+  width: 7.5vh;
+  height: 7.5vh;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.8vh;
+  background: rgba(0, 0, 0, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+.sym-frame img {
+  width: 90%;
+  height: 90%;
+  object-fit: contain;
+}
+
+.sym-frame.border-red {
+  border: 2px solid #e53935;
+  box-shadow: 0 0 8px rgba(229, 57, 53, 0.5);
+}
+
+.sym-frame.border-green {
+  border: 2px solid #43a047;
+  box-shadow: 0 0 8px rgba(67, 160, 71, 0.5);
+}
+
+.sym-frame.border-blue {
+  border: 2px solid #1e88e5;
+  box-shadow: 0 0 8px rgba(30, 136, 229, 0.5);
+}
+
+.sym-frame.border-purple {
+  border: 2px solid #8e24aa;
+  box-shadow: 0 0 8px rgba(142, 36, 170, 0.5);
+}
+
+.sym-frame.border-gold {
+  border: 2px solid #ffd700;
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.6);
+}
+
+.sym-letter-img {
+  width: 7.5vh;
+  height: 7.5vh;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
+}
+
+.sym-payouts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2vh;
+  font-size: 1.75vh;
+  font-weight: 800;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+/* PAGE 2: WILD & CARA MENANG */
+.fivelions-rules-page.page-2 {
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+  padding: 0 4vw;
+}
+
+.p2-left-col, .p2-right-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  flex: 1;
+}
+
+.wild-box {
+  width: 14vh;
+  height: 14vh;
+}
+
+.rules-wild-img {
+  width: 90%;
+  height: 90%;
+  object-fit: contain;
+}
+
+.p2-desc {
+  font-size: 2vh;
+  color: #ffffff;
+  font-weight: 600;
+  line-height: 1.45;
+  margin-top: 2vh;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+.p2-right-title {
+  font-size: 2.5vh;
+  color: #ffffff;
+  font-weight: 700;
+  margin-bottom: 2vh;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+.p2-diagrams {
+  display: flex;
+  gap: 3vw;
+  align-items: center;
+  margin-bottom: 2vh;
+}
+
+.p2-diag-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6vw;
+}
+
+.grid-diagram {
+  display: flex;
+  gap: 2px;
+  background: #ffffff;
+  padding: 3px;
+  border-radius: 4px;
+}
+
+.diag-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.diag-col.highlight-red {
+  background: #d32f2f;
+  padding: 0 1px;
+  border-radius: 2px;
+}
+
+.diag-cell {
+  width: 2vh;
+  height: 2vh;
+  border: 1px solid #ccc;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.diag-dot {
+  width: 1.1vh;
+  height: 1.1vh;
+  background: #000000;
+  border-radius: 50%;
+}
+
+.diag-icon {
+  font-size: 3.5vh;
+  font-weight: 900;
+}
+
+.diag-icon.check {
+  color: #4caf50;
+}
+
+.diag-icon.cross {
+  color: #f44336;
+}
+
+/* PAGE 3: TUMBLE, WILD MULTIPLIER, FREE SPINS */
+.gold-sec-title {
+  font-size: 2.6vh;
+  color: #ffd700;
+  font-weight: 800;
+  text-align: center;
+  margin: 1vh 0 0.6vh 0;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+  letter-spacing: 1px;
+}
+
+.p3-text {
+  font-size: 1.85vh;
+  color: #ffffff;
+  text-align: center;
+  max-width: 850px;
+  margin: 0 auto 1.5vh auto;
+  line-height: 1.4;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+.p3-bonus-split {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4vw;
+  margin-top: 1.2vh;
+}
+
+.p3-bonus-left {
+  font-size: 1.85vh;
+  color: #ffffff;
+  font-weight: 600;
+  line-height: 1.6;
+  text-align: left;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+.p3-bonus-right {
+  display: flex;
+  align-items: center;
+  gap: 1.2vw;
+}
+
+.p3-scatter-img {
+  width: 9.5vh;
+  height: 9.5vh;
+  object-fit: contain;
+}
+
+.p3-bonus-txt {
+  font-size: 1.8vh;
+  color: #ffffff;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: left;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+/* PAGE 4: 7 LION OPTIONS */
+.p4-top-hdr {
+  font-size: 2.1vh;
+  color: #ffffff;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 2vh;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+.p4-lion-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.2vw 3vw;
+  max-width: 1050px;
+  margin: 0 auto;
+}
+
+.p4-lion-item {
+  display: flex;
+  align-items: center;
+  gap: 0.8vw;
+  width: 28%;
+}
+
+.p4-lion-item.mystery-item {
+  width: 55%;
+  justify-content: center;
+  margin-top: 0.6vh;
+}
+
+.lion-statue-box {
+  width: 7.5vh;
+  height: 7.5vh;
+  border-radius: 0.8vh;
+  border: 2px solid #ffd700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+  flex-shrink: 0;
+}
+
+.lion-filter {
+  width: 85%;
+  height: 85%;
+  object-fit: contain;
+}
+
+.silver-f { filter: grayscale(1) brightness(1.3); }
+.red-f { filter: hue-rotate(-30deg) saturate(2); }
+.bronze-f { filter: sepia(1) saturate(3) hue-rotate(5deg); }
+.blue-f { filter: hue-rotate(180deg) saturate(2); }
+.gold-f { filter: brightness(1.2) saturate(1.5); }
+.green-f { filter: hue-rotate(90deg) saturate(2); }
+.purple-f { filter: hue-rotate(250deg) saturate(2); }
+
+.lion-txt {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2vh;
+}
+
+.l-spins {
+  font-size: 1.85vh;
+  color: #ffffff;
+  font-weight: 800;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+.l-mults {
+  font-size: 1.6vh;
+  color: #ffffff;
+  font-weight: 700;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+.p4-bottom-desc {
+  font-size: 1.75vh;
+  color: #ffffff;
+  font-weight: 500;
+  text-align: center;
+  margin-top: 2vh;
+  max-width: 950px;
+  line-height: 1.4;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+/* PAGE 5: ANTE BET & BUY FREE SPINS */
+.p5-sublist {
+  font-size: 1.8vh;
+  color: #ffffff;
+  text-align: center;
+  max-width: 850px;
+  margin: 1vh auto 1.5vh auto;
+  line-height: 1.5;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+.p5-maxwin {
+  margin-top: 1.5vh;
+}
+
+/* BOTTOM NAVIGATION BAR */
+.fivelions-rules-bottomnav {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5vw;
+  width: 100%;
+  padding-top: 1.2vh;
+}
+
+.rules-arrow-btn {
+  width: 5.5vh;
+  height: 5.5vh;
+  border-radius: 50%;
+  background: transparent;
+  border: 2px solid #ffd700;
+  color: #ffd700;
+  font-size: 3.5vh;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.rules-arrow-btn:hover {
+  background: rgba(255, 215, 0, 0.2);
+  transform: scale(1.1);
+}
+
+.rules-arrow-btn:active {
+  transform: scale(0.95);
+}
+
+.rules-kembali-btn {
+  background: linear-gradient(180deg, #ffe57f 0%, #ffb300 50%, #ff8f00 100%);
+  border: 2px solid #fff8e1;
+  border-radius: 3vh;
+  padding: 1vh 3.5vw;
+  color: #ffffff;
+  font-size: 2.2vh;
+  font-weight: 900;
+  text-shadow: 0 1px 3px #000000;
+  letter-spacing: 1px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6), inset 0 2px 2px rgba(255, 255, 255, 0.7);
+  transition: transform 0.15s ease;
+}
+
+.rules-kembali-btn:hover {
+  transform: scale(1.05);
+}
+
+.rules-kembali-btn:active {
+  transform: scale(0.97);
+}
+
+.rules-pagination-dots {
+  position: absolute;
+  bottom: -2.2vh;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.8vw;
+  align-items: center;
+}
+
+.rules-pagination-dots .dot {
+  width: 1.2vh;
+  height: 1.2vh;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.rules-pagination-dots .dot.active {
+  background: #ffd700;
+  border-color: #ffe082;
+  box-shadow: 0 0 10px #ffd700;
+  transform: scale(1.3);
+}
+

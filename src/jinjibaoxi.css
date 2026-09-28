@@ -30,44 +30,63 @@ button:hover, .jinji-side-card:hover, .jinji-avatar:hover, .jinji-plus-btn:hover
   filter: brightness(1.15);
 }
 
-/* Background: Blue Sky Chinese Temple */
+.jinji-bg-svg {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+
+/* Background: Blue Sky Chinese Temple - Vivid like reference */
 .jinji-bg-sky {
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
   background: 
     linear-gradient(180deg, 
-      #2d6bb5 0%,
-      #3d82d0 25%,
-      #5498e0 45%,
-      #4a7fc2 65%,
-      #3060a0 80%,
-      #1a4070 100%
+      #1a4fa8 0%,
+      #2060c0 15%,
+      #3878d8 35%,
+      #4a8ae0 52%,
+      #3870c0 65%,
+      #244c8a 80%,
+      #0e2855 100%
     );
   z-index: 0;
+  overflow: hidden;
 }
-/* Decorative lanterns / temple silhouette */
+
+/* Lantern glow effects */
 .jinji-bg-sky::before {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
   background: 
-    radial-gradient(ellipse at 15% 95%, rgba(255, 140, 0, 0.35) 0%, transparent 35%),
-    radial-gradient(ellipse at 85% 95%, rgba(255, 140, 0, 0.35) 0%, transparent 35%),
-    radial-gradient(circle at 50% 35%, rgba(100, 180, 255, 0.18) 0%, transparent 55%);
+    radial-gradient(ellipse at 8% 85%, rgba(255, 100, 0, 0.45) 0%, rgba(255, 80, 0, 0.0) 30%),
+    radial-gradient(ellipse at 92% 85%, rgba(255, 100, 0, 0.45) 0%, rgba(255, 80, 0, 0.0) 30%),
+    radial-gradient(ellipse at 22% 80%, rgba(255, 120, 0, 0.28) 0%, transparent 22%),
+    radial-gradient(ellipse at 78% 80%, rgba(255, 120, 0, 0.28) 0%, transparent 22%),
+    radial-gradient(circle at 50% 30%, rgba(120, 200, 255, 0.12) 0%, transparent 50%);
   pointer-events: none;
 }
-/* Temple building silhouette at bottom */
+
+/* Temple/pagoda silhouette at bottom */
 .jinji-bg-sky::after {
   content: '';
   position: absolute;
   bottom: 0; left: 0; right: 0;
-  height: 45%;
+  height: 48%;
   background:
-    radial-gradient(ellipse at 10% 100%, rgba(255, 120, 0, 0.2) 0%, transparent 40%),
-    radial-gradient(ellipse at 90% 100%, rgba(255, 120, 0, 0.2) 0%, transparent 40%),
-    linear-gradient(0deg, rgba(10, 30, 70, 0.5) 0%, transparent 100%);
+    /* Dark bridge/ground base */
+    linear-gradient(0deg, rgba(8, 20, 55, 0.9) 0%, rgba(12, 28, 70, 0.6) 18%, transparent 50%),
+    /* Left pagoda glow */
+    radial-gradient(ellipse at 6% 100%, rgba(180, 80, 0, 0.3) 0%, transparent 35%),
+    /* Right pagoda glow */
+    radial-gradient(ellipse at 94% 100%, rgba(180, 80, 0, 0.3) 0%, transparent 35%),
+    /* Bridge/pond reflection */
+    radial-gradient(ellipse at 50% 105%, rgba(50, 120, 200, 0.25) 0%, transparent 45%);
   pointer-events: none;
 }
+
 
 /* TOP LEFT (Profile & Coins) */
 .jinji-top-left {
@@ -160,39 +179,98 @@ button:hover, .jinji-side-card:hover, .jinji-avatar:hover, .jinji-plus-btn:hover
 /* TOP JACKPOT BANNER & FU POT */
 .jinji-jackpot-header {
   position: absolute;
-  top: 1.2vh; left: 50%; transform: translateX(-50%);
-  width: 62vw; max-width: 920px; height: 11.5vh;
+  top: 0.8vh; left: 50%; transform: translateX(-50%);
+  width: 70vw; max-width: 1000px;
   z-index: 25;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Outer decorative gold-bordered banner */
+.jp-banner-outer {
+  width: 100%;
+  background: linear-gradient(180deg, 
+    rgba(45, 12, 0, 0.93) 0%, 
+    rgba(28, 6, 0, 0.95) 100%
+  );
+  border: 0.32vh solid #d4a820;
+  border-radius: 0.9vh;
+  box-shadow: 
+    0 0 0 0.18vh #8c5500,
+    0 0 0 0.38vh #d4a820,
+    0 0 0 0.58vh #8c5500,
+    0 1vh 3vh rgba(0,0,0,0.8),
+    inset 0 0 0.8vh rgba(255, 200, 50, 0.1);
+  padding: 0.5vh 0.8vw;
   display: flex;
   flex-direction: row;
   gap: 0.6vw;
   align-items: stretch;
+  position: relative;
+}
+
+/* Triple-border decorative side lines */
+.jp-banner-outer::before,
+.jp-banner-outer::after {
+  content: '';
+  position: absolute;
+  top: 0.25vh; bottom: 0.25vh;
+  width: 0.14vh;
+  background: #d4a820;
+}
+.jp-banner-outer::before { left: 5.5vw; }
+.jp-banner-outer::after { right: 5.5vw; }
+
+.jp-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45vh;
+  flex: 2;
 }
 
 .jackpot-box {
-  border-radius: 0.5vh;
-  padding: 0.4vh 0.8vw;
+  border-radius: 0.45vh;
+  padding: 0.45vh 1.0vw;
   display: flex; flex-direction: row; align-items: center; justify-content: space-between;
-  box-shadow: 0 0.3vh 0.6vh rgba(0,0,0,0.5);
-  border: 0.22vh solid rgba(255,220,80,0.5);
+  box-shadow: 0 0.2vh 0.5vh rgba(0,0,0,0.6), inset 0 0 0.5vh rgba(0,0,0,0.4);
+  border: 0.18vh solid rgba(255,220,80,0.4);
   flex: 1;
 }
 /* Grand = red bg, Minor = deep red/purple, Major = blue, Mini = green-teal */
-.jackpot-box.grand { background: linear-gradient(90deg, #b71c1c 0%, #7f0000 100%); border-color: #ff7070; }
-.jackpot-box.minor { background: linear-gradient(90deg, #880e4f 0%, #4a0030 100%); border-color: #e91e8c; }
-.jackpot-box.major { background: linear-gradient(90deg, #0d47a1 0%, #062c66 100%); border-color: #5cb8ff; }
-.jackpot-box.mini  { background: linear-gradient(90deg, #1b7b3e 0%, #0c4020 100%); border-color: #70d070; }
+.jackpot-box.grand { 
+  background: linear-gradient(90deg, #cc2020 0%, #8a0000 100%); 
+  border-color: #ff7070; 
+  border-left: 0.4vh solid #ff5050;
+}
+.jackpot-box.minor { 
+  background: linear-gradient(90deg, #991060 0%, #5a0038 100%); 
+  border-color: #e91e8c;
+  border-left: 0.4vh solid #e91e8c;
+}
+.jackpot-box.major { 
+  background: linear-gradient(90deg, #1555bb 0%, #083278 100%); 
+  border-color: #5cb8ff;
+  border-left: 0.4vh solid #5cb8ff;
+}
+.jackpot-box.mini  { 
+  background: linear-gradient(90deg, #1e8c48 0%, #0c4820 100%); 
+  border-color: #70d070;
+  border-left: 0.4vh solid #70d070;
+}
 
 .jp-label { 
-  font-size: 1.3vh; font-weight: 900; color: #ffe082; letter-spacing: 0.04vw;
+  font-size: 1.4vh; font-weight: 900; color: #ffe082; letter-spacing: 0.06vw;
   text-shadow: 0 0.1vh 0.3vh #000;
   white-space: nowrap;
 }
 .jp-val { 
-  font-size: 1.75vh; font-weight: 900; color: #ffffff; 
-  text-shadow: 0 0.15vh 0.3vh #000;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.85vh; font-weight: 900; color: #ffffff; 
+  text-shadow: 0 0.15vh 0.3vh #000, 0 0 0.6vh rgba(255,255,255,0.2);
   white-space: nowrap;
   text-align: right;
+  letter-spacing: 0.02vw;
 }
 
 /* Center Fu Pot */
@@ -211,20 +289,33 @@ button:hover, .jinji-side-card:hover, .jinji-avatar:hover, .jinji-plus-btn:hover
 /* SIDE BUTTONS (LEFT) */
 .jinji-side-left {
   position: absolute;
-  top: 22vh; left: 1.2vw;
+  top: 22vh; left: 1.0vw;
   z-index: 30;
-  display: flex; flex-direction: column; gap: 1.2vh;
+  display: flex; flex-direction: column; gap: 1.0vh;
 }
 .jinji-side-card {
-  background: linear-gradient(180deg, #7b1e1e 0%, #4a0808 100%);
-  border: 0.2vh solid #d4a820;
-  border-radius: 0.8vh;
-  padding: 0.7vh 0.6vw;
+  background: linear-gradient(180deg, #8a2020 0%, #550a0a 55%, #3a0505 100%);
+  border: 0.22vh solid #d4a820;
+  border-radius: 0.9vh;
+  padding: 0.8vh 0.7vw;
   width: 6.5vw;
-  max-width: 80px;
+  max-width: 82px;
   display: flex; flex-direction: column; align-items: center;
-  box-shadow: 0 0.4vh 0.8vh rgba(0,0,0,0.7), inset 0 0 0.5vh rgba(0,0,0,0.5);
+  box-shadow: 
+    0 0.5vh 1vh rgba(0,0,0,0.75),
+    inset 0 0 0.6vh rgba(0,0,0,0.5),
+    inset 0 0.15vh 0.3vh rgba(255,200,80,0.12);
   cursor: pointer;
+  position: relative;
+}
+/* Gold top accent on side card */
+.jinji-side-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%;
+  height: 0.2vh;
+  background: linear-gradient(90deg, transparent, #d4a820, transparent);
+  border-radius: 0.2vh;
 }
 .side-title { color: #ffe082; font-size: 1.05vh; font-weight: 900; text-align: center; line-height: 1.15; }
 .side-val { color: #ffffff; font-size: 1.55vh; font-weight: 900; margin-top: 0.3vh; }
@@ -253,26 +344,41 @@ button:hover, .jinji-side-card:hover, .jinji-avatar:hover, .jinji-plus-btn:hover
 
 /* Authentic Chinese ornate frame */
 .jinji-machine {
-  background: linear-gradient(180deg, #d4900a 0%, #b8740a 15%, #8c4a00 85%, #d4900a 100%);
-  padding: 0.8vh 0.8vw;
-  border-radius: 1.5vh;
-  border: 0.45vh solid #f0c040;
+  background: linear-gradient(180deg, #c87800 0%, #a05800 12%, #7c3800 85%, #b06800 100%);
+  padding: 0.7vh 0.7vw;
+  border-radius: 1.2vh;
+  border: 0.5vh solid #f0c040;
   box-shadow: 
-    0 0 0 0.35vh #8c5500,
-    0 1.5vh 3.5vh rgba(0,0,0,0.9),
-    inset 0 0 1.5vh rgba(255,220,80,0.3);
-  width: 76vw; max-width: 1120px;
+    0 0 0 0.28vh #8c5500,
+    0 0 0 0.55vh #f0c040,
+    0 0 0 0.82vh #8c5500,
+    0 1.8vh 4vh rgba(0,0,0,0.95),
+    inset 0 0 2vh rgba(255,200,50,0.25);
+  width: 78vw; max-width: 1140px;
   height: 58vh;
   display: flex; position: relative; align-items: center;
 }
 
-/* Machine inner red glow */
+/* Inner decorative inset line */
 .jinji-machine::before {
   content: '';
   position: absolute;
-  inset: 0.6vh 0.6vw;
-  border: 0.2vh solid rgba(255, 200, 50, 0.3);
-  border-radius: 1.2vh;
+  inset: 0.5vh 0.5vw;
+  border: 0.18vh solid rgba(255, 210, 60, 0.5);
+  border-radius: 1vh;
+  pointer-events: none;
+  box-shadow: inset 0 0 2vh rgba(255, 150, 0, 0.08);
+}
+
+/* Corner ornamental diamond markers */
+.jinji-machine::after {
+  content: '✦ ✦';
+  position: absolute;
+  top: 0.4vh;
+  left: 50%; transform: translateX(-50%);
+  color: rgba(255, 215, 0, 0.6);
+  font-size: 1.8vh;
+  letter-spacing: 0.8vw;
   pointer-events: none;
 }
 
@@ -332,12 +438,14 @@ button:hover, .jinji-side-card:hover, .jinji-avatar:hover, .jinji-plus-btn:hover
 /* GRID FRAME */
 .jinji-grid {
   flex: 1; height: 100%;
-  background: #780010;
-  border: 0.3vh solid #c85000;
-  border-radius: 0.6vh;
+  background: #7a0010;
+  border: 0.28vh solid #c07000;
+  border-radius: 0.5vh;
   display: flex; flex-direction: row;
   overflow: hidden; position: relative;
-  box-shadow: inset 0 0 2vh rgba(0,0,0,0.6);
+  box-shadow: 
+    inset 0 0 2.5vh rgba(0,0,0,0.7),
+    inset 0 0 1.2vh rgba(200, 50, 0, 0.3);
 }
 
 .jinji-col {
@@ -350,8 +458,8 @@ button:hover, .jinji-side-card:hover, .jinji-avatar:hover, .jinji-plus-btn:hover
 .jinji-cell {
   flex: 1; display: flex; justify-content: center; align-items: center;
   position: relative;
-  background: linear-gradient(180deg, #8a0010 0%, #600008 50%, #8a0010 100%);
-  border-bottom: 0.18vh solid rgba(200, 80, 0, 0.4);
+  background: linear-gradient(180deg, #900012 0%, #6a0008 48%, #900012 100%);
+  border-bottom: 0.18vh solid rgba(180, 60, 0, 0.35);
   overflow: hidden;
 }
 .jinji-cell:last-child { border-bottom: none; }
@@ -459,74 +567,373 @@ button:hover, .jinji-side-card:hover, .jinji-avatar:hover, .jinji-plus-btn:hover
   white-space: nowrap;
 }
 
-/* BOTTOM BAR WRAPPER & CONTROLS */
+/* ========================================================
+   JIN JI BAO XI — BOTTOM CONTROL BAR (PIXEL-PERFECT REPLICA)
+   ======================================================== */
+
 .jinji-bottombar-wrapper {
-  position: relative; z-index: 20;
-  height: 13vh; width: 100%;
+  position: relative;
+  z-index: 20;
+  height: 12.5vh;
+  width: 100%;
 }
+
 .jinji-bottombar-bg {
-  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-  background: linear-gradient(180deg, #e8a000 0%, #c47800 40%, #a55500 80%, #8c3c00 100%);
-  border-top: 0.35vh solid #f0d060;
-  border-radius: 3.5vh 3.5vh 0 0;
-  box-shadow: 0 -0.8vh 2vh rgba(0,0,0,0.5), inset 0 0.8vh 0.8vh rgba(255,255,255,0.25);
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(180deg, 
+    #fff9c4 0%, 
+    #fcd34d 8%, 
+    #fbbf24 20%, 
+    #f59e0b 45%, 
+    #d97706 75%, 
+    #b45309 92%, 
+    #78350f 100%
+  );
+  border-top: 0.45vh solid #ffffff;
+  border-radius: 2.5vh 2.5vh 0 0;
+  box-shadow: 
+    0 -0.8vh 2.2vh rgba(0, 0, 0, 0.7),
+    inset 0 1vh 0.8vh rgba(255, 255, 255, 0.8),
+    inset 0 -0.6vh 1vh rgba(0, 0, 0, 0.3);
 }
+
 .jinji-bottombar {
-  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-  display: flex; padding: 0 2.5vw; align-items: center;
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  display: flex;
+  padding: 0 1.5vw;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .jbot-left, .jbot-center, .jbot-right {
-  display: flex; align-items: center; gap: 0.8vw;
-}
-.jbot-left { flex: 1; justify-content: flex-start; }
-.jbot-center { flex: 1; justify-content: center; }
-.jbot-right { flex: 1; justify-content: flex-end; }
-
-.jbot-icon-btn, .jbot-bet-btn {
-  width: 5.2vh; height: 5.2vh; border-radius: 1vh;
-  border: 0.2vh solid #fff59d;
-  background: linear-gradient(180deg, #3a0060 0%, #1a0030 100%);
-  color: #ffe082; font-size: 2.4vh; font-weight: 900; cursor: pointer;
-  box-shadow: 0 0.4vh 0.8vh rgba(0,0,0,0.5);
-  display: flex; align-items: center; justify-content: center;
+  display: flex;
+  align-items: center;
 }
 
-.jbot-bet-display {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  background: linear-gradient(180deg, #1a0000, #0a0000);
-  border: 0.2vh solid #fff59d; border-radius: 1vh;
-  padding: 0.4vh 1.6vw; color: #ffffff; box-shadow: inset 0 0 0.8vh #000;
-  min-width: 10vw;
-}
-.jbot-bet-label { font-size: 1.05vh; font-weight: 800; color: #ffe082; }
-.jbot-bet-val { font-size: 2.1vh; font-weight: 900; }
-.jbot-line-bet { font-size: 0.85vh; color: #ffca28; opacity: 0.8; }
-
-.jbot-info {
-  background: linear-gradient(180deg, #6a1a9a 0%, #3d0f5e 100%);
-  border: 0.3vh solid #fff59d; border-radius: 4vh;
-  padding: 1.2vh 3vw; color: #ffffff; font-size: 2vh; font-weight: 800;
-  box-shadow: 0 0.5vh 1vh rgba(0,0,0,0.5); text-align: center; min-width: 22vw;
+.jbot-left {
+  display: flex;
+  align-items: center;
+  gap: 0.55vw;
 }
 
-.jbot-maxbet-btn, .jbot-speed-btn {
-  background: linear-gradient(180deg, #fff59d 0%, #e0a800 100%);
-  border: 0.2vh solid #a07000; border-radius: 1vh;
-  height: 6.8vh; padding: 0 1.2vw; font-size: 1.85vh; font-weight: 900;
-  color: #3a0000; cursor: pointer; box-shadow: 0 0.4vh 0.8vh rgba(0,0,0,0.4);
+.jbot-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 1vw;
 }
 
-.jbot-spin-btn {
-  background: linear-gradient(180deg, #5ef0b8 0%, #00c878 40%, #009050 80%, #006030 100%);
-  border: 0.3vh solid #ffffff; border-radius: 2vh;
-  height: 8.8vh; padding: 0 2.8vw;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
+.jbot-right {
+  display: flex;
+  align-items: center;
+  gap: 0.55vw;
+}
+
+/* UNIFIED GOLD BUTTONS (Chat, i, -, +, Max Bet, X1) */
+.jbot-btn {
+  background: linear-gradient(180deg, #fffde7 0%, #fff9c4 18%, #fde047 42%, #fbbf24 72%, #f59e0b 92%, #d97706 100%);
+  border: 0.24vh solid #5c2600;
+  border-radius: 1vh;
+  color: #4a1800;
+  box-shadow: 
+    inset 0 0.2vh 0.25vh #ffffff, 
+    inset 0 -0.2vh 0.25vh rgba(0,0,0,0.18),
+    0 0.35vh 0.7vh rgba(0,0,0,0.45);
   cursor: pointer;
-  box-shadow: 0 0.6vh 1.5vh rgba(0,0,0,0.6), 0 0 1.5vh rgba(80,255,160,0.4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  transition: transform 0.08s ease, filter 0.08s ease;
 }
-.jbot-spin-title { font-size: 3.4vh; font-weight: 900; color: #ffeb3b; text-shadow: 0 0.2vh 0.4vh #000; }
-.jbot-spin-sub { font-size: 1.05vh; font-weight: 900; color: #d0ffe8; letter-spacing: 0.02vw; }
+
+.jbot-btn:hover {
+  filter: brightness(1.05);
+}
+
+.jbot-btn:active {
+  transform: scale(0.95) translateY(0.1vh);
+  box-shadow: inset 0 0.2vh 0.4vh rgba(0,0,0,0.35);
+}
+
+/* Square icon buttons: Chat, Info, -, + */
+.jbot-icon-btn,
+.jbot-chat-btn,
+.jbot-info-btn,
+.jbot-minus-btn,
+.jbot-plus-btn {
+  width: 5.8vh;
+  height: 5.8vh;
+  min-width: 5.8vh;
+}
+
+.jbot-svg-chat {
+  width: 3.4vh;
+  height: 3.4vh;
+  display: block;
+}
+
+.jbot-serif-i {
+  font-family: 'Times New Roman', Times, Georgia, serif;
+  font-size: 3.2vh;
+  font-weight: 900;
+  color: #4a1800;
+  line-height: 1;
+}
+
+.jbot-sym-minus {
+  font-size: 3.8vh;
+  font-weight: 900;
+  color: #4a1800;
+  line-height: 1;
+  margin-top: -0.35vh;
+}
+
+.jbot-sym-plus {
+  font-size: 3.4vh;
+  font-weight: 900;
+  color: #4a1800;
+  line-height: 1;
+}
+
+/* BET DISPLAY SECTION */
+.jbot-bet-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.jbot-bet-box {
+  background: linear-gradient(180deg, #240d01 0%, #150600 65%, #080200 100%);
+  border: 0.24vh solid #5c2600;
+  border-radius: 0.9vh;
+  padding: 0.35vh 1.4vw;
+  min-width: 8.5vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 
+    inset 0 0 0.7vh rgba(0,0,0,0.95),
+    0 0.35vh 0.6vh rgba(0,0,0,0.35);
+}
+
+.jbot-bet-label {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.1vh;
+  font-weight: 900;
+  color: #ffca28;
+  letter-spacing: 0.05vw;
+  line-height: 1.1;
+}
+
+.jbot-bet-val {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 2.4vh;
+  font-weight: 900;
+  color: #ffffff;
+  line-height: 1.15;
+  text-shadow: 0 0.15vh 0.3vh rgba(0,0,0,0.85);
+}
+
+.jbot-line-bet {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.05vh;
+  font-weight: 900;
+  color: #4a1800;
+  letter-spacing: 0.04vw;
+  margin-top: 0.25vh;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* CENTER MESSAGE PLAQUE (Teka [SPIN] untuk memulai) */
+.jbot-info-frame {
+  position: relative;
+  height: 6.8vh;
+  min-width: 27vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 0.4vh 0.7vh rgba(0,0,0,0.5));
+}
+
+.jbot-info-outer {
+  width: 100%;
+  height: 100%;
+  clip-path: polygon(
+    1.8vh 0%,
+    calc(100% - 1.8vh) 0%,
+    100% 1.8vh,
+    100% calc(100% - 1.8vh),
+    calc(100% - 1.8vh) 100%,
+    1.8vh 100%,
+    0% calc(100% - 1.8vh),
+    0% 1.8vh
+  );
+  background: linear-gradient(180deg, #ffffff 0%, #fff7b2 18%, #ffd700 40%, #f59e0b 70%, #d97706 90%, #78350f 100%);
+  padding: 0.42vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.jbot-info-inner-frame {
+  width: 100%;
+  height: 100%;
+  clip-path: polygon(
+    1.5vh 0%,
+    calc(100% - 1.5vh) 0%,
+    100% 1.5vh,
+    100% calc(100% - 1.5vh),
+    calc(100% - 1.5vh) 100%,
+    1.5vh 100%,
+    0% calc(100% - 1.5vh),
+    0% 1.5vh
+  );
+  background: linear-gradient(180deg, #5c2600 0%, #3a1500 100%);
+  padding: 0.22vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.jbot-info-inner {
+  width: 100%;
+  height: 100%;
+  clip-path: polygon(
+    1.35vh 0%,
+    calc(100% - 1.35vh) 0%,
+    100% 1.35vh,
+    100% calc(100% - 1.35vh),
+    calc(100% - 1.35vh) 100%,
+    1.35vh 100%,
+    0% calc(100% - 1.35vh),
+    0% 1.35vh
+  );
+  background: radial-gradient(ellipse at center, #6b0d4c 0%, #450431 55%, #2a001d 100%);
+  box-shadow: inset 0 0.3vh 0.9vh rgba(0,0,0,0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 2.2vw;
+  color: #fff3a1;
+  font-family: 'Times New Roman', Georgia, 'Noto Serif', serif;
+  font-size: 2.2vh;
+  font-weight: 700;
+  letter-spacing: 0.03vw;
+  text-shadow: 0 0.15vh 0.3vh rgba(0,0,0,0.9);
+  white-space: nowrap;
+}
+
+/* RIGHT BUTTONS */
+.jbot-maxbet-btn {
+  width: 6.2vh;
+  height: 5.8vh;
+  min-width: 6.2vh;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.jbot-btn-line {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.45vh;
+  font-weight: 900;
+  color: #4a1800;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.jbot-speed-btn {
+  width: 5.8vh;
+  height: 5.8vh;
+  min-width: 5.8vh;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 2.4vh;
+  font-weight: 900;
+  color: #4a1800;
+  line-height: 1;
+}
+
+/* JADE GREEN SPIN BUTTON */
+.jbot-spin-btn {
+  background: linear-gradient(180deg, #34d399 0%, #10b981 30%, #059669 68%, #047857 90%, #064e3b 100%);
+  border: 0.28vh solid #023824;
+  border-radius: 1.3vh;
+  height: 7.2vh;
+  min-width: 11vw;
+  padding: 0 1.5vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  box-shadow: 
+    inset 0 0.28vh 0.35vh rgba(255,255,255,0.7),
+    inset 0 -0.25vh 0.4vh rgba(0,0,0,0.35),
+    0 0.45vh 0.9vh rgba(0,0,0,0.45);
+  transition: transform 0.08s ease, filter 0.08s ease;
+}
+
+.jbot-spin-btn:hover {
+  filter: brightness(1.06);
+}
+
+.jbot-spin-btn:active {
+  transform: scale(0.96) translateY(0.15vh);
+  box-shadow: inset 0 0.3vh 0.6vh rgba(0,0,0,0.5);
+}
+
+.jbot-spin-btn.spinning {
+  background: linear-gradient(180deg, #f87171 0%, #ef4444 35%, #dc2626 70%, #991b1b 100%);
+  border-color: #450a0a;
+}
+
+.jbot-spin-title {
+  font-family: 'Luckiest Guy', 'Montserrat', 'Arial Black', Impact, sans-serif;
+  font-size: 3.5vh;
+  font-weight: 900;
+  letter-spacing: 0.08vw;
+  line-height: 1;
+  margin-bottom: 0.25vh;
+  background: linear-gradient(180deg, #ffffff 0%, #fff9c4 18%, #ffd54f 45%, #f59e0b 78%, #d97706 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: 
+    drop-shadow(0 0.12vh 0 #b45309)
+    drop-shadow(0 0.24vh 0 #92400e)
+    drop-shadow(0 0.36vh 0 #78350f)
+    drop-shadow(0 0.45vh 0.4vh rgba(0,0,0,0.85));
+}
+
+.jbot-spin-sub-pill {
+  background: rgba(1, 40, 25, 0.72);
+  border: 0.12vh solid rgba(16, 185, 129, 0.35);
+  border-radius: 1.5vh;
+  padding: 0.15vh 0.8vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0.15vh 0.3vh rgba(0,0,0,0.6);
+}
+
+.jbot-spin-sub {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.05vh;
+  font-weight: 900;
+  color: #a7f3d0;
+  letter-spacing: 0.05vw;
+  text-shadow: 0 0.1vh 0.2vh rgba(0,0,0,0.9);
+}
 
 .jinji-auto-menu {
   position: absolute; bottom: 100%; right: 0;
@@ -569,79 +976,100 @@ button:hover, .jinji-side-card:hover, .jinji-avatar:hover, .jinji-plus-btn:hover
 .pick-coin-card.revealed.minor { background: #ab47bc; color: #fff; }
 .pick-coin-card.revealed.mini { background: #66bb6a; color: #fff; }
 
-/* RULES MODAL (AUTHENTIC ATURAN SCREEN FROM REFERENCE) */
+/* RULES MODAL (AUTHENTIC SCREEN-FILLING ATURAN SCREEN FROM REFERENCE) */
 .jinji-rules-modal {
-  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(0,0,0,0.88); z-index: 150;
-  display: flex; align-items: center; justify-content: center;
-}
-.jinji-aturan-screen {
-  background: radial-gradient(circle at 50% 30%, #5a000e 0%, #300007 70%, #150003 100%);
-  border: 0.4vh solid #ffd700;
-  border-radius: 2.2vh;
-  width: 90vw;
-  max-width: 980px;
-  max-height: 90vh;
-  padding: 2vh 2vw;
-  position: relative;
-  overflow-y: auto;
-  color: #fff;
-  box-shadow: 0 1.5vh 4vh rgba(0,0,0,0.95), inset 0 0 3vh rgba(0,0,0,0.8);
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 9.8vh;
+  background-color: #48000a;
+  background-image: 
+    radial-gradient(circle at 50% 30%, rgba(145, 12, 28, 0.7) 0%, rgba(35, 0, 5, 0.98) 100%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='40' viewBox='0 0 80 40'%3E%3Cpath d='M0 40a40 40 0 0 1 80 0' fill='none' stroke='%23280005' stroke-width='2'/%3E%3Cpath d='M0 40a30 30 0 0 1 60 0' fill='none' stroke='%23280005' stroke-width='1.5'/%3E%3Cpath d='M0 40a20 20 0 0 1 40 0' fill='none' stroke='%23280005' stroke-width='1.5'/%3E%3Cpath d='M0 40a10 10 0 0 1 20 0' fill='none' stroke='%23280005' stroke-width='1.5'/%3E%3Cpath d='M40 40a40 40 0 0 1 80 0' fill='none' stroke='%23280005' stroke-width='2'/%3E%3Cpath d='M-40 40a40 40 0 0 1 80 0' fill='none' stroke='%23280005' stroke-width='2'/%3E%3Cpath d='M-20 20a40 40 0 0 1 80 0' fill='none' stroke='%23280005' stroke-width='2'/%3E%3Cpath d='M20 20a40 40 0 0 1 80 0' fill='none' stroke='%23280005' stroke-width='2'/%3E%3C/svg%3E");
+  z-index: 150;
   display: flex;
   flex-direction: column;
   align-items: center;
-}
-.jinji-rules-close {
-  position: absolute; top: 1.5vh; right: 1.5vh;
-  background: #d32f2f; color: #fff; border: 0.2vh solid #fff;
-  width: 4.2vh; height: 4.2vh; border-radius: 50%; font-size: 2.2vh; cursor: pointer;
-  box-shadow: 0 0.3vh 0.6vh rgba(0,0,0,0.6);
-  display: flex; align-items: center; justify-content: center;
+  justify-content: space-between;
+  padding: 1.5vh 2.5vw 1vh 2.5vw;
+  box-shadow: inset 0 -1.5vh 3vh rgba(0,0,0,0.9);
+  overflow: hidden;
 }
 
-/* Ornate Red Ribbon Header */
+/* Ornate Red Ribbon Header with Gold Wings */
 .aturan-banner-header {
   position: relative;
-  margin-bottom: 1.8vh;
   display: flex;
+  align-items: center;
   justify-content: center;
+  margin-bottom: 0.8vh;
 }
 .aturan-banner-title {
-  background: linear-gradient(180deg, #d32f2f 0%, #b71c1c 50%, #7f0000 100%);
-  border: 0.25vh solid #ffe082;
+  background: linear-gradient(180deg, #d32f2f 0%, #b71c1c 45%, #7f0000 100%);
+  border: 0.3vh solid #ffe082;
   border-radius: 1vh;
-  color: #ffe082;
-  font-size: 3vh;
+  color: #fffde7;
+  font-family: 'Luckiest Guy', 'Cinzel', cursive, sans-serif;
+  font-size: 3.8vh;
   font-weight: 900;
-  padding: 0.6vh 4vw;
-  letter-spacing: 0.1vw;
-  box-shadow: 0 0.5vh 1.2vh rgba(0,0,0,0.6), inset 0 0.2vh 0.4vh rgba(255,255,255,0.4);
-  text-shadow: 0 0.2vh 0.4vh #000;
+  padding: 0.4vh 6.5vw;
+  letter-spacing: 0.22vw;
+  box-shadow: 
+    0 0.8vh 2vh rgba(0,0,0,0.85),
+    inset 0 0.3vh 0.8vh rgba(255,255,255,0.45),
+    inset 0 -0.3vh 0.8vh rgba(0,0,0,0.6);
+  text-shadow: 0 0.3vh 0.6vh #000, 0 0 1vh rgba(255,215,0,0.4);
+  position: relative;
+}
+.aturan-banner-title::before,
+.aturan-banner-title::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2.2vh;
+  height: 3.2vh;
+  background: linear-gradient(180deg, #ffd700, #b8860b);
+  border: 0.2vh solid #fff8e1;
+  border-radius: 0.5vh;
+  box-shadow: 0 0.2vh 0.5vh rgba(0,0,0,0.6);
+}
+.aturan-banner-title::before { left: -1.6vh; }
+.aturan-banner-title::after { right: -1.6vh; }
+
+/* Main Content Body - Fills screen */
+.aturan-body {
+  width: 96vw;
+  max-width: 1800px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 58vh;
 }
 
-/* 6-box paytable grid */
+/* 6-box paytable grid (Pages 1 & 2) */
 .aturan-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1.2vh 1vw;
+  gap: 1.2vh 1.5vw;
   width: 100%;
+  height: 100%;
+  min-height: 58vh;
 }
-
 .aturan-card {
-  background: rgba(45, 0, 8, 0.65);
-  border: 0.18vh solid #6b1420;
-  border-radius: 1vh;
-  padding: 1.2vh 0.8vw;
+  background: rgba(40, 0, 8, 0.45);
+  border: 0.18vh solid #851c27;
+  border-radius: 0.8vh;
+  padding: 1.8vh 1.4vw;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  box-shadow: inset 0 0 1.2vh rgba(0,0,0,0.7);
+  justify-content: space-around;
+  box-shadow: inset 0 0 1.5vh rgba(0,0,0,0.5);
 }
 .aturan-card.cards-box {
-  padding: 1.2vh 0.4vw;
+  padding: 1.8vh 1vw;
 }
-
 .aturan-pair {
   display: flex;
   flex-direction: row;
@@ -649,30 +1077,27 @@ button:hover, .jinji-side-card:hover, .jinji-avatar:hover, .jinji-plus-btn:hover
   justify-content: space-around;
   align-items: center;
 }
-
 .aturan-col {
   display: flex;
   flex-direction: column;
   align-items: center;
   flex: 1;
 }
-
 .aturan-sym-img {
-  width: 54px;
-  height: 54px;
+  width: 95px;
+  height: 95px;
   object-fit: contain;
-  filter: drop-shadow(0 0.3vh 0.6vh rgba(0,0,0,0.7));
-  margin-bottom: 0.6vh;
+  filter: drop-shadow(0 0.4vh 0.8vh rgba(0,0,0,0.8));
+  margin-bottom: 0.8vh;
 }
 .aturan-sym-img.round {
   border-radius: 50%;
 }
-
 .aturan-pays {
   display: flex;
   flex-direction: column;
-  gap: 0.25vh;
-  font-size: 1.45vh;
+  gap: 0.5vh;
+  font-size: 2.4vh;
   font-weight: 800;
   color: #ffca28;
   text-shadow: 0 0.15vh 0.3vh #000;
@@ -680,18 +1105,19 @@ button:hover, .jinji-side-card:hover, .jinji-avatar:hover, .jinji-plus-btn:hover
 }
 .pay-row {
   display: flex;
-  gap: 0.5vw;
+  gap: 1.2vw;
+  align-items: center;
+  justify-content: center;
 }
 .pay-row .num {
-  color: #fff;
+  color: #ffffff;
   font-weight: 900;
-  min-width: 1.2vw;
+  min-width: 1.8vw;
 }
 .pay-row .val {
   color: #ffca28;
   font-weight: 900;
 }
-
 .aturan-cards-row {
   display: flex;
   flex-direction: row;
@@ -705,48 +1131,552 @@ button:hover, .jinji-side-card:hover, .jinji-avatar:hover, .jinji-plus-btn:hover
   align-items: center;
 }
 .aturan-sym-card {
-  width: 40px;
-  height: 44px;
+  width: 68px;
+  height: 75px;
   object-fit: contain;
-  filter: drop-shadow(0 0.3vh 0.5vh rgba(0,0,0,0.7));
-  margin-bottom: 0.6vh;
+  filter: drop-shadow(0 0.3vh 0.6vh rgba(0,0,0,0.8));
+  margin-bottom: 0.8vh;
 }
 
-/* Bottom Nav */
+/* Page 3: Simbol Khusus */
+.aturan-special-panel {
+  width: 100%;
+  min-height: 58vh;
+  background: rgba(40, 0, 8, 0.45);
+  border: 0.18vh solid #851c27;
+  border-radius: 0.8vh;
+  box-shadow: inset 0 0 1.5vh rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  padding: 1.5vh 0;
+  overflow: hidden;
+}
+.aturan-spec-row {
+  display: flex;
+  align-items: center;
+  padding: 2.2vh 4vw;
+  gap: 3.5vw;
+  border-bottom: 0.15vh solid #5c0a13;
+}
+.aturan-spec-row:last-child {
+  border-bottom: none;
+}
+.aturan-spec-icon-wrap {
+  min-width: 110px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.aturan-spec-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6vh;
+  text-align: left;
+}
+.aturan-spec-title {
+  color: #ffca28;
+  font-weight: 900;
+  font-size: 3.2vh;
+  letter-spacing: 0.05vw;
+  text-shadow: 0 0.15vh 0.3vh #000;
+}
+.aturan-spec-desc {
+  color: #ffffff;
+  font-size: 2.2vh;
+  font-weight: 700;
+  line-height: 1.6;
+  text-shadow: 0 0.15vh 0.3vh #000;
+}
+
+/* Page 4: SIMBOL EMAS */
+.aturan-gold-panel {
+  width: 100%;
+  min-height: 58vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  gap: 1.5vh;
+}
+.aturan-info-box {
+  background: rgba(40, 0, 8, 0.45);
+  border: 0.18vh solid #851c27;
+  border-radius: 0.8vh;
+  padding: 2vh 3vw;
+  text-align: left;
+  box-shadow: inset 0 0 1.5vh rgba(0,0,0,0.5);
+}
+.aturan-info-title {
+  color: #ffca28;
+  font-size: 3vh;
+  font-weight: 900;
+  margin-bottom: 0.8vh;
+  text-shadow: 0 0.15vh 0.3vh #000;
+  display: flex;
+  align-items: center;
+  gap: 0.8vw;
+}
+.aturan-info-bullet {
+  color: #ffffff;
+  font-size: 2.2vh;
+  font-weight: 700;
+  line-height: 1.6;
+  text-shadow: 0 0.15vh 0.3vh #000;
+}
+.aturan-gold-bottom {
+  display: flex;
+  align-items: center;
+  gap: 2.5vw;
+  width: 100%;
+}
+.aturan-gold-table {
+  flex: 1.3;
+  background: rgba(40, 0, 8, 0.45);
+  border: 0.18vh solid #851c27;
+  border-radius: 0.8vh;
+  padding: 1.5vh 2vw;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  box-shadow: inset 0 0 1.5vh rgba(0,0,0,0.5);
+}
+.aturan-gt-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6vh 0;
+  border-bottom: 0.1vh solid rgba(110, 21, 32, 0.5);
+}
+.aturan-gt-row:last-child {
+  border-bottom: none;
+}
+.gt-label {
+  color: #ffffff;
+  font-size: 1.8vh;
+  font-weight: 900;
+  width: 8vw;
+}
+.gt-bet {
+  color: #ffca28;
+  font-size: 1.8vh;
+  font-weight: 900;
+  width: 8.5vw;
+  line-height: 1.25;
+}
+.gt-icons {
+  display: flex;
+  gap: 0.8vw;
+  align-items: center;
+}
+.gt-icons img {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+}
+.aturan-gold-plus {
+  color: #ffca28;
+  font-size: 5.5vh;
+  font-weight: 900;
+  text-shadow: 0 0.2vh 0.4vh #000;
+}
+.aturan-gold-right {
+  flex: 0.7;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5vh;
+  align-items: center;
+  justify-content: center;
+  background: rgba(40, 0, 8, 0.45);
+  border: 0.18vh solid #851c27;
+  border-radius: 0.8vh;
+  padding: 2.5vh 2vw;
+  box-shadow: inset 0 0 1.5vh rgba(0,0,0,0.5);
+}
+.agr-row {
+  display: flex;
+  gap: 2.5vw;
+  align-items: center;
+  justify-content: center;
+}
+.agr-row img {
+  width: 70px;
+  height: 75px;
+  object-fit: contain;
+}
+
+/* Page 5: NILAI */
+.aturan-nilai-panel {
+  width: 100%;
+  min-height: 58vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  gap: 1.5vh;
+}
+.aturan-nilai-table-wrap {
+  width: 100%;
+  background: rgba(40, 0, 8, 0.45);
+  border: 0.18vh solid #851c27;
+  border-radius: 0.8vh;
+  overflow: hidden;
+  box-shadow: inset 0 0 1.5vh rgba(0,0,0,0.5);
+}
+.aturan-nilai-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.aturan-nilai-table th,
+.aturan-nilai-table td {
+  border: 0.15vh solid #550a12;
+  text-align: center;
+  padding: 1.2vh 1vw;
+  font-size: 2.2vh;
+  font-weight: 800;
+  text-shadow: 0 0.15vh 0.3vh #000;
+}
+.aturan-nilai-table th {
+  color: #ffca28;
+  background: rgba(60, 5, 12, 0.85);
+  font-size: 2.1vh;
+}
+.aturan-nilai-table td.col-left {
+  color: #ffffff;
+  text-align: left;
+  padding-left: 2.5vw;
+  width: 26%;
+}
+.aturan-nilai-table td.val-cell {
+  color: #ffca28;
+  font-weight: 900;
+  font-size: 2.3vh;
+}
+.aturan-nilai-foot {
+  color: #ff5252;
+  font-size: 2.2vh;
+  font-weight: 800;
+  margin-top: 0.8vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6vw;
+  text-shadow: 0 0.15vh 0.3vh #000;
+}
+
+/* Common rules text container (Pages 6, 7, 8, 9, 10) - Full screen presence */
+.aturan-text-panel {
+  width: 100%;
+  min-height: 58vh;
+  background: rgba(40, 0, 8, 0.45);
+  border: 0.18vh solid #851c27;
+  border-radius: 0.8vh;
+  padding: 3.5vh 4.5vw;
+  text-align: left;
+  box-shadow: inset 0 0 1.5vh rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1.5vh;
+}
+.aturan-text-panel.compact {
+  padding: 2.2vh 3.5vw;
+  gap: 1.2vh;
+  min-height: auto;
+}
+.aturan-page-title {
+  color: #ffca28;
+  font-family: 'Luckiest Guy', 'Cinzel', cursive, sans-serif;
+  font-size: 3.6vh;
+  font-weight: 900;
+  letter-spacing: 0.05vw;
+  text-shadow: 0 0.2vh 0.4vh #000;
+  margin-bottom: 0.8vh;
+}
+.aturan-page-subtitle {
+  color: #fff8e1;
+  font-size: 2.4vh;
+  font-weight: 700;
+  line-height: 1.6;
+  text-shadow: 0 0.15vh 0.3vh #000;
+}
+.aturan-bullet-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  gap: 1.5vh;
+}
+.aturan-bullet-item {
+  color: #fffde7;
+  font-size: 2.3vh;
+  font-weight: 700;
+  line-height: 1.7;
+  text-shadow: 0 0.15vh 0.3vh #000;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5vw;
+}
+.aturan-bullet-item span.bullet-dot {
+  color: #ffca28;
+  font-size: 2.6vh;
+  margin-right: 0.5vw;
+}
+
+/* Page 6 & 7 Preview Screens */
+.aturan-preview-box {
+  width: 100%;
+  max-width: 650px;
+  background: rgba(20, 2, 5, 0.85);
+  border: 0.2vh solid #851c27;
+  border-radius: 1vh;
+  padding: 1.5vh 2vw;
+  margin: 1vh auto 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: inset 0 0 1.8vh rgba(0,0,0,0.85);
+}
+.aturan-preview-title {
+  color: #ffd54f;
+  font-size: 1.8vh;
+  font-weight: 900;
+  margin-bottom: 0.8vh;
+  letter-spacing: 0.05vw;
+  text-shadow: 0 0.15vh 0.3vh #000;
+}
+.aturan-pfg-lanterns {
+  display: flex;
+  gap: 3.5vw;
+  align-items: center;
+  justify-content: center;
+}
+.aturan-lantern {
+  background: linear-gradient(180deg, #ffb300 0%, #f57f17 50%, #bf360c 100%);
+  border: 0.22vh solid #ffe082;
+  border-radius: 1.4vh;
+  padding: 1.5vh 2.2vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 130px;
+  box-shadow: 0 0.5vh 1.2vh rgba(0,0,0,0.6);
+  color: #fff;
+  font-weight: 900;
+  text-align: center;
+  line-height: 1.2;
+}
+.aturan-lantern .alt-title {
+  font-size: 1.8vh;
+  color: #fff;
+  text-shadow: 0 0.1vh 0.3vh #000;
+}
+.aturan-lantern .alt-sub {
+  font-size: 1.3vh;
+  color: #ffe082;
+  margin-top: 0.4vh;
+}
+.aturan-lantern-footer {
+  color: #b0bec5;
+  font-size: 1.45vh;
+  margin-top: 0.8vh;
+  display: flex;
+  align-items: center;
+  gap: 0.4vw;
+}
+
+/* Page 7 Reels Mockup */
+.aturan-reels-mockup {
+  width: 100%;
+  max-width: 600px;
+  background: #1e0004;
+  border: 0.22vh solid #ffd700;
+  border-radius: 0.8vh;
+  padding: 0.8vh 1vw;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6vh;
+  box-shadow: 0 0.5vh 1.4vh rgba(0,0,0,0.75);
+  margin: 0.8vh auto 0 auto;
+}
+.arm-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(180deg, #a00d14 0%, #6a0006 100%);
+  padding: 0.4vh 1vw;
+  border-radius: 0.5vh;
+}
+.arm-jp-badge {
+  color: #ffd54f;
+  font-size: 1.35vh;
+  font-weight: 900;
+}
+.arm-val-badge {
+  color: #76ff03;
+  font-size: 1.35vh;
+  font-weight: 900;
+}
+.arm-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.4vw;
+  background: #000;
+  padding: 0.6vh 0.6vw;
+  border-radius: 0.5vh;
+}
+.arm-cell {
+  background: #2b0006;
+  border: 0.12vh solid #550a12;
+  border-radius: 0.5vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 4.2vh;
+}
+.arm-cell img {
+  width: 3.2vh;
+  height: 3.2vh;
+  object-fit: contain;
+}
+.arm-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4vh 0.8vw;
+  background: #110003;
+  border-radius: 0.4vh;
+  font-size: 1.25vh;
+  color: #ffe082;
+  font-weight: 800;
+}
+
+/* Page 9 Jackpot Table */
+.aturan-jp-table {
+  width: 100%;
+  background: rgba(40, 0, 8, 0.45);
+  border: 0.18vh solid #851c27;
+  border-radius: 0.8vh;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  padding: 1.5vh 2vw;
+  margin-bottom: 1.5vh;
+  box-shadow: inset 0 0 1.5vh rgba(0,0,0,0.5);
+}
+.aturan-jp-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4vh;
+}
+.aturan-jp-col .jp-name {
+  font-weight: 900;
+  font-size: 2.8vh;
+  letter-spacing: 0.05vw;
+  text-shadow: 0 0.15vh 0.3vh #000;
+}
+.aturan-jp-col .jp-name.grand { color: #ffeb3b; }
+.aturan-jp-col .jp-name.major { color: #00e5ff; }
+.aturan-jp-col .jp-name.minor { color: #ff4081; }
+.aturan-jp-col .jp-name.mini  { color: #76ff03; }
+.aturan-jp-col .jp-val {
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 2.2vh;
+}
+
+/* Bottom Nav Controls (Dots & Arrows & Back) */
 .aturan-bottom-nav {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1vh;
-  margin-top: 1.8vh;
+  gap: 1.2vh;
+  margin-top: 1vh;
+  width: 100%;
 }
 .aturan-dots {
   display: flex;
-  gap: 0.6vw;
+  gap: 1vw;
 }
 .aturan-dots .dot {
-  width: 0.8vh;
-  height: 0.8vh;
+  width: 1.3vh;
+  height: 1.3vh;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  transition: all 0.2s;
 }
 .aturan-dots .dot.active {
   background: #ffeb3b;
-  box-shadow: 0 0 0.5vh #ffeb3b;
+  box-shadow: 0 0 1vh #ffeb3b;
+  transform: scale(1.4);
 }
-
+.aturan-btn-row {
+  display: flex;
+  align-items: center;
+  gap: 2vw;
+}
+.aturan-arrow-btn {
+  background: linear-gradient(180deg, #00c853 0%, #007e33 100%);
+  border: 0.25vh solid #ffe082;
+  border-radius: 1.5vh;
+  color: #ffffff;
+  font-size: 2.4vh;
+  padding: 0.8vh 2vw;
+  cursor: pointer;
+  box-shadow: 0 0.6vh 1.4vh rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s;
+}
 .aturan-back-btn {
   background: linear-gradient(180deg, #00c853 0%, #007e33 100%);
-  border: 0.22vh solid #ffe082;
-  border-radius: 2vh;
+  border: 0.28vh solid #ffe082;
+  border-radius: 2.6vh;
   color: #ffffff;
-  font-size: 1.8vh;
+  font-family: 'Luckiest Guy', sans-serif;
+  font-size: 2.4vh;
   font-weight: 900;
-  padding: 0.8vh 3.5vw;
+  padding: 1vh 6vw;
   cursor: pointer;
-  letter-spacing: 0.05vw;
-  box-shadow: 0 0.4vh 1vh rgba(0,0,0,0.6);
-  text-shadow: 0 0.15vh 0.3vh #000;
+  letter-spacing: 0.1vw;
+  box-shadow: 0 0.6vh 1.6vh rgba(0,0,0,0.6);
+  text-shadow: 0 0.2vh 0.4vh #000;
+  transition: transform 0.1s;
+}
+.aturan-arrow-btn:active,
+.aturan-back-btn:active {
+  transform: scale(0.94);
+}
+
+/* TUTUP BUTTON (Replaces SPIN on bottom bar when rules are open) */
+.jbot-tutup-btn {
+  background: linear-gradient(180deg, #4fc3f7 0%, #0288d1 45%, #01579b 100%);
+  border: 0.25vh solid #b3e5fc;
+  border-radius: 1.6vh;
+  color: #ffffff;
+  font-family: 'Luckiest Guy', 'Segoe UI', cursive, sans-serif;
+  font-size: 3.2vh;
+  letter-spacing: 0.1vw;
+  padding: 0 2.8vw;
+  height: 8.5vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 
+    0 0.6vh 1.5vh rgba(0,0,0,0.6),
+    inset 0 0.3vh 0.6vh rgba(255,255,255,0.6),
+    inset 0 -0.3vh 0.6vh rgba(0,0,0,0.4);
+  text-shadow: 0 0.25vh 0.5vh #002f6c;
+  transition: transform 0.1s, filter 0.1s;
+}
+.jbot-tutup-btn:hover {
+  filter: brightness(1.12);
+}
+.jbot-tutup-btn:active {
+  transform: scale(0.95);
 }
 
 /* ANIMATED JACKPOT WIN CELEBRATION MODAL */
