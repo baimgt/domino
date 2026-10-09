@@ -18,59 +18,72 @@
 }
 
 /* ===========================
-   BACKGROUND - Purple temple
+   GATOKACA LOADING SCREEN
+   =========================== */
+.gato-loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #000 url('/assets/gatokaca/gato_loading_bg.jpg') no-repeat center center / cover;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  padding-bottom: 3.5vh;
+}
+
+.gato-loading-bar-wrapper {
+  width: 52vw;
+  max-width: 620px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8vh;
+}
+
+.gato-loading-bar-track {
+  width: 100%;
+  height: 2.2vh;
+  min-height: 16px;
+  background: rgba(30, 8, 2, 0.85);
+  border: 2px solid #ffcc00;
+  border-radius: 20px;
+  padding: 2px;
+  box-sizing: border-box;
+  overflow: hidden;
+  box-shadow: 0 0 16px rgba(255, 180, 0, 0.6), inset 0 2px 6px rgba(0, 0, 0, 0.85);
+}
+
+.gato-loading-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #d32f2f, #ff5722, #ffd600);
+  border-radius: 14px;
+  transition: width 0.08s ease-out;
+  box-shadow: 0 0 10px #ff9800;
+}
+
+.gato-loading-text {
+  color: #fff;
+  font-size: 1.6vh;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9), 0 0 10px rgba(255, 200, 0, 0.8);
+}
+
+/* ===========================
+   BACKGROUND - Real Temple
    =========================== */
 .gato-bg {
   position: absolute;
   inset: 0;
   z-index: 0;
+  background: url('/assets/gatokaca/bg-gato-new.png') no-repeat center center / cover;
 }
-.gato-bg-sky {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, #ce93d8 0%, #9c27b0 15%, #6a1b9a 35%, #4a148c 55%, #3a0b7a 80%, #2d0669 100%);
-}
-/* Atmospheric glow */
-.gato-bg-sky::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse at 50% 20%, rgba(255,200,100,0.12) 0%, transparent 60%),
-    radial-gradient(ellipse at 20% 70%, rgba(150,50,255,0.15) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 70%, rgba(150,50,255,0.15) 0%, transparent 50%);
-}
-/* Left columns */
-.gato-bg-columns-left {
-  position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 18vw;
-  background:
-    repeating-linear-gradient(90deg,
-      transparent 0, transparent 3vw,
-      rgba(180,120,50,0.6) 3vw, rgba(180,120,50,0.6) 4.5vw,
-      transparent 4.5vw, transparent 8vw
-    ),
-    linear-gradient(180deg, rgba(255,200,120,0.2) 0%, rgba(120,60,20,0.4) 100%);
-}
-/* Right columns */
-.gato-bg-columns-right {
-  position: absolute;
-  right: 0; top: 0; bottom: 0;
-  width: 18vw;
-  background:
-    repeating-linear-gradient(90deg,
-      transparent 0, transparent 3vw,
-      rgba(180,120,50,0.6) 3vw, rgba(180,120,50,0.6) 4.5vw,
-      transparent 4.5vw, transparent 8vw
-    ),
-    linear-gradient(180deg, rgba(255,200,120,0.2) 0%, rgba(120,60,20,0.4) 100%);
-}
+.gato-bg-sky,
+.gato-bg-columns-left,
+.gato-bg-columns-right,
 .gato-bg-floor {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 15vh;
-  background: linear-gradient(180deg, transparent 0%, rgba(80,40,10,0.4) 100%);
+  display: none;
 }
 
 /* ===========================
@@ -122,9 +135,14 @@
   position: absolute;
   top: 1.5vh; left: 50%; transform: translateX(-50%);
   z-index: 50;
-  color: #ffe082; font-size: 1.8vh; font-weight: 700;
-  text-shadow: 0 0.2vh 0.5vh rgba(0,0,0,0.8);
+  background: linear-gradient(180deg, rgba(0,0,0,0.8), rgba(40,10,10,0.8));
+  border: 0.15vh solid rgba(255, 215, 0, 0.4);
+  padding: 0.4vh 1.5vw;
+  border-radius: 2vh;
+  color: #ffe082; font-size: 1.6vh; font-weight: 900; letter-spacing: 0.05em;
+  text-shadow: 0 0.2vh 0.5vh #000;
   white-space: nowrap;
+  box-shadow: 0 0.5vh 1vh rgba(0,0,0,0.6);
 }
 
 .gato-topright {
@@ -349,11 +367,38 @@
   0%   { box-shadow: 0 0 1.5vh 0.5vh rgba(255,215,0,0.7); }
   100% { box-shadow: 0 0 3.5vh 2vh rgba(255,215,0,1), 0 0 6vh 3vh rgba(255,150,0,0.6); }
 }
+
 .gato-tile-explode { animation: tileBlast 0.4s ease-out forwards; }
 @keyframes tileBlast {
   0%   { transform: scale(1); opacity: 1; }
   40%  { transform: scale(1.3); filter: brightness(3) drop-shadow(0 0 1vh #ffd700); }
   100% { transform: scale(0); opacity: 0; }
+}
+
+.gato-sym-img-wrap {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.gato-sym-img {
+  width: 84%;
+  height: 84%;
+  max-width: 84%;
+  max-height: 84%;
+  object-fit: contain;
+  filter: drop-shadow(0 0.4vh 0.8vh rgba(0, 0, 0, 0.85));
+  transition: transform 0.15s ease;
+  pointer-events: none;
+  user-select: none;
+}
+
+.gato-sym-img:hover {
+  transform: scale(1.08);
 }
 
 /* ===========================
@@ -550,32 +595,92 @@
 }
 
 /* ===========================
-   MULTIPLIER ORB
+   MULTIPLIER ORB (3D GATOTKACA STYLE)
    =========================== */
-.gato-mult-orb {
-  width: 88%; height: 88%;
-  border-radius: 50%;
-  border: 0.3vh solid rgba(255,255,255,0.45);
+.gato-mult-orb-wrap {
+  width: 96%; height: 96%;
   display: flex; align-items: center; justify-content: center;
-  position: relative; overflow: hidden;
-  animation: multOrbPulse 1.8s ease-in-out infinite;
+  position: relative;
 }
-@keyframes multOrbPulse {
-  0%,100% { filter: brightness(1); }
-  50%     { filter: brightness(1.3) drop-shadow(0 0 0.8vh rgba(150,220,255,1)); }
+
+/* The spinning 8-pointed golden spikes behind the orb */
+.gato-mult-spikes {
+  position: absolute;
+  width: 100%; height: 100%;
+  animation: spinSlow 8s linear infinite;
+  display: flex; align-items: center; justify-content: center;
 }
-.gato-mult-lightning {
-  position: absolute; inset: 0;
-  background:
-    radial-gradient(circle at 28% 22%, rgba(255,255,255,0.75) 0%, transparent 42%),
-    radial-gradient(circle at 72% 72%, rgba(255,255,255,0.18) 0%, transparent 38%);
+.gato-mult-spikes::before, .gato-mult-spikes::after {
+  content: '';
+  position: absolute;
+  width: 75%; height: 75%;
+  background: linear-gradient(135deg, #ffd700 0%, #ff8f00 25%, #b8860b 50%, #ff8f00 75%, #ffd700 100%);
+  border: 0.1vh solid rgba(255,255,255,0.5);
+  border-radius: 12%;
+  box-shadow: 0 0 1vh rgba(0,0,0,0.8);
+}
+.gato-mult-spikes::after {
+  transform: rotate(45deg);
+}
+
+/* Outer golden ring */
+.gato-mult-ring {
+  position: absolute;
+  width: 78%; height: 78%;
   border-radius: 50%;
+  background: radial-gradient(circle, #2a2a2a 0%, #000 100%);
+  border: 0.35vh solid #ffd740;
+  box-shadow: 0 0 1vh #ffcc00, inset 0 0 1vh #000;
+  z-index: 2;
+  display: flex; align-items: center; justify-content: center;
 }
+
+/* Inner glowing glass sphere */
+.gato-mult-sphere {
+  width: 90%; height: 90%;
+  border-radius: 50%;
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 0 1.5vh rgba(0,0,0,0.8);
+  animation: orbPulse 1.5s ease-in-out infinite alternate;
+}
+
+/* Glass shine effect */
+.gato-mult-sphere::after {
+  content: '';
+  position: absolute;
+  top: 5%; left: 15%;
+  width: 70%; height: 35%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 100%);
+  border-radius: 50%;
+  transform: rotate(-15deg);
+  pointer-events: none;
+}
+
+/* The multiplier text */
 .gato-mult-val {
-  color: #fff; font-size: clamp(0.75rem, 2.4vh, 2.8vh);
-  font-weight: 900; letter-spacing: -0.03em;
-  text-shadow: 0 0.1vh 0.4vh rgba(0,0,0,0.95), 0 0 0.8vh rgba(0,0,0,0.7);
-  position: relative; z-index: 1;
+  position: absolute;
+  z-index: 5;
+  color: #ffffff;
+  font-family: 'Cinzel', 'Outfit', sans-serif;
+  font-size: clamp(1rem, 2.5vh, 2.8vh);
+  font-weight: 900;
+  text-shadow: 
+    0 0.2vh 0 #000, 0 -0.2vh 0 #000, 
+    0.2vh 0 0 #000, -0.2vh 0 0 #000,
+    0 0.4vh 1vh rgba(0,0,0,1),
+    0 0 2vh rgba(0,0,0,0.8);
+  letter-spacing: -0.05em;
+  pointer-events: none;
+}
+
+@keyframes spinSlow {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+@keyframes orbPulse {
+  0%   { filter: brightness(1) drop-shadow(0 0 0.5vh rgba(255,255,255,0.2)); }
+  100% { filter: brightness(1.3) drop-shadow(0 0 1.5vh rgba(255,255,255,0.6)); }
 }
 
 
@@ -583,26 +688,33 @@
    RIGHT PANEL - Gatokaca Hero
    =========================== */
 .gato-right-panel {
-  width: 10vw;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: flex-end;
+  width: 15vw;
+  max-width: 240px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
   padding-bottom: 2vh;
+  position: relative;
+  z-index: 25;
 }
-.gato-hero-char {
-  display: flex; flex-direction: column; align-items: center;
-  filter: drop-shadow(0 0 2vh rgba(255,150,0,0.6));
+
+.gato-hero-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  position: relative;
 }
-.gato-hero-crown { font-size: 4vh; }
-.gato-hero-body {
-  display: flex; flex-direction: column; align-items: center;
-  background: linear-gradient(180deg, #5d4037 0%, #3e2723 100%);
-  border: 0.2vh solid #ffd700;
-  border-radius: 1.5vh;
-  padding: 1vh 1vw;
-  margin-top: -1vh;
+
+.gato-hero-video {
+  width: 100%;
+  max-height: 60vh;
+  object-fit: contain;
+  filter: drop-shadow(0 0 18px rgba(255, 180, 0, 0.65));
+  pointer-events: none;
 }
-.gato-hero-face { font-size: 5vh; }
-.gato-hero-armor { font-size: 3vh; }
 
 /* ===========================
    BOTTOM BAR

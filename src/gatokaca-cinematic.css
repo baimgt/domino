@@ -1,0 +1,218 @@
+/* gatokaca-cinematic.css */
+.gato-cine-wrapper {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #000;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  font-family: 'Outfit', 'Cinzel', sans-serif;
+  user-select: none;
+}
+
+/* Background image with slow pan and zoom */
+.gato-cine-bg {
+  position: absolute;
+  inset: -5%; /* buffer for panning */
+  background: url('/assets/gatokaca/bg-gato-new.png') center/cover no-repeat;
+  filter: brightness(0.6) contrast(1.1);
+  animation: gatoCinePan 20s ease-in-out infinite alternate;
+  z-index: 1;
+}
+
+@keyframes gatoCinePan {
+  0% { transform: scale(1) translate(0, 0); }
+  100% { transform: scale(1.08) translate(-1%, 2%); }
+}
+
+/* Lightning Flashes */
+.gato-cine-lightning {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 220, 100, 0.4);
+  mix-blend-mode: overlay;
+  z-index: 2;
+  opacity: 0;
+  animation: gatoCineFlash 7s infinite;
+}
+.gato-cine-lightning-2 {
+  background: rgba(255, 255, 255, 0.3);
+  animation: gatoCineFlash 11s infinite 3s;
+}
+
+@keyframes gatoCineFlash {
+  0%, 95%, 98%, 100% { opacity: 0; }
+  96% { opacity: 0.8; }
+  97% { opacity: 0.1; }
+  99% { opacity: 1; }
+}
+
+/* Hero Character */
+.gato-cine-hero-wrap {
+  position: absolute;
+  bottom: 0; /* Base position */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100vh; /* Scaled with height to fit character nicely */
+  max-width: 150vw;
+  height: 85vh;
+  z-index: 5;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  animation: gatoCineFloat 4s ease-in-out infinite alternate;
+}
+
+@keyframes gatoCineFloat {
+  0% { transform: translateX(-50%) translateY(1vh); }
+  100% { transform: translateX(-50%) translateY(-2vh); }
+}
+
+.gato-cine-hero {
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 3vh rgba(255, 150, 0, 0.5)) contrast(1.1);
+  position: relative;
+  z-index: 6;
+}
+
+/* Big magical glow behind the hero */
+.gato-cine-hero-glow {
+  position: absolute;
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70vh;
+  height: 70vh;
+  background: radial-gradient(circle, rgba(255,150,0,0.4) 0%, rgba(255,50,0,0) 70%);
+  border-radius: 50%;
+  z-index: 5;
+  animation: gatoCinePulseGlow 3s ease-in-out infinite alternate;
+}
+@keyframes gatoCinePulseGlow {
+  0% { transform: translateX(-50%) scale(0.9); opacity: 0.6; }
+  100% { transform: translateX(-50%) scale(1.1); opacity: 1; }
+}
+
+/* Particles / Embers */
+.gato-cine-particles {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+.gato-cine-ember {
+  position: absolute;
+  background: #ffb300;
+  border-radius: 50%;
+  box-shadow: 0 0 1vh 0.2vh #ff5722, 0 0 2vh #ffeb3b;
+  animation-name: gatoCineRise;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+@keyframes gatoCineRise {
+  0% { transform: translateY(0) scale(1) translateX(0); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 0.8; }
+  100% { transform: translateY(-120vh) scale(0.2) translateX(8vw); opacity: 0; }
+}
+
+/* Vignette / Dark overlay */
+.gato-cine-vignette {
+  position: absolute;
+  inset: 0;
+  background: 
+    linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,0.85) 85%, #000 100%),
+    radial-gradient(circle at center, transparent 30%, rgba(0,0,0,0.5) 100%);
+  z-index: 15;
+  pointer-events: none;
+}
+
+/* UI Elements */
+.gato-cine-ui {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-bottom: 5vh;
+  width: 100%;
+}
+
+.gato-cine-title {
+  color: #ffcc00;
+  font-family: 'Cinzel', serif;
+  font-size: clamp(2rem, 5vh, 4.5rem);
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-shadow: 0 0.5vh 1vh #000, 0 0 2vh rgba(255,100,0,0.8);
+  margin-bottom: -1vh;
+  text-align: center;
+}
+.gato-cine-subtitle {
+  color: #fff;
+  font-family: 'Cinzel', serif;
+  font-size: clamp(1.2rem, 3vh, 2.5rem);
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  text-shadow: 0 0.2vh 0.5vh #000, 0 0 1vh #ffcc00;
+  margin-bottom: 3.5vh;
+  text-align: center;
+}
+
+/* Loading Bar */
+.gato-cine-bar-wrap {
+  width: 50vw;
+  min-width: 300px;
+  max-width: 650px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.2vh;
+}
+
+.gato-cine-bar-track {
+  width: 100%;
+  height: 2.2vh;
+  min-height: 16px;
+  background: rgba(20, 5, 0, 0.85);
+  border: 0.25vh solid #b8860b;
+  border-radius: 2vh;
+  padding: 0.25vh;
+  position: relative;
+  box-shadow: 0 0 2vh rgba(255, 150, 0, 0.6), inset 0 0.2vh 0.5vh rgba(0,0,0,0.9);
+}
+
+.gato-cine-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #d32f2f, #ff8f00, #ffd700);
+  border-radius: 1.5vh;
+  box-shadow: 0 0 1.5vh rgba(255, 200, 0, 0.8), inset 0 0.2vh 0.4vh rgba(255,255,255,0.4);
+  transition: width 0.15s ease-out;
+  position: relative;
+}
+
+/* Glowing dot at the end of the loading bar */
+.gato-cine-bar-spark {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 3.5vh;
+  height: 3.5vh;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 2vh 1vh #fff, 0 0 4vh 2vh #ffd700;
+  transition: left 0.15s ease-out;
+  pointer-events: none;
+}
+
+.gato-cine-loading-text {
+  color: #ffe082;
+  font-size: 1.8vh;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-shadow: 0 0.2vh 0.5vh #000, 0 0 1vh rgba(255, 150, 0, 0.6);
+}

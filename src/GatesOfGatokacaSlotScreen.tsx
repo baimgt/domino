@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Socket } from 'socket.io-client';
 import './gatokaca.css';
 import GameMenuDropdown from './GameMenuDropdown';
+import GatokacaCinematicBackground from './GatokacaCinematicBackground';
 
 interface Props {
   onBack: () => void;
@@ -10,20 +11,20 @@ interface Props {
 
 // Symbol definitions - Gates of Gatotkaca 1000 theme
 export const GATO_SYMBOLS: Record<number, {
-  emoji?: string; name: string; label: string; tier: 'high' | 'mid' | 'low' | 'special';
+  name: string; label: string; tier: 'high' | 'mid' | 'low' | 'special';
   color: string; bgColor: string; img?: string;
 }> = {
-  // ── 5 NEW USER IMAGES ─────────────────────────────────────────────────────
-  0: { name: 'lion',       label: 'Singa Emas',      tier: 'high',    color: '#ffd700', bgColor: '#4a2800', img: '/assets/gatokaca/sym_lion.png' },
-  1: { name: 'blu-medal',  label: 'Liontin Biru',    tier: 'high',    color: '#29b6f6', bgColor: '#01579b', img: '/assets/gatokaca/sym_blue_medal.png' },
-  2: { name: 'pur-gem',    label: 'Permata Ungu',    tier: 'high',    color: '#ce93d8', bgColor: '#4a148c', img: '/assets/gatokaca/sym_purple_gem.png' },
-  3: { name: 'red-gem',    label: 'Permata Merah',   tier: 'mid',     color: '#ef5350', bgColor: '#7f0000', img: '/assets/gatokaca/sym_red_gem.png' },
-  4: { name: 'yel-gem',    label: 'Permata Kuning',  tier: 'mid',     color: '#ffa726', bgColor: '#e65100', img: '/assets/gatokaca/sym_yellow_gem.png' },
-  // ── 4 REMAINING USER IMAGES ───────────────────────────────────────────────
-  5: { name: 'grn-gem',    label: 'Permata Hijau',   tier: 'mid',     color: '#66bb6a', bgColor: '#1b5e20', img: '/assets/gatokaca/sym_green_gem.png' },
-  6: { name: 'potion',     label: 'Ramuan Hijau',    tier: 'low',     color: '#26a69a', bgColor: '#004d40', img: '/assets/gatokaca/sym_potion.png' },
-  7: { name: 'ruby-ring',  label: 'Cincin Ruby',     tier: 'low',     color: '#ef5350', bgColor: '#7f0000', img: '/assets/gatokaca/sym_ruby_ring.png' },
-  8: { name: 'amulet',     label: 'Jimat Emas',      tier: 'low',     color: '#ffd700', bgColor: '#b8860b', img: '/assets/gatokaca/sym_amulet.png' },
+  // ── 4 HIGH-PAYING ITEMS (Pragmatic Play Gatotkaca) ─────────────────────────
+  0: { name: 'ruby-ring',  label: 'Cincin Ruby',     tier: 'high',    color: '#ef5350', bgColor: '#7f0000', img: '/assets/gatokaca/sym_ruby_ring.png' },
+  1: { name: 'lion',       label: 'Singa Emas',      tier: 'high',    color: '#ffd700', bgColor: '#4a2800', img: '/assets/gatokaca/sym_lion.png' },
+  2: { name: 'potion',     label: 'Ramuan Hijau',    tier: 'high',    color: '#26a69a', bgColor: '#004d40', img: '/assets/gatokaca/sym_potion.png' },
+  3: { name: 'blu-medal',  label: 'Liontin Biru',    tier: 'high',    color: '#29b6f6', bgColor: '#01579b', img: '/assets/gatokaca/sym_blue_medal.png' },
+  // ── 5 GEMSTONES (RED, PURPLE, YELLOW, GREEN, BLUE) ───────────────────────
+  4: { name: 'red-gem',    label: 'Permata Merah',   tier: 'mid',     color: '#ef5350', bgColor: '#7f0000', img: '/assets/gatokaca/sym_red_gem.png' },
+  5: { name: 'pur-gem',    label: 'Permata Ungu',    tier: 'mid',     color: '#ce93d8', bgColor: '#4a148c', img: '/assets/gatokaca/sym_purple_gem.png' },
+  6: { name: 'yel-gem',    label: 'Permata Kuning',  tier: 'mid',     color: '#ffa726', bgColor: '#e65100', img: '/assets/gatokaca/sym_yellow_gem.png' },
+  7: { name: 'grn-gem',    label: 'Permata Hijau',   tier: 'low',     color: '#66bb6a', bgColor: '#1b5e20', img: '/assets/gatokaca/sym_green_gem.png' },
+  8: { name: 'blu-gem',    label: 'Permata Biru',    tier: 'low',     color: '#29b6f6', bgColor: '#01579b', img: '/assets/gatokaca/sym_blue_gem.png' },
   // ── SPECIAL ───────────────────────────────────────────────────────────────
   9: { name: 'scatter',    label: 'SCATTER',         tier: 'special', color: '#ffd700', bgColor: '#1a237e', img: '/assets/gatokaca/sym_scatter.png' },
   10:{ name: 'multi',      label: 'MULTIPLIER',      tier: 'special', color: '#ffffff', bgColor: '#880e4f' },
@@ -31,15 +32,15 @@ export const GATO_SYMBOLS: Record<number, {
 
 // Paytable: count -> payout multiplier (per bet unit)
 const PAYTABLE: Record<number, Record<string, number>> = {
-  0:  { '12': 50, '20': 250, '30': 500  }, // Cincin Ruby
-  1:  { '12': 25, '20': 100, '30': 250  }, // Ramuan Hijau
-  2:  { '12': 15, '20': 50,  '30': 150  }, // Jimat Emas
-  3:  { '12': 12, '20': 20,  '30': 120  }, // Permata Hijau
-  4:  { '12': 10, '20': 15,  '30': 100  }, // Permata Ungu
-  5:  { '12': 8,  '20': 12,  '30': 80   }, // Berlian Biru
-  6:  { '12': 5,  '20': 10,  '30': 50   }, // Permata Oranye
-  7:  { '12': 4,  '20': 9,   '30': 40   }, // Permata Merah
-  8:  { '12': 2,  '20': 7,   '30': 20   }, // Cincin Emas
+  0:  { '12': 50, '20': 250, '30': 500  }, // Cincin Ruby (500x)
+  1:  { '12': 25, '20': 100, '30': 250  }, // Singa Emas (250x)
+  2:  { '12': 15, '20': 60,  '30': 150  }, // Ramuan Hijau (150x)
+  3:  { '12': 12, '20': 40,  '30': 120  }, // Liontin Biru (120x)
+  4:  { '12': 10, '20': 30,  '30': 100  }, // Permata Merah (100x)
+  5:  { '12': 8,  '20': 25,  '30': 80   }, // Permata Ungu (80x)
+  6:  { '12': 5,  '20': 20,  '30': 50   }, // Permata Kuning (50x)
+  7:  { '12': 4,  '20': 18,  '30': 40   }, // Permata Hijau (40x)
+  8:  { '12': 2,  '20': 14,  '30': 20   }, // Permata Biru (20x)
 };
 
 const SCATTER_PAY: Record<number, number> = { 4: 3, 5: 5, 6: 100 };
@@ -97,6 +98,7 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
   const freeSpinsLeftRef = useRef(freeSpinsLeft);
   const spinSpeedRef = useRef(spinSpeed);
   const doSpinRef = useRef<any>(null);
+  const isStoppingRef = useRef(false);
 
   useEffect(() => { autoSpinsRef.current = autoSpins; }, [autoSpins]);
   useEffect(() => { freeSpinsLeftRef.current = freeSpinsLeft; }, [freeSpinsLeft]);
@@ -241,22 +243,46 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
     const expCls = isExplode? 'gato-tile-explode' : '';
     const sym = GATO_SYMBOLS[symId] || GATO_SYMBOLS[4];
 
-    /* ── MULTIPLIER ORB ─────────────────────────────────── */
+    /* ── MULTIPLIER ORB (Image-based with CSS filters) ──────── */
     if (symId === 10) {
-      const multColors: Record<number,string[]> = {
-        2:  ['#a5f3a0','#1b5e20'], 3:  ['#a5f3a0','#1b5e20'],
-        5:  ['#81d4fa','#01579b'], 8:  ['#81d4fa','#01579b'],
-        10: ['#81d4fa','#01579b'], 15: ['#ce93d8','#4a148c'],
-        25: ['#ce93d8','#4a148c'], 50: ['#ef9a9a','#b71c1c'],
-        100:['#ef9a9a','#b71c1c'],500:['#fff59d','#f57f17'],
-        1000:['#ffd700','#d50000']
-      };
-      const [c1, c2] = multColors[multVal] ?? ['#81d4fa','#01579b'];
+      // Base image is blue gem (sym_blue_gem.png). We use hue-rotate to change the color.
+      let filterStyle = 'hue-rotate(0deg)'; // Blue default
+      if (multVal >= 2 && multVal <= 4) filterStyle = 'hue-rotate(-90deg) brightness(1.2)'; // Green
+      else if (multVal >= 15 && multVal <= 25) filterStyle = 'hue-rotate(70deg)'; // Purple
+      else if (multVal >= 50 && multVal <= 100) filterStyle = 'hue-rotate(150deg) brightness(1.1)'; // Red
+      else if (multVal >= 500) filterStyle = 'hue-rotate(-160deg) brightness(1.4) sepia(0.5)'; // Gold
+      
+      const textColor = multVal >= 500 ? '#ffd700' : '#ffffff';
+
       return (
         <div className={`gato-tile ${winCls} ${expCls}`} style={{background:'none',border:'none',boxShadow:'none'}}>
-          <div className="gato-mult-orb" style={{background:`radial-gradient(circle at 32% 28%, #fff 0%, ${c1} 35%, ${c2} 80%)`}}>
-            <div className="gato-mult-lightning"/>
-            <span className="gato-mult-val">{multVal > 0 ? `${multVal}x` : '?x'}</span>
+          <div className="gato-mult-img-wrap" style={{ position: 'relative', width: '90%', height: '90%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <img 
+              src="/assets/gatokaca/sym_blue_gem.png" 
+              alt="Multiplier" 
+              style={{ 
+                width: '100%', 
+                height: '100%', 
+                objectFit: 'contain', 
+                position: 'absolute', 
+                filter: `${filterStyle} drop-shadow(0 0 1vh rgba(0,0,0,0.8))`,
+                animation: 'multOrbPulse 2s ease-in-out infinite alternate' 
+              }} 
+            />
+            {/* Dark overlay to make text pop */}
+            <div style={{ position: 'absolute', inset: '20%', background: 'radial-gradient(circle, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 70%)', borderRadius: '50%' }} />
+            <span 
+              className="gato-mult-val" 
+              style={{ 
+                color: textColor, 
+                position: 'relative',
+                zIndex: 2,
+                fontSize: multVal >= 500 ? 'clamp(1rem, 2vh, 2.2vh)' : 'clamp(1rem, 2.4vh, 2.6vh)',
+                textShadow: '0 0.2vh 0 #000, 0 -0.2vh 0 #000, 0.2vh 0 0 #000, -0.2vh 0 0 #000, 0 0.4vh 1vh rgba(0,0,0,1)'
+              }}
+            >
+              {multVal > 0 ? `${multVal}x` : '?x'}
+            </span>
           </div>
         </div>
       );
@@ -266,7 +292,15 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
     if (symId === 9) {
       return (
         <div className={`gato-tile gato-sym-img-wrap ${winCls} ${expCls}`}>
-          <img src="/assets/gatokaca/sym_scatter.png" alt="SCATTER" className="gato-sym-img" draggable={false} />
+          <img
+            src="/assets/gatokaca/sym_scatter.png"
+            alt="SCATTER"
+            className="gato-sym-img"
+            draggable={false}
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = '/assets/gatokaca/test_defringed.png';
+            }}
+          />
         </div>
       );
     }
@@ -275,7 +309,15 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
     if (sym.img) {
       return (
         <div className={`gato-tile gato-sym-img-wrap ${winCls} ${expCls}`}>
-          <img src={sym.img} alt={sym.label} className="gato-sym-img" draggable={false} />
+          <img
+            src={sym.img}
+            alt={sym.label}
+            className="gato-sym-img"
+            draggable={false}
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = '/assets/gatokaca/sym_ruby_ring.png';
+            }}
+          />
         </div>
       );
     }
@@ -284,59 +326,7 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
   };
 
   if (loading) {
-    return (
-      <div className="gato-loading-screen">
-        <div className="gato-loading-content">
-          {/* LEFT FEATURE: 500x BADGE */}
-          <div className="gato-loading-feature gato-feat-left">
-            <div className="gato-feat-badge">
-              <span>500x</span>
-            </div>
-            <div className="gato-feat-desc">
-              Kelipatan kemenangan<br />hingga x500
-            </div>
-          </div>
-
-          {/* CENTER: HERO CHARACTER & LOGO */}
-          <div className="gato-loading-center">
-            <img
-              src="/assets/gatokaca/hero_character.png"
-              alt="Gatotkaca"
-              className="gato-loading-hero-img"
-            />
-            <div className="gato-loading-logo">
-              <span className="gato-logo-gold">Gates</span>
-              <span className="gato-logo-sub">OF</span>
-              <span className="gato-logo-cyan">GATOT KACA</span>
-            </div>
-          </div>
-
-          {/* RIGHT FEATURE: SCATTER CARD */}
-          <div className="gato-loading-feature gato-feat-right">
-            <div className="gato-feat-card">
-              <img src="/assets/gatokaca/sym_scatter.png" alt="Scatter" />
-              <div className="gato-scatter-txt">SCATTER</div>
-            </div>
-            <div className="gato-feat-desc">
-              4 atau lebih SCATTER<br />memasuki free spin
-            </div>
-          </div>
-        </div>
-
-        {/* BOTTOM PROGRESS BAR */}
-        <div className="gato-loading-bar-wrapper">
-          <div className="gato-loading-bar-track">
-            <div
-              className="gato-loading-bar-fill"
-              style={{ width: `${loadProgress}%` }}
-            />
-          </div>
-          <div className="gato-loading-text">
-            LOADING......{loadProgress}%
-          </div>
-        </div>
-      </div>
-    );
+    return <GatokacaCinematicBackground progress={loadProgress} />;
   }
 
   return (
@@ -358,7 +348,15 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
       {/* TOP LEFT: Avatar + coins */}
       <div className="gato-topleft">
         <div className="gato-avatar-wrap" onClick={() => alert('Profil VIP')}>
-          <img className="gato-avatar-img" src="https://i.pravatar.cc/100?img=33" alt="avatar" />
+          <img
+            className="gato-avatar-img"
+            src="https://i.pravatar.cc/100?img=33"
+            alt="avatar"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src =
+                'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%23ffd700"/><circle cx="50" cy="38" r="18" fill="%234a148c"/><path d="M22 84 C22 64 36 58 50 58 C64 58 78 64 78 84 Z" fill="%234a148c"/></svg>';
+            }}
+          />
           <div className="gato-vip-badge">VIP 1</div>
         </div>
         <div className="gato-coins-row">
@@ -368,11 +366,9 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
         </div>
       </div>
 
-      {/* TOP CENTER: Info text with Green Gem Icon */}
+      {/* TOP CENTER: Sleek Pragmatic info badge - unblocks middle of the screen */}
       <div className="gato-top-info">
-        <span>Mendapatkan</span>
-        <img src="/assets/gatokaca/sym_green_gem.png" alt="" className="gato-top-gem-icon" />
-        <span>dapat dikalikan dengan bonus</span>
+        <div className="gato-top-info-text">SIMBOL MEMBAYAR DI MANA SAJA</div>
       </div>
 
       {/* TOP RIGHT */}
@@ -382,7 +378,7 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
           <span className="gato-tr-icon">🔄</span>
           <span className="gato-tr-label">Ganti<br/>room</span>
         </button>
-        <button className="gato-tr-btn" onClick={() => setShowMenu(v => !v)}>≡</button>
+        <button className="gato-tr-btn" style={{position:'relative'}} onClick={() => setShowMenu(v => !v)}>≡</button>
 
         <GameMenuDropdown
           isOpen={showMenu}
@@ -433,13 +429,7 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
             </div>
           </div>
 
-          {/* VIP 2 Upgrade Box at bottom left */}
-          <div className="gato-vip-upgrade-box">
-            <div className="gato-vip-req-label">Minimal VIP 2</div>
-            <button className="gato-vip-upgrade-btn" onClick={() => alert('Upgrade ke VIP 2')}>
-              Upgrade
-            </button>
-          </div>
+          
         </div>
 
         {/* GRID */}
@@ -469,7 +459,7 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
           </div>
         </div>
 
-        {/* RIGHT: Gatotkaca Hero Character - Video */}
+        {/* RIGHT: Gatotkaca Hero Character - Video with static fallback */}
         <div className="gato-right-panel">
           <div className="gato-hero-container">
             <video
@@ -478,9 +468,14 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
               loop
               muted
               playsInline
+              poster="/assets/gatokaca/test_defringed.png"
             >
               <source src="/assets/gatokaca/animasi.webm" type="video/webm" />
-              <source src="/assets/gatokaca/animasi.mp4" type="video/mp4" />
+              <img
+                src="/assets/gatokaca/test_defringed.png"
+                alt="Gatotkaca Hero"
+                className="gato-hero-fallback-img"
+              />
             </video>
           </div>
         </div>
@@ -489,10 +484,11 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
       {/* PRAGMATIC / HIGGS GOLDEN BOTTOM BAR */}
       <div className="gato-bottom-bar notranslate" translate="no">
         <div className="gato-bot-left">
-          <button className="gato-bot-btn gato-btn-chat" onClick={() => alert('Fitur chat segera hadir!')}>
-            <svg viewBox="0 0 24 24" width="60%" height="60%" fill="#4a2503">
-              <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h2v2H6V9zm5 2H9V9h2v2zm4 0h-2V9h2v2z"/>
-            </svg>
+          <button className="gato-bot-btn" onClick={() => setShowMenu(v => !v)}>
+            ≡
+          </button>
+          <button className="gato-bot-btn" onClick={() => setSoundOn(v => !v)}>
+            {soundOn ? '🔊' : '🔇'}
           </button>
           <button className="gato-bot-btn gato-btn-info" onClick={() => { setShowRules(true); setRulesPage(0); }}>
             i
@@ -537,30 +533,53 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
             )}
             <button
               className={`gato-spin-btn ${isSpinning ? 'gato-spin-anim' : ''}`}
-              onMouseDown={() => {
-                if (isSpinning || autoSpins > 0) { setAutoSpins(0); return; }
+              onMouseDown={(e) => {
+                if (e.button !== 0) return; // Only left click
+                if (isSpinning || autoSpins > 0) { 
+                  setAutoSpins(0); 
+                  isStoppingRef.current = true;
+                  return; 
+                }
+                isStoppingRef.current = false;
                 spinPressTimer.current = setTimeout(() => setShowAutoMenu(true), 400);
               }}
               onMouseUp={() => {
                 clearTimeout(spinPressTimer.current);
+                if (isStoppingRef.current) {
+                  isStoppingRef.current = false;
+                  return;
+                }
                 if (!isSpinning && autoSpins === 0 && !showAutoMenu) doSpin();
               }}
-              onMouseLeave={() => clearTimeout(spinPressTimer.current)}
+              onMouseLeave={() => {
+                clearTimeout(spinPressTimer.current);
+                isStoppingRef.current = false;
+              }}
               onTouchStart={() => {
-                if (isSpinning || autoSpins > 0) { setAutoSpins(0); return; }
+                if (isSpinning || autoSpins > 0) { 
+                  setAutoSpins(0); 
+                  isStoppingRef.current = true;
+                  return; 
+                }
+                isStoppingRef.current = false;
                 spinPressTimer.current = setTimeout(() => setShowAutoMenu(true), 400);
               }}
-              onTouchEnd={() => {
+              onTouchEnd={(e) => {
+                e.preventDefault(); // Prevent ghost clicks
                 clearTimeout(spinPressTimer.current);
+                if (isStoppingRef.current) {
+                  isStoppingRef.current = false;
+                  return;
+                }
                 if (!isSpinning && autoSpins === 0 && !showAutoMenu) doSpin();
               }}
               onContextMenu={e => { e.preventDefault(); setShowAutoMenu(v => !v); }}
             >
               <div className="gato-spin-title">
-                {isSpinning ? 'STOP' : (autoSpins > 0 ? (autoSpins > 90000 ? 'AUTO ∞' : `AUTO ${autoSpins}`) : 'SPIN')}
+                {autoSpins > 0 ? (autoSpins > 90000 ? 'AUTO ∞' : `AUTO ${autoSpins}`) : (isSpinning ? 'STOP' : 'SPIN')}
               </div>
               <div className="gato-spin-sub">
-                {isSpinning ? 'BERHENTI' : 'HOLD FOR AUTO'}
+                {autoSpins > 0 ? 'STOP' : (isSpinning ? 'BERHENTI' : 'HOLD FOR AUTO')}
               </div>
             </button>
           </div>

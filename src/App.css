@@ -13087,6 +13087,7 @@ input:checked+.setting-slider:before {
 
 /* =====================================================
    PROFILE MODAL: CUSTOM & LENCANA STYLES
+
    ===================================================== */
 .pm-custom-pane {
   display: flex;
@@ -15747,3 +15748,49 @@ input:checked+.setting-slider:before {
   transform: scale(0.9);
 }
 
+
+/* ===== Friend Modal (Teman Online) ===== */
+.fm-modal{width:min(440px,94vw);max-height:84vh;display:flex;flex-direction:column;border-radius:22px;overflow:hidden;background:linear-gradient(160deg,rgba(60,24,110,.92),rgba(24,10,52,.95));backdrop-filter:blur(18px);border:1px solid rgba(190,140,255,.35);box-shadow:0 20px 60px rgba(90,30,180,.55),inset 0 1px 0 rgba(255,255,255,.15);color:#fff;font-family:'Inter','Outfit',sans-serif;animation:fmPop .28s cubic-bezier(.2,.9,.3,1.2);position:relative}
+@keyframes fmPop{from{opacity:0;transform:scale(.88) translateY(20px)}to{opacity:1;transform:none}}
+.fm-header{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;background:linear-gradient(90deg,#8e44ff,#c056ff 60%,#ff6ad5);}
+.fm-header-left{display:flex;align-items:center;gap:12px}
+.fm-header-icon{font-size:30px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.3))}
+.fm-header-title{font-weight:800;letter-spacing:1.5px;font-size:17px}
+.fm-header-sub{font-size:12px;opacity:.9}
+.fm-close-btn{width:32px;height:32px;border-radius:50%;border:none;background:rgba(0,0,0,.28);color:#fff;cursor:pointer;transition:.2s}
+.fm-close-btn:hover{background:rgba(255,60,90,.8);transform:rotate(90deg)}
+.fm-toast{margin:10px 14px 0;padding:8px 12px;border-radius:10px;background:rgba(74,222,128,.18);border:1px solid rgba(74,222,128,.5);font-size:13px;text-align:center}
+.fm-tabs{display:flex;gap:6px;padding:12px 14px 4px}
+.fm-tab{flex:1;padding:9px 6px;border:none;border-radius:12px;background:rgba(255,255,255,.07);color:#d9c4ff;font-weight:600;font-size:12.5px;cursor:pointer;transition:.2s}
+.fm-tab:hover{background:rgba(255,255,255,.14)}
+.fm-tab.active{background:linear-gradient(135deg,#a45bff,#ff6ad5);color:#fff;box-shadow:0 4px 14px rgba(170,80,255,.5)}
+.fm-tab-badge{display:inline-block;min-width:18px;padding:0 5px;margin-left:3px;border-radius:9px;background:rgba(255,255,255,.25);font-size:11px}
+.fm-badge-red{background:#ff3b5c}
+.fm-content{flex:1;overflow-y:auto;padding:10px 14px 16px}
+.fm-content::-webkit-scrollbar{width:6px}.fm-content::-webkit-scrollbar-thumb{background:rgba(190,140,255,.4);border-radius:3px}
+.fm-section-label{margin:10px 2px 6px;font-size:12px;font-weight:700;color:#7dffb0;letter-spacing:.5px}
+.fm-friend-card{display:flex;align-items:center;gap:12px;padding:10px 12px;margin-bottom:8px;border-radius:14px;border:1px solid rgba(255,255,255,.08);transition:.2s;background:rgba(255,255,255,.05)}
+.fm-friend-card:hover{transform:translateX(3px);border-color:rgba(190,140,255,.5)}
+.fm-friend-avatar{position:relative;width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#5b2aa8,#2d1362);border:2px solid rgba(190,140,255,.5)}
+.fm-online-dot{position:absolute;right:-1px;bottom:-1px;width:13px;height:13px;border-radius:50%;border:2px solid #20093f}
+.fm-online-dot.online{background:#4ade80;box-shadow:0 0 8px #4ade80}
+.fm-online-dot.offline{background:#6b6b7b}
+.fm-friend-info{flex:1;min-width:0}
+.fm-friend-name{font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fm-friend-meta{font-size:11.5px;color:#cbb6f0;margin-top:2px}
+.fm-online-badge{margin-left:6px;color:#4ade80;font-weight:700}
+.fm-friend-actions{display:flex;gap:6px;align-items:center}
+.fm-btn{border:none;border-radius:10px;padding:7px 11px;font-weight:700;font-size:12.5px;color:#fff;cursor:pointer;transition:.2s}
+.fm-btn:hover{transform:translateY(-2px);filter:brightness(1.15)}
+.fm-btn:disabled{opacity:.6}
+.fm-btn-gift{background:linear-gradient(135deg,#ffb938,#ff7b2e)}
+.fm-btn-remove{background:rgba(255,70,100,.35)}
+.fm-btn-accept,.fm-btn-add{background:linear-gradient(135deg,#34d399,#16a34a)}
+.fm-btn-search{background:linear-gradient(135deg,#a45bff,#ff6ad5)}
+.fm-search-bar{display:flex;gap:8px;margin-bottom:12px}
+.fm-search-input{flex:1;padding:10px 14px;border-radius:12px;border:1px solid rgba(190,140,255,.4);background:rgba(0,0,0,.3);color:#fff;outline:none}
+.fm-search-input:focus{border-color:#ff6ad5;box-shadow:0 0 0 3px rgba(255,106,213,.25)}
+.fm-empty{text-align:center;padding:34px 10px;color:#cbb6f0;font-size:13px}
+.fm-loading{text-align:center;padding:40px;color:#cbb6f0}
+.fm-spinner{width:34px;height:34px;margin:0 auto 10px;border-radius:50%;border:4px solid rgba(255,255,255,.15);border-top-color:#ff6ad5;animation:fmSpin .8s linear infinite}
+@keyframes fmSpin{to{transform:rotate(360deg)}}

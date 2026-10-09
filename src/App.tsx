@@ -15,6 +15,7 @@ import BilliardScreen from './BilliardScreen';
 import GameMenuDropdown from './GameMenuDropdown';
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
 import { FacebookLogin } from '@capacitor-community/facebook-login';
+import OlympusCinematicBackground from './OlympusCinematicBackground';
 
 const API_URL = 'http://localhost:8080/api';
 
@@ -26,61 +27,57 @@ function LoadingScreen({ onFinish }: { onFinish: (target: 'login' | 'home') => v
   const animEnabled = localStorage.getItem('set_anim') !== 'off';
 
   useEffect(() => {
-    const stepSpeed = animEnabled ? 20 : 10;
+    const stepSpeed = animEnabled ? 28 : 10;
     const interval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) {
           clearInterval(interval);
-          setTimeout(() => onFinish('login'), 300);
+          setTimeout(() => onFinish('login'), 350);
           return 100;
         }
-        return prev + 2;
+        return prev + 1;
       });
     }, stepSpeed);
     return () => clearInterval(interval);
   }, [onFinish, animEnabled]);
 
-  const particles = ['🪙', '🎲', '🎴', '👑', '💎', '♠️', '🌟'];
+  const getStatusText = (p: number) => {
+    if (p < 25) return '⚡ MEMBUKA GERBANG OLYMPUS...';
+    if (p < 55) return '⚡ MENGHUBUNGKAN KE SERVER...';
+    if (p < 85) return '⚡ MEMUAT SUMBER DAYA GAME...';
+    if (p < 100) return '⚡ MENERIMA BERKAH DEWA ZEUS...';
+    return '⚡ KEKUATAN ZEUS SIAP! 🔥';
+  };
 
   return (
-    <div className="epic-loading-wrapper">
-      {animEnabled && <div className="epic-rays-bg" />}
+    <OlympusCinematicBackground>
+      <div className="olympus-loading-wrapper">
+        <div className="olympus-loading-content">
+          <div className="olympus-loading-crest">
+            <div className="olympus-crest-badge">
+              <span className="olympus-crest-badge-icon">⚡</span>
+              <span className="olympus-crest-badge-text">GATES OF OLYMPUS</span>
+            </div>
+            <h1 className="olympus-loading-title">DOMINO OLYMPUS</h1>
+            <p className="olympus-loading-subtitle">✨ KEKUATAN PETIR PETUALANGAN KASINO ✨</p>
+          </div>
 
-      {/* Floating 3D Particles */}
-      {animEnabled && particles.map((p, i) => (
-        <div
-          key={i}
-          className="epic-bg-particle"
-          style={{
-            left: `${10 + (i * 13)}vw`,
-            top: `${15 + ((i * 17) % 65)}vh`,
-            animationDelay: `${(i * 0.4).toFixed(1)}s`,
-            animationDuration: `${4 + (i % 3)}s`
-          }}
-        >
-          {p}
-        </div>
-      ))}
+          <div className="olympus-progress-box">
+            <div className="olympus-progress-header">
+              <span className="olympus-progress-status">{getStatusText(progress)}</span>
+              <span className="olympus-progress-percent">{progress}%</span>
+            </div>
+            <div className="olympus-progress-track">
+              <div className="olympus-progress-fill" style={{ width: `${progress}%` }} />
+            </div>
+          </div>
 
-      {/* Epic Logo Container */}
-      <div className="epic-logo-container">
-        <div className="epic-logo-badge">
-          <div className="epic-logo-icon">🀱</div>
-        </div>
-        <h1 className="epic-logo-text">DOMINO</h1>
-        <p className="epic-logo-sub">✨ GAME KASINO ONLINE #1 ✨</p>
-      </div>
-
-      {/* Progress Bar V2 */}
-      <div className="loading-bar-wrapper-v2">
-        <div className="loading-text-v2">
-          {progress < 100 ? `MEMUAT DATA KASINO... ${progress}%` : 'SIAP MAIN! 🔥'}
-        </div>
-        <div className="loading-bar-bg-v2">
-          <div className="loading-bar-fill-v2" style={{ width: `${progress}%` }} />
+          <div className="olympus-loading-footer">
+            Koneksi aman • Nikmati sensasi petir Zeus & kemenangan legendaris
+          </div>
         </div>
       </div>
-    </div>
+    </OlympusCinematicBackground>
   );
 }
 
@@ -213,57 +210,66 @@ function LoginScreen({ onLoginSuccess }: { onLoginSuccess: () => void }) {
   };
 
   return (
-    <div
-      className="screen-wrapper login-bg"
-      onClick={savedUser ? onLoginSuccess : undefined}
-      style={{ cursor: savedUser ? 'pointer' : 'default' }}
-    >
-      <div className="loading-logo-block">
-        <div className="loading-logo-icon">🀱</div>
-        <h1 className="loading-logo-text">DOMINO</h1>
-        <p className="loading-logo-sub">
-          {savedUser ? `Selamat Datang, ${savedUser}!` : 'Game Kasino Online #1'}
-        </p>
-      </div>
+    <OlympusCinematicBackground>
+      <div
+        className="screen-wrapper login-olympus"
+        onClick={savedUser ? onLoginSuccess : undefined}
+        style={{ cursor: savedUser ? 'pointer' : 'default', zIndex: 10 }}
+      >
+        <div className="olympus-loading-crest">
+          <div className="olympus-crest-badge">
+            <span className="olympus-crest-badge-icon">⚡</span>
+            <span className="olympus-crest-badge-text">GATES OF OLYMPUS</span>
+          </div>
+          <h1 className="olympus-loading-title">DOMINO OLYMPUS</h1>
+          <p className="olympus-loading-subtitle">
+            {savedUser ? `Selamat Datang, ${savedUser}!` : '✨ GAME KASINO ONLINE #1 ✨'}
+          </p>
+        </div>
 
-      {savedUser ? (
-        <div className="tap-to-enter-anim">
-          <span className="tap-text">— Ketuk Layar untuk Masuk —</span>
-        </div>
-      ) : (
-        <div className="login-box" onClick={e => e.stopPropagation()}>
-          <p className="login-title">Pilih Cara Masuk</p>
-          <button className="btn-login-main" onClick={handleGuestLogin} disabled={isLoggingIn}>
-            <span className="btn-login-icon">👤</span>
-            <div className="btn-login-text">
-              <span className="btn-login-name">{isLoggingIn ? 'Mendaftar...' : 'Masuk sebagai Tamu'}</span>
-              <span className="btn-login-desc">Langsung main tanpa akun</span>
-            </div>
-          </button>
-          <button className="btn-login-alt google" onClick={() => handleSocialLogin('Google')}>
-            <span className="btn-login-icon">G</span>
-            <div className="btn-login-text">
-              <span className="btn-login-name">Masuk dengan Google</span>
-              <span className="btn-login-desc">Gunakan akun Gmail Anda</span>
-            </div>
-          </button>
-          <button className="btn-login-alt facebook" onClick={() => handleSocialLogin('Facebook')}>
-            <span className="btn-login-icon">f</span>
-            <div className="btn-login-text">
-              <span className="btn-login-name">Masuk dengan Facebook</span>
-              <span className="btn-login-desc">Gunakan akun Facebook Anda</span>
-            </div>
-          </button>
-          <button className="btn-login-alt phone" onClick={() => alert('Login HP segera hadir!')}>
-            <span className="btn-login-icon">📱</span>
-            <div className="btn-login-text">
-              <span className="btn-login-name">Masuk dengan Nomor HP</span>
-              <span className="btn-login-desc">Verifikasi via SMS OTP</span>
-            </div>
-          </button>
-        </div>
-      )}
-    </div>
+        {savedUser ? (
+          <div className="tap-to-enter-anim login-olympus-tap">
+            <span className="tap-text" style={{ fontSize: '2.3vh', color: '#ffd700', textShadow: '0 0 16px rgba(255,215,0,0.85)' }}>
+              ⚡ Ketuk Layar untuk Masuk ⚡
+            </span>
+          </div>
+        ) : (
+          <div className="login-box login-olympus-box" onClick={e => e.stopPropagation()}>
+            <p className="login-title" style={{ color: '#ffe694', textShadow: '0 0 10px rgba(255,215,0,0.5)' }}>
+              Pilih Cara Masuk
+            </p>
+            <button className="btn-login-main" onClick={handleGuestLogin} disabled={isLoggingIn}>
+              <span className="btn-login-icon">👤</span>
+              <div className="btn-login-text">
+                <span className="btn-login-name">{isLoggingIn ? 'Mendaftar...' : 'Masuk sebagai Tamu'}</span>
+                <span className="btn-login-desc">Langsung main tanpa akun</span>
+              </div>
+            </button>
+            <button className="btn-login-alt google" onClick={() => handleSocialLogin('Google')}>
+              <span className="btn-login-icon">G</span>
+              <div className="btn-login-text">
+                <span className="btn-login-name">Masuk dengan Google</span>
+                <span className="btn-login-desc">Gunakan akun Gmail Anda</span>
+              </div>
+            </button>
+            <button className="btn-login-alt facebook" onClick={() => handleSocialLogin('Facebook')}>
+              <span className="btn-login-icon">f</span>
+              <div className="btn-login-text">
+                <span className="btn-login-name">Masuk dengan Facebook</span>
+                <span className="btn-login-desc">Gunakan akun Facebook Anda</span>
+              </div>
+            </button>
+            <button className="btn-login-alt phone" onClick={() => alert('Login HP segera hadir!')}>
+              <span className="btn-login-icon">📱</span>
+              <div className="btn-login-text">
+                <span className="btn-login-name">Masuk dengan Nomor HP</span>
+                <span className="btn-login-desc">Verifikasi via SMS OTP</span>
+              </div>
+            </button>
+          </div>
+        )}
+      </div>
+    </OlympusCinematicBackground>
   );
 }
 
@@ -1530,118 +1536,6 @@ function KirimKoinModal({ onClose, onCoinsTransferred, onOpenShop }: { onClose: 
 }
 
 // =====================================================
-// AJAK TEMAN MODAL
-// =====================================================
-function AjakTemanModal({ onClose }: { onClose: () => void }) {
-  const [copied, setCopied] = useState(false);
-  const myUsername = localStorage.getItem('domino_username') || 'Guest';
-  const referralLink = `${window.location.origin}/ref/${myUsername}`;
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(referralLink);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <div className="modal-overlay">
-      <div className="modal-content glass-panel" style={{ width: '450px', padding: '0' }}>
-        {/* Header */}
-        <div style={{
-          background: 'linear-gradient(to right, #4a00e0, #8e2de2)',
-          padding: '20px',
-          borderTopLeftRadius: '15px',
-          borderTopRightRadius: '15px',
-          position: 'relative'
-        }}>
-          <h2 style={{ margin: 0, color: 'white', textAlign: 'center', fontSize: '24px', textShadow: '1px 1px 3px rgba(0,0,0,0.5)' }}>
-            🤝 AJAK TEMAN
-          </h2>
-          <button className="close-btn" onClick={onClose} style={{ position: 'absolute', top: '15px', right: '15px' }}>✕</button>
-        </div>
-
-        {/* Body */}
-        <div style={{ padding: '30px', textAlign: 'center', color: '#fff' }}>
-          <div style={{ fontSize: '50px', marginBottom: '15px' }}>🎁</div>
-          <h3 style={{ margin: '0 0 10px 0', color: '#ffd700', fontSize: '20px' }}>Dapatkan 1.000.000 Koin!</h3>
-          <p style={{ margin: '0 0 25px 0', fontSize: '15px', color: '#ccc', lineHeight: '1.5' }}>
-            Bagikan link referral Anda ke teman. Setiap teman yang mendaftar dan bermain akan memberikan Anda bonus koin!
-          </p>
-
-          <div style={{
-            background: 'rgba(0,0,0,0.5)',
-            border: '1px solid rgba(255,255,255,0.2)',
-            borderRadius: '10px',
-            padding: '15px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: '20px'
-          }}>
-            <span style={{ fontFamily: 'monospace', color: '#4ade80', fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginRight: '10px' }}>
-              {referralLink}
-            </span>
-            <button 
-              onClick={handleCopy}
-              style={{
-                background: copied ? '#4ade80' : 'linear-gradient(to right, #00b4db, #0083b0)',
-                color: copied ? '#000' : '#fff',
-                border: 'none',
-                padding: '8px 15px',
-                borderRadius: '5px',
-                cursor: 'pointer',
-                fontWeight: 'bold',
-                transition: 'all 0.3s'
-              }}
-            >
-              {copied ? 'Tersalin! ✅' : 'SALIN'}
-            </button>
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '15px' }}>
-            <button 
-              style={{
-                background: '#1877F2',
-                color: 'white',
-                border: 'none',
-                padding: '10px 20px',
-                borderRadius: '25px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
-              onClick={() => alert('Membuka Facebook...')}
-            >
-              <span>f</span> Share
-            </button>
-            <button 
-              style={{
-                background: '#25D366',
-                color: 'white',
-                border: 'none',
-                padding: '10px 20px',
-                borderRadius: '25px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
-              onClick={() => alert('Membuka WhatsApp...')}
-            >
-              <span>💬</span> WhatsApp
-            </button>
-          </div>
-
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// =====================================================
 // TEMAN ONLINE MODAL
 // =====================================================
 type FriendEntry = {
@@ -1719,7 +1613,7 @@ function FriendModal({ onClose, onOpenKirimKoin, socket }: {
     };
     const onOnlineUpdate = ({ onlineUsers }: { onlineUsers: string[] }) => {
       // Update online status for our friends
-      setOnlineSet(prev => {
+      setOnlineSet(() => {
         const newSet = new Set<string>();
         const currentFriendNames = friends.map(f => f.username);
         onlineUsers.forEach(u => { if (currentFriendNames.includes(u)) newSet.add(u); });
@@ -3525,7 +3419,7 @@ function SlotGamesModal({ onClose, onPlaySlot }: { onClose: () => void, onPlaySl
 // =====================================================
 // HOME / LOBBY SCREEN — mirip referensi gambar
 // =====================================================
-function HomeScreen({ onLogout, onNavigate }: { onLogout: () => void; onNavigate: (screen: any, category?: any) => void }) {
+function HomeScreen({ onLogout, onNavigate, socket }: { onLogout: () => void; onNavigate: (screen: any, category?: any) => void; socket?: any }) {
   const [profile, setProfile] = useState<any>(null);
   const [modal, setModal] = useState<{ title: string; message: string } | null>(null);
   const [showLogout, setShowLogout] = useState(false);
@@ -3545,6 +3439,12 @@ function HomeScreen({ onLogout, onNavigate }: { onLogout: () => void; onNavigate
   const [showKirimKoin, setShowKirimKoin] = useState(false);
   const [showSlotPopup, setShowSlotPopup] = useState(false);
   const [showAjakTeman, setShowAjakTeman] = useState(false);
+  const [showFriendModal, setShowFriendModal] = useState(false);
+
+  useEffect(() => {
+    const u = localStorage.getItem('domino_username');
+    if (socket && u) socket.emit('register-user', { username: u });
+  }, [socket]);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('domino_username');
@@ -3619,15 +3519,8 @@ function HomeScreen({ onLogout, onNavigate }: { onLogout: () => void; onNavigate
 
   return (
     <div className="screen-wrapper home-bg">
-      {/* ===== VIDEO BACKGROUND ===== */}
-      <video
-        className="lobby-video-bg"
-        src="/assets/loby/loby.mp4"
-        autoPlay
-        muted
-        loop
-        playsInline
-      />
+      {/* ===== IMAGE BACKGROUND ===== */}
+      <img className="lobby-video-bg" src="/assets/loby/lobby_bg.jpg" alt="" />
 
       {modal && <Modal title={modal.title} message={modal.message} onClose={() => setModal(null)} />}
 
@@ -3668,6 +3561,15 @@ function HomeScreen({ onLogout, onNavigate }: { onLogout: () => void; onNavigate
             setCanClaimBonus(false);
             setProfile((prev: any) => prev ? { ...prev, coins: newCoins } : prev);
           }}
+        />
+      )}
+
+      {/* Teman Online Modal */}
+      {showFriendModal && (
+        <FriendModal
+          socket={socket}
+          onClose={() => setShowFriendModal(false)}
+          onOpenKirimKoin={() => setShowKirimKoin(true)}
         />
       )}
 
@@ -3997,7 +3899,7 @@ function HomeScreen({ onLogout, onNavigate }: { onLogout: () => void; onNavigate
             </span>
             <span className="hb3-lbl">Beranda</span>
           </button>
-          <button className="hb3-nav-btn" onClick={() => pop('Teman', 'Daftar teman online Anda.')}>
+          <button className="hb3-nav-btn" onClick={() => setShowFriendModal(true)}>
             <span className="hb3-ico">
               <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" /></svg>
             </span>
@@ -7493,6 +7395,8 @@ function App() {
 
     sock.on('connect', () => {
       console.log('Socket.IO connected:', sock.id);
+      const u = localStorage.getItem('domino_username');
+      if (u) sock.emit('register-user', { username: u });
     });
 
     sock.on('disconnect', () => {
@@ -7643,7 +7547,7 @@ function App() {
         />
       )}
       {screen === 'home' && (
-        <HomeScreen onLogout={() => setScreen('login')} onNavigate={handleNavigate} />
+        <HomeScreen onLogout={() => setScreen('login')} onNavigate={handleNavigate} socket={socketRef.current} />
       )}
 
       {screen === 'slot-lobby' && (
@@ -7665,63 +7569,63 @@ function App() {
 
       {screen === 'slot-game' && (
         <SlotGameScreen
-          onBack={() => setScreen('slot-lobby')}
+          onBack={() => setScreen('home')}
           socket={socketRef.current}
         />
       )}
 
       {screen === 'zeus-game' && (
         <ZeusSlotScreen
-          onBack={() => setScreen('slot-lobby')}
+          onBack={() => setScreen('home')}
           socket={socketRef.current}
         />
       )}
 
       {screen === 'fafafa-game' && (
         <FafafaSlotScreen
-          onBack={() => setScreen('slot-lobby')}
+          onBack={() => setScreen('home')}
           socket={socketRef.current}
         />
       )}
 
       {screen === 'jinji-game' && (
         <JinJiBaoXiSlotScreen
-          onBack={() => setScreen('slot-lobby')}
+          onBack={() => setScreen('home')}
           socket={socketRef.current}
         />
       )}
 
       {screen === 'mahjong2-game' && (
         <MahjongWays2SlotScreen
-          onBack={() => setScreen('slot-lobby')}
+          onBack={() => setScreen('home')}
           socket={socketRef.current}
         />
       )}
 
       {screen === 'gatokaca-game' && (
         <GatesOfGatokacaSlotScreen
-          onBack={() => setScreen('slot-lobby')}
+          onBack={() => setScreen('home')}
           socket={socketRef.current}
         />
       )}
 
       {screen === 'candy-game' && (
         <CandyRushSlotScreen
-          onBack={() => setScreen('slot-lobby')}
+          onBack={() => setScreen('home')}
           socket={socketRef.current}
         />
       )}
 
       {screen === 'wildwest-game' && (
         <WildWestSlotScreen
-          onBack={() => setScreen('slot-lobby')}
+          onBack={() => setScreen('home')}
           socket={socketRef.current}
         />
       )}
 
       {screen === 'fivelions-game' && (
         <FiveLionsSlotScreen
-          onBack={() => setScreen('slot-lobby')}
+          onBack={() => setScreen('home')}
           socket={socketRef.current}
         />
       )}
