@@ -329,17 +329,98 @@
   overflow: hidden;
   transition: background 0.2s;
 }
-.gato-cell.gato-cell-spin {
-  animation: cellSpin 0.08s linear infinite;
+/* ===== SPIN ANIMATION (disamakan dengan Duo Fu Duo Cai) ===== */
+/* 1. Getar cepat ke bawah saat reel berputar */
+.gato-cell.gato-cell-spin .gato-tile {
+  animation: gatoReelSpin 0.065s linear infinite;
+  will-change: transform;
+  filter: blur(3.5px) brightness(1.15) saturate(1.25);
+  transform: scaleY(1.14);
 }
-@keyframes cellSpin {
-  0%   { transform: translateY(0); }
-  50%  { transform: translateY(-4px); }
+@keyframes gatoReelSpin {
+  0%   { transform: translateY(-8px) scaleY(1.14); }
+  50%  { transform: translateY(8px)  scaleY(1.14); }
+  100% { transform: translateY(-8px) scaleY(1.14); }
+}
+
+/* Garis kecepatan vertikal */
+.gato-cell.gato-cell-spin::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    180deg,
+    transparent 0,
+    transparent 18px,
+    rgba(255, 255, 255, 0.09) 18px,
+    rgba(255, 255, 255, 0.09) 36px
+  );
+  animation: gatoSpeedLines 0.12s linear infinite;
+  pointer-events: none;
+  z-index: 5;
+}
+@keyframes gatoSpeedLines {
+  0%   { transform: translateY(-36px); }
   100% { transform: translateY(0); }
 }
-.gato-cell.gato-cell-spin .gato-tile {
-  filter: blur(3px) brightness(1.1);
-  transform: scaleY(1.05);
+
+/* Kilau menyapu di dalam sel saat berputar */
+.gato-cell.gato-cell-spin::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(180, 120, 255, 0.3) 40%,
+    rgba(255, 215, 0, 0.25) 60%,
+    transparent 100%
+  );
+  animation: gatoCellShimmer 0.16s linear infinite;
+  pointer-events: none;
+  z-index: 4;
+}
+@keyframes gatoCellShimmer {
+  0%   { transform: translateY(-110%); opacity: 0.6; }
+  50%  { transform: translateY(0%);    opacity: 0.3; }
+  100% { transform: translateY(110%);  opacity: 0; }
+}
+
+/* 2. Mendarat: jatuh dari atas + pantulan mekanis */
+.gato-cell.gato-cell-bounce .gato-tile {
+  animation: gatoReelBounce 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--r, 0) * 0.025s);
+}
+@keyframes gatoReelBounce {
+  0%   { transform: translateY(-80px); opacity: 0.7; filter: blur(2px); }
+  50%  { transform: translateY(18px);  opacity: 1;   filter: none; }
+  75%  { transform: translateY(-7px); }
+  90%  { transform: translateY(2px); }
+  100% { transform: translateY(0); filter: none; }
+}
+
+/* Kilau emas saat reel mendarat */
+.gato-cell.gato-cell-bounce::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 215, 0, 0) 0%,
+    rgba(255, 215, 0, 0.4) 35%,
+    rgba(255, 255, 255, 0.55) 50%,
+    rgba(255, 215, 0, 0.4) 65%,
+    rgba(255, 215, 0, 0) 100%
+  );
+  opacity: 0;
+  animation: gatoLandingFlash 0.35s ease-out;
+  pointer-events: none;
+  z-index: 8;
+}
+@keyframes gatoLandingFlash {
+  0%   { opacity: 0.85; transform: translateY(-100%); }
+  50%  { opacity: 0.5;  transform: translateY(0%); }
+  100% { opacity: 0;    transform: translateY(100%); }
 }
 
 /* ===========================

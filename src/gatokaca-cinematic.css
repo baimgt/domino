@@ -11,90 +11,108 @@
   align-items: center;
   font-family: 'Outfit', 'Cinzel', sans-serif;
   user-select: none;
+  animation: gatoCineEnter 0.9s ease-out both;
+}
+.gato-cine-wrapper.gato-cine-exit {
+  animation: gatoCineExit 0.4s ease-in forwards;
+}
+@keyframes gatoCineEnter {
+  0% { opacity: 0; transform: scale(1.06); filter: brightness(2.5); }
+  100% { opacity: 1; transform: scale(1); filter: brightness(1); }
+}
+@keyframes gatoCineExit {
+  0% { opacity: 1; filter: brightness(1); }
+  100% { opacity: 0; filter: brightness(2.2); transform: scale(1.08); }
 }
 
-/* Background image with slow pan and zoom */
+/* Gambar utama dengan zoom & pan pelan */
 .gato-cine-bg {
   position: absolute;
-  inset: -5%; /* buffer for panning */
-  background: url('/assets/gatokaca/bg-gato-new.png') center/cover no-repeat;
-  filter: brightness(0.6) contrast(1.1);
-  animation: gatoCinePan 20s ease-in-out infinite alternate;
+  inset: -4%;
+  background: center/cover no-repeat;
+  animation: gatoCinePan 14s ease-in-out infinite alternate;
   z-index: 1;
 }
-
 @keyframes gatoCinePan {
   0% { transform: scale(1) translate(0, 0); }
-  100% { transform: scale(1.08) translate(-1%, 2%); }
+  100% { transform: scale(1.1) translate(-1.2%, 1.5%); }
 }
 
-/* Lightning Flashes */
+/* Sinar cahaya berputar dari tengah */
+.gato-cine-rays {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 200vmax; height: 200vmax;
+  margin: -100vmax 0 0 -100vmax;
+  background: repeating-conic-gradient(
+    from 0deg at 50% 50%,
+    rgba(255, 215, 120, 0.16) 0deg 6deg,
+    rgba(255, 215, 120, 0) 6deg 18deg
+  );
+  mix-blend-mode: screen;
+  -webkit-mask-image: radial-gradient(circle at center, #000 0%, transparent 35%);
+  mask-image: radial-gradient(circle at center, #000 0%, transparent 35%);
+  animation: gatoCineSpin 40s linear infinite;
+  z-index: 2;
+  pointer-events: none;
+}
+@keyframes gatoCineSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* Aura emas berdenyut */
+.gato-cine-aura {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 40%, rgba(255, 200, 60, 0.35) 0%, rgba(255, 120, 0, 0.12) 35%, transparent 65%);
+  mix-blend-mode: screen;
+  animation: gatoCineAura 2.6s ease-in-out infinite alternate;
+  z-index: 3;
+  pointer-events: none;
+}
+@keyframes gatoCineAura {
+  0% { opacity: 0.35; transform: scale(0.95); }
+  100% { opacity: 1; transform: scale(1.08); }
+}
+
+/* Kilat */
 .gato-cine-lightning {
   position: absolute;
   inset: 0;
-  background: rgba(255, 220, 100, 0.4);
+  background: rgba(255, 230, 140, 0.45);
   mix-blend-mode: overlay;
-  z-index: 2;
+  z-index: 4;
   opacity: 0;
-  animation: gatoCineFlash 7s infinite;
+  animation: gatoCineFlash 6s infinite;
+  pointer-events: none;
 }
 .gato-cine-lightning-2 {
-  background: rgba(255, 255, 255, 0.3);
-  animation: gatoCineFlash 11s infinite 3s;
+  background: rgba(255, 255, 255, 0.35);
+  animation: gatoCineFlash 9s infinite 2.5s;
 }
-
 @keyframes gatoCineFlash {
-  0%, 95%, 98%, 100% { opacity: 0; }
-  96% { opacity: 0.8; }
-  97% { opacity: 0.1; }
-  99% { opacity: 1; }
+  0%, 92%, 95%, 100% { opacity: 0; }
+  93% { opacity: 0.9; }
+  94% { opacity: 0.15; }
+  96% { opacity: 1; }
 }
 
-/* Hero Character */
-.gato-cine-hero-wrap {
+/* Kilau emas menyapu layar */
+.gato-cine-shine {
   position: absolute;
-  bottom: 0; /* Base position */
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100vh; /* Scaled with height to fit character nicely */
-  max-width: 150vw;
-  height: 85vh;
+  top: 0; bottom: 0;
+  width: 30vw;
+  left: -40vw;
+  background: linear-gradient(100deg, transparent 0%, rgba(255, 240, 180, 0.28) 50%, transparent 100%);
+  transform: skewX(-18deg);
+  mix-blend-mode: screen;
+  animation: gatoCineShine 3.6s ease-in-out infinite;
   z-index: 5;
-  display: flex;
-  justify-content: center;
-  align-items: flex-end;
-  animation: gatoCineFloat 4s ease-in-out infinite alternate;
+  pointer-events: none;
 }
-
-@keyframes gatoCineFloat {
-  0% { transform: translateX(-50%) translateY(1vh); }
-  100% { transform: translateX(-50%) translateY(-2vh); }
-}
-
-.gato-cine-hero {
-  height: 100%;
-  object-fit: contain;
-  filter: drop-shadow(0 0 3vh rgba(255, 150, 0, 0.5)) contrast(1.1);
-  position: relative;
-  z-index: 6;
-}
-
-/* Big magical glow behind the hero */
-.gato-cine-hero-glow {
-  position: absolute;
-  top: 10%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 70vh;
-  height: 70vh;
-  background: radial-gradient(circle, rgba(255,150,0,0.4) 0%, rgba(255,50,0,0) 70%);
-  border-radius: 50%;
-  z-index: 5;
-  animation: gatoCinePulseGlow 3s ease-in-out infinite alternate;
-}
-@keyframes gatoCinePulseGlow {
-  0% { transform: translateX(-50%) scale(0.9); opacity: 0.6; }
-  100% { transform: translateX(-50%) scale(1.1); opacity: 1; }
+@keyframes gatoCineShine {
+  0% { left: -40vw; }
+  60%, 100% { left: 120vw; }
 }
 
 /* Particles / Embers */
@@ -106,32 +124,34 @@
 }
 .gato-cine-ember {
   position: absolute;
-  background: #ffb300;
+  bottom: -2vh;
+  background: radial-gradient(circle, #fff7c2 0%, #ffb300 55%, #ff5722 100%);
   border-radius: 50%;
-  box-shadow: 0 0 1vh 0.2vh #ff5722, 0 0 2vh #ffeb3b;
+  box-shadow: 0 0 1vh 0.2vh #ff8a00, 0 0 2vh #ffeb3b;
   animation-name: gatoCineRise;
-  animation-timing-function: linear;
+  animation-timing-function: ease-out;
   animation-iteration-count: infinite;
+  opacity: 0;
 }
 @keyframes gatoCineRise {
-  0% { transform: translateY(0) scale(1) translateX(0); opacity: 0; }
+  0% { transform: translate(0, 0) scale(1); opacity: 0; }
   10% { opacity: 1; }
-  90% { opacity: 0.8; }
-  100% { transform: translateY(-120vh) scale(0.2) translateX(8vw); opacity: 0; }
+  85% { opacity: 0.8; }
+  100% { transform: translate(var(--drift, 5vw), -110vh) scale(0.2); opacity: 0; }
 }
 
-/* Vignette / Dark overlay */
+/* Vignette */
 .gato-cine-vignette {
   position: absolute;
   inset: 0;
-  background: 
-    linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,0.85) 85%, #000 100%),
-    radial-gradient(circle at center, transparent 30%, rgba(0,0,0,0.5) 100%);
+  background:
+    linear-gradient(180deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0) 20%, rgba(0,0,0,0) 65%, rgba(0,0,0,0.9) 100%),
+    radial-gradient(circle at center, transparent 45%, rgba(0,0,0,0.55) 100%);
   z-index: 15;
   pointer-events: none;
 }
 
-/* UI Elements */
+/* UI */
 .gato-cine-ui {
   position: relative;
   z-index: 20;
@@ -142,25 +162,20 @@
   width: 100%;
 }
 
-.gato-cine-title {
-  color: #ffcc00;
+.gato-cine-tip {
+  color: #ffe9a8;
   font-family: 'Cinzel', serif;
-  font-size: clamp(2rem, 5vh, 4.5rem);
+  font-size: clamp(0.9rem, 2.2vh, 1.6rem);
   font-weight: 900;
-  letter-spacing: 0.1em;
-  text-shadow: 0 0.5vh 1vh #000, 0 0 2vh rgba(255,100,0,0.8);
-  margin-bottom: -1vh;
+  letter-spacing: 0.22em;
+  margin-bottom: 2vh;
   text-align: center;
+  text-shadow: 0 0.3vh 0.8vh #000, 0 0 2vh rgba(255, 170, 0, 0.9);
+  animation: gatoCineTip 0.7s ease-out both;
 }
-.gato-cine-subtitle {
-  color: #fff;
-  font-family: 'Cinzel', serif;
-  font-size: clamp(1.2rem, 3vh, 2.5rem);
-  font-weight: 900;
-  letter-spacing: 0.2em;
-  text-shadow: 0 0.2vh 0.5vh #000, 0 0 1vh #ffcc00;
-  margin-bottom: 3.5vh;
-  text-align: center;
+@keyframes gatoCineTip {
+  0% { opacity: 0; transform: translateY(1.5vh); letter-spacing: 0.4em; }
+  100% { opacity: 1; transform: translateY(0); letter-spacing: 0.22em; }
 }
 
 /* Loading Bar */
@@ -179,11 +194,16 @@
   height: 2.2vh;
   min-height: 16px;
   background: rgba(20, 5, 0, 0.85);
-  border: 0.25vh solid #b8860b;
+  border: 0.25vh solid #d4a017;
   border-radius: 2vh;
   padding: 0.25vh;
   position: relative;
-  box-shadow: 0 0 2vh rgba(255, 150, 0, 0.6), inset 0 0.2vh 0.5vh rgba(0,0,0,0.9);
+  box-shadow: 0 0 2vh rgba(255, 170, 0, 0.7), inset 0 0.2vh 0.5vh rgba(0,0,0,0.9);
+  animation: gatoCineBarGlow 1.8s ease-in-out infinite alternate;
+}
+@keyframes gatoCineBarGlow {
+  0% { box-shadow: 0 0 1.2vh rgba(255, 170, 0, 0.4), inset 0 0.2vh 0.5vh rgba(0,0,0,0.9); }
+  100% { box-shadow: 0 0 3vh rgba(255, 200, 0, 0.95), inset 0 0.2vh 0.5vh rgba(0,0,0,0.9); }
 }
 
 .gato-cine-bar-fill {
@@ -193,9 +213,20 @@
   box-shadow: 0 0 1.5vh rgba(255, 200, 0, 0.8), inset 0 0.2vh 0.4vh rgba(255,255,255,0.4);
   transition: width 0.15s ease-out;
   position: relative;
+  overflow: hidden;
+}
+.gato-cine-bar-shimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 20%, rgba(255,255,255,0.7) 50%, transparent 80%);
+  width: 40%;
+  animation: gatoCineBarShimmer 1.1s linear infinite;
+}
+@keyframes gatoCineBarShimmer {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(300%); }
 }
 
-/* Glowing dot at the end of the loading bar */
 .gato-cine-bar-spark {
   position: absolute;
   top: 50%;
@@ -207,6 +238,11 @@
   box-shadow: 0 0 2vh 1vh #fff, 0 0 4vh 2vh #ffd700;
   transition: left 0.15s ease-out;
   pointer-events: none;
+  animation: gatoCineSparkPulse 0.5s ease-in-out infinite alternate;
+}
+@keyframes gatoCineSparkPulse {
+  0% { transform: translate(-50%, -50%) scale(0.8); }
+  100% { transform: translate(-50%, -50%) scale(1.2); }
 }
 
 .gato-cine-loading-text {
@@ -216,3 +252,85 @@
   letter-spacing: 0.15em;
   text-shadow: 0 0.2vh 0.5vh #000, 0 0 1vh rgba(255, 150, 0, 0.6);
 }
+.gato-cine-dots::after {
+  content: '';
+  animation: gatoCineDots 1.2s steps(4, end) infinite;
+}
+@keyframes gatoCineDots {
+  0% { content: ''; }
+  25% { content: '.'; }
+  50% { content: '..'; }
+  75%, 100% { content: '...'; }
+}
+
+/* Game Title Overlay for non-baked backgrounds */
+.gato-cine-title-overlay {
+  position: absolute;
+  top: 16%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 18;
+  pointer-events: none;
+  text-align: center;
+  width: 90%;
+  max-width: 800px;
+}
+
+.gato-cine-title-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 16px;
+  background: rgba(0, 0, 0, 0.65);
+  border: 1px solid rgba(255, 215, 0, 0.5);
+  border-radius: 20px;
+  color: #ffd700;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+.gato-cine-title-text {
+  font-family: 'Cinzel', 'Outfit', sans-serif;
+  font-size: clamp(1.6rem, 4.2vh, 3rem);
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: linear-gradient(180deg, #ffffff 0%, #ffd700 45%, #ff9800 80%, #b8860b 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0.4vh 1.2vh rgba(0,0,0,0.9)) drop-shadow(0 0 2vh rgba(255,170,0,0.8));
+  margin: 0 0 6px;
+}
+
+.gato-cine-title-sub {
+  color: #ffe082;
+  font-size: clamp(0.75rem, 1.5vh, 0.95rem);
+  letter-spacing: 0.22em;
+  font-weight: 600;
+  text-shadow: 0 2px 5px rgba(0,0,0,0.95);
+}
+
+/* Theme color accents */
+.gato-theme-zeus .gato-cine-aura {
+  background: radial-gradient(circle at 50% 40%, rgba(0, 210, 255, 0.35) 0%, rgba(72, 52, 212, 0.15) 35%, transparent 65%);
+}
+.gato-theme-zeus .gato-cine-lightning {
+  background: rgba(180, 235, 255, 0.5);
+}
+
+.gato-theme-mahjong .gato-cine-aura {
+  background: radial-gradient(circle at 50% 40%, rgba(46, 204, 113, 0.35) 0%, rgba(39, 174, 96, 0.15) 35%, transparent 65%);
+}
+
+.gato-theme-candy .gato-cine-aura {
+  background: radial-gradient(circle at 50% 40%, rgba(255, 64, 129, 0.35) 0%, rgba(156, 39, 176, 0.15) 35%, transparent 65%);
+}
+

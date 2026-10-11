@@ -16,6 +16,13 @@ import GameMenuDropdown from './GameMenuDropdown';
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
 import { FacebookLogin } from '@capacitor-community/facebook-login';
 import OlympusCinematicBackground from './OlympusCinematicBackground';
+import LeaderboardModal from './LeaderboardModal';
+import ChatModal from './ChatModal';
+import ByOneScreen from './ByOneScreen';
+import ByOneRoomModal from './ByOneRoomModal';
+import './byone.css';
+import SlotLoadingScreen from './SlotLoadingScreen';
+import RiwayatTransferModal from './RiwayatTransferModal';
 
 const API_URL = 'http://localhost:8080/api';
 
@@ -424,7 +431,7 @@ function CSModal({ onClose }: { onClose: () => void }) {
 // =====================================================
 // MODAL LIHAT PROFIL ORANG LAIN (OTHER PROFILE MODAL)
 // =====================================================
-function OtherProfileModal({ username, onClose, onAddFriend, onSendCoins }: { username: string; onClose: () => void; onAddFriend?: (uname: string) => void; onSendCoins?: (uname: string) => void }) {
+function OtherProfileModal({ username, onClose, onAddFriend, onSendCoins, onChallengeByOne }: { username: string; onClose: () => void; onAddFriend?: (uname: string) => void; onSendCoins?: (uname: string) => void; onChallengeByOne?: (uname: string) => void }) {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const myUsername = localStorage.getItem('domino_username') || '';
@@ -561,14 +568,25 @@ function OtherProfileModal({ username, onClose, onAddFriend, onSendCoins }: { us
         <div className="op-actions">
           {isSelf ? (
             <div style={{ color: 'rgba(255,255,255,0.6)', fontStyle: 'italic', fontSize: '2vh' }}>Ini adalah profil Anda</div>
-          ) : isFriend ? (
-            <button className="op-action-btn send g-btn-press" onClick={() => { onClose(); onSendCoins?.(profile.username); }}>
-              💸 Kirim Uang (Koin)
-            </button>
           ) : (
-            <button className="op-action-btn add g-btn-press" onClick={() => { onClose(); onAddFriend?.(profile.username); }}>
-              ➕ Tambah Teman
-            </button>
+            <div style={{ display: 'flex', gap: '1vw', width: '100%' }}>
+              {isFriend ? (
+                <button className="op-action-btn send g-btn-press" onClick={() => { onClose(); onSendCoins?.(profile.username); }}>
+                  💸 Kirim Koin
+                </button>
+              ) : (
+                <button className="op-action-btn add g-btn-press" onClick={() => { onClose(); onAddFriend?.(profile.username); }}>
+                  ➕ Tambah Teman
+                </button>
+              )}
+              <button
+                className="op-action-btn send g-btn-press"
+                style={{ background: 'linear-gradient(90deg, #e74c3c, #c0392b)', borderColor: '#ff7675' }}
+                onClick={() => { onClose(); onChallengeByOne?.(profile.username); }}
+              >
+                ⚔️ Tantang By One
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -1355,7 +1373,7 @@ function InboxModal({ onClose, onViewProfile }: { onClose: () => void; onViewPro
 // =====================================================
 // KIRIM KOIN MODAL (FITUR VIP)
 // =====================================================
-function KirimKoinModal({ onClose, onCoinsTransferred, onOpenShop }: { onClose: () => void; onCoinsTransferred?: () => void; onOpenShop?: () => void }) {
+function KirimKoinModal({ onClose, onCoinsTransferred, onOpenShop, onOpenHistory }: { onClose: () => void; onCoinsTransferred?: () => void; onOpenShop?: () => void; onOpenHistory?: () => void }) {
   const myUsername = localStorage.getItem('domino_username') || '';
   const [recipient, setRecipient] = useState('');
   const [amountInput, setAmountInput] = useState('');
@@ -1438,7 +1456,33 @@ function KirimKoinModal({ onClose, onCoinsTransferred, onOpenShop }: { onClose: 
               <div className="kirim-sub">Transfer koin antar pemain berdasarkan Level VIP</div>
             </div>
           </div>
-          <button className="kirim-koin-close-btn" onClick={onClose}>✖</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {onOpenHistory && (
+              <button 
+                type="button"
+                className="g-btn-press"
+                style={{
+                  background: 'linear-gradient(90deg, #f39c12, #e67e22)',
+                  border: 'none',
+                  borderRadius: '16px',
+                  color: '#fff',
+                  padding: '5px 12px',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  boxShadow: '0 2px 8px rgba(243, 156, 18, 0.4)'
+                }}
+                onClick={onOpenHistory}
+                title="Lihat Riwayat Transfer"
+              >
+                📜 Riwayat
+              </button>
+            )}
+            <button className="kirim-koin-close-btn" onClick={onClose}>✖</button>
+          </div>
         </div>
 
         {alert && (
@@ -3440,6 +3484,10 @@ function HomeScreen({ onLogout, onNavigate, socket }: { onLogout: () => void; on
   const [showSlotPopup, setShowSlotPopup] = useState(false);
   const [showAjakTeman, setShowAjakTeman] = useState(false);
   const [showFriendModal, setShowFriendModal] = useState(false);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [showChatModal, setShowChatModal] = useState(false);
+  const [showByOneRoomModal, setShowByOneRoomModal] = useState(false);
+  const [showRiwayatTransfer, setShowRiwayatTransfer] = useState(false);
 
   useEffect(() => {
     const u = localStorage.getItem('domino_username');
@@ -3545,6 +3593,23 @@ function HomeScreen({ onLogout, onNavigate, socket }: { onLogout: () => void; on
         />
       )}
 
+      {/* Leaderboard Modal */}
+      {showLeaderboard && (
+        <LeaderboardModal
+          onClose={() => setShowLeaderboard(false)}
+          onViewProfile={u => { setShowLeaderboard(false); setViewingProfileFromHome(u); }}
+        />
+      )}
+
+      {/* Chat Modal */}
+      {showChatModal && (
+        <ChatModal
+          socket={socket}
+          onClose={() => setShowChatModal(false)}
+          onViewProfile={u => { setShowChatModal(false); setViewingProfileFromHome(u); }}
+        />
+      )}
+
       {/* Inbox Modal */}
       {showInbox && (
         <InboxModal
@@ -3598,6 +3663,10 @@ function HomeScreen({ onLogout, onNavigate, socket }: { onLogout: () => void; on
         <KirimKoinModal
           onClose={() => setShowKirimKoin(false)}
           onOpenShop={() => setShowToko(true)}
+          onOpenHistory={() => {
+            setShowKirimKoin(false);
+            setShowRiwayatTransfer(true);
+          }}
           onCoinsTransferred={() => {
             const savedUser = localStorage.getItem('domino_username');
             if (savedUser) {
@@ -3606,6 +3675,17 @@ function HomeScreen({ onLogout, onNavigate, socket }: { onLogout: () => void; on
                 .then(d => { if (d) setProfile(d); })
                 .catch(() => { });
             }
+          }}
+        />
+      )}
+
+      {/* Riwayat Transfer Koin Modal */}
+      {showRiwayatTransfer && (
+        <RiwayatTransferModal
+          onClose={() => setShowRiwayatTransfer(false)}
+          onOpenSendCoins={() => {
+            setShowRiwayatTransfer(false);
+            setShowKirimKoin(true);
           }}
         />
       )}
@@ -3673,7 +3753,7 @@ function HomeScreen({ onLogout, onNavigate, socket }: { onLogout: () => void; on
             </svg>
             <span className="ht-act-lbl">Inbox</span>
           </button>
-          <button className="ht-act-btn" onClick={() => pop('Ranking', 'Peringkat pemain teratas!')}>
+          <button className="ht-act-btn" onClick={() => setShowLeaderboard(true)}>
             {/* Crown/Ranking icon */}
             <svg className="ht-act-ico-svg" viewBox="0 0 24 24" fill="currentColor">
               <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z" />
@@ -3705,6 +3785,10 @@ function HomeScreen({ onLogout, onNavigate, socket }: { onLogout: () => void; on
           <div className="hb-rs-item" onClick={() => { setShowRightSidebar(false); setShowKirimKoin(true); }}>
             <span className="hb-rs-icon">🎁</span>
             <span className="hb-rs-label">Kirim Koin</span>
+          </div>
+          <div className="hb-rs-item" onClick={() => { setShowRightSidebar(false); setShowRiwayatTransfer(true); }}>
+            <span className="hb-rs-icon">📜</span>
+            <span className="hb-rs-label">Riwayat Koin</span>
           </div>
           <div className="hb-rs-item" onClick={() => { setShowRightSidebar(false); setShowCS(true); }}>
             <span className="hb-rs-icon">💬</span>
@@ -3899,19 +3983,27 @@ function HomeScreen({ onLogout, onNavigate, socket }: { onLogout: () => void; on
             </span>
             <span className="hb3-lbl">Beranda</span>
           </button>
+          <button className="hb3-nav-btn" onClick={() => setShowByOneRoomModal(true)}>
+            <span className="hb3-ico">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M6.92 5h-.01L4 7.91l2.92 2.92-1.42 1.42L2.59 9.33a1.996 1.996 0 0 1 0-2.83l3.5-3.5c.78-.78 2.05-.78 2.83 0l2.92 2.92-1.42 1.42L7.5 4.41l-.58.59zm12.67 4.33l-1.42-1.42 2.92-2.92-.58-.59-2.92 2.92-1.42-1.42 2.92-2.92a1.996 1.996 0 0 1 2.83 0l3.5 3.5c.78.78.78 2.05 0 2.83l-2.91 2.92-2.92-2.92zm-7.66 1.34l-1.41-1.41 7.07-7.07 1.41 1.41-7.07 7.07zm-4.95 4.95l1.41 1.41-5.66 5.66-1.41-1.41 5.66-5.66zM20 20.59l-1.41 1.41-5.66-5.66 1.41-1.41 5.66 5.66zm-7.07-7.07l1.41 1.41-7.07 7.07-1.41-1.41 7.07-7.07z"/>
+              </svg>
+            </span>
+            <span className="hb3-lbl" style={{ color: '#ff7675', fontWeight: 'bold' }}>By One ⚔️</span>
+          </button>
           <button className="hb3-nav-btn" onClick={() => setShowFriendModal(true)}>
             <span className="hb3-ico">
               <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" /></svg>
             </span>
             <span className="hb3-lbl">Teman</span>
           </button>
-          <button className="hb3-nav-btn" onClick={() => pop('Chat', 'Ruang percakapan komunitas.')}>
+          <button className="hb3-nav-btn" onClick={() => setShowChatModal(true)}>
             <span className="hb3-ico">
               <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 9H6V9h12v2zm0-3H6V6h12v2z" /></svg>
             </span>
             <span className="hb3-lbl">Chat</span>
           </button>
-          <button className="hb3-nav-btn" onClick={() => pop('Leaderboard', 'Peringkat klasemen pemain.')}>
+          <button className="hb3-nav-btn" onClick={() => setShowLeaderboard(true)}>
             <span className="hb3-ico">
               <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v2c0 2.21 1.79 4 4 4 .19 0 .37-.02.55-.05C8.36 12.59 10 14 12 14s3.64-1.41 4.45-3.05c.18.03.36.05.55.05 2.21 0 4-1.79 4-4V5c0-1.1-.9-2-2-2zm-2 4H7V5h10v2zm-5 5c-1.1 0-2-.9-2-2h4c0 1.1-.9 2-2 2zm7-5h-2v2c0 1.1-.9 2-2 2-.19 0-.37-.02-.55-.05C15.64 8.59 14 7 12 7s-3.64 1.41-4.45 3.05c-.18.03-.36.05-.55.05-1.1 0-2-.9-2-2V7H5V5h14v2zm-5 13v-3h-4v3H8v2h8v-2h-2z" /></svg>
             </span>
@@ -3947,6 +4039,24 @@ function HomeScreen({ onLogout, onNavigate, socket }: { onLogout: () => void; on
             else if (gameId === 'candyrush') onNavigate('candy-game');
             else if (gameId === 'wildwest') onNavigate('wildwest-game');
             else if (gameId === '5lions') onNavigate('fivelions-game');
+          }}
+        />
+      )}
+
+      {/* BY ONE ROOM MODAL (ADU TARUHAN) */}
+      {showByOneRoomModal && (
+        <ByOneRoomModal
+          onClose={() => setShowByOneRoomModal(false)}
+          socket={socket}
+          onLaunchGame={(mode, bet, opp) => {
+            setShowByOneRoomModal(false);
+            if (mode === 'billiard') {
+              onNavigate('billiard-game');
+            } else if (mode === 'qiuqiu') {
+              onNavigate('qiuqiu-game');
+            } else {
+              onNavigate('byone-game', opp);
+            }
           }}
         />
       )}
@@ -7376,6 +7486,12 @@ function App() {
   const [transferTarget, setTransferTarget] = useState<{ username: string } | null>(null);
   const [transferAmount, setTransferAmount] = useState('');
   const [appAlert, setAppAlert] = useState<string | null>(null);
+  const [activeSlotLoading, setActiveSlotLoading] = useState<string | null>(null);
+
+  // By One 1v1 state
+  const [byoneOpponent, setByoneOpponent] = useState<string | null>(null);
+  const [byoneBet, setByoneBet] = useState<number | null>(null);
+  const [incomingChallenge, setIncomingChallenge] = useState<{ fromUsername: string; betAmount: number; tierName: string; mode: string } | null>(null);
 
   // Lobby states
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
@@ -7399,6 +7515,10 @@ function App() {
       if (u) sock.emit('register-user', { username: u });
     });
 
+    sock.on('byone_challenge_received', (data: any) => {
+      setIncomingChallenge(data);
+    });
+
     sock.on('disconnect', () => {
       console.log('Socket.IO disconnected');
     });
@@ -7419,9 +7539,29 @@ function App() {
     setTransferTarget({ username });
   };
 
+  const SCREEN_TO_SLOT: Record<string, string> = {
+    'slot-game': 'duofuduocai',
+    'zeus-game': 'zeus',
+    'fafafa-game': 'fafafa2',
+    'jinji-game': 'jinjibaoxi',
+    'mahjong2-game': 'mahjong2',
+    'gatokaca-game': 'gatotkaca',
+    'candy-game': 'candyrush',
+    'wildwest-game': 'wildwest',
+    'fivelions-game': '5lions',
+  };
+
   const handleNavigate = (targetScreen: any, categoryOverride?: any) => {
     if (categoryOverride) {
-      setLobbyCategory(categoryOverride);
+      if (targetScreen === 'byone-game') {
+        setByoneOpponent(categoryOverride);
+      } else {
+        setLobbyCategory(categoryOverride);
+      }
+    }
+    const slotId = SCREEN_TO_SLOT[targetScreen];
+    if (slotId) {
+      setActiveSlotLoading(slotId);
     }
     setScreen(targetScreen);
   };
@@ -7554,15 +7694,21 @@ function App() {
         <SlotLobbyScreen
           onBack={() => setScreen('home')}
           onPlaySlot={(gameId) => {
-            if (gameId === 'duofuduocai') setScreen('slot-game');
-            else if (gameId === 'zeus') setScreen('zeus-game');
-            else if (gameId === 'fafafa2') setScreen('fafafa-game');
-            else if (gameId === 'jinjibaoxi') setScreen('jinji-game');
-            else if (gameId === 'mahjong2') setScreen('mahjong2-game');
-            else if (gameId === 'gatotkaca') setScreen('gatokaca-game');
-            else if (gameId === 'candyrush') setScreen('candy-game');
-            else if (gameId === 'wildwest') setScreen('wildwest-game');
-            else if (gameId === '5lions') setScreen('fivelions-game');
+            const map: Record<string, string> = {
+              duofuduocai: 'slot-game',
+              zeus: 'zeus-game',
+              fafafa2: 'fafafa-game',
+              jinjibaoxi: 'jinji-game',
+              mahjong2: 'mahjong2-game',
+              gatotkaca: 'gatokaca-game',
+              candyrush: 'candy-game',
+              wildwest: 'wildwest-game',
+              '5lions': 'fivelions-game',
+            };
+            const target = map[gameId];
+            if (target) {
+              handleNavigate(target);
+            }
           }}
         />
       )}
@@ -7643,6 +7789,23 @@ function App() {
         />
       )}
 
+      {screen === 'byone-game' && (
+        <ByOneScreen
+          onBack={() => { setByoneOpponent(null); setByoneBet(null); setScreen('home'); }}
+          socket={socketRef.current}
+          initialOpponent={byoneOpponent}
+          initialBet={byoneBet}
+        />
+      )}
+
+      {/* SLOT LOADING SCREEN OVERLAY */}
+      {activeSlotLoading && (
+        <SlotLoadingScreen
+          gameId={activeSlotLoading}
+          onFinish={() => setActiveSlotLoading(null)}
+        />
+      )}
+
       {/* Other Profile Modal */}
       {viewingProfile && (
         <OtherProfileModal
@@ -7650,6 +7813,11 @@ function App() {
           onClose={() => setViewingProfile(null)}
           onAddFriend={handleSendRequestFromProfile}
           onSendCoins={handleOpenTransferFromProfile}
+          onChallengeByOne={(targetUser) => {
+            setViewingProfile(null);
+            setByoneOpponent(targetUser);
+            setScreen('byone-game');
+          }}
         />
       )}
 
@@ -7700,6 +7868,50 @@ function App() {
                 <button className="tm-transfer-cancel-btn g-btn-press" onClick={() => { setTransferTarget(null); setTransferAmount(''); }}>Batal</button>
                 <button className="tm-transfer-submit-btn g-btn-press tm-pulse-btn" onClick={handleExecuteTransferFromApp}>🚀 Kirim Sekarang</button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Incoming By One Challenge Modal */}
+      {incomingChallenge && (
+        <div className="modal-overlay tm-overlay-fade" style={{ zIndex: 2000 }}>
+          <div className="byone-prompt-modal" style={{ position: 'relative', top: 'auto', left: 'auto', transform: 'none' }}>
+            <div className="byone-prompt-title">⚔️ TANTANGAN BY ONE MASUK!</div>
+            <div className="byone-prompt-body">
+              <b>{incomingChallenge.fromUsername}</b> menantang Anda duel By One di <b>{incomingChallenge.tierName}</b>!<br />
+              Taruhan: <b style={{ color: '#f1c40f' }}>{formatCoins(incomingChallenge.betAmount)} 🪙</b>
+            </div>
+            <div className="byone-prompt-actions">
+              <button
+                className="byone-action-primary"
+                onClick={() => {
+                  socketRef.current?.emit('byone_respond_challenge', {
+                    ...incomingChallenge,
+                    toUsername: incomingChallenge.fromUsername,
+                    accepted: true
+                  });
+                  setByoneOpponent(incomingChallenge.fromUsername);
+                  setByoneBet(incomingChallenge.betAmount);
+                  setIncomingChallenge(null);
+                  setScreen('byone-game');
+                }}
+              >
+                ⚔️ TERIMA DUEL!
+              </button>
+              <button
+                className="byone-action-secondary"
+                onClick={() => {
+                  socketRef.current?.emit('byone_respond_challenge', {
+                    ...incomingChallenge,
+                    toUsername: incomingChallenge.fromUsername,
+                    accepted: false
+                  });
+                  setIncomingChallenge(null);
+                }}
+              >
+                Tolak
+              </button>
             </div>
           </div>
         </div>

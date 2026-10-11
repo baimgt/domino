@@ -3,6 +3,7 @@ import { Socket } from 'socket.io-client';
 import './gatokaca.css';
 import GameMenuDropdown from './GameMenuDropdown';
 import GatokacaCinematicBackground from './GatokacaCinematicBackground';
+import LeaderboardModal from './LeaderboardModal';
 
 interface Props {
   onBack: () => void;
@@ -55,6 +56,7 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
   );
   const [isSpinning, setIsSpinning] = useState(false);
   const [spinningCols, setSpinningCols] = useState<boolean[]>(Array(COLS).fill(false));
+  const [bouncingCols, setBouncingCols] = useState<boolean[]>(Array(COLS).fill(false));
   const [betAmount, setBetAmount] = useState(10000000);
   const [myCoins, setMyCoins] = useState(8994600);
   const [totalWin, setTotalWin] = useState(0);
@@ -66,6 +68,7 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
   const [showRules, setShowRules] = useState(false);
   const [rulesPage, setRulesPage] = useState(0);
   const [showMenu, setShowMenu] = useState(false);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [soundOn, setSoundOn] = useState(true);
   const [musicOn, setMusicOn] = useState(true);
   const [showAutoMenu, setShowAutoMenu] = useState(false);
@@ -73,22 +76,23 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
   const [statusText, setStatusText] = useState('GOOD LUCK');
   const [winningCells, setWinningCells] = useState<string[]>([]);
   const [scatterCount, setScatterCount] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [loadProgress, setLoadProgress] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [loadProgress, setLoadProgress] = useState(100);
 
   useEffect(() => {
     let current = 0;
     const interval = setInterval(() => {
-      current += Math.floor(Math.random() * 8) + 5;
+      // rata-rata +1 per 60ms => sekitar 6 detik sampai 100%
+      current += Math.random() * 1.4 + 0.3;
       if (current >= 100) {
         current = 100;
         setLoadProgress(100);
         clearInterval(interval);
-        setTimeout(() => setLoading(false), 350);
+        setTimeout(() => setLoading(false), 600);
       } else {
-        setLoadProgress(current);
+        setLoadProgress(Math.floor(current));
       }
-    }, 65);
+    }, 60);
     return () => clearInterval(interval);
   }, []);
 
@@ -144,6 +148,9 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
         const col = c;
         setTimeout(() => {
           setSpinningCols(prev => { const n = [...prev]; n[col] = false; return n; });
+          // Efek mendarat + pantulan ala Duofu
+          setBouncingCols(prev => { const n = [...prev]; n[col] = true; return n; });
+          setTimeout(() => setBouncingCols(prev => { const n = [...prev]; n[col] = false; return n; }), 450);
           setGrid(prev => prev.map((row, r) =>
             row.map((cell, ci) => ci === col ? data.initialGrid[r][col] : cell)
           ));
@@ -372,8 +379,8 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
       </div>
 
       {/* TOP RIGHT */}
-      <div className="gato-topright" style={{ position: 'relative' }}>
-        <button className="gato-tr-btn" onClick={() => alert('Prestasi/Trophy')}>🏆</button>
+      <div className="gato-topright">
+        <button className="gato-tr-btn" onClick={() => setShowLeaderboard(true)}>🏆</button>
         <button className="gato-tr-btn gato-tr-room" onClick={onBack}>
           <span className="gato-tr-icon">🔄</span>
           <span className="gato-tr-label">Ganti<br/>room</span>
@@ -449,7 +456,7 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
                   const isWin = winningCells.includes(cellKey);
                   const isExp = explodingCells.includes(cellKey);
                   return (
-                    <div key={cellKey} className={`gato-cell ${spinningCols[c] ? 'gato-cell-spin' : ''}`}>
+                    <div key={cellKey} style={{ ['--r' as any]: r }} className={`gato-cell ${spinningCols[c] ? 'gato-cell-spin' : ''} ${bouncingCols[c] ? 'gato-cell-bounce' : ''}`}>
                       {renderSymbol(symId === 10 && multVal === 0 ? 10 : symId, multVal, isWin, isExp)}
                     </div>
                   );
@@ -493,14 +500,14 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
           <button className="gato-bot-btn gato-btn-info" onClick={() => { setShowRules(true); setRulesPage(0); }}>
             i
           </button>
-          <button className="gato-bot-btn gato-minus" onClick={() => setBetAmount(b => Math.max(25000, b - 25000))}>
+          <button className="gato-bot-btn gato-minus" onClick={() => setBetAmount(b => Math.max(200000, b - 200000))}>
             −
           </button>
           <div className="gato-bet-box">
             <div className="gato-bet-label">BET</div>
             <div className="gato-bet-val">{betAmount.toLocaleString('en-US')}</div>
           </div>
-          <button className="gato-bot-btn gato-plus-bet" onClick={() => setBetAmount(b => Math.min(10000000, b + 25000))}>
+          <button className="gato-bot-btn gato-plus-bet" onClick={() => setBetAmount(b => Math.min(10000000, b + 200000))}>
             +
           </button>
         </div>
@@ -585,6 +592,8 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
           </div>
         </div>
       </div>
+
+      {showLeaderboard && <LeaderboardModal onClose={() => setShowLeaderboard(false)} />}
 
       {/* RULES MODAL */}
       {showRules && (
