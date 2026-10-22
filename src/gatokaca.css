@@ -206,6 +206,25 @@
 }
 .gato-buy-spin:hover { filter: brightness(1.15); }
 .gato-buy-spin:active { transform: scale(0.93); }
+.gato-buy-spin.disabled {
+  opacity: 0.45;
+  filter: grayscale(0.85);
+  cursor: not-allowed;
+  position: relative;
+}
+.gato-buy-spin.disabled:hover {
+  transform: none;
+  filter: grayscale(0.85);
+}
+.gato-buy-spin.disabled::after {
+  content: '🔒';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 2.8vh;
+  text-shadow: 0 0 8px rgba(0,0,0,0.9);
+}
 .gato-bs-title {
   color: #4a0000; font-size: 1.2vh; font-weight: 900; line-height: 1.2;
 }
@@ -265,6 +284,157 @@
 }
 
 /* ===========================
+   AUTHENTIC PRAGMATIC SIDE MULTIPLIER (TOTAL PENGALI)
+   =========================== */
+.gato-side-multiplier {
+  width: 100%;
+  background: linear-gradient(180deg, rgba(30, 15, 5, 0.95) 0%, rgba(10, 4, 0, 0.98) 100%);
+  border: 0.25vh solid #ffb300;
+  border-radius: 1.5vh;
+  padding: 0.8vh 0.6vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4vh;
+  box-shadow: 0 0.5vh 1.4vh rgba(0,0,0,0.7), inset 0 0 1vh rgba(255, 179, 0, 0.2);
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  box-sizing: border-box;
+}
+
+.gato-side-multiplier.is-active {
+  border-color: #ffd700;
+  box-shadow: 0 0 1.8vh rgba(255, 215, 0, 0.6), inset 0 0 1.2vh rgba(255, 215, 0, 0.35);
+  animation: gsmActivePulse 1.8s ease-in-out infinite alternate;
+}
+
+.gato-side-multiplier.is-free-spin {
+  background: linear-gradient(180deg, rgba(75, 10, 100, 0.96) 0%, rgba(25, 2, 40, 0.98) 100%);
+  border: 0.28vh solid #ffd700;
+  box-shadow: 0 0 2.2vh rgba(234, 128, 252, 0.75), inset 0 0 1.5vh rgba(255, 215, 0, 0.4);
+  animation: gsmFreeSpinGlow 1.6s ease-in-out infinite alternate;
+}
+
+.gsm-wing-top {
+  font-size: 1.1vh;
+  color: #ffd54f;
+  letter-spacing: 0.3vw;
+  line-height: 1;
+  text-shadow: 0 0 0.6vh #ffc107;
+}
+
+.gsm-title {
+  font-family: 'Arial Black', Arial, sans-serif;
+  font-size: 1.25vh;
+  font-weight: 900;
+  letter-spacing: 0.08vw;
+  color: #ffe082;
+  text-transform: uppercase;
+  text-align: center;
+  line-height: 1.1;
+  text-shadow: 0 0.2vh 0.4vh rgba(0,0,0,0.8), 0 0 0.8vh rgba(255, 193, 7, 0.6);
+}
+
+.gsm-orb-wrap {
+  position: relative;
+  width: 7vh;
+  height: 7vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gsm-orb-glow {
+  position: absolute;
+  inset: -0.4vh;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 193, 7, 0.5) 0%, rgba(255, 152, 0, 0) 70%);
+  animation: gsmOrbPulse 1.6s ease-in-out infinite alternate;
+}
+
+.gato-side-multiplier.is-free-spin .gsm-orb-glow {
+  background: radial-gradient(circle, rgba(255, 215, 0, 0.7) 0%, rgba(142, 68, 173, 0) 70%);
+}
+
+.gsm-orb {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff3b0 0%, #ffb300 45%, #b26a00 85%, #4a2800 100%);
+  border: 0.22vh solid #ffffff;
+  box-shadow: 0 0.4vh 1vh rgba(0,0,0,0.6), inset 0 0.3vh 0.6vh rgba(255,255,255,0.8), inset 0 -0.4vh 0.8vh rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gato-side-multiplier.is-free-spin .gsm-orb {
+  background: radial-gradient(circle at 35% 30%, #ffd700 0%, #ba68c8 45%, #7b1fa2 85%, #2a0845 100%);
+  border: 0.25vh solid #ffe082;
+  box-shadow: 0 0.4vh 1.2vh rgba(0,0,0,0.7), inset 0 0.3vh 0.8vh rgba(255, 235, 150, 0.9), inset 0 -0.4vh 0.8vh rgba(40, 0, 60, 0.8);
+}
+
+.gsm-val {
+  font-family: 'Arial Black', Arial, sans-serif;
+  font-size: 2.5vh;
+  font-weight: 900;
+  line-height: 1;
+  color: #fff;
+  text-shadow: 0 0.25vh 0 #5c2c00, 0 -0.15vh 0 #5c2c00, 0.2vh 0 0 #5c2c00, -0.2vh 0 0 #5c2c00, 0 0 0.8vh rgba(255, 235, 59, 0.9);
+  letter-spacing: -0.05vw;
+}
+
+.gato-side-multiplier.is-free-spin .gsm-val {
+  font-size: 2.8vh;
+  text-shadow: 0 0.25vh 0 #2a0845, 0 -0.15vh 0 #2a0845, 0.2vh 0 0 #2a0845, -0.2vh 0 0 #2a0845, 0 0 1vh #ffd700;
+}
+
+.gsm-sub {
+  font-family: 'Arial Black', Arial, sans-serif;
+  font-size: 1vh;
+  font-weight: 900;
+  letter-spacing: 0.05vw;
+  color: #ffd54f;
+  text-transform: uppercase;
+  text-align: center;
+  padding: 0.2vh 0.6vw;
+  background: rgba(0,0,0,0.45);
+  border-radius: 1vh;
+  border: 0.1vh solid rgba(255, 215, 0, 0.3);
+}
+
+.gato-side-multiplier.is-free-spin .gsm-sub {
+  color: #fff;
+  background: linear-gradient(90deg, #d81b60, #8e24aa);
+  border-color: #ffd700;
+  box-shadow: 0 0 0.8vh rgba(233, 30, 99, 0.7);
+  animation: gsmSubPulse 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes gsmActivePulse {
+  0% { transform: scale(1); box-shadow: 0 0 1.2vh rgba(255, 215, 0, 0.5); }
+  100% { transform: scale(1.03); box-shadow: 0 0 2.2vh rgba(255, 215, 0, 0.85); }
+}
+
+@keyframes gsmFreeSpinGlow {
+  0% { box-shadow: 0 0 1.5vh rgba(234, 128, 252, 0.6); }
+  100% { box-shadow: 0 0 2.8vh rgba(255, 215, 0, 0.9), 0 0 1.5vh rgba(186, 104, 200, 0.9); }
+}
+
+@keyframes gsmOrbPulse {
+  0% { transform: scale(0.9); opacity: 0.5; }
+  100% { transform: scale(1.15); opacity: 0.9; }
+}
+
+@keyframes gsmSubPulse {
+  0% { transform: scale(0.95); opacity: 0.85; }
+  100% { transform: scale(1.05); opacity: 1; filter: brightness(1.2); }
+}
+
+/* ===========================
    GRID
    =========================== */
 .gato-grid-wrap {
@@ -286,7 +456,11 @@
 }
 
 .gato-grid-frame {
-  width: 100%; height: 100%;
+  aspect-ratio: 6 / 3.8;
+  height: min(72vh, 450px);
+  width: auto;
+  max-width: 86vw;
+  margin: 0 auto;
   background: linear-gradient(180deg, rgba(255,200,80,0.15), rgba(80,30,120,0.3));
   border: 0.4vh solid #b8860b;
   border-radius: 1.5vh;
@@ -330,21 +504,21 @@
   transition: background 0.2s;
 }
 /* ===== SPIN ANIMATION (disamakan dengan Duo Fu Duo Cai) ===== */
-/* 1. Getar cepat ke bawah saat reel berputar */
+/* 1. Putaran mulus ke bawah tanpa buram (crystal clear smooth roll) */
 .gato-cell.gato-cell-spin .gato-tile {
-  animation: gatoReelSpin 0.065s linear infinite;
+  animation: gatoSmoothRoll 0.12s ease-in-out infinite alternate;
   will-change: transform;
-  filter: blur(3.5px) brightness(1.15) saturate(1.25);
-  transform: scaleY(1.14);
+  filter: none !important;
+  transform: none;
 }
-@keyframes gatoReelSpin {
-  0%   { transform: translateY(-8px) scaleY(1.14); }
-  50%  { transform: translateY(8px)  scaleY(1.14); }
-  100% { transform: translateY(-8px) scaleY(1.14); }
+@keyframes gatoSmoothRoll {
+  0%   { transform: translateY(-8px); }
+  100% { transform: translateY(8px); }
 }
 
 /* Garis kecepatan vertikal */
 .gato-cell.gato-cell-spin::after {
+  display: none !important;
   content: '';
   position: absolute;
   inset: 0;
@@ -366,6 +540,7 @@
 
 /* Kilau menyapu di dalam sel saat berputar */
 .gato-cell.gato-cell-spin::before {
+  display: none !important;
   content: '';
   position: absolute;
   inset: 0;
@@ -392,7 +567,7 @@
   animation-delay: calc(var(--r, 0) * 0.025s);
 }
 @keyframes gatoReelBounce {
-  0%   { transform: translateY(-80px); opacity: 0.7; filter: blur(2px); }
+  0%   { transform: translateY(-50px); opacity: 0.9; filter: none; }
   50%  { transform: translateY(18px);  opacity: 1;   filter: none; }
   75%  { transform: translateY(-7px); }
   90%  { transform: translateY(2px); }
@@ -435,25 +610,58 @@
 }
 
 /* Win glow */
+.gato-tile-win {
+  z-index: 10;
+}
 .gato-tile-win::after {
   content: '';
-  position: absolute; inset: -8%;
+  position: absolute; inset: -6%;
   border-radius: 50%;
-  background: transparent;
-  box-shadow: 0 0 2.5vh 1vh rgba(255,215,0,0.9);
-  animation: tileWinPulse 0.5s ease-in-out infinite alternate;
+  background: radial-gradient(circle, rgba(255, 215, 0, 0.35) 0%, transparent 70%);
+  box-shadow: 0 0 2vh 0.8vh rgba(255,215,0,0.85);
+  animation: tileWinPulse 0.45s ease-in-out infinite alternate;
   pointer-events: none; z-index: 10;
 }
 @keyframes tileWinPulse {
-  0%   { box-shadow: 0 0 1.5vh 0.5vh rgba(255,215,0,0.7); }
-  100% { box-shadow: 0 0 3.5vh 2vh rgba(255,215,0,1), 0 0 6vh 3vh rgba(255,150,0,0.6); }
+  0%   { box-shadow: 0 0 1.2vh 0.4vh rgba(255,215,0,0.6); transform: scale(0.98); }
+  100% { box-shadow: 0 0 2.8vh 1.4vh rgba(255,215,0,0.95), 0 0 5vh 2.5vh rgba(255,150,0,0.5); transform: scale(1.05); }
 }
 
-.gato-tile-explode { animation: tileBlast 0.4s ease-out forwards; }
+.gato-tile-explode {
+  animation: tileBlast 0.35s ease-out forwards;
+  pointer-events: none;
+}
 @keyframes tileBlast {
   0%   { transform: scale(1); opacity: 1; }
-  40%  { transform: scale(1.3); filter: brightness(3) drop-shadow(0 0 1vh #ffd700); }
-  100% { transform: scale(0); opacity: 0; }
+  35%  { transform: scale(1.25); filter: brightness(2.2) drop-shadow(0 0 1.5vh #ffd700); opacity: 1; }
+  100% { transform: scale(0); opacity: 0; filter: brightness(3); }
+}
+
+/* Cascade drop for new/falling symbols smoothly landing */
+.gato-tile.gato-tile-dropping {
+  animation: gatoTileCascadeDrop 0.38s cubic-bezier(0.22, 1, 0.36, 1) both !important;
+  will-change: transform;
+  filter: none !important;
+}
+@keyframes gatoTileCascadeDrop {
+  0% {
+    transform: translateY(-38px);
+    opacity: 0.3;
+    filter: none;
+  }
+  65% {
+    transform: translateY(6px);
+    opacity: 1;
+    filter: none;
+  }
+  85% {
+    transform: translateY(-2px);
+  }
+  100% {
+    transform: translateY(0px);
+    opacity: 1;
+    filter: none;
+  }
 }
 
 .gato-sym-img-wrap {
@@ -463,7 +671,7 @@
   align-items: center;
   justify-content: center;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .gato-sym-img {
@@ -676,12 +884,53 @@
 }
 
 /* ===========================
-   MULTIPLIER ORB (3D GATOTKACA STYLE)
+   MULTIPLIER ORB (AUTHENTIC 3D PRAGMATIC GATOTKACA / OLYMPUS STYLE)
    =========================== */
 .gato-mult-orb-wrap {
-  width: 96%; height: 96%;
+  width: 98%; height: 98%;
   display: flex; align-items: center; justify-content: center;
   position: relative;
+  animation: orbDropLand 0.42s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+
+@keyframes orbDropLand {
+  0% {
+    transform: translateY(-90%) scale(0.65);
+    opacity: 0.3;
+  }
+  65% {
+    transform: translateY(10%) scale(1.15);
+    opacity: 1;
+  }
+  85% {
+    transform: translateY(-4%) scale(0.96);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Winged golden side accents */
+.gato-mult-orb-wrap::before, .gato-mult-orb-wrap::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 32%;
+  height: 60%;
+  background: linear-gradient(135deg, #ffe082 0%, #ffd700 30%, #ff8f00 70%, #b8860b 100%);
+  border-radius: 50% 10% 50% 10%;
+  box-shadow: 0 0 1vh rgba(255, 215, 0, 0.8), inset 0 0.2vh 0.4vh #fff;
+  z-index: 1;
+  pointer-events: none;
+}
+.gato-mult-orb-wrap::before {
+  left: -12%;
+  transform: translateY(-50%) rotate(-25deg);
+}
+.gato-mult-orb-wrap::after {
+  right: -12%;
+  transform: translateY(-50%) rotate(25deg) scaleX(-1);
 }
 
 /* The spinning 8-pointed golden spikes behind the orb */
@@ -690,15 +939,16 @@
   width: 100%; height: 100%;
   animation: spinSlow 8s linear infinite;
   display: flex; align-items: center; justify-content: center;
+  z-index: 2;
 }
 .gato-mult-spikes::before, .gato-mult-spikes::after {
   content: '';
   position: absolute;
-  width: 75%; height: 75%;
+  width: 76%; height: 76%;
   background: linear-gradient(135deg, #ffd700 0%, #ff8f00 25%, #b8860b 50%, #ff8f00 75%, #ffd700 100%);
-  border: 0.1vh solid rgba(255,255,255,0.5);
+  border: 0.15vh solid rgba(255,255,255,0.7);
   border-radius: 12%;
-  box-shadow: 0 0 1vh rgba(0,0,0,0.8);
+  box-shadow: 0 0 1.2vh rgba(0,0,0,0.85);
 }
 .gato-mult-spikes::after {
   transform: rotate(45deg);
@@ -707,22 +957,22 @@
 /* Outer golden ring */
 .gato-mult-ring {
   position: absolute;
-  width: 78%; height: 78%;
+  width: 80%; height: 80%;
   border-radius: 50%;
   background: radial-gradient(circle, #2a2a2a 0%, #000 100%);
-  border: 0.35vh solid #ffd740;
-  box-shadow: 0 0 1vh #ffcc00, inset 0 0 1vh #000;
-  z-index: 2;
+  border: 0.38vh solid #ffd740;
+  box-shadow: 0 0 1.5vh #ffcc00, inset 0 0 1vh #000;
+  z-index: 3;
   display: flex; align-items: center; justify-content: center;
 }
 
 /* Inner glowing glass sphere */
 .gato-mult-sphere {
-  width: 90%; height: 90%;
+  width: 88%; height: 88%;
   border-radius: 50%;
   position: relative;
   overflow: hidden;
-  box-shadow: inset 0 0 1.5vh rgba(0,0,0,0.8);
+  box-shadow: inset 0 0 1.8vh rgba(0,0,0,0.85);
   animation: orbPulse 1.5s ease-in-out infinite alternate;
 }
 
@@ -732,27 +982,29 @@
   position: absolute;
   top: 5%; left: 15%;
   width: 70%; height: 35%;
-  background: linear-gradient(180deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 100%);
+  background: linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0) 100%);
   border-radius: 50%;
   transform: rotate(-15deg);
   pointer-events: none;
 }
 
-/* The multiplier text */
+/* The giant bold multiplier text - clearly visible & centered */
 .gato-mult-val {
   position: absolute;
-  z-index: 5;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 20;
   color: #ffffff;
-  font-family: 'Cinzel', 'Outfit', sans-serif;
-  font-size: clamp(1rem, 2.5vh, 2.8vh);
+  font-family: 'Arial Black', 'Cinzel', 'Outfit', sans-serif;
+  font-size: clamp(1.3rem, 2.8vh, 3.4vh);
   font-weight: 900;
-  text-shadow: 
-    0 0.2vh 0 #000, 0 -0.2vh 0 #000, 
-    0.2vh 0 0 #000, -0.2vh 0 0 #000,
-    0 0.4vh 1vh rgba(0,0,0,1),
-    0 0 2vh rgba(0,0,0,0.8);
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
   letter-spacing: -0.05em;
   pointer-events: none;
+  filter: drop-shadow(0 0.3vh 0.6vh rgba(0, 0, 0, 0.9));
 }
 
 @keyframes spinSlow {
@@ -760,8 +1012,34 @@
   100% { transform: rotate(360deg); }
 }
 @keyframes orbPulse {
-  0%   { filter: brightness(1) drop-shadow(0 0 0.5vh rgba(255,255,255,0.2)); }
-  100% { filter: brightness(1.3) drop-shadow(0 0 1.5vh rgba(255,255,255,0.6)); }
+  0%   { filter: brightness(1) drop-shadow(0 0 0.8vh rgba(255,255,255,0.3)); }
+  100% { filter: brightness(1.35) drop-shadow(0 0 2vh rgba(255,255,255,0.7)); }
+}
+
+/* Floating multiplier drop banner alert */
+.gato-mult-drop-banner {
+  position: absolute;
+  top: 1.5vh;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  background: linear-gradient(135deg, rgba(180, 20, 20, 0.95), rgba(40, 0, 60, 0.95));
+  border: 0.25vh solid #ffd700;
+  border-radius: 2.5vh;
+  padding: 0.6vh 2.5vh;
+  color: #fff;
+  font-family: 'Arial Black', sans-serif;
+  font-size: 2.2vh;
+  font-weight: 900;
+  box-shadow: 0 0 2.5vh rgba(255, 215, 0, 0.9), 0 0.5vh 1.5vh rgba(0, 0, 0, 0.8);
+  animation: multDropPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+@keyframes multDropPop {
+  0% { transform: translateX(-50%) translateY(-2vh) scale(0.7); opacity: 0; }
+  100% { transform: translateX(-50%) translateY(0) scale(1); opacity: 1; }
 }
 
 
@@ -1039,3 +1317,322 @@
   box-shadow: 0 0 0.8vh #ffd700;
   transform: scale(1.3);
 }
+
+/* ========================================================
+   AUTHENTIC 3D WINGED MULTIPLIER ORBS (AS IN USER SCREENSHOT)
+   ======================================================== */
+.gato-orb-real-wrap {
+  width: 96%;
+  height: 96%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  animation: orbDropBounce 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+
+.gato-orb-real-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0.4vh 1vh rgba(255, 215, 0, 0.7));
+  transition: transform 0.2s;
+}
+
+.gato-orb-real-wrap:hover .gato-orb-real-img {
+  transform: scale(1.08);
+}
+
+.gato-orb-real-val {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: 'Arial Black', sans-serif;
+  font-size: clamp(1.3rem, 2.8vh, 3.4vh);
+  font-weight: 900;
+  color: #ffffff;
+  text-shadow: 
+    0 0 1.2vh rgba(0, 0, 0, 1),
+    0 0.3vh 0.6vh #000,
+    0 -0.2vh 0 #000,
+    0.2vh 0 0 #000,
+    -0.2vh 0 0 #000;
+  letter-spacing: -0.05em;
+  z-index: 5;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+@keyframes orbDropBounce {
+  0% { transform: translateY(-100%) scale(0.6); opacity: 0.2; }
+  65% { transform: translateY(12%) scale(1.15); opacity: 1; }
+  85% { transform: translateY(-4%) scale(0.96); }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+/* 1000x LEGENDARY MULTIPLIER EFFECTS */
+.gato-orb-1000-img {
+  filter: drop-shadow(0 0 1.5vh #ff1744) drop-shadow(0 0 2.5vh #ffd700) !important;
+  animation: orb1000Pulse 1.2s infinite alternate ease-in-out;
+}
+
+.gato-orb-500-img {
+  filter: drop-shadow(0 0 1.2vh #ff5252) drop-shadow(0 0 1.8vh #ff9100) !important;
+}
+
+@keyframes orb1000Pulse {
+  0% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 1.2vh #ff1744) drop-shadow(0 0 2vh #ffd700);
+  }
+  100% {
+    transform: scale(1.1);
+    filter: drop-shadow(0 0 2.2vh #ff1744) drop-shadow(0 0 3.5vh #ffe57f) drop-shadow(0 0 4.5vh #ff3d00);
+  }
+}
+
+.gato-orb-val-1000 {
+  background: linear-gradient(180deg, #ffffff 0%, #fff176 30%, #ff9800 70%, #d50000 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0.2vh 0.4vh rgba(0,0,0,0.9));
+  font-size: clamp(1.4rem, 3.2vh, 4vh) !important;
+  letter-spacing: -0.06em;
+}
+
+/* MATH FORMULA CARD IN RULES MODAL */
+.gato-math-formula-card {
+  background: linear-gradient(135deg, rgba(20, 15, 5, 0.95), rgba(45, 30, 10, 0.95));
+  border: 1.5px solid #d4af37;
+  border-radius: 12px;
+  padding: 1.6vh 2vw;
+  margin: 1.5vh 0;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(212, 175, 55, 0.2);
+}
+
+.gato-math-formula-title {
+  font-size: clamp(0.9rem, 2vh, 2.3vh);
+  font-weight: 800;
+  color: #ffd700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.8vh;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.gato-math-formula-eq {
+  font-family: 'Courier New', monospace, sans-serif;
+  font-size: clamp(1.1rem, 2.6vh, 3.2vh);
+  font-weight: 900;
+  color: #fff9df;
+  background: rgba(0, 0, 0, 0.4);
+  display: inline-block;
+  padding: 0.6vh 1.8vw;
+  border-radius: 8px;
+  border: 1px dashed rgba(255, 215, 0, 0.6);
+  letter-spacing: 0.05em;
+  margin: 0.5vh 0;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+}
+
+.gato-math-formula-sub {
+  font-size: clamp(0.75rem, 1.6vh, 1.9vh);
+  color: #e0d0b0;
+  margin-top: 0.8vh;
+  line-height: 1.4;
+}
+
+/* ========================================================
+   GATES OF GATOTKACA MOBILE LANDSCAPE RESPONSIVE FIXES
+   ======================================================== */
+@media screen and (max-height: 600px), screen and (max-width: 1024px) and (orientation: landscape) {
+  .gato-top-bar {
+    height: 38px !important;
+    padding: 0 8px !important;
+  }
+  .gato-tb-back {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 18px !important;
+  }
+  .gato-tb-avatar {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 14px !important;
+  }
+  .gato-tb-coins {
+    height: 26px !important;
+    padding: 0 8px !important;
+    font-size: 11px !important;
+    gap: 4px !important;
+  }
+  .gato-tb-plus {
+    width: 18px !important;
+    height: 18px !important;
+    font-size: 13px !important;
+  }
+  .gato-tb-banner {
+    height: 26px !important;
+    padding: 0 8px !important;
+    font-size: 10px !important;
+  }
+  .gato-tb-btn {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 13px !important;
+  }
+
+  .gato-main-area {
+    top: 40px !important;
+    bottom: 44px !important;
+    gap: 6px !important;
+    padding: 0 8px !important;
+  }
+
+  /* Left Panel: Compact sizing and hide ransel on mobile landscape to prevent vertical overflow */
+  .gato-left-panel {
+    width: 115px !important;
+    min-width: 105px !important;
+    max-width: 120px !important;
+    gap: 4px !important;
+    padding-top: 0 !important;
+    flex-shrink: 0 !important;
+    justify-content: center !important;
+  }
+
+  .gato-ransel {
+    display: none !important;
+  }
+
+  .gato-buy-spin {
+    padding: 3px 5px !important;
+    border-radius: 8px !important;
+    border-width: 1.5px !important;
+  }
+  .gato-bs-title {
+    font-size: 9.5px !important;
+  }
+  .gato-bs-amount {
+    font-size: 12px !important;
+    margin-top: 1px !important;
+  }
+
+  .gato-taruhan-panel {
+    padding: 3px 5px !important;
+    border-radius: 8px !important;
+    border-width: 1.5px !important;
+  }
+  .gato-tp-title {
+    font-size: 8.5px !important;
+  }
+  .gato-tp-amount {
+    font-size: 12px !important;
+    margin: 1px 0 !important;
+  }
+  .gato-tp-sub, .gato-tp-sub2 {
+    font-size: 7.5px !important;
+  }
+
+  /* Center Grid Frame */
+  .gato-center-stage {
+    flex: 1 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 0 !important;
+    height: 100% !important;
+  }
+  .gato-grid-frame {
+    aspect-ratio: 6 / 3.8 !important;
+    height: min(76vh, 370px) !important;
+    max-width: 84vw !important;
+    width: auto !important;
+    margin: 0 auto !important;
+  }
+
+  /* Right Panel: Scaled Gatotkaca Character */
+  .gato-right-panel {
+    width: 95px !important;
+    min-width: 80px !important;
+    max-width: 105px !important;
+    flex-shrink: 0 !important;
+  }
+  .gato-character {
+    width: 115px !important;
+    height: 155px !important;
+    top: -4vh !important;
+    left: -1vw !important;
+  }
+
+  /* Bottom Bar */
+  .gato-bottom-bar {
+    height: 42px !important;
+    padding: 0 8px !important;
+  }
+  .gato-bot-left {
+    gap: 4px !important;
+  }
+  .gato-bot-btn {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 8px !important;
+    font-size: 16px !important;
+  }
+  .gato-btn-chat { font-size: 15px !important; }
+  .gato-btn-info { font-size: 18px !important; }
+  .gato-minus { font-size: 20px !important; }
+  .gato-plus-bet { font-size: 18px !important; }
+
+  .gato-bet-box {
+    min-width: 85px !important;
+    height: 34px !important;
+    padding: 0 4px !important;
+    border-radius: 8px !important;
+  }
+  .gato-bet-label {
+    font-size: 7.5px !important;
+  }
+  .gato-bet-val {
+    font-size: 11px !important;
+  }
+
+  .gato-win-banner {
+    min-width: 110px !important;
+    height: 36px !important;
+    margin-top: 0 !important;
+    border-radius: 0 0 10px 10px !important;
+    padding: 1px 8px !important;
+  }
+  .gato-win-label {
+    font-size: 8px !important;
+  }
+  .gato-win-val {
+    font-size: 14px !important;
+  }
+
+  .gato-bot-right {
+    gap: 4px !important;
+  }
+  .gato-maxbet-btn,
+  .gato-speed-btn {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+  }
+  .gato-spin-btn {
+    min-width: 85px !important;
+    height: 36px !important;
+    padding: 0 8px !important;
+    border-radius: 8px !important;
+  }
+  .gato-spin-txt-main {
+    font-size: 14px !important;
+  }
+  .gato-spin-txt-sub {
+    font-size: 7.5px !important;
+  }
+}
+

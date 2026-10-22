@@ -32,8 +32,17 @@
 .fivelions-bg {
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
-  background-image: radial-gradient(circle at 50% 40%, #172c72 0%, #0c1847 60%, #050b24 100%);
+  background:
+    radial-gradient(ellipse at 50% 55%, rgba(10, 6, 30, 0.55) 0%, rgba(10, 6, 30, 0.15) 55%, transparent 80%),
+    linear-gradient(180deg, rgba(8, 4, 24, 0.35) 0%, rgba(8, 4, 24, 0) 25%, rgba(8, 4, 24, 0.4) 100%),
+    url('/assets/fivelions/bg_temple.jpg') center / cover no-repeat,
+    radial-gradient(circle at 50% 40%, #172c72 0%, #0c1847 60%, #050b24 100%);
+  animation: flBgDrift 45s ease-in-out infinite alternate;
   z-index: 0;
+}
+@keyframes flBgDrift {
+  0%   { background-position: 0 0, 0 0, 48% 50%, 0 0; }
+  100% { background-position: 0 0, 0 0, 52% 50%, 0 0; }
 }
 .fivelions-bg::before {
   content: '';
@@ -280,6 +289,24 @@
   color: #ffffff;
   margin-top: 0.4vh;
 }
+.buy-spin-card.disabled {
+  opacity: 0.45;
+  filter: grayscale(0.85);
+  cursor: not-allowed;
+  position: relative;
+}
+.buy-spin-card.disabled:hover {
+  transform: none;
+}
+.buy-spin-card.disabled::after {
+  content: '🔒';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 2.4vh;
+  text-shadow: 0 0 8px rgba(0,0,0,0.9);
+}
 
 .double-chance-card .badge-hdr {
   font-size: 1.2vh;
@@ -366,8 +393,11 @@
   border: 0.25vh solid #d4af37;
   border-radius: 1vh;
   overflow: hidden;
-  height: 61.5vh;
-  max-height: 585px;
+  aspect-ratio: 6 / 3.4;
+  height: min(65vh, 420px);
+  width: auto;
+  max-width: 86vw;
+  margin: 0 auto;
 }
 
 .fivelions-col {
@@ -383,6 +413,7 @@
 
 .fivelions-reel-track {
   width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   will-change: transform;
@@ -400,10 +431,10 @@
 
 @keyframes reelGridScrollDown {
   0% {
-    transform: translateY(-102.5vh);
+    transform: translate3d(0, calc(-100% * 5 / 3), 0);
   }
   100% {
-    transform: translateY(0);
+    transform: translate3d(0, 0, 0);
   }
 }
 
@@ -414,21 +445,18 @@
 
 @keyframes reelLandBounce {
   0% {
-    transform: translateY(-16px);
+    transform: translate3d(0, -14px, 0);
   }
   70% {
-    transform: translateY(3px);
+    transform: translate3d(0, 3px, 0);
   }
   100% {
-    transform: translateY(0);
+    transform: translate3d(0, 0, 0);
   }
 }
 
 .fivelions-cell {
-  width: 10.2vw;
-  height: 20.5vh;
-  max-width: 165px;
-  max-height: 195px;
+  width: 100% !important;
   border-bottom: 0.18vh solid rgba(212, 175, 55, 0.45);
   display: flex;
   align-items: center;
@@ -438,18 +466,25 @@
   padding: 0;
   position: relative;
   overflow: hidden;
+  flex: 0 0 auto !important;
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
 }
 
-/* 1:1 Aspect Ratio Cell (Standard 1-Row) */
+/* Standard 1-Row Unit (exactly 1/3 of Column Height - NEVER shrinks on spin) */
 .fivelions-cell.span-1 {
-  height: 20.5vh;
-  max-height: 195px;
+  height: calc(100% / 3) !important;
+  flex: 0 0 calc(100% / 3) !important;
+  min-height: calc(100% / 3) !important;
+  max-height: calc(100% / 3) !important;
 }
 
-/* 9:16 Tall Aspect Ratio Cell (2-Row Multi-Span) */
+/* Tall Aspect Ratio Cell (2-Row Multi-Span = exactly 2/3 of Column Height - NEVER shrinks on spin) */
 .fivelions-cell.span-2 {
-  height: 41vh;
-  max-height: 390px;
+  height: calc(100% * 2 / 3) !important;
+  flex: 0 0 calc(100% * 2 / 3) !important;
+  min-height: calc(100% * 2 / 3) !important;
+  max-height: calc(100% * 2 / 3) !important;
   background: radial-gradient(ellipse at 50% 50%, #3d055e 0%, #1f0130 65%, #0e0017 100%);
   border: 0.22vh solid rgba(255, 215, 0, 0.6);
   box-shadow: inset 0 0 1.5vh rgba(0, 0, 0, 0.8);
@@ -464,15 +499,22 @@
 
 .fivelions-col .fivelions-cell:last-child { border-bottom: none; }
 
+/* Dynamic lightweight winning cell & symbol animations */
 .fivelions-cell.is-winning {
-  box-shadow: inset 0 0 1.5vh #ffd700, 0 0 2vh #ffab00;
-  border: 0.22vh solid #ffd700;
-  animation: flWinGlow 0.8s ease-in-out infinite alternate;
+  border: 0.25vh solid #ffd700 !important;
+  box-shadow: inset 0 0 1.8vh rgba(255, 215, 0, 0.7), 0 0 1.2vh rgba(255, 171, 0, 0.6) !important;
+  z-index: 5;
 }
-@keyframes flWinGlow {
-  0% { transform: scale(1); }
-  100% { transform: scale(1.04); }
+.fivelions-cell.is-winning .fivelions-sym-img {
+  animation: flWinSymBounce 0.65s ease-in-out infinite alternate !important;
+  filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.95)) !important;
+  will-change: transform;
 }
+@keyframes flWinSymBounce {
+  0% { transform: scale(1) translateZ(0); }
+  100% { transform: scale(1.14) translateZ(0); }
+}
+
 
 .fivelions-cell-inner {
   width: 100%;
@@ -815,6 +857,40 @@
   transform: skewX(-6deg) scale(0.97);
 }
 
+.fbot-spin-btn.is-spinning-btn {
+  background: linear-gradient(180deg, #ef4444 0%, #dc2626 35%, #b91c1c 70%, #7f1d1d 100%);
+  border: 2.5px solid #fecaca;
+  box-shadow: 0 4px 16px rgba(220, 38, 38, 0.8), inset 0 2px 4px rgba(255, 255, 255, 0.9);
+  animation: fbotStopPulse 0.9s infinite alternate;
+}
+
+@keyframes fbotStopPulse {
+  0% { transform: skewX(-6deg) scale(1); filter: brightness(1); }
+  100% { transform: skewX(-6deg) scale(1.03); filter: brightness(1.2); }
+}
+
+.fbot-spin-btn.is-spinning-btn .fbot-spin-title {
+  color: #ffffff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9), 0 0 12px rgba(255, 255, 255, 0.9);
+}
+
+.fbot-spin-btn.is-freespin-btn:not(.is-spinning-btn) {
+  background: linear-gradient(180deg, #ffd700 0%, #ff8f00 40%, #e65100 80%, #bf360c 100%);
+  border: 2.5px solid #fff9c4;
+  box-shadow: 0 4px 18px rgba(255, 143, 0, 0.8), inset 0 2px 4px rgba(255, 255, 255, 0.9);
+  animation: freespinBtnGlow 1.2s infinite alternate;
+}
+
+@keyframes freespinBtnGlow {
+  0% { filter: brightness(1); box-shadow: 0 4px 15px rgba(255, 143, 0, 0.7); }
+  100% { filter: brightness(1.2); box-shadow: 0 4px 25px rgba(255, 215, 0, 1); }
+}
+
+.fbot-spin-btn.is-freespin-btn:not(.is-spinning-btn) .fbot-spin-title {
+  color: #ffffff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9), 0 0 12px rgba(255, 215, 0, 0.9);
+}
+
 .fbot-spin-title {
   transform: skewX(6deg);
   font-family: 'Cinzel', 'Times New Roman', Georgia, serif;
@@ -823,6 +899,24 @@
   color: #ffe57f;
   letter-spacing: 1.5px;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9), 0 0 10px rgba(255, 215, 0, 0.5);
+  line-height: 1;
+}
+
+.fbot-spin-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2vh;
+}
+
+.fbot-spin-sub {
+  font-size: 1.2vh;
+  font-weight: 800;
+  color: #fffde7;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  letter-spacing: 0.5px;
+  transform: skewX(6deg);
 }
 
 .fbot-tutup-btn {
@@ -1514,4 +1608,384 @@
   box-shadow: 0 0 10px #ffd700;
   transform: scale(1.3);
 }
+
+/* =====================================================
+   AUTHENTIC 5 LIONS MEGAWAYS WILD MULTIPLIER BANNER
+   ===================================================== */
+.fivelions-wild-mult-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.2vw;
+  background: radial-gradient(ellipse at 50% 50%, #8a0c16 0%, #4a0208 70%, #260004 100%);
+  border: 0.28vh solid #ffd700;
+  border-radius: 2vh;
+  padding: 0.5vh 2vw;
+  margin-bottom: 0.9vh;
+  box-shadow: 
+    0 0.5vh 1.5vh rgba(0, 0, 0, 0.75),
+    inset 0 0.15vh 0.4vh rgba(255, 215, 0, 0.5),
+    0 0 1.2vh rgba(255, 215, 0, 0.25);
+  position: relative;
+  z-index: 15;
+  min-width: 380px;
+  max-width: 600px;
+  width: 48vw;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.fivelions-wild-mult-bar.is-active {
+  background: radial-gradient(ellipse at 50% 50%, #b71c1c 0%, #630009 60%, #300004 100%);
+  border-color: #fff176;
+  box-shadow: 
+    0 0.8vh 2.5vh rgba(255, 143, 0, 0.8),
+    0 0 3vh rgba(255, 215, 0, 0.9),
+    inset 0 0.2vh 0.6vh rgba(255, 255, 255, 0.7);
+  transform: scale(1.03);
+  animation: fwmPulse 1.2s infinite alternate;
+}
+
+@keyframes fwmPulse {
+  0% {
+    box-shadow: 0 0.8vh 2.5vh rgba(255, 143, 0, 0.8), 0 0 2vh rgba(255, 215, 0, 0.7);
+  }
+  100% {
+    box-shadow: 0 1vh 3vh rgba(255, 69, 0, 1), 0 0 3.5vh rgba(255, 215, 0, 1);
+  }
+}
+
+.fw-mult-dragon {
+  font-size: 3.2vh;
+  filter: drop-shadow(0 0.2vh 0.4vh rgba(0, 0, 0, 0.8));
+  user-select: none;
+}
+.fw-mult-dragon.left {
+  transform: scaleX(-1);
+}
+.fivelions-wild-mult-bar.is-active .fw-mult-dragon {
+  animation: dragonRoar 0.6s ease-in-out infinite alternate;
+}
+@keyframes dragonRoar {
+  0% { transform: scale(1) translateY(0); }
+  100% { transform: scale(1.18) translateY(-0.3vh); }
+}
+.fivelions-wild-mult-bar.is-active .fw-mult-dragon.left {
+  animation: dragonRoarLeft 0.6s ease-in-out infinite alternate;
+}
+@keyframes dragonRoarLeft {
+  0% { transform: scaleX(-1) scale(1) translateY(0); }
+  100% { transform: scaleX(-1) scale(1.18) translateY(-0.3vh); }
+}
+
+.fw-mult-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+}
+
+.fw-mult-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.8vw;
+  margin-bottom: 0.2vh;
+}
+
+.fw-mult-cn {
+  font-size: 1.1vh;
+  color: #ffca28;
+  letter-spacing: 0.1vw;
+  font-weight: 700;
+  opacity: 0.85;
+}
+
+.fw-mult-label {
+  font-size: 1.4vh;
+  font-weight: 900;
+  letter-spacing: 0.15vw;
+  color: #ffd54f;
+  text-shadow: 0 0.2vh 0.4vh rgba(0, 0, 0, 0.9), 0 0 0.8vh rgba(255, 213, 79, 0.6);
+}
+
+.fw-mult-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3.4vh;
+}
+
+.fw-mult-idle-val {
+  display: flex;
+  align-items: center;
+  gap: 0.6vw;
+}
+
+.fw-mult-lion {
+  font-size: 2.4vh;
+  filter: drop-shadow(0 0.2vh 0.4vh rgba(0, 0, 0, 0.8));
+}
+
+.fw-mult-idle-text {
+  font-size: 1.6vh;
+  font-weight: 900;
+  letter-spacing: 0.08vw;
+  background: linear-gradient(180deg, #fff9c4 0%, #ffd54f 50%, #ff8f00 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0.2vh 0.6vh rgba(0, 0, 0, 0.8);
+}
+
+.fw-mult-range-list {
+  display: flex;
+  align-items: center;
+  gap: 0.5vw;
+}
+
+.fw-range-item {
+  font-size: 1.5vh;
+  font-weight: 900;
+  color: #ffd700;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 0.2vh 0.6vw;
+  border-radius: 1vh;
+  border: 0.15vh solid rgba(255, 215, 0, 0.6);
+}
+
+.fw-mult-active-val {
+  display: flex;
+  align-items: center;
+  gap: 0.6vw;
+  animation: fwmPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes fwmPop {
+  0% { transform: scale(0.6); opacity: 0; }
+  70% { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.fw-mult-num {
+  font-size: 3.2vh;
+  font-weight: 950;
+  font-family: 'Arial Black', Impact, sans-serif;
+  color: #ffffff;
+  background: linear-gradient(180deg, #ffffff 0%, #fff176 35%, #ffd600 70%, #ff6f00 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0.3vh 0.8vh rgba(255, 111, 0, 0.95)) drop-shadow(0 0 1.2vh rgba(255, 214, 0, 0.8));
+  letter-spacing: 0.05vw;
+}
+
+.fw-mult-badge {
+  background: linear-gradient(180deg, #ff1744 0%, #b71c1c 100%);
+  color: #ffffff;
+  font-size: 1.1vh;
+  font-weight: 900;
+  padding: 0.3vh 0.8vw;
+  border-radius: 1.2vh;
+  border: 0.15vh solid #ffffff;
+  box-shadow: 0 0.2vh 0.6vh rgba(0, 0, 0, 0.6), 0 0 1vh rgba(255, 23, 68, 0.8);
+  animation: fwmBadgePulse 0.8s infinite alternate;
+}
+
+@keyframes fwmBadgePulse {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.08); filter: brightness(1.2); }
+}
+
+/* WILD WIN CELL HIGHLIGHT ON REELS */
+.fivelions-cell.is-wild-win {
+  box-shadow: inset 0 0 2vh rgba(255, 215, 0, 0.9), 0 0 2.5vh rgba(255, 165, 0, 0.85);
+  border: 0.25vh solid #ffd700;
+  border-radius: 0.8vh;
+  position: relative;
+  animation: wildCellGlow 1s infinite alternate;
+}
+
+@keyframes wildCellGlow {
+  0% { filter: brightness(1); }
+  100% { filter: brightness(1.3) drop-shadow(0 0 1.5vh #ffd700); }
+}
+
+.fivelions-wild-glow-tag {
+  position: absolute;
+  bottom: 0.6vh;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, #ff6f00 0%, #d50000 100%);
+  color: #fff;
+  border: 0.18vh solid #fff275;
+  border-radius: 1vh;
+  font-size: 1.3vh;
+  font-weight: 950;
+  padding: 0.2vh 0.8vw;
+  white-space: nowrap;
+  box-shadow: 0 0.3vh 0.8vh rgba(0, 0, 0, 0.8), 0 0 1vh rgba(255, 214, 0, 0.8);
+  z-index: 10;
+  animation: fwmPop 0.35s ease-out;
+}
+
+/* ========================================================
+   5 LIONS MEGAWAYS MOBILE LANDSCAPE RESPONSIVE FIXES
+   ======================================================== */
+@media screen and (max-height: 600px), screen and (max-width: 1024px) and (orientation: landscape) {
+  .fivelions-topbar {
+    height: 38px !important;
+    padding: 0 8px !important;
+  }
+  .fl-tb-btn {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 13px !important;
+  }
+  .fl-tb-avatar {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 14px !important;
+  }
+  .fl-tb-coins {
+    height: 26px !important;
+    padding: 0 8px !important;
+    font-size: 11px !important;
+    gap: 4px !important;
+  }
+  .fl-tb-plus {
+    width: 18px !important;
+    height: 18px !important;
+    font-size: 13px !important;
+  }
+
+  .fivelions-side-left,
+  .fivelions-side-badge {
+    display: none !important;
+  }
+
+  .fivelions-machine-container {
+    margin-top: 38px !important;
+    margin-bottom: 44px !important;
+    padding: 0 4px !important;
+  }
+
+  .fivelions-wild-mult-bar {
+    padding: 2px 14px !important;
+    margin-bottom: 4px !important;
+    border-radius: 12px !important;
+    gap: 8px !important;
+  }
+  .fw-mult-dragon {
+    font-size: 16px !important;
+  }
+  .fw-mult-label {
+    font-size: 9px !important;
+  }
+  .fw-mult-cn {
+    display: none !important;
+  }
+  .fw-mult-num {
+    font-size: 13px !important;
+  }
+  .fw-mult-idle-text {
+    font-size: 9px !important;
+  }
+
+  .fivelions-machine-frame {
+    aspect-ratio: 6 / 3.3 !important;
+    height: min(65vh, 260px) !important;
+    max-width: 88vw !important;
+    width: auto !important;
+    margin: 0 auto !important;
+    padding: 3px 4px !important;
+  }
+
+  .fivelions-pillar-left,
+  .fivelions-pillar-right {
+    display: none !important;
+  }
+
+  .fivelions-grid {
+    aspect-ratio: 6 / 3.3 !important;
+    height: 100% !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  .fivelions-cell.span-1 {
+    flex: 0 0 calc(100% / 3) !important;
+    height: calc(100% / 3) !important;
+    min-height: calc(100% / 3) !important;
+    max-height: calc(100% / 3) !important;
+  }
+
+  .fivelions-cell.span-2 {
+    flex: 0 0 calc(100% * 2 / 3) !important;
+    height: calc(100% * 2 / 3) !important;
+    min-height: calc(100% * 2 / 3) !important;
+    max-height: calc(100% * 2 / 3) !important;
+  }
+
+  .fivelions-bottombar-wrapper {
+    height: 44px !important;
+  }
+  .fivelions-bottombar {
+    height: 42px !important;
+    padding: 0 8px !important;
+    border-radius: 12px 12px 0 0 !important;
+  }
+  .fl-bot-left, .fl-bot-right {
+    gap: 4px !important;
+  }
+  .flbot-btn {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 8px !important;
+  }
+
+  .fl-bet-box {
+    min-width: 85px !important;
+    height: 34px !important;
+    padding: 0 4px !important;
+    border-radius: 8px !important;
+    justify-content: center !important;
+  }
+  .fl-bet-label {
+    font-size: 7.5px !important;
+  }
+  .fl-bet-val {
+    font-size: 11px !important;
+  }
+
+  .fl-win-box {
+    min-width: 110px !important;
+    height: 36px !important;
+    padding: 1px 8px !important;
+    border-radius: 12px !important;
+  }
+  .fl-win-label {
+    font-size: 8px !important;
+  }
+  .fl-win-val {
+    font-size: 14px !important;
+  }
+
+  .fl-maxbet-btn, .fl-speed-btn {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+  }
+  .fl-spin-btn {
+    min-width: 85px !important;
+    height: 36px !important;
+    padding: 0 8px !important;
+    border-radius: 8px !important;
+  }
+  .fl-spin-txt-main {
+    font-size: 14px !important;
+  }
+  .fl-spin-txt-sub {
+    font-size: 7.5px !important;
+  }
+}
+
 

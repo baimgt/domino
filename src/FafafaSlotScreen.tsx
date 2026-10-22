@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Socket } from 'socket.io-client';
 import './fafafa.css';
 import GameMenuDropdown from './GameMenuDropdown';
+import SlotMultiplierBar from './SlotMultiplierBar';
+import SlotCelebrationModal, { SlotCelebrationData } from './SlotCelebrationModal';
 
 interface Props {
   onBack: () => void;
@@ -44,6 +46,7 @@ export default function FafafaSlotScreen({ onBack, socket }: Props) {
   const [myCoins, setMyCoins] = useState(0);
   const [winLines, setWinLines] = useState<any[]>([]);
   const [freeSpinsLeft, setFreeSpinsLeft] = useState(0);
+  const [multInfo, setMultInfo] = useState<any>(null); // dari server: tangga & pengali free spin
   const [totalWin, setTotalWin] = useState(0);
   const [autoSpins, setAutoSpins] = useState(0);
   const [isFullBoard, setIsFullBoard] = useState(false);
@@ -56,6 +59,7 @@ export default function FafafaSlotScreen({ onBack, socket }: Props) {
   const [soundOn, setSoundOn] = useState(true);
   const [musicOn, setMusicOn] = useState(true);
   const [winningPaylineNums, setWinningPaylineNums] = useState<number[]>([]);
+  const [celebration, setCelebration] = useState<SlotCelebrationData | null>(null);
   const spinPressTimer = useRef<any>(null);
 
   const username = localStorage.getItem('domino_username') || '';
@@ -65,6 +69,7 @@ export default function FafafaSlotScreen({ onBack, socket }: Props) {
   const freeSpinsLeftRef = useRef(freeSpinsLeft);
   const spinSpeedRef = useRef(spinSpeed);
   const doSpinRef = useRef<any>(null);
+  const spinningColsRef = useRef<boolean[]>([false, false, false, false, false]);
 
   useEffect(() => { autoSpinsRef.current = autoSpins; }, [autoSpins]);
   useEffect(() => { freeSpinsLeftRef.current = freeSpinsLeft; }, [freeSpinsLeft]);
@@ -91,34 +96,40 @@ export default function FafafaSlotScreen({ onBack, socket }: Props) {
     let interval: any = null;
     if (isSpinning) {
       interval = setInterval(() => {
+        if (!spinningColsRef.current.some(Boolean)) return;
         setGrid(prev => {
           const next = prev.map(row => [...row]);
           for (let r = 0; r < 3; r++) {
             for (let c = 0; c < 5; c++) {
-              if (spinningCols[c]) {
+              if (spinningColsRef.current[c]) {
                 next[r][c] = Math.floor(Math.random() * 11);
               }
             }
           }
           return next;
         });
-      }, 70 / spinSpeedRef.current);
+      }, Math.max(30, Math.floor(65 / spinSpeedRef.current)));
     }
     return () => { if (interval) clearInterval(interval); };
-  }, [isSpinning, spinningCols]);
+  }, [isSpinning]);
 
   useEffect(() => {
     if (!socket) return;
     
     const handleResult = (data: any) => {
+      setMultInfo(data.multiplier || null);
       const spd = spinSpeedRef.current;
-      let stopTime = 200 / spd;
-      const delayPerCol = 220 / spd;
+      const minSpinBase = spd === 3 ? 240 : spd === 2 ? 400 : 750;
+      const delayPerCol = spd === 3 ? 65 : spd === 2 ? 100 : 180;
+      const bounceDuration = spd === 3 ? 160 : spd === 2 ? 240 : 380;
+      let stopTime = minSpinBase;
 
       // Staggered stop: Reel 1 -> Reel 2 -> Reel 3 -> Reel 4 -> Reel 5
       for (let c = 0; c < 5; c++) {
         const col = c;
         setTimeout(() => {
+          // Matikan flag reel ini secara sinkron di ref TERLEBIH DAHULU agar interval shuffle tidak menimpa
+          spinningColsRef.current[col] = false;
           setSpinningCols(prev => {
             const next = [...prev];
             next[col] = false;
@@ -135,15 +146,19 @@ export default function FafafaSlotScreen({ onBack, socket }: Props) {
         stopTime += delayPerCol;
       }
 
-      // Finish spinning sequence
+      // Finish spinning sequence after all reels settled cleanly
+      const allReelsSettled = stopTime + bounceDuration + 60;
       setTimeout(() => {
         setIsSpinning(false);
+        spinningColsRef.current = [false, false, false, false, false];
+        setSpinningCols([false, false, false, false, false]);
         setMyCoins(data.newBalance);
         localStorage.setItem('domino_coins', data.newBalance.toString());
         
         if (data.winningLines && data.winningLines.length > 0) {
+          const winTotal = data.totalWinAmount;
           setWinLines(data.winningLines);
-          setTotalWin(data.totalWinAmount);
+          setTotalWin(winTotal);
           const paylineNums = data.winningLines.map((wl: any) => wl.lineIdx + 1);
           setWinningPaylineNums(paylineNums);
         } else {
@@ -160,26 +175,48 @@ export default function FafafaSlotScreen({ onBack, socket }: Props) {
           setIsFullBoard(false);
         }
 
+        let totalFree = freeSpinsLeftRef.current;
         if (data.triggerFreeSpins) {
-          setFreeSpinsLeft(prev => prev + data.freeSpinsAwarded);
+          totalFree += data.freeSpinsAwarded;
+          setFreeSpinsLeft(totalFree);
+          setCelebration({
+            type: 'scatter',
+            freeSpinsCount: data.freeSpinsAwarded || 10,
+            title: '🏮 SCATTER FAFAFA! 🏮',
+            subtext: `SELAMAT! KAMU MEMICU ${data.freeSpinsAwarded || 10} PUTARAN GRATIS!`
+          });
+        } else if (data.winningLines && data.winningLines.length > 0) {
+          const ratio = (data.totalWinAmount || 0) / Math.max(1, betAmount);
+          if (data.isFullBoard || ratio >= 30) {
+            setCelebration({ type: 'super_win', amount: data.totalWinAmount });
+          } else if (ratio >= 12) {
+            setCelebration({ type: 'mega_win', amount: data.totalWinAmount });
+          } else if (ratio >= 3) {
+            setCelebration({ type: 'big_win', amount: data.totalWinAmount });
+          }
         }
 
         // Handle auto spin & free spin continuations
-        if (autoSpinsRef.current > 1 || (freeSpinsLeftRef.current > 0 && !data.triggerFreeSpins)) {
+        const fafaRatio = (data.totalWinAmount || 0) / Math.max(1, betAmount);
+        const hasCelebration = data.triggerFreeSpins || (data.winningLines && data.winningLines.length > 0 && (data.isFullBoard || fafaRatio >= 3));
+        const nextDelay = hasCelebration ? 3900 : Math.max(700, 850 / spd);
+
+        if (autoSpinsRef.current > 1 || totalFree > 0) {
            if (autoSpinsRef.current > 1) setAutoSpins(a => a - 1);
-           if (freeSpinsLeftRef.current > 0) setFreeSpinsLeft(f => f - 1);
+           if (totalFree > 0) setFreeSpinsLeft(f => f - 1);
            setTimeout(() => {
              if (doSpinRef.current) doSpinRef.current();
-           }, 700 / spd);
+           }, nextDelay);
         } else if (autoSpinsRef.current === 1) {
            setAutoSpins(0);
         }
-      }, stopTime + 80);
+      }, allReelsSettled);
     };
 
     const handleError = (data: any) => {
       alert(data.message);
       setIsSpinning(false);
+      spinningColsRef.current = [false, false, false, false, false];
       setSpinningCols([false, false, false, false, false]);
       setAutoSpins(0);
     };
@@ -196,6 +233,7 @@ export default function FafafaSlotScreen({ onBack, socket }: Props) {
   const doSpin = () => {
     if (isSpinning || !socket) return;
     setIsSpinning(true);
+    spinningColsRef.current = [true, true, true, true, true];
     setSpinningCols([true, true, true, true, true]);
     setWinLines([]);
     setWinningPaylineNums([]);
@@ -232,6 +270,7 @@ export default function FafafaSlotScreen({ onBack, socket }: Props) {
     <div className="fafafa-screen">
       {/* AUTHENTIC TEMPLE COURTYARD BACKGROUND */}
       <div className="fafafa-bg-pillars"></div>
+
 
       {/* TOP LEFT (Profile, VIP, Coins, Plus) */}
       <div className="fafafa-top-left">
@@ -308,6 +347,31 @@ export default function FafafaSlotScreen({ onBack, socket }: Props) {
 
       {/* SLOT MACHINE AREA */}
       <div className="fafafa-machine-container">
+        {/* TOTAL PENGALI (SIDE MULTIPLIER WIDGET) */}
+        <div style={{ position: 'absolute', left: '-15vw', top: '10vh', zIndex: 12, width: '13vw' }}>
+          {(() => {
+            const displayMult = freeSpinsLeft > 0
+              ? Math.max(1, multInfo?.freeMult || 1)
+              : Math.max(1, [1, 2, 3, 5][multInfo?.idx ?? 0] || 1);
+            return (
+              <div className={`gato-side-multiplier ${freeSpinsLeft > 0 ? 'is-free-spin' : ''} ${displayMult > 1 ? 'is-active' : ''}`} style={{ width: '100%', boxSizing: 'border-box' }}>
+                <div className="gsm-wing-top">🏮 🏮 🏮</div>
+                <div className="gsm-title">{freeSpinsLeft > 0 ? 'TOTAL PENGALI' : 'PENGALI'}</div>
+                <div className="gsm-orb-wrap">
+                  <div className="gsm-orb-glow" />
+                  <div className="gsm-orb">
+                    <span className="gsm-val">{displayMult}x</span>
+                  </div>
+                </div>
+                <div className="gsm-sub">
+                  {freeSpinsLeft > 0 ? '★ TERSIMPAN ★' : (displayMult > 1 ? 'AKTIF' : 'BASE x1')}
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+        {/* MULTIPLIER BAR - PLACED DIRECTLY ABOVE REELS */}
+        <SlotMultiplierBar inline={true} idx={multInfo?.idx ?? 0} isFree={freeSpinsLeft > 0} freeMult={multInfo?.freeMult || 1} />
         {showBonusOverlay && (
           <div className="fafafa-bonus-overlay">
             <div className="bonus-gold-box">
@@ -522,10 +586,12 @@ export default function FafafaSlotScreen({ onBack, socket }: Props) {
                   onContextMenu={(e) => { e.preventDefault(); setShowAutoMenu(!showAutoMenu); }}
                 >
                   <div className="fbot-spin-title">
-                    {autoSpins > 0 ? `AUTO ${autoSpins > 90000 ? '∞' : autoSpins}` : 'SPIN'}
+                    {isSpinning ? 'STOP' : 'SPIN'}
                   </div>
                   <div className="fbot-spin-sub">
-                    {autoSpins > 0 ? 'STOP' : 'HOLD FOR AUTO'}
+                    {autoSpins > 0 
+                      ? (autoSpins > 90000 ? 'AUTO ∞' : `AUTO: ${autoSpins}`) 
+                      : (isSpinning ? 'BERHENTI' : 'HOLD FOR AUTO')}
                   </div>
                 </button>
               )}
@@ -971,6 +1037,9 @@ export default function FafafaSlotScreen({ onBack, socket }: Props) {
           </div>
         </div>
       )}
+
+      {/* Universal Slot Celebration Modal */}
+      <SlotCelebrationModal data={celebration} onClose={() => setCelebration(null)} />
     </div>
   );
 }

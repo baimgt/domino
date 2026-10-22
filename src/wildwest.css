@@ -20,20 +20,26 @@
 }
 .ww-bg-sky {
   position: absolute; inset: 0;
-  background: linear-gradient(180deg,
+  background:
+    radial-gradient(ellipse at 50% 55%, rgba(30, 12, 4, 0.55) 0%, rgba(30, 12, 4, 0.15) 55%, transparent 80%),
+    linear-gradient(180deg, rgba(20, 8, 2, 0.35) 0%, rgba(20, 8, 2, 0) 25%, rgba(20, 8, 2, 0.4) 100%),
+    url('/assets/wildwest/bg_town.jpg') center / cover no-repeat,
+    linear-gradient(180deg,
     #ff6f00 0%, #e65100 20%, #bf360c 45%,
     #4e342e 70%, #261710 100%);
+  animation: wwBgDrift 45s ease-in-out infinite alternate;
+}
+@keyframes wwBgDrift {
+  0%   { background-position: 0 0, 0 0, 48% 50%, 0 0; }
+  100% { background-position: 0 0, 0 0, 52% 50%, 0 0; }
 }
 .ww-bg-mountains {
-  position: absolute; bottom: 25%; left: 0; right: 0; height: 30%;
-  background:
-    radial-gradient(ellipse at 20% 100%, #3e2723 0%, transparent 60%),
-    radial-gradient(ellipse at 80% 100%, #3e2723 0%, transparent 60%);
-  opacity: 0.8;
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 50%, transparent 45%, rgba(0,0,0,0.5) 100%);
 }
 .ww-bg-saloon {
-  position: absolute; bottom: 0; left: 0; right: 0; height: 25%;
-  background: linear-gradient(180deg, transparent 0%, #1c0d02 100%);
+  position: absolute; bottom: 0; left: 0; right: 0; height: 20%;
+  background: linear-gradient(180deg, transparent 0%, rgba(28, 13, 2, 0.75) 100%);
 }
 
 /* ===========================
@@ -182,9 +188,18 @@
    FULL-WIDTH CABINET ARCH & SEAMLESS 5x4 REELS GRID
    =========================== */
 .ww-grid-wrap {
-  flex: 1; width: 100%; height: 100%;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: flex-end; position: relative;
+  flex: 0 0 auto;
+  aspect-ratio: 5 / 4.5;
+  height: min(78vh, 440px);
+  width: auto;
+  max-width: 82vw;
+  margin: 0 auto;
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  position: relative;
   min-width: 0;
 }
 .ww-fs-banner {
@@ -303,13 +318,12 @@
   overflow: hidden; padding: 0;
 }
 .ww-cell:nth-child(5n) { border-right: none; }
-.ww-cell.ww-cell-spin { animation: wwCellSpin 0.08s linear infinite; }
+.ww-cell.ww-cell-spin { animation: wwCellSpin 0.12s ease-in-out infinite alternate; }
 @keyframes wwCellSpin {
-  0%   { transform: translateY(0); }
-  50%  { transform: translateY(-5px); }
-  100% { transform: translateY(0); }
+  0%   { transform: translateY(-7px); }
+  100% { transform: translateY(7px); }
 }
-.ww-cell.ww-cell-spin .ww-tile { filter: blur(2.5px) brightness(1.1); }
+.ww-cell.ww-cell-spin .ww-tile { filter: none !important; }
 
 .ww-img-symbol-wrap {
   width: 100%; height: 100%;
@@ -1303,3 +1317,159 @@
 }
 .ww-win-collect-btn:hover { filter: brightness(1.15); }
 .ww-win-collect-btn:active { transform: scale(0.94); }
+
+/* ========================================================
+   WILD WEST GOLD MOBILE LANDSCAPE RESPONSIVE FIXES
+   ======================================================== */
+@media screen and (max-height: 600px), screen and (max-width: 1024px) and (orientation: landscape) {
+  .ww-top-bar {
+    height: 38px !important;
+    padding: 0 8px !important;
+  }
+  .ww-tb-back, .ww-tb-btn {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 13px !important;
+  }
+  .ww-tb-avatar {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 14px !important;
+  }
+  .ww-tb-coins {
+    height: 26px !important;
+    padding: 0 8px !important;
+    font-size: 11px !important;
+    gap: 4px !important;
+  }
+  .ww-tb-plus {
+    width: 18px !important;
+    height: 18px !important;
+    font-size: 13px !important;
+  }
+
+  .ww-main-area {
+    top: 38px !important;
+    bottom: 44px !important;
+    gap: 6px !important;
+    padding: 0 8px !important;
+  }
+
+  .ww-left-panel {
+    width: 105px !important;
+    min-width: 95px !important;
+    margin-top: 0 !important;
+    gap: 4px !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+  }
+  .ww-ransel-mascot {
+    display: none !important;
+  }
+
+  .ww-buy-spin-card {
+    padding: 4px 6px !important;
+    border-radius: 8px !important;
+  }
+  .ww-bs-title {
+    font-size: 10px !important;
+  }
+  .ww-bs-sub {
+    font-size: 8px !important;
+  }
+  .ww-bs-cost {
+    font-size: 11px !important;
+    margin-top: 1px !important;
+  }
+
+  .ww-grid-wrap {
+    aspect-ratio: 5 / 4.5 !important;
+    height: min(72vh, 360px) !important;
+    max-width: 78vw !important;
+    width: auto !important;
+    margin: 0 auto !important;
+  }
+  .ww-cabinet-top-arch {
+    height: 32px !important;
+  }
+  .ww-skull-ico {
+    font-size: 20px !important;
+  }
+  .ww-lantern-ico {
+    font-size: 14px !important;
+  }
+  .ww-arch-wild-west {
+    font-size: 16px !important;
+  }
+  .ww-arch-gold-badge {
+    padding: 1px 6px !important;
+    border-radius: 6px !important;
+  }
+  .ww-arch-gold-txt {
+    font-size: 9px !important;
+  }
+
+  .ww-bottom-bar {
+    height: 42px !important;
+    padding: 0 8px !important;
+    border-radius: 12px 12px 0 0 !important;
+    gap: 6px !important;
+  }
+  .ww-bot-left, .ww-bot-right {
+    gap: 4px !important;
+  }
+  .ww-bot-btn {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 8px !important;
+  }
+  .ww-minus, .ww-plus-bet {
+    font-size: 18px !important;
+  }
+
+  .ww-bet-box {
+    min-width: 85px !important;
+    height: 34px !important;
+    padding: 0 4px !important;
+    border-radius: 8px !important;
+    justify-content: center !important;
+  }
+  .ww-bet-label {
+    font-size: 7.5px !important;
+  }
+  .ww-bet-val {
+    font-size: 11px !important;
+  }
+
+  .ww-win-banner {
+    min-width: 110px !important;
+    height: 36px !important;
+    padding: 1px 8px !important;
+    border-radius: 12px !important;
+  }
+  .ww-win-label {
+    font-size: 8px !important;
+  }
+  .ww-win-val {
+    font-size: 14px !important;
+  }
+
+  .ww-maxbet-btn, .ww-speed-btn {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+  }
+  .ww-spin-btn {
+    min-width: 85px !important;
+    height: 36px !important;
+    padding: 0 8px !important;
+    border-radius: 8px !important;
+  }
+  .ww-spin-txt-main {
+    font-size: 14px !important;
+  }
+  .ww-spin-txt-sub {
+    font-size: 7.5px !important;
+  }
+}

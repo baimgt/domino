@@ -1,0 +1,473 @@
+/* ========================================================
+   MODERN HIGH-END SLOT WIN & SCATTER CELEBRATION (HANDS-FREE)
+   Ultra-sleek, lightweight 60 FPS, modern arcade aesthetics
+   ======================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@700;800;900&family=Cinzel:wght@800;900&display=swap');
+
+.slot-cel-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  background: radial-gradient(circle at 50% 50%, rgba(18, 10, 32, 0.88) 0%, rgba(6, 2, 12, 0.96) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: pointer;
+  user-select: none;
+  font-family: 'Outfit', sans-serif;
+  animation: celFadeIn 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.slot-cel-overlay.is-exiting {
+  animation: celFadeOut 0.22s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+}
+
+@keyframes celFadeIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes celFadeOut {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(1.04); }
+}
+
+/* Ambient Radial Spotlight */
+.slot-cel-spotlight {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90vmin;
+  height: 90vmin;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 215, 0, 0.18) 0%, rgba(255, 140, 0, 0.08) 45%, transparent 70%);
+  pointer-events: none;
+  animation: celSpotlightPulse 2.4s ease-in-out infinite alternate;
+}
+
+@keyframes celSpotlightPulse {
+  from { transform: translate(-50%, -50%) scale(0.9); opacity: 0.7; }
+  to { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+}
+
+/* Soft Light Shockwaves */
+.slot-cel-shockwave-wrap {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slot-cel-shockwave {
+  position: absolute;
+  width: 35vmin;
+  height: 35vmin;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 215, 0, 0.6);
+  animation: celShockwaveExpand 2s cubic-bezier(0.1, 0.8, 0.3, 1) infinite;
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+.slot-cel-shockwave:nth-child(2) {
+  animation-delay: 0.5s;
+  border-color: rgba(255, 160, 0, 0.5);
+}
+
+@keyframes celShockwaveExpand {
+  0% {
+    transform: translate3d(0, 0, 0) scale(0.3);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(3.2);
+    opacity: 0;
+  }
+}
+
+/* Rotating Sunburst FX */
+.slot-cel-sunburst {
+  position: absolute;
+  width: 120vh;
+  height: 120vh;
+  top: 50%;
+  left: 50%;
+  background: repeating-conic-gradient(
+    from 0deg,
+    rgba(255, 215, 0, 0.12) 0deg 8deg,
+    transparent 8deg 16deg
+  );
+  border-radius: 50%;
+  animation: celSunburstSpin 25s linear infinite;
+  pointer-events: none;
+  will-change: transform;
+}
+
+@keyframes celSunburstSpin {
+  from { transform: translate3d(-50%, -50%, 0) rotate(0deg); }
+  to { transform: translate3d(-50%, -50%, 0) rotate(360deg); }
+}
+
+/* ========================================================
+   MODERN PARTICLES (3D Styled Coins, Starbursts, Diamonds)
+   ======================================================== */
+.slot-cel-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.slot-cel-particle {
+  position: absolute;
+  top: -10vh;
+  animation: celParticleFall linear infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes celParticleFall {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(0.7);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+    transform: translate3d(0, 15vh, 0) rotate(60deg) scale(1);
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(0, 115vh, 0) rotate(360deg) scale(1.1);
+    opacity: 0;
+  }
+}
+
+/* Styled 3D Gold Coin Particle */
+.slot-cel-coin-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fffde7 0%, #ffd700 45%, #e65100 100%);
+  border: 1.5px solid #fff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6), inset 0 0 4px rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: celCoinSpin 1.2s ease-in-out infinite alternate;
+}
+
+.slot-cel-coin-inner::after {
+  content: '★';
+  color: #78350f;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+@keyframes celCoinSpin {
+  0% { transform: scaleX(1); }
+  50% { transform: scaleX(0.2); }
+  100% { transform: scaleX(1); }
+}
+
+.slot-cel-star-symbol {
+  color: #ffd700;
+  font-size: 24px;
+  filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.8));
+  animation: celPulse 0.8s ease-in-out infinite alternate;
+}
+
+.slot-cel-diamond-symbol {
+  color: #00e5ff;
+  font-size: 18px;
+  filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.85));
+  animation: celPulse 0.9s ease-in-out infinite alternate;
+}
+
+@keyframes celPulse {
+  from { transform: scale(0.8); opacity: 0.7; }
+  to { transform: scale(1.2); opacity: 1; }
+}
+
+/* ========================================================
+   CENTER CINEMATIC SHIELD
+   ======================================================== */
+.slot-cel-center {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  animation: celCenterPop 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.2) both;
+}
+
+@keyframes celCenterPop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.06);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Modern Vector Icon Emblem */
+.slot-cel-emblem-wrap {
+  position: relative;
+  width: 9vh;
+  height: 9vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5vh;
+}
+
+.slot-cel-emblem-halo {
+  position: absolute;
+  inset: -1.5vh;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 215, 0, 0.55) 0%, rgba(255, 140, 0, 0.15) 55%, transparent 75%);
+  animation: celHaloBreathe 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes celHaloBreathe {
+  from { transform: scale(0.9); opacity: 0.6; }
+  to { transform: scale(1.25); opacity: 1; }
+}
+
+.slot-cel-emblem-icon {
+  width: 7.5vh;
+  height: 7.5vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.6));
+}
+
+.slot-cel-svg-icon {
+  width: 100%;
+  height: 100%;
+}
+
+/* ========================================================
+   MODERN SLEEK HEADLINE
+   ======================================================== */
+.slot-cel-headline-wrap {
+  margin: 0.2vh 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slot-cel-headline {
+  margin: 0;
+  font-family: 'Outfit', 'Cinzel', sans-serif;
+  font-size: clamp(2.4rem, 7vh, 9.5vh);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  line-height: 1.05;
+  white-space: nowrap;
+  
+  /* Modern Specular Gold Gradient */
+  background: linear-gradient(
+    180deg,
+    #ffffff 0%,
+    #fff9c4 22%,
+    #ffd700 50%,
+    #ff9800 78%,
+    #e65100 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+
+  /* Crisp Modern Glow */
+  filter: 
+    drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8))
+    drop-shadow(0 6px 20px rgba(255, 200, 0, 0.6));
+}
+
+/* Theme Variances */
+.theme-super_win .slot-cel-headline {
+  background: linear-gradient(
+    180deg,
+    #ffffff 0%,
+    #ffebee 20%,
+    #ff1744 50%,
+    #d50000 80%,
+    #ffd700 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: 
+    drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8))
+    drop-shadow(0 6px 22px rgba(255, 23, 68, 0.7));
+}
+
+.theme-mega_win .slot-cel-headline {
+  background: linear-gradient(
+    180deg,
+    #ffffff 0%,
+    #f3e5f5 20%,
+    #d500f9 50%,
+    #7b1fa2 80%,
+    #00e5ff 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: 
+    drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8))
+    drop-shadow(0 6px 22px rgba(213, 0, 249, 0.7));
+}
+
+.theme-scatter .slot-cel-headline {
+  background: linear-gradient(
+    180deg,
+    #ffffff 0%,
+    #fff8e1 20%,
+    #ffb300 50%,
+    #ff6f00 80%,
+    #ffd54f 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: 
+    drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8))
+    drop-shadow(0 6px 22px rgba(255, 179, 0, 0.7));
+}
+
+/* Subtitle Pill */
+.slot-cel-subtext-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5vh 3vw;
+  margin-top: 0.4vh;
+  margin-bottom: 2.2vh;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 215, 0, 0.35);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.slot-cel-subtext-pill span {
+  color: #fffde7;
+  font-size: clamp(0.9rem, 2vh, 2.5vh);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ========================================================
+   MODERN PRIZE GLASSMORPHIC CAPSULE
+   ======================================================== */
+.slot-cel-prize-capsule {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.2vw;
+  background: linear-gradient(135deg, rgba(28, 16, 45, 0.82) 0%, rgba(12, 5, 22, 0.94) 100%);
+  border: 1.5px solid rgba(255, 215, 0, 0.55);
+  border-radius: 9999px;
+  padding: 1.1vh 4vw;
+  box-shadow: 
+    0 12px 35px rgba(0, 0, 0, 0.75),
+    0 0 35px rgba(255, 215, 0, 0.3),
+    inset 0 1px 1px rgba(255, 255, 255, 0.35);
+  animation: celCapsulePulse 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes celCapsulePulse {
+  from { transform: scale(1); }
+  to { transform: scale(1.03); box-shadow: 0 14px 40px rgba(0,0,0,0.8), 0 0 45px rgba(255, 215, 0, 0.5); }
+}
+
+.theme-super_win .slot-cel-prize-capsule {
+  border-color: rgba(255, 23, 68, 0.7);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.75), 0 0 35px rgba(255, 23, 68, 0.45);
+}
+
+.theme-mega_win .slot-cel-prize-capsule {
+  border-color: rgba(213, 0, 249, 0.7);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.75), 0 0 35px rgba(213, 0, 249, 0.45);
+}
+
+.slot-cel-currency-tag {
+  color: #ffd700;
+  font-size: clamp(1.4rem, 3.8vh, 5vh);
+  font-weight: 800;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+}
+
+.slot-cel-number {
+  font-size: clamp(2.2rem, 6vh, 8vh);
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 0.05em;
+  text-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.9),
+    0 0 20px rgba(255, 215, 0, 0.7);
+}
+
+/* Scatter Free Spins Display inside capsule */
+.slot-cel-scatter-num {
+  font-size: clamp(2.5rem, 6.8vh, 8.5vh);
+  font-weight: 900;
+  color: #ffd700;
+  line-height: 1;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9), 0 0 24px rgba(255, 215, 0, 0.85);
+}
+
+.slot-cel-scatter-lbl {
+  font-size: clamp(1rem, 2.2vh, 2.8vh);
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* ========================================================
+   SLEEK AUTO-DISMISS PROGRESS INDICATOR (NO TOUCH NEEDED)
+   ======================================================== */
+.slot-cel-auto-bar-wrap {
+  width: 140px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 2px;
+  margin-top: 2.6vh;
+  overflow: hidden;
+  position: relative;
+}
+
+.slot-cel-auto-bar {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #ffd700, #ff9100);
+  box-shadow: 0 0 8px #ffd700;
+  animation: celAutoBarDeplete var(--auto-duration, 2.1s) linear forwards;
+  transform-origin: left center;
+}
+
+@keyframes celAutoBarDeplete {
+  0% { transform: scaleX(1); }
+  100% { transform: scaleX(0); }
+}

@@ -23,60 +23,48 @@
 }
 
 /* ====================================================
-   BACKGROUND (Jade Green Dragon Pattern)
+   BACKGROUND (Imperial Jade Dragon & Temple Artwork)
    ==================================================== */
 .mj-bg {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 50% 45%, #00d6aa 0%, #009a7b 45%, #006652 75%, #004235 100%);
+  background:
+    radial-gradient(ellipse at 50% 55%, rgba(1, 35, 27, 0.55) 0%, rgba(1, 30, 22, 0.15) 55%, transparent 80%),
+    linear-gradient(180deg, rgba(1, 24, 18, 0.4) 0%, rgba(1, 24, 18, 0) 25%, rgba(1, 20, 15, 0.45) 100%),
+    url('/assets/mahjong2/bg_mahjong.jpg') center / cover no-repeat,
+    radial-gradient(circle at 50% 45%, #00d6aa 0%, #009a7b 45%, #006652 75%, #004235 100%);
+  animation: mjBgDrift 45s ease-in-out infinite alternate;
   z-index: 0;
   overflow: hidden;
 }
 
-/* Scale & Cloud Pattern Overlay */
+@keyframes mjBgDrift {
+  0%   { background-position: 0 0, 0 0, 48% 50%, 0 0; }
+  100% { background-position: 0 0, 0 0, 52% 50%, 0 0; }
+}
+
+/* Vignette overlay */
 .mj-bg::before {
   content: '';
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(circle at 50% 50%, transparent 40%, rgba(0,0,0,0.12) 41%, transparent 42%);
-  background-size: 5vw 5vw;
-  opacity: 0.65;
+  background:
+    radial-gradient(ellipse at 50% 50%, transparent 45%, rgba(0, 0, 0, 0.45) 100%),
+    radial-gradient(circle at 50% 10%, rgba(255, 230, 140, 0.12) 0%, transparent 45%);
+  pointer-events: none;
 }
 
 .mj-bg-glow {
-  position: absolute;
-  top: 5%; left: 15%; right: 15%; bottom: 5%;
-  background: radial-gradient(ellipse at 50% 45%, rgba(255,255,255,0.22) 0%, transparent 70%);
-  border-radius: 50%;
+  display: none;
 }
 
 .mj-bg-left-dragon, .mj-bg-right-dragon {
-  position: absolute;
-  top: 0; bottom: 0;
-  width: 25vw;
-  pointer-events: none;
-  opacity: 0.7;
-}
-
-.mj-bg-left-dragon {
-  left: -2vw;
-  background: radial-gradient(circle at 0% 50%, rgba(255, 215, 0, 0.3) 0%, transparent 70%);
-}
-
-.mj-bg-right-dragon {
-  right: -2vw;
-  background: radial-gradient(circle at 100% 50%, rgba(255, 215, 0, 0.3) 0%, transparent 70%);
+  display: none;
 }
 
 .mj-cloud {
-  position: absolute;
-  background: rgba(255,255,255,0.85);
-  border-radius: 50%;
-  filter: blur(10px);
+  display: none;
 }
-.mj-cloud-1 { width: 18vw; height: 7vw; bottom: 15%; left: 2%; }
-.mj-cloud-2 { width: 15vw; height: 6vw; bottom: 25%; right: 2%; }
-.mj-cloud-3 { width: 12vw; height: 5vw; top: 12%; left: 4%; }
 
 /* ====================================================
    TOP BAR (Profile Avatar & Ganti Room Menu)
@@ -177,39 +165,81 @@
    TOP MULTIPLIER BAR (Teal Header Ribbon x1 x2 x3 x5)
    ==================================================== */
 .mj-mult-bar-wrapper {
-  position: absolute;
-  top: 1vh; left: 50%; transform: translateX(-50%);
-  z-index: 45;
+  position: relative;
+  margin: 0.6vh auto 0.8vh auto;
+  z-index: 50;
+  display: flex;
+  justify-content: center;
+  width: 100%;
 }
 
 .mj-mult-ribbon {
   background: linear-gradient(180deg, #00897b 0%, #004d40 100%);
-  border: 0.3vh solid #ffd700;
+  border: 0.28vh solid #ffd700;
   border-radius: 3vh;
-  padding: 0.5vh 3vw;
+  padding: 0.5vh 2.5vw;
   display: flex;
   align-items: center;
-  gap: 2.5vw;
-  box-shadow: 0 0.5vh 1.5vh rgba(0,0,0,0.6);
+  gap: 2.2vw;
+  box-shadow: 0 0 2vh rgba(0, 230, 150, 0.45), 0 0.5vh 1.5vh rgba(0,0,0,0.7);
+}
+
+.mj-mult-ribbon.is-free-spin {
+  background: linear-gradient(180deg, #7b1fa2 0%, #4a148c 100%);
+  border-color: #ffd700;
+  box-shadow: 0 0 2.5vh rgba(255, 215, 0, 0.7), 0 0.5vh 1.5vh rgba(0,0,0,0.7);
+}
+
+.mj-mult-title {
+  font-family: 'Arial Black', sans-serif;
+  font-size: 1.4vh;
+  font-weight: 900;
+  color: #ffe082;
+  letter-spacing: 0.1vh;
+  margin-right: 0.5vw;
+  text-shadow: 0 0.15vh 0.3vh #000;
 }
 
 .mj-mult-step {
   font-family: 'Outfit', sans-serif;
   font-size: 2.8vh;
   font-weight: 900;
-  color: rgba(255,255,255,0.45);
+  color: rgba(255,255,255,0.4);
   text-shadow: 0 0.2vh 0.4vh rgba(0,0,0,0.6);
   font-style: italic;
-  transition: all 0.3s ease;
+  padding: 0.2vh 1vw;
+  border-radius: 1.5vh;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .mj-mult-active {
-  color: #ffee33;
-  font-size: 3.8vh;
-  text-shadow:
-    0 0 1.2vh #ffe000,
-    0 0.3vh 0.6vh #000;
-  filter: drop-shadow(0 0 0.8vh rgba(255,220,0,0.9));
+  color: #2b1200;
+  background: linear-gradient(180deg, #fff9c4 0%, #ffca28 50%, #ff8f00 100%);
+  font-size: 3.4vh;
+  border: 0.15vh solid #ffffff;
+  text-shadow: 0 0 0.8vh rgba(255,255,255,0.8);
+  box-shadow: 0 0 2vh rgba(255, 215, 0, 1), 0 0 3.5vh rgba(255, 152, 0, 0.7);
+  transform: scale(1.18);
+  filter: drop-shadow(0 0 1vh rgba(255,220,0,0.9));
+}
+
+.mj-mult-win-pop {
+  position: absolute;
+  top: -3.8vh;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  background: linear-gradient(135deg, #ffd700, #ff8f00);
+  color: #000;
+  font-family: 'Arial Black', sans-serif;
+  font-size: 1.8vh;
+  font-weight: 900;
+  padding: 0.4vh 1.8vh;
+  border-radius: 2vh;
+  border: 0.18vh solid #fff;
+  box-shadow: 0 0 2vh rgba(255, 215, 0, 0.9);
+  white-space: nowrap;
+  animation: smbPop 0.35s ease-out;
 }
 
 /* ====================================================
@@ -326,8 +356,11 @@
 .mj-machine-frame {
   display: flex;
   align-items: stretch;
-  width: 100%; max-width: 900px;
-  height: 100%;
+  aspect-ratio: 5 / 4.2;
+  height: min(72vh, 420px);
+  width: auto;
+  max-width: 82vw;
+  margin: 0 auto;
 }
 
 /* Pillar with vertical "2000 CARA" text */
@@ -394,20 +427,21 @@
   display: flex;
   flex-direction: column;
   will-change: transform;
-  transform: translateY(0);
+  transform: translate3d(0, 0, 0);
 }
 
-/* Smooth continuous downward scroll during spin */
+/* Smooth continuous downward scroll during spin (50% translation over 200% track = seamless 100% loop) */
 .mj-col.is-spinning .mj-reel-track {
-  animation: reelGridScrollDown var(--spin-duration, 0.25s) linear infinite;
+  height: 200% !important;
+  animation: reelGridScrollDown var(--spin-duration, 0.28s) linear infinite;
 }
 
 @keyframes reelGridScrollDown {
   0% {
-    transform: translateY(-100%);
+    transform: translate3d(0, -50%, 0);
   }
   100% {
-    transform: translateY(0);
+    transform: translate3d(0, 0, 0);
   }
 }
 
@@ -416,20 +450,38 @@
 }
 
 @keyframes reelLandBounce {
-  0% { transform: translateY(-12px); }
-  70% { transform: translateY(2px); }
-  100% { transform: translateY(0); }
+  0% { transform: translate3d(0, -12px, 0); }
+  70% { transform: translate3d(0, 2px, 0); }
+  100% { transform: translate3d(0, 0, 0); }
 }
 
-/* Cell */
+/* Cell - strictly fixed flex-basis to prevent flexbox resize/shrink */
 .mj-cell {
-  flex: 1;
+  width: 100% !important;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0.3vh 0.3vw;
   box-sizing: border-box;
   position: relative;
+  flex-shrink: 0 !important;
+}
+
+/* Reels 1 and 5 have 4 rows (100% / 4 = 25%) */
+.col-0 .mj-cell,
+.col-4 .mj-cell {
+  flex: 0 0 25% !important;
+  height: 25% !important;
+  max-height: 25% !important;
+}
+
+/* Reels 2, 3, 4 have 5 rows (100% / 5 = 20%) */
+.col-1 .mj-cell,
+.col-2 .mj-cell,
+.col-3 .mj-cell {
+  flex: 0 0 20% !important;
+  height: 20% !important;
+  max-height: 20% !important;
 }
 
 /* Top Row Gold Header on Reels 2, 3, 4 (col 1, 2, 3 row 0) */
@@ -1225,4 +1277,145 @@
 }
 .mj-rules-back-btn:hover { filter: brightness(1.15); }
 .mj-rules-back-btn:active { transform: scale(0.94); }
+
+/* ========================================================
+   MAHJONG WAYS 2 MOBILE LANDSCAPE RESPONSIVE FIXES
+   ======================================================== */
+@media screen and (max-height: 600px), screen and (max-width: 1024px) and (orientation: landscape) {
+  .mj-topbar {
+    height: 38px !important;
+    padding: 0 8px !important;
+  }
+  .mj-tb-btn {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 13px !important;
+  }
+  .mj-tb-avatar {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 14px !important;
+  }
+  .mj-tb-coins {
+    height: 26px !important;
+    padding: 0 8px !important;
+    font-size: 11px !important;
+    gap: 4px !important;
+  }
+  .mj-tb-plus {
+    width: 18px !important;
+    height: 18px !important;
+    font-size: 13px !important;
+  }
+
+  .mj-main-container {
+    top: 40px !important;
+    bottom: 44px !important;
+    left: 4vw !important;
+    right: 4vw !important;
+  }
+
+  .mj-machine-frame {
+    aspect-ratio: 5 / 4.2 !important;
+    height: min(72vh, 360px) !important;
+    max-width: 84vw !important;
+    width: auto !important;
+  }
+
+  .mj-pillar {
+    width: 3.5vw !important;
+    min-width: 32px !important;
+  }
+  .mj-pillar-text {
+    font-size: 11px !important;
+    letter-spacing: 2px !important;
+  }
+
+  /* Multiplier Bar Header (Top of Machine) */
+  .mj-mult-header {
+    height: 30px !important;
+  }
+  .mj-mult-badge {
+    font-size: 11px !important;
+    padding: 2px 8px !important;
+  }
+
+  /* Bottom Bar */
+  .mj-bottombar-wrapper {
+    height: 44px !important;
+  }
+  .mj-scroll-handle {
+    height: 42px !important;
+    min-width: 28px !important;
+  }
+  .mj-bottombar {
+    height: 42px !important;
+    padding: 0 8px !important;
+    border-radius: 12px 12px 0 0 !important;
+  }
+
+  .mjbot-left, .mjbot-right {
+    gap: 4px !important;
+  }
+  .mjbot-gold-btn {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 8px !important;
+  }
+  .mjbot-chat-btn, .mjbot-info-btn {
+    width: 34px !important;
+    height: 34px !important;
+    font-size: 16px !important;
+  }
+  .mjbot-step-btn {
+    width: 34px !important;
+    height: 34px !important;
+    font-size: 20px !important;
+  }
+
+  .mjbot-bet-display {
+    min-width: 85px !important;
+    height: 34px !important;
+    padding: 0 4px !important;
+    border-radius: 8px !important;
+    justify-content: center !important;
+  }
+  .mjbot-bet-label {
+    font-size: 7.5px !important;
+  }
+  .mjbot-bet-val {
+    font-size: 11px !important;
+  }
+
+  .mjbot-vip-tag {
+    display: none !important;
+  }
+  .mjbot-purple-pill {
+    padding: 2px 12px !important;
+    min-width: 100px !important;
+    border-radius: 14px !important;
+  }
+  .mjbot-purple-text {
+    font-size: 13px !important;
+  }
+
+  .mjbot-maxbet-btn,
+  .mjbot-speed-btn {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+  }
+  .mjbot-spin-btn {
+    height: 36px !important;
+    padding: 0 12px !important;
+    border-radius: 8px !important;
+  }
+  .spin-txt-main {
+    font-size: 14px !important;
+  }
+  .spin-txt-sub {
+    font-size: 7.5px !important;
+  }
+}
 

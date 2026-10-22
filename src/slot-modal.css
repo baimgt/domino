@@ -117,7 +117,8 @@
 .slot-modal-hero {
   width: 100%;
   height: 150px;
-  background: linear-gradient(160deg, #d32f2f, #7f0000);
+  background: linear-gradient(90deg, rgba(15, 2, 6, 0.85) 0%, rgba(15, 2, 6, 0.4) 45%, rgba(15, 2, 6, 0.88) 100%),
+              url('/assets/duofuduocai/loading_art.jpg') center/cover no-repeat;
   border-radius: 18px;
   border: 2px solid #ffca28;
   padding: 16px 20px;
@@ -193,17 +194,85 @@
   z-index: 2;
 }
 .sl-hero-title {
-  font-size: 20px;
-  font-weight: 900;
-  color: #f1c40f;
+  font-size: 16px;
+  font-weight: 800;
+  color: rgba(241, 196, 15, 0.85);
   text-align: center;
   line-height: 1.1;
-  text-shadow: 0 3px 6px rgba(0,0,0,0.9);
+  text-shadow: 0 2px 4px rgba(0,0,0,0.8);
   z-index: 2;
-  min-width: 100px;
+  min-width: 90px;
 }
 
-/* ---- GAME CARDS — HORIZONTAL SCROLL (2 ROWS) ---- */
+/* ---- GAME CARDS — HORIZONTAL SCROLL (KE SAMPING SEMUA) ---- */
+.slot-modal-active-row {
+  display: flex;
+  flex-direction: row;
+  gap: 14px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 14px;
+  padding-top: 4px;
+  margin-bottom: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(78, 240, 168, 0.5) transparent;
+}
+.slot-modal-active-row::-webkit-scrollbar {
+  height: 7px;
+}
+.slot-modal-active-row::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, #4ef0a8, #ffd700);
+  border-radius: 10px;
+}
+.slot-modal-active-row .sl-card {
+  flex: 0 0 230px;
+  min-height: 200px;
+  border-color: #ffd700;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7), 0 0 14px rgba(255, 215, 0, 0.35);
+}
+
+.slot-modal-coming-row {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 14px;
+  padding-top: 4px;
+  margin-bottom: 12px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(241, 196, 15, 0.3) transparent;
+}
+.slot-modal-coming-row::-webkit-scrollbar {
+  height: 6px;
+}
+.slot-modal-coming-row::-webkit-scrollbar-thumb {
+  background: rgba(241, 196, 15, 0.3);
+  border-radius: 10px;
+}
+.slot-modal-coming-row .sl-card {
+  flex: 0 0 190px;
+  min-height: 180px;
+}
+
+.sl-card-active-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: linear-gradient(90deg, #27ae60, #2ecc71);
+  color: #fff;
+  font-family: 'Arial Black', sans-serif;
+  font-size: 10px;
+  font-weight: 900;
+  padding: 3px 8px;
+  border-radius: 10px;
+  border: 1px solid #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+  z-index: 4;
+  letter-spacing: 0.5px;
+}
+
+/* Fallback cards row */
 .slot-modal-cards-row {
   display: grid;
   grid-template-rows: repeat(2, 1fr);
@@ -232,7 +301,7 @@
 /* ---- INDIVIDUAL CARD ---- */
 .sl-card {
   border-radius: 14px;
-  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(241, 196, 15, 0.45);
   padding: 10px 8px;
   display: flex;
   flex-direction: column;
@@ -240,82 +309,108 @@
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.65), inset 0 0 12px rgba(0, 0, 0, 0.35);
   transition: transform 0.22s, box-shadow 0.22s, border-color 0.22s;
   gap: 10px;
   min-height: 200px;
   justify-content: space-between;
+  box-sizing: border-box;
 }
 .sl-card:hover:not(.sl-card-locked) {
   transform: translateY(-5px) scale(1.03);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.75), 0 0 0 2px rgba(241, 196, 15, 0.55);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.8), 0 0 16px rgba(241, 196, 15, 0.45);
   border-color: #f1c40f;
 }
 
-/* Locked state */
+/* Locked state - Solid, vibrant, non-transparent */
 .sl-card-locked {
-  cursor: not-allowed;
+  cursor: pointer;
+  filter: none !important;
+  opacity: 1 !important;
 }
+
+.sl-card-locked:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.8), 0 0 16px rgba(241, 196, 15, 0.45);
+  border-color: #ffd700;
+}
+
 .sl-card-lock-overlay {
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0, 0, 0, 0.72);
+  top: 48%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(135deg, rgba(16, 12, 4, 0.96) 0%, rgba(38, 24, 6, 0.96) 100%);
+  border: 1.5px solid #ffd700;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.9), 0 0 12px rgba(255, 215, 0, 0.45);
+  border-radius: 22px;
+  padding: 6px 14px;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
-  text-align: center;
-  font-weight: bold;
+  gap: 6px;
+  font-weight: 900;
+  font-family: 'Arial Black', sans-serif;
   font-size: 11px;
-  color: #fff;
+  color: #ffd700;
   z-index: 5;
-  border-radius: 13px;
-  gap: 4px;
+  letter-spacing: 0.8px;
+  white-space: nowrap;
+  pointer-events: none;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
 }
 
 .sl-card-jackpot {
-  background: rgba(0, 0, 0, 0.5);
-  color: #f1c40f;
+  background: linear-gradient(180deg, rgba(20, 5, 10, 0.85) 0%, rgba(0, 0, 0, 0.92) 100%);
+  color: #ffdf00;
   font-size: 13px;
   font-weight: 900;
   padding: 6px 10px;
   border-radius: 8px;
-  border: 1px solid rgba(241, 196, 15, 0.3);
+  border: 1px solid rgba(241, 196, 15, 0.5);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
   width: 100%;
   text-align: center;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   box-sizing: border-box;
+  letter-spacing: 0.5px;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+  z-index: 2;
 }
-.sl-card-img-wrapper {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+
+.sl-card-bottom-wrap {
   width: 100%;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.15) 0%, rgba(10, 2, 6, 0.65) 100%);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  border-radius: 8px;
+  padding: 6px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid rgba(255, 215, 0, 0.18);
+  box-sizing: border-box;
+  z-index: 2;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
 }
-.sl-card-img {
-  max-width: 85%;
-  max-height: 85px;
-  object-fit: contain;
-  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6));
-}
-.sl-card-emoji {
-  font-size: 56px;
-  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
-}
+
 .sl-card-name {
-  font-size: 16px;
+  font-size: 12px;
   font-weight: 700;
-  color: #fff;
+  color: rgba(255, 255, 255, 0.82);
   text-align: center;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
   line-height: 1.2;
+  letter-spacing: 0.2px;
 }
 .sl-card-players {
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.55);
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 230, 150, 0.75);
 }
 
 /* ---- SCROLL HINT (hidden in grid mode) ---- */
@@ -339,6 +434,45 @@
   .sl-hero-mascot { font-size: 54px; }
   .sl-jackpot-val { font-size: 17px; }
   .sl-hero-title  { font-size: 15px; }
+}
+
+@media (max-height: 540px) {
+  .slot-modal-container {
+    width: min(92vw, 920px);
+    max-height: 90vh;
+    border-radius: 18px;
+    padding: 0;
+  }
+  .slot-modal-header {
+    padding: 6px 14px;
+  }
+  .slot-modal-header h2 {
+    font-size: 16px;
+    margin: 0;
+  }
+  .slot-modal-header p {
+    font-size: 11px;
+    margin: 0;
+  }
+  .slot-modal-hero {
+    height: 85px;
+    margin-bottom: 8px;
+    padding: 8px 16px;
+  }
+  .sl-hero-mascot { font-size: 38px; }
+  .sl-jackpot-val { font-size: 15px; }
+  .sl-hero-title  { font-size: 13px; }
+  .slot-modal-cards-row {
+    grid-auto-columns: 125px;
+    height: 115px;
+    gap: 8px;
+  }
+  .sl-card {
+    height: 115px;
+    border-radius: 12px;
+  }
+  .sl-card-name { font-size: 11px; }
+  .sl-card-jackpot { font-size: 9px; }
 }
 
 /* ---- ANIMATIONS ---- */

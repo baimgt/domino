@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import './leaderboard.css';
 
-const API_URL = 'http://localhost:8080/api';
+import { API_URL } from './config';
 
 interface Entry {
   rank: number;

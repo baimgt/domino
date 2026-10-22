@@ -4,4 +4,5 @@
     <string name="title_activity_main">DominoApp</string>
     <string name="package_name">com.domino.app</string>
     <string name="custom_url_scheme">com.domino.app</string>
+    <string name="server_client_id">933896189377-s9gkhtjnjkpn0dvsio8orl7cdc9k13mc.apps.googleusercontent.com</string>
 </resources>

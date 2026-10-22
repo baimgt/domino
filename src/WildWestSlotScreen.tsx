@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { Socket } from 'socket.io-client';
 import './wildwest.css';
 import GameMenuDropdown from './GameMenuDropdown';
+import SlotMultiplierBar from './SlotMultiplierBar';
+import SlotCelebrationModal, { SlotCelebrationData } from './SlotCelebrationModal';
 
 interface Props {
   onBack: () => void;
@@ -52,6 +54,9 @@ export default function WildWestSlotScreen({ onBack, socket }: Props) {
   const [myCoins, setMyCoins] = useState(0);
   const [totalWin, setTotalWin] = useState(0);
   const [freeSpinsLeft, setFreeSpinsLeft] = useState(0);
+  const [multInfo, setMultInfo] = useState<any>(null); // dari server: tangga & pengali free spin
+  const [currentMultiplier, setCurrentMultiplier] = useState(1);
+  const [droppedMultNotif, setDroppedMultNotif] = useState<string | null>(null);
   const [autoSpins, setAutoSpins] = useState(0);
   const [spinSpeed, setSpinSpeed] = useState(1);
   const [showRules, setShowRules] = useState(false);
@@ -63,7 +68,7 @@ export default function WildWestSlotScreen({ onBack, socket }: Props) {
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [winningCells, setWinningCells] = useState<string[]>([]);
   const [statusText, setStatusText] = useState('GOOD LUCK');
-  const [winCelebration, setWinCelebration] = useState<{ amount: number; type: 'WIN' | 'BIG_WIN' | 'MEGA_WIN' } | null>(null);
+  const [celebration, setCelebration] = useState<SlotCelebrationData | null>(null);
 
   const spinPressTimer = useRef<any>(null);
   const isLongPressSpin = useRef(false);
@@ -72,6 +77,7 @@ export default function WildWestSlotScreen({ onBack, socket }: Props) {
   const freeSpinsLeftRef = useRef(freeSpinsLeft);
   const spinSpeedRef = useRef(spinSpeed);
   const doSpinRef = useRef<(() => void) | undefined>(undefined);
+  const spinningColsRef = useRef<boolean[]>(Array(COLS).fill(false));
 
   useEffect(() => { autoSpinsRef.current = autoSpins; }, [autoSpins]);
   useEffect(() => { freeSpinsLeftRef.current = freeSpinsLeft; }, [freeSpinsLeft]);
@@ -95,32 +101,39 @@ export default function WildWestSlotScreen({ onBack, socket }: Props) {
     if (coinsStr) setMyCoins(parseInt(coinsStr));
   }, []);
 
+  // Rapid reel shuffle - displays regular symbols during spin blur, checking synchronous spinningColsRef to prevent symbol flicker
   useEffect(() => {
     let interval: any = null;
     if (isSpinning) {
       interval = setInterval(() => {
+        if (!spinningColsRef.current.some(Boolean)) return;
         setGrid(prev => prev.map((row, r) =>
           row.map((cell, c) => {
             // Keep sticky wild positions during free spins
             if (freeSpinsLeftRef.current > 0 && stickyWilds.some(w => w.r === r && w.c === c)) return 12;
-            return spinningCols[c] ? Math.floor(Math.random() * 11) : cell;
+            return spinningColsRef.current[c] ? Math.floor(Math.random() * 11) : cell;
           })
         ));
-      }, 70 / spinSpeedRef.current);
+      }, Math.max(30, Math.floor(65 / spinSpeedRef.current)));
     }
     return () => { if (interval) clearInterval(interval); };
-  }, [isSpinning, spinningCols, stickyWilds]);
+  }, [isSpinning, stickyWilds]);
 
   useEffect(() => {
     if (!socket) return;
     const handleResult = async (data: any) => {
+      setMultInfo(data.multiplier || null);
       const spd = spinSpeedRef.current;
-      let stopTime = 150 / spd;
-      const delayPerCol = 200 / spd;
+      const minSpinBase = spd === 3 ? 240 : spd === 2 ? 400 : 750;
+      const delayPerCol = spd === 3 ? 65 : spd === 2 ? 100 : 180;
+      const bounceDuration = spd === 3 ? 160 : spd === 2 ? 240 : 380;
+      let stopTime = minSpinBase;
 
       for (let c = 0; c < COLS; c++) {
         const col = c;
         setTimeout(() => {
+          // Matikan flag reel ini secara sinkron di ref TERLEBIH DAHULU agar interval shuffle tidak menimpa
+          spinningColsRef.current[col] = false;
           setSpinningCols(prev => { const n = [...prev]; n[col] = false; return n; });
           setGrid(prev => prev.map((row, r) =>
             row.map((cell, ci) => ci === col ? data.initialGrid[r][col] : cell)
@@ -132,8 +145,10 @@ export default function WildWestSlotScreen({ onBack, socket }: Props) {
         stopTime += delayPerCol;
       }
 
+      const allReelsSettled = stopTime + bounceDuration + 60;
       setTimeout(async () => {
         setIsSpinning(false);
+        spinningColsRef.current = Array(COLS).fill(false);
         setSpinningCols(Array(COLS).fill(false));
         setMyCoins(data.newBalance);
         localStorage.setItem('domino_coins', data.newBalance.toString());
@@ -142,35 +157,70 @@ export default function WildWestSlotScreen({ onBack, socket }: Props) {
         setStatusText(data.totalWinAmount > 0 ? `MENANG: ${Math.floor(data.totalWinAmount).toLocaleString('id-ID')}` : 'GOOD LUCK');
 
         const winAmt = data.totalWinAmount || 0;
-        if (winAmt > 0) {
-          const winType = winAmt >= betAmount * 20 ? 'MEGA_WIN' : winAmt >= betAmount * 5 ? 'BIG_WIN' : 'WIN';
-          setWinCelebration({ amount: winAmt, type: winType });
-          const autoCloseTime = autoSpinsRef.current > 0 || freeSpinsLeftRef.current > 0 ? 2000 : 3800;
-          setTimeout(() => {
-            setWinCelebration(null);
-          }, autoCloseTime);
+        if (winAmt > 0 && !data.triggerFreeSpins) {
+          const ratio = winAmt / Math.max(1, betAmount);
+          if (ratio >= 30) {
+            setCelebration({ type: 'super_win', amount: winAmt });
+          } else if (ratio >= 12) {
+            setCelebration({ type: 'mega_win', amount: winAmt });
+          } else if (ratio >= 3) {
+            setCelebration({ type: 'big_win', amount: winAmt });
+          }
+        }
+
+        // Calculate landed wild multiplier sum
+        let landedWildMultSum = 0;
+        if (data.initialWildMultGrid) {
+          for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+              if (data.initialWildMultGrid[r]?.[c] > 1) {
+                landedWildMultSum += data.initialWildMultGrid[r][c];
+              }
+            }
+          }
+        }
+        if (landedWildMultSum > 0) {
+          setCurrentMultiplier(landedWildMultSum);
+          setDroppedMultNotif(`🤠 WILD PENGALI ${landedWildMultSum}x MENDARAT! 🤠`);
+          setTimeout(() => setDroppedMultNotif(null), 3000);
+        } else if (data.multiplier?.applied && data.multiplier.applied > 1) {
+          setCurrentMultiplier(data.multiplier.applied);
+        } else {
+          setCurrentMultiplier(1);
         }
 
         if (data.newStickyWilds) {
           setStickyWilds(data.newStickyWilds);
         }
 
+        let totalFree = freeSpinsLeftRef.current;
         if (data.triggerFreeSpins) {
-          setFreeSpinsLeft(p => p + data.freeSpinsAwarded);
+          totalFree += data.freeSpinsAwarded;
+          setFreeSpinsLeft(totalFree);
+          setCelebration({
+            type: 'scatter',
+            freeSpinsCount: data.freeSpinsAwarded || 8,
+            title: '🤠 SCATTER SHERIFF! 🤠',
+            subtext: `SELAMAT! KAMU MEMICU ${data.freeSpinsAwarded || 8} PUTARAN GRATIS STICKY WILD!`
+          });
         }
 
-        if (autoSpinsRef.current > 1 || freeSpinsLeftRef.current > 0) {
+        const hasCelebration = data.triggerFreeSpins || (winAmt > 0 && (winAmt / Math.max(1, betAmount)) >= 3);
+        const nextDelay = hasCelebration ? 3900 : Math.max(700, 1000 / spd);
+
+        if (autoSpinsRef.current > 1 || totalFree > 0) {
           if (autoSpinsRef.current > 1) setAutoSpins(a => a - 1);
-          if (freeSpinsLeftRef.current > 0) setFreeSpinsLeft(f => f - 1);
-          setTimeout(() => doSpinRef.current?.(), 1000 / spd);
+          if (totalFree > 0) setFreeSpinsLeft(f => f - 1);
+          setTimeout(() => doSpinRef.current?.(), nextDelay);
         } else if (autoSpinsRef.current === 1) {
           setAutoSpins(0);
         }
-      }, stopTime + 150);
+      }, allReelsSettled);
     };
 
     const handleError = () => {
       setIsSpinning(false);
+      spinningColsRef.current = Array(COLS).fill(false);
       setSpinningCols(Array(COLS).fill(false));
       setAutoSpins(0);
       setStatusText('GOOD LUCK');
@@ -183,8 +233,9 @@ export default function WildWestSlotScreen({ onBack, socket }: Props) {
 
   const doSpin = () => {
     if (isSpinning || !socket) return;
-    setWinCelebration(null);
+    setCelebration(null);
     setIsSpinning(true);
+    spinningColsRef.current = Array(COLS).fill(true);
     setSpinningCols(Array(COLS).fill(true));
     setTotalWin(0);
     setWinningCells([]);
@@ -206,13 +257,21 @@ export default function WildWestSlotScreen({ onBack, socket }: Props) {
     /* ── WILD (12): Golden Plaque with 3D Multiplier Overlay ─────────── */
     if (symId === 12) {
       const multCls = wildMult === 2 ? 'mult-x2' : wildMult === 3 ? 'mult-x3' : wildMult === 5 ? 'mult-x5' : 'mult-x2';
+      const orbImg = wildMult >= 5 ? '/assets/orbs/orb_red.png' : wildMult >= 3 ? '/assets/orbs/orb_purple.png' : '/assets/orbs/orb_blue.png';
       return (
         <div className={`ww-tile ww-sym-wild ${winCls}`}>
-          <div className="ww-img-symbol-wrap">
+          <div className="ww-img-symbol-wrap" style={{ position: 'relative' }}>
             <img src="/assets/wildwest/wild.png" alt="Wild" className="ww-sym-png-img" />
             {wildMult > 1 && (
-              <div className={`ww-wild-3d-mult ${multCls}`}>
-                <span className="ww-mult-txt">x{wildMult}</span>
+              <div style={{ position: 'absolute', bottom: -2, right: -2, width: '48%', height: '48%', zIndex: 12 }}>
+                <img 
+                  src={orbImg} 
+                  alt={`${wildMult}x`} 
+                  style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'drop-shadow(0 0.3vh 0.6vh rgba(0,0,0,0.8))' }} 
+                />
+                <span style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontFamily: "'Arial Black', sans-serif", fontSize: '2vh', fontWeight: 900, color: '#fff', textShadow: '0 0.2vh 0.4vh #000' }}>
+                  {wildMult}x
+                </span>
               </div>
             )}
           </div>
@@ -360,6 +419,7 @@ export default function WildWestSlotScreen({ onBack, socket }: Props) {
         <div className="ww-bg-saloon" />
       </div>
 
+
       {/* TOP BAR - ONLY IN GAMEPLAY MODE */}
       {!showRules && (
         <div className="ww-top-bar">
@@ -412,6 +472,15 @@ export default function WildWestSlotScreen({ onBack, socket }: Props) {
         <div className="ww-main-area">
           {/* LEFT PANEL */}
           <div className="ww-left-panel">
+            {/* SIDE MULTIPLIER WIDGET */}
+            <div className={`gato-side-multiplier ${freeSpinsLeft > 0 ? 'is-free-spin' : ''} ${currentMultiplier > 1 ? 'is-active' : ''}`} style={{ width: '100%', marginBottom: '1.2vh', boxSizing: 'border-box' }}>
+              <div className="gsm-orb-glow"></div>
+              <div className="gsm-orb">
+                <span className="gsm-val">{currentMultiplier}x</span>
+                <span className="gsm-sub">{freeSpinsLeft > 0 ? 'TOTAL PENGALI' : 'PENGALI AKTIF'}</span>
+              </div>
+            </div>
+
             <div className="ww-buy-spin-card g-btn-press" onClick={() => alert('Beli Free Spin: ' + (betAmount * 100).toLocaleString('id-ID'))}>
               <div className="ww-bs-title">BELI</div>
               <div className="ww-bs-sub">SPIN GRATIS</div>
@@ -428,9 +497,18 @@ export default function WildWestSlotScreen({ onBack, socket }: Props) {
 
           {/* GRID WITH WOOD ARCH HEADER, STEER SKULLS & REELS */}
           <div className="ww-grid-wrap">
+            {droppedMultNotif && (
+              <div className="gato-mult-drop-banner notranslate" translate="no">
+                {droppedMultNotif}
+              </div>
+            )}
+
             {freeSpinsLeft > 0 && (
               <div className="ww-fs-banner">⭐ STICKY WILD FREE SPIN: {freeSpinsLeft} ⭐</div>
             )}
+
+            {/* MULTIPLIER BAR DIRECTLY ABOVE REELS */}
+            <SlotMultiplierBar inline={true} idx={multInfo?.idx ?? 0} isFree={freeSpinsLeft > 0} freeMult={multInfo?.freeMult || 1} />
 
             {/* UNIFIED TOP WOODEN ARCH HEADER WITH WILD WEST GOLD LOGO */}
             <div className="ww-cabinet-top-arch">
@@ -991,49 +1069,22 @@ export default function WildWestSlotScreen({ onBack, socket }: Props) {
                   setShowSpeedMenu(false);
                 }}
               >
-                <span className="ww-spin-3d-text">
-                  {autoSpins > 0 ? (autoSpins > 90000 ? 'AUTO ∞' : `AUTO ${autoSpins}`) : 'SPIN'}
-                </span>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>
+                  <span className="ww-spin-3d-text">{isSpinning ? 'STOP' : 'SPIN'}</span>
+                  {autoSpins > 0 && (
+                    <span style={{ fontSize: '1.2vh', fontWeight: 900, color: '#ffe082', textShadow: '0 1px 3px #000', marginTop: '0.2vh' }}>
+                      {autoSpins > 90000 ? 'AUTO ∞' : `AUTO: ${autoSpins}`}
+                    </span>
+                  )}
+                </div>
               </button>
             </div>
           )}
         </div>
       </div>
 
-      {/* WIN CELEBRATION MODAL & ANIMATION OVERLAY */}
-      {winCelebration && (
-        <div className="ww-win-celebration-overlay" onClick={() => setWinCelebration(null)}>
-          <div className="ww-win-banner-card" onClick={e => e.stopPropagation()}>
-            {/* Exploding Coins & Stars Background Particles */}
-            <div className="ww-coins-rain">
-              {Array.from({ length: 16 }, (_, i) => (
-                <span key={i} className={`ww-rain-coin coin-${(i % 6) + 1}`}>
-                  {i % 3 === 0 ? '🪙' : i % 3 === 1 ? '⭐' : '💰'}
-                </span>
-              ))}
-            </div>
-
-            <div className={`ww-win-title-badge ${winCelebration.type.toLowerCase()}`}>
-              <span className="ww-win-stars left">★★★</span>
-              <h2 className="ww-win-title-text">
-                {winCelebration.type === 'MEGA_WIN' ? 'MEGA WIN' : winCelebration.type === 'BIG_WIN' ? 'BIG WIN' : 'MENANG!'}
-              </h2>
-              <span className="ww-win-stars right">★★★</span>
-            </div>
-
-            <div className="ww-win-amount-box">
-              <div className="ww-win-currency">Rp</div>
-              <div className="ww-win-counter-number">
-                {Math.floor(winCelebration.amount).toLocaleString('id-ID')}
-              </div>
-            </div>
-
-            <button className="ww-win-collect-btn g-btn-press" onClick={() => setWinCelebration(null)}>
-              KLAIM HADIAH 🪙
-            </button>
-          </div>
-        </div>
-      )}
+      {/* WIN CELEBRATION MODAL & SCATTER OVERLAY */}
+      <SlotCelebrationModal data={celebration} onClose={() => setCelebration(null)} />
     </div>
   );
 }

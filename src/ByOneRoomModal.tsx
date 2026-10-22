@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Socket } from 'socket.io-client';
+import { API_URL } from './config';
 import './byone.css';
 
 interface ByOneRoomModalProps {
@@ -70,7 +71,7 @@ export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneR
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await fetch(`http://localhost:8080/api/profile/${myUsername}`);
+        const res = await fetch(`${API_URL}/profile/${myUsername}`);
         if (res.ok) {
           const data = await res.json();
           setMyCoins(data.coins || 0);

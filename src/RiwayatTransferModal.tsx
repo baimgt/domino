@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './transfer-history.css';
 
-const API_URL = 'http://localhost:8080/api';
+import { API_URL } from './config';
 
 export interface TransferItem {
   _id: string;

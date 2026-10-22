@@ -1,0 +1,153 @@
+/* ==========================================================================
+   SLOT MULTIPLIER BAR (UNIVERSAL ACROSS ALL SLOT GAMES)
+   - Ladder: x1 > x2 > x3 > x5 (Normal Game)
+   - Free Spins: x2 > x4 > x6 > x10 or Accumulating Stored Multiplier (x...)
+   - Unmissable, ultra-premium arcade aesthetic with gold wings & glow
+   ========================================================================== */
+
+.smb-wrap {
+  position: fixed;
+  top: 7.2vh;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  pointer-events: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  filter: drop-shadow(0 0.4vh 1.2vh rgba(0, 0, 0, 0.85));
+}
+
+/* Inline mode for embedding directly above reels frame */
+.smb-wrap.smb-inline {
+  position: relative;
+  top: auto;
+  left: auto;
+  transform: none;
+  margin: 0.6vh auto 0.8vh auto;
+  z-index: 50;
+}
+
+/* The ornate golden bar container */
+.smb-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6vh;
+  padding: 0.45vh 1.2vh;
+  background: linear-gradient(180deg, rgba(20, 14, 40, 0.95) 0%, rgba(5, 2, 15, 0.95) 100%);
+  border: 0.25vh solid #ffd700;
+  border-radius: 3vh;
+  box-shadow: 
+    0 0 1.8vh rgba(255, 215, 0, 0.55),
+    inset 0 0 1vh rgba(255, 215, 0, 0.2),
+    0 0.5vh 1.5vh rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  position: relative;
+}
+
+/* Winged golden side accents */
+.smb-bar::before, .smb-bar::after {
+  content: '✦';
+  font-size: 1.4vh;
+  color: #ffd700;
+  text-shadow: 0 0 0.8vh #ffeb3b;
+  padding: 0 0.3vh;
+}
+
+/* Label text preceding steps */
+.smb-title {
+  font-family: 'Arial Black', 'Outfit', sans-serif;
+  font-size: 1.3vh;
+  font-weight: 900;
+  letter-spacing: 0.1vh;
+  color: #ffe082;
+  text-shadow: 0 0.15vh 0.4vh #000;
+  margin-right: 0.4vh;
+  white-space: nowrap;
+}
+
+/* Each multiplier step badge */
+.smb-step {
+  min-width: 4.6vh;
+  padding: 0.3vh 1.1vh;
+  text-align: center;
+  font-family: 'Arial Black', Arial, sans-serif;
+  font-size: 1.9vh;
+  font-weight: 900;
+  line-height: 1.1;
+  color: rgba(255, 255, 255, 0.45);
+  border-radius: 2vh;
+  background: rgba(255, 255, 255, 0.08);
+  border: 0.15vh solid rgba(255, 255, 255, 0.12);
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.smb-step.smb-passed {
+  color: rgba(255, 223, 0, 0.75);
+  background: rgba(255, 215, 0, 0.18);
+  border-color: rgba(255, 215, 0, 0.35);
+}
+
+/* Currently active highlighted multiplier */
+.smb-step.smb-active {
+  color: #2b1200;
+  background: linear-gradient(180deg, #fff9c4 0%, #ffca28 45%, #ff8f00 100%);
+  border-color: #ffffff;
+  box-shadow: 
+    0 0 2vh rgba(255, 193, 7, 1),
+    0 0 3.5vh rgba(255, 152, 0, 0.7),
+    inset 0 0 0.5vh #fff;
+  transform: scale(1.22);
+  animation: smbPop 0.4s cubic-bezier(0.2, 1.6, 0.4, 1);
+  z-index: 2;
+}
+
+/* Free spin accumulating multiplier container */
+.smb-free {
+  display: flex;
+  align-items: center;
+  gap: 1.2vh;
+  padding: 0.5vh 2.2vh;
+  background: linear-gradient(180deg, rgba(142, 36, 170, 0.95) 0%, rgba(49, 27, 146, 0.95) 100%);
+  border: 0.28vh solid #ffd700;
+  border-radius: 3vh;
+  box-shadow: 
+    0 0 2.5vh rgba(255, 215, 0, 0.85),
+    0 0 4vh rgba(156, 39, 176, 0.7),
+    0 0.5vh 1.5vh rgba(0, 0, 0, 0.8);
+  animation: smbFreePop 0.45s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+
+.smb-free-label {
+  font-family: 'Arial Black', Arial, sans-serif;
+  font-size: 1.4vh;
+  font-weight: 900;
+  letter-spacing: 0.15vh;
+  color: #ffe082;
+  text-shadow: 0 0.2vh 0.4vh #000;
+}
+
+.smb-free-val {
+  font-family: 'Arial Black', Arial, sans-serif;
+  font-size: 3.2vh;
+  font-weight: 900;
+  line-height: 1;
+  color: #fff;
+  text-shadow: 
+    0 0 1.2vh #ffd700,
+    0 0 2.5vh #ff9800,
+    0 0.25vh 0 #b36b00;
+}
+
+@keyframes smbPop {
+  0%   { transform: scale(0.7); filter: brightness(2.5); }
+  60%  { transform: scale(1.35); }
+  100% { transform: scale(1.22); filter: brightness(1); }
+}
+
+@keyframes smbFreePop {
+  0%   { transform: scale(0.75); filter: brightness(2); }
+  60%  { transform: scale(1.18); }
+  100% { transform: scale(1); filter: brightness(1); }
+}

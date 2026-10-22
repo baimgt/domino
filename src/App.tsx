@@ -3,6 +3,7 @@ import './App.css';
 import './slot-modal.css';
 import { io, Socket } from 'socket.io-client';
 import { PixiSlotGame } from './PixiSlotGame';
+import SlotMultiplierBar from './SlotMultiplierBar';
 import FafafaSlotScreen from './FafafaSlotScreen';
 import JinJiBaoXiSlotScreen from './JinJiBaoXiSlotScreen';
 import MahjongWays2SlotScreen from './MahjongWays2SlotScreen';
@@ -14,8 +15,8 @@ import FiveLionsSlotScreen from './FiveLionsSlotScreen';
 import BilliardScreen from './BilliardScreen';
 import GameMenuDropdown from './GameMenuDropdown';
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
-import { FacebookLogin } from '@capacitor-community/facebook-login';
 import OlympusCinematicBackground from './OlympusCinematicBackground';
+import RoyalLoadingBackground from './RoyalLoadingBackground';
 import LeaderboardModal from './LeaderboardModal';
 import ChatModal from './ChatModal';
 import ByOneScreen from './ByOneScreen';
@@ -23,8 +24,10 @@ import ByOneRoomModal from './ByOneRoomModal';
 import './byone.css';
 import SlotLoadingScreen from './SlotLoadingScreen';
 import RiwayatTransferModal from './RiwayatTransferModal';
+import SlotCelebrationModal, { SlotCelebrationData } from './SlotCelebrationModal';
+import lobbyAudio, { type BgmTrackType } from './LobbyAudio';
 
-const API_URL = 'http://localhost:8080/api';
+import { API_URL, getBackendBase } from './config';
 
 // =====================================================
 // LAYAR 1: LOADING SCREEN
@@ -49,42 +52,35 @@ function LoadingScreen({ onFinish }: { onFinish: (target: 'login' | 'home') => v
   }, [onFinish, animEnabled]);
 
   const getStatusText = (p: number) => {
-    if (p < 25) return '⚡ MEMBUKA GERBANG OLYMPUS...';
-    if (p < 55) return '⚡ MENGHUBUNGKAN KE SERVER...';
-    if (p < 85) return '⚡ MEMUAT SUMBER DAYA GAME...';
-    if (p < 100) return '⚡ MENERIMA BERKAH DEWA ZEUS...';
-    return '⚡ KEKUATAN ZEUS SIAP! 🔥';
+    if (p < 25) return '👑 MEMPERSIAPKAN RUANG PERMAINAN...';
+    if (p < 55) return '👑 MENGHUBUNGKAN KE SERVER...';
+    if (p < 85) return '👑 MEMUAT SUMBER DAYA GAME...';
+    if (p < 100) return '👑 MENYIAPKAN PENGALAMAN ROYAL X...';
+    return '👑 SELAMAT DATANG DI ROYAL X! ✨';
   };
 
   return (
-    <OlympusCinematicBackground>
-      <div className="olympus-loading-wrapper">
-        <div className="olympus-loading-content">
-          <div className="olympus-loading-crest">
-            <div className="olympus-crest-badge">
-              <span className="olympus-crest-badge-icon">⚡</span>
-              <span className="olympus-crest-badge-text">GATES OF OLYMPUS</span>
-            </div>
-            <h1 className="olympus-loading-title">DOMINO OLYMPUS</h1>
-            <p className="olympus-loading-subtitle">✨ KEKUATAN PETIR PETUALANGAN KASINO ✨</p>
-          </div>
+    <RoyalLoadingBackground>
+      <div className="royal-progress-panel">
+        <div className="royal-brand-badge">
+          <span className="royal-brand-icon">👑</span>
+          <span className="royal-brand-name">ROYAL X</span>
+        </div>
 
-          <div className="olympus-progress-box">
-            <div className="olympus-progress-header">
-              <span className="olympus-progress-status">{getStatusText(progress)}</span>
-              <span className="olympus-progress-percent">{progress}%</span>
-            </div>
-            <div className="olympus-progress-track">
-              <div className="olympus-progress-fill" style={{ width: `${progress}%` }} />
-            </div>
-          </div>
+        <div className="royal-progress-info">
+          <span className="royal-status-text">{getStatusText(progress)}</span>
+          <span className="royal-percent-val">{progress}%</span>
+        </div>
 
-          <div className="olympus-loading-footer">
-            Koneksi aman • Nikmati sensasi petir Zeus & kemenangan legendaris
-          </div>
+        <div className="royal-progress-track">
+          <div className="royal-progress-fill" style={{ width: `${progress}%` }} />
+        </div>
+
+        <div className="royal-footer-note">
+          Koneksi Aman • Royal Gaming Platform
         </div>
       </div>
-    </OlympusCinematicBackground>
+    </RoyalLoadingBackground>
   );
 }
 
@@ -101,7 +97,7 @@ function LoginScreen({ onLoginSuccess }: { onLoginSuccess: () => void }) {
 
     // Initialize Google Auth early on web so the GSI script is loaded before clicking
     try {
-      GoogleAuth.initialize({ clientId: '1056817053315-5583vf0b7u4rjipvst1frjjpr9tv2ml5.apps.googleusercontent.com', scopes: ['profile', 'email'] });
+      GoogleAuth.initialize({ clientId: '933896189377-s9gkhtjnjkpn0dvsio8orl7cdc9k13mc.apps.googleusercontent.com', scopes: ['profile', 'email'] });
     } catch (e) {
       console.warn('Failed to initialize Google Auth', e);
     }
@@ -144,37 +140,49 @@ function LoginScreen({ onLoginSuccess }: { onLoginSuccess: () => void }) {
         setIsLoggingIn(false);
       }
     } catch {
-      alert('Koneksi gagal. Pastikan server Node.js menyala di port 8080.');
+      const currentHost = getBackendBase();
+      const promptIp = prompt(
+        `Gagal terhubung ke server (${currentHost})!\n\n` +
+        `Pastikan HP dan Laptop terhubung ke WiFi yang sama dan server backend menyala.\n` +
+        `Jika alamat IP laptop Anda berbeda, silakan masukkan URL server di bawah:`,
+        currentHost
+      );
+      if (promptIp && promptIp.trim() !== currentHost) {
+        localStorage.setItem('domino_server_ip', promptIp.trim());
+        window.location.reload();
+      }
       setIsLoggingIn(false);
     }
   };
 
-  const handleSocialLogin = async (platform: string) => {
+  const handleSocialLogin = async (platform: string = 'Google') => {
     setIsLoggingIn(true);
     let username = '';
 
     try {
-      if (platform === 'Google') {
-        // Attempt Native Google Login
-        const user = await GoogleAuth.signIn();
-        username = `Google_${user.name || user.givenName || Math.floor(Math.random() * 9999)}`;
-      } else if (platform === 'Facebook') {
-        // Attempt Native Facebook Login
-        const FACEBOOK_PERMISSIONS = ['email', 'public_profile'];
-        const result = await FacebookLogin.login({ permissions: FACEBOOK_PERMISSIONS });
-        if (result.accessToken) {
-          const profile = await FacebookLogin.getProfile({ fields: ['name'] });
-          username = `FB_${profile.name || Math.floor(Math.random() * 9999)}`;
-        } else {
-          throw new Error('Facebook Login failed or cancelled');
-        }
+      // Ensure GoogleAuth is initialized before signing in
+      await GoogleAuth.initialize({
+        clientId: '933896189377-s9gkhtjnjkpn0dvsio8orl7cdc9k13mc.apps.googleusercontent.com',
+        scopes: ['profile', 'email'],
+        grantOfflineAccess: false
+      });
+      // Attempt Native Google Login
+      const user = await GoogleAuth.signIn();
+      username = `Google_${user.name || user.givenName || Math.floor(Math.random() * 9999)}`;
+    } catch (error: any) {
+      console.warn('Google Native Login error:', error);
+      const errStr = String(error?.message || error?.error || error || '');
+      const defaultName = `Google_${Math.floor(Math.random() * 9999)}`;
+      let infoMsg = '';
+      if (errStr.includes('10')) {
+        infoMsg = 'Info: Error Code 10 (Fingerprint SHA-1 belum terdaftar di Google Cloud Console).\n';
+      } else if (errStr) {
+        infoMsg = `Info: ${errStr}\n`;
       }
-    } catch (error) {
-      console.warn(`${platform} Native Login failed or not configured, using fallback.`, error);
-      // FALLBACK: Since the developer hasn't set up the keys or we are on web without config,
-      // fallback to the prompt so the app doesn't crash and remains testable.
-      const defaultName = platform === 'Google' ? `Google_${Math.floor(Math.random() * 9999)}` : `FB_${Math.floor(Math.random() * 9999)}`;
-      const promptUsername = prompt(`[FALLBACK MODE]\nNative ${platform} keys missing.\nMasukkan nama akun ${platform} Anda:`, defaultName);
+      const promptUsername = prompt(
+        `[Google Sign-In]\n${infoMsg}\nMasukkan nama profil Google Anda untuk melanjutkan:`,
+        defaultName
+      );
       if (!promptUsername) {
         setIsLoggingIn(false);
         return;
@@ -211,33 +219,42 @@ function LoginScreen({ onLoginSuccess }: { onLoginSuccess: () => void }) {
       }
     } catch (err) {
       console.error('Login error:', err);
-      alert(`Gagal terhubung ke server.`);
+      const currentHost = getBackendBase();
+      const promptIp = prompt(
+        `Gagal terhubung ke server (${currentHost})!\n\n` +
+        `Pastikan HP dan Laptop terhubung ke WiFi yang sama dan server backend menyala.\n` +
+        `Jika alamat IP laptop Anda berbeda, silakan masukkan URL server di bawah:`,
+        currentHost
+      );
+      if (promptIp && promptIp.trim() !== currentHost) {
+        localStorage.setItem('domino_server_ip', promptIp.trim());
+        window.location.reload();
+      }
       setIsLoggingIn(false);
     }
   };
 
   return (
-    <OlympusCinematicBackground>
+    <RoyalLoadingBackground>
       <div
         className="screen-wrapper login-olympus"
         onClick={savedUser ? onLoginSuccess : undefined}
-        style={{ cursor: savedUser ? 'pointer' : 'default', zIndex: 10 }}
+        style={{ cursor: savedUser ? 'pointer' : 'default', zIndex: 10, justifyContent: 'flex-end', paddingBottom: '7vh' }}
       >
-        <div className="olympus-loading-crest">
-          <div className="olympus-crest-badge">
-            <span className="olympus-crest-badge-icon">⚡</span>
-            <span className="olympus-crest-badge-text">GATES OF OLYMPUS</span>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '2vh' }}>
+          <div className="royal-brand-badge">
+            <span className="royal-brand-icon">👑</span>
+            <span className="royal-brand-name">ROYAL X</span>
           </div>
-          <h1 className="olympus-loading-title">DOMINO OLYMPUS</h1>
-          <p className="olympus-loading-subtitle">
-            {savedUser ? `Selamat Datang, ${savedUser}!` : '✨ GAME KASINO ONLINE #1 ✨'}
+          <p className="royal-status-text" style={{ fontSize: '13px', margin: 0, textShadow: '0 2px 8px rgba(0,0,0,0.9)' }}>
+            {savedUser ? `Selamat Datang Kembali, ${savedUser}!` : '✨ VIP CLUB DOMINO & CARD GAMES ✨'}
           </p>
         </div>
 
         {savedUser ? (
           <div className="tap-to-enter-anim login-olympus-tap">
-            <span className="tap-text" style={{ fontSize: '2.3vh', color: '#ffd700', textShadow: '0 0 16px rgba(255,215,0,0.85)' }}>
-              ⚡ Ketuk Layar untuk Masuk ⚡
+            <span className="tap-text" style={{ fontSize: '2.2vh', color: '#ffd700', textShadow: '0 0 16px rgba(255,215,0,0.85)' }}>
+              👑 Ketuk Layar untuk Masuk 👑
             </span>
           </div>
         ) : (
@@ -259,13 +276,6 @@ function LoginScreen({ onLoginSuccess }: { onLoginSuccess: () => void }) {
                 <span className="btn-login-desc">Gunakan akun Gmail Anda</span>
               </div>
             </button>
-            <button className="btn-login-alt facebook" onClick={() => handleSocialLogin('Facebook')}>
-              <span className="btn-login-icon">f</span>
-              <div className="btn-login-text">
-                <span className="btn-login-name">Masuk dengan Facebook</span>
-                <span className="btn-login-desc">Gunakan akun Facebook Anda</span>
-              </div>
-            </button>
             <button className="btn-login-alt phone" onClick={() => alert('Login HP segera hadir!')}>
               <span className="btn-login-icon">📱</span>
               <div className="btn-login-text">
@@ -276,7 +286,7 @@ function LoginScreen({ onLoginSuccess }: { onLoginSuccess: () => void }) {
           </div>
         )}
       </div>
-    </OlympusCinematicBackground>
+    </RoyalLoadingBackground>
   );
 }
 
@@ -288,11 +298,57 @@ function PengaturanModal({ onClose, onLogout }: { onClose: () => void; onLogout:
   const [sfx, setSfx] = useState(() => localStorage.getItem('set_sfx') !== 'off');
   const [anim, setAnim] = useState(() => localStorage.getItem('set_anim') !== 'off');
   const [showDel, setShowDel] = useState<'cache' | 'data' | 'akun' | null>(null);
+  const [bgmTrack, setBgmTrack] = useState<BgmTrackType>(() => lobbyAudio.getTrack());
+  const [customSongName, setCustomSongName] = useState<string | null>(() => lobbyAudio.getCustomAudioName());
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    const onTrackChange = (e: any) => {
+      if (e.detail?.track) setBgmTrack(e.detail.track);
+    };
+    const onCustomLoaded = (e: any) => {
+      setCustomSongName(e.detail?.name || null);
+    };
+    const onCustomRemoved = () => {
+      setCustomSongName(null);
+    };
+    window.addEventListener('bgm_track_changed', onTrackChange);
+    window.addEventListener('bgm_custom_file_loaded', onCustomLoaded);
+    window.addEventListener('bgm_custom_file_removed', onCustomRemoved);
+    return () => {
+      window.removeEventListener('bgm_track_changed', onTrackChange);
+      window.removeEventListener('bgm_custom_file_loaded', onCustomLoaded);
+      window.removeEventListener('bgm_custom_file_removed', onCustomRemoved);
+    };
+  }, []);
+
+  const handleSelectTrack = (track: BgmTrackType) => {
+    setBgmTrack(track);
+    lobbyAudio.setTrack(track);
+  };
+
+  const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const name = await lobbyAudio.setCustomAudioFile(file);
+      setCustomSongName(name);
+      handleSelectTrack('royal_x');
+    }
+  };
+
+  const handleRemoveCustomSong = async () => {
+    await lobbyAudio.removeCustomAudioFile();
+    setCustomSongName(null);
+  };
 
   const toggle = (key: string, val: boolean, setter: (v: boolean) => void) => {
     setter(!val);
     const stateStr = !val ? 'on' : 'off';
     localStorage.setItem(key, stateStr);
+    if (key === 'set_bgm') {
+      lobbyAudio.setMuted(val);
+      window.dispatchEvent(new CustomEvent('bgm_setting_changed', { detail: { enabled: !val } }));
+    }
     if (key === 'set_anim') {
       localStorage.setItem('domino_login_animation', stateStr);
     }
@@ -332,6 +388,79 @@ function PengaturanModal({ onClose, onLogout }: { onClose: () => void; onLogout:
               <span className="peng-toggle-label">{item.label}</span>
             </div>
           ))}
+        </div>
+
+        {/* PILIHAN MUSIK LOBI (LAGU ITU VS LAGU KITA) */}
+        <div className="peng-bgm-panel">
+          <div className="peng-bgm-panel-hdr">
+            <span>🎵</span>
+            <span>Pilihan Musik Lobi</span>
+          </div>
+
+          <div className="peng-track-cards">
+            {/* OPSI 1: LAGU ITU (TROPIS ISLAND) */}
+            <div
+              className={`peng-track-card g-btn-press ${bgmTrack === 'tropical' ? 'selected' : ''}`}
+              onClick={() => handleSelectTrack('tropical')}
+            >
+              <div className="peng-track-card-badge">🎵 OPSI 1</div>
+              <div className="peng-track-card-name">Lagu</div>
+              <div className="peng-track-card-desc">Marimba Island / Lagu Santai Pantai</div>
+              <div className="peng-track-card-indicator">
+                {bgmTrack === 'tropical' ? '✓ Aktif' : 'Pilih'}
+              </div>
+            </div>
+
+            {/* OPSI 2: LAGU KITA (ROYAL X THEME / CUSTOM) */}
+            <div
+              className={`peng-track-card g-btn-press ${bgmTrack === 'royal_x' ? 'selected' : ''}`}
+              onClick={() => handleSelectTrack('royal_x')}
+            >
+              <div className="peng-track-card-badge gold">👑 OPSI 2</div>
+              <div className="peng-track-card-name">Lagu Kita</div>
+              <div className="peng-track-card-desc">
+                {customSongName ? `File: ${customSongName}` : 'Tema Khas Royal X (VIP Anthem)'}
+              </div>
+              <div className="peng-track-card-indicator">
+                {bgmTrack === 'royal_x' ? '✓ Aktif' : 'Pilih'}
+              </div>
+            </div>
+          </div>
+
+          {/* OPSI UNGGAH FILE MUSIK KUSTOM */}
+          {bgmTrack === 'royal_x' && (
+            <div className="peng-custom-audio-box">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="audio/*"
+                style={{ display: 'none' }}
+                onChange={handleFileSelected}
+              />
+              <div className="peng-custom-actions">
+                <button
+                  type="button"
+                  className="peng-custom-upload-btn g-btn-press"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  📁 {customSongName ? 'Ganti File Lagu Sendiri' : 'Unggah File Lagu Sendiri (MP3 / WAV)'}
+                </button>
+                {customSongName && (
+                  <button
+                    type="button"
+                    className="peng-custom-reset-btn g-btn-press"
+                    onClick={handleRemoveCustomSong}
+                    title="Kembali ke lagu tema bawaan Royal X"
+                  >
+                    ↺ Reset ke Tema Asli
+                  </button>
+                )}
+              </div>
+              <div className="peng-custom-hint">
+                💡 File Anda tersimpan otomatis.
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="peng-update-row">
@@ -1458,7 +1587,7 @@ function KirimKoinModal({ onClose, onCoinsTransferred, onOpenShop, onOpenHistory
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {onOpenHistory && (
-              <button 
+              <button
                 type="button"
                 className="g-btn-press"
                 style={{
@@ -3341,25 +3470,28 @@ interface SlotGameDef {
 }
 
 const SLOT_GAMES: SlotGameDef[] = [
-  { id: 'duofugrand', name: 'DuoFu DuoCai Grand', img: '🧧', jackpot: '99,899,264,448', players: 22728, bg: 'linear-gradient(160deg,#f9d976,#e8703a)', locked: true },
-  { id: 'wildwest', name: 'Wild West Gold', img: '🤠', jackpot: '100,000,000,000', players: 48291, bg: 'linear-gradient(160deg,#e65100,#4e342e)', locked: false },
-  { id: 'jinjibaoxi', name: 'Jin Ji Bao Xi', img: '/assets/jinji/sym_dragon_gold.png', jackpot: '2,835,374,165', players: 184598, bg: 'linear-gradient(160deg,#800010,#311b92)', locked: false },
-  { id: 'zeus', name: 'Gates of Olympus', img: '⚡', jackpot: '5,000,000,000', players: 320450, bg: 'linear-gradient(160deg,#1a1a6e,#4a0e8f)', locked: false },
-  { id: 'fafafa2', name: 'Fafafa 2', img: '🐉', jackpot: '10,000,000,000', players: 104598, bg: 'linear-gradient(160deg,#8b0000,#ff0000)', locked: false },
-  { id: 'superace', name: 'Super Ace', img: '🃏', jackpot: '200,000,000,000', players: 150598, bg: 'linear-gradient(160deg,#8e44ad,#3a0e5c)', locked: true },
-  { id: 'speedwinner', name: 'Speed Winner', img: '🏎️', jackpot: '100,000,000,000', players: 59273, bg: 'linear-gradient(160deg,#2c3e50,#0f1c2e)', locked: true },
-  { id: '5lions', name: '5 Lions Megaways', img: '/assets/fivelions/sym_phoenix.png', jackpot: '200,000,000,000', players: 156431, bg: 'linear-gradient(160deg,#172c72,#050b24)', locked: false },
-  { id: 'yingcaishen', name: 'Ying Cai Shen', img: '🧙', jackpot: '176,000,000,000', players: 12181, bg: 'linear-gradient(160deg,#b91d47,#5c0e22)', locked: true, lockText: 'Terbuka pada\nLV7' },
-  { id: 'candyrush', name: 'Candy Rush', img: '🍬', jackpot: '100,000,000,000', players: 13680, bg: 'linear-gradient(160deg,#ff80ab,#c2185b)', locked: false },
-  { id: 'richmine', name: 'Rich Mine Blast', img: '⛏️', jackpot: '19,978,165,368', players: 29740, bg: 'linear-gradient(160deg,#8a5a2c,#4a2c0e)', locked: true },
-  { id: 'mahjong2', name: 'Mahjong Ways 2', img: '/assets/mahjong2/sym_fa.png', jackpot: '100,000,000,000', players: 161974, bg: 'linear-gradient(160deg,#27ae60,#145a32)', locked: false },
-  { id: 'gatotkaca', name: 'Gates of Gatotkaca 1000', img: '/assets/gatokaca/sym_scatter.png', jackpot: '100,000,000,000', players: 39464, bg: 'linear-gradient(160deg,#f39c12,#8a4b0e)', locked: false },
+  // ===== 5 ACTIVE GAMES (Semua di depan / berdampingan) =====
+  { id: 'zeus', name: 'Gates of Olympus', img: '/assets/zeus/bg_olympus_hd.jpg', jackpot: '5,000,000,000', players: 320450, bg: 'linear-gradient(160deg,#1a1a6e,#4a0e8f)', locked: false },
+  { id: 'mahjong2', name: 'Mahjong Ways 2', img: '/assets/mahjong2/loading.jpg', jackpot: '100,000,000,000', players: 161974, bg: 'linear-gradient(160deg,#27ae60,#145a32)', locked: false },
+  { id: '5lions', name: '5 Lions Megaways', img: '/assets/fivelions/loading.jpg', jackpot: '200,000,000,000', players: 156431, bg: 'linear-gradient(160deg,#172c72,#050b24)', locked: false },
+  { id: 'gatotkaca', name: 'Gates of Gatotkaca 1000', img: '/assets/gatokaca/loading_art.jpg', jackpot: '100,000,000,000', players: 39464, bg: 'linear-gradient(160deg,#f39c12,#8a4b0e)', locked: false },
+  { id: 'fafafa2', name: 'Fafafa 2 Deluxe', img: '/assets/fafafa2/loading.jpg', jackpot: '10,000,000,000', players: 104598, bg: 'linear-gradient(160deg,#8b0000,#ff0000)', locked: false },
+
+  // ===== COMING SOON GAMES =====
+  { id: 'duofugrand', name: 'DuoFu DuoCai Grand', img: '/assets/duofuduocai/loading_art.jpg', jackpot: '99,899,264,448', players: 22728, bg: 'linear-gradient(160deg,#800010,#311b92)', locked: true, lockText: 'COMING SOON' },
+  { id: 'jinjibaoxi', name: 'Jin Ji Bao Xi', img: '/assets/jinji/loading.jpg', jackpot: '2,835,374,165', players: 184598, bg: 'linear-gradient(160deg,#800010,#311b92)', locked: true, lockText: 'COMING SOON' },
+  { id: 'wildwest', name: 'Wild West Gold', img: '/assets/wildwest/loading.jpg', jackpot: '100,000,000,000', players: 48291, bg: 'linear-gradient(160deg,#e65100,#4e342e)', locked: true, lockText: 'COMING SOON' },
+  { id: 'candyrush', name: 'Candy Rush Bonanza', img: '/assets/candyrush/loading.jpg', jackpot: '100,000,000,000', players: 13680, bg: 'linear-gradient(160deg,#ff80ab,#c2185b)', locked: true, lockText: 'COMING SOON' },
+  { id: 'superace', name: 'Super Ace', img: '/assets/slot_loading_bg.jpg', jackpot: '200,000,000,000', players: 150598, bg: 'linear-gradient(160deg,#8e44ad,#3a0e5c)', locked: true, lockText: 'COMING SOON' },
+  { id: 'speedwinner', name: 'Speed Winner', img: '/assets/slot_loading_bg.jpg', jackpot: '100,000,000,000', players: 59273, bg: 'linear-gradient(160deg,#2c3e50,#0f1c2e)', locked: true, lockText: 'COMING SOON' },
+  { id: 'yingcaishen', name: 'Ying Cai Shen', img: '/assets/fafafa2/bg_temple_clean.jpg', jackpot: '176,000,000,000', players: 12181, bg: 'linear-gradient(160deg,#b91d47,#5c0e22)', locked: true, lockText: 'COMING SOON' },
+  { id: 'richmine', name: 'Rich Mine Blast', img: '/assets/slot_loading_bg.jpg', jackpot: '19,978,165,368', players: 29740, bg: 'linear-gradient(160deg,#8a5a2c,#4a2c0e)', locked: true, lockText: 'COMING SOON' },
 ];
 
 function AjakTemanModal({ onClose }: { onClose: () => void }) {
   const [copied, setCopied] = useState(false);
   const refCode = "DMN-992X8A";
-  
+
   const handleCopy = () => {
     navigator.clipboard.writeText(refCode);
     setCopied(true);
@@ -3375,13 +3507,13 @@ function AjakTemanModal({ onClose }: { onClose: () => void }) {
         <div className="modal-message" style={{ marginBottom: 20, fontSize: 14, color: 'rgba(255,255,255,0.8)' }}>
           Undang temanmu bermain dan dapatkan <b>1.000.000 Koin</b> secara instan untuk setiap teman yang mendaftar!
         </div>
-        
+
         <div style={{ background: 'rgba(0,0,0,0.3)', padding: '15px', borderRadius: 12, marginBottom: 20, border: '1px solid rgba(241,196,15,0.2)' }}>
           <div style={{ fontSize: 12, color: '#aaa', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 }}>Kode Referral Kamu:</div>
           <div style={{ fontSize: 28, fontWeight: 'bold', color: '#f1c40f', letterSpacing: 4 }}>{refCode}</div>
         </div>
 
-        <button 
+        <button
           onClick={handleCopy}
           style={{ width: '100%', padding: '14px', borderRadius: 12, background: copied ? '#2ecc71' : 'linear-gradient(90deg, #f1c40f, #f39c12)', color: copied ? '#fff' : '#000', border: 'none', fontWeight: 'bold', fontSize: 16, cursor: 'pointer', transition: '0.2s', boxShadow: '0 4px 12px rgba(241,196,15,0.3)' }}
         >
@@ -3394,31 +3526,39 @@ function AjakTemanModal({ onClose }: { onClose: () => void }) {
 
 function SlotGamesModal({ onClose, onPlaySlot }: { onClose: () => void, onPlaySlot: (gameId: string) => void }) {
   const handleCardClick = (game: SlotGameDef) => {
-    if (game.locked) return;
+    if (game.locked) {
+      alert(`${game.name} sedang dalam pengembangan (Coming Soon)!`);
+      return;
+    }
+    if (game.id === 'duofugrand') {
+      onPlaySlot('duofuduocai');
+      return;
+    }
     onPlaySlot(game.id);
   };
 
-  // Split into two rows for nicer horizontal carousel feel
-  // all games in one grid
-  const allGames = SLOT_GAMES;
+  const activeGames = SLOT_GAMES.filter(g => !g.locked);
+  const comingSoonGames = SLOT_GAMES.filter(g => g.locked);
 
   const renderCard = (game: SlotGameDef) => (
     <div
       key={game.id}
-      className={`sl-card ${game.locked ? 'sl-card-locked' : ''} g-btn-press`}
-      style={{ background: game.bg }}
+      className={`sl-card ${game.locked ? 'sl-card-locked' : 'sl-card-active'} g-btn-press`}
+      style={{
+        backgroundImage: `linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, transparent 45%, rgba(0, 0, 0, 0.9) 100%), url('${game.img}')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
       onClick={() => handleCardClick(game)}
     >
-      {game.locked && <div className="sl-card-lock-overlay">🔒{'\n'}{game.lockText || 'Terkunci'}</div>}
+      {game.locked && (
+        <div className="sl-card-lock-overlay">
+          <span style={{ fontSize: '14px' }}>🔒</span>
+          <span>{game.lockText || 'COMING SOON'}</span>
+        </div>
+      )}
       <div className="sl-card-jackpot">{game.jackpot}</div>
-      <div className="sl-card-img-wrapper">
-        {game.img.startsWith('/') || game.img.startsWith('http') ? (
-          <img src={game.img} alt={game.name} className="sl-card-img" />
-        ) : (
-          <div className="sl-card-emoji">{game.img}</div>
-        )}
-      </div>
-      <div>
+      <div className="sl-card-bottom-wrap">
         <div className="sl-card-name">{game.name}</div>
         <div className="sl-card-players">👤 {game.players.toLocaleString()}</div>
       </div>
@@ -3436,24 +3576,197 @@ function SlotGamesModal({ onClose, onPlaySlot }: { onClose: () => void, onPlaySl
         </div>
 
         <div className="slot-modal-scroll-area">
-          {/* Hero / Featured card */}
-          <div className="slot-section-label">🔥 Featured</div>
-          <div className="slot-modal-hero g-btn-press" onClick={() => onPlaySlot('duofuduocai')}>
+          {/* Hero / Featured card - Gates of Olympus (Active) */}
+          <div className="slot-section-label" style={{ color: '#ffd700', fontWeight: 900 }}>⭐ GAME UTAMA PILIHAN</div>
+          <div
+            className="slot-modal-hero g-btn-press"
+            style={{
+              backgroundImage: `linear-gradient(90deg, rgba(15, 2, 6, 0.85) 0%, rgba(15, 2, 6, 0.4) 45%, rgba(15, 2, 6, 0.88) 100%), url('/assets/zeus/bg_olympus_hd.jpg')`,
+              borderColor: '#ffd700'
+            }}
+            onClick={() => onPlaySlot('zeus')}
+          >
             <div className="sl-hero-jackpot-box">
-              <div className="sl-hero-badge">⭐ FEATURED</div>
-              <span className="sl-jackpot-label">Jackpot</span>
-              <span className="sl-jackpot-val">3,514,456,714</span>
-              <div className="sl-hero-players">👤 411,890 main</div>
+              <div className="sl-hero-badge">⭐ FEATURED • AKTIF</div>
+              <span className="sl-jackpot-label">Jackpot Olympus</span>
+              <span className="sl-jackpot-val">5,000,000,000</span>
+              <div className="sl-hero-players">👤 320,450 main sekarang</div>
             </div>
-            <div className="sl-hero-mascot">👶🏻</div>
-            <div className="sl-hero-title">DUOFU<br />DUOCAI</div>
+            <div className="sl-hero-title">GATES OF<br />OLYMPUS</div>
           </div>
 
-          {/* All games in stacked grid */}
-          <div className="slot-section-label" style={{ marginTop: 14 }}>🎮 Semua Game</div>
-          <div className="slot-modal-cards-row">
-            {allGames.map(renderCard)}
+          {/* All active games lined up horizontally (ke samping semua) */}
+          <div className="slot-section-label" style={{ color: '#4ef0a8', fontWeight: 900, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span>🔥</span>
+            <span>GAME AKTIF (BERJAJAR KE SAMPING)</span>
           </div>
+          <div className="slot-modal-active-row">
+            {activeGames.map(renderCard)}
+          </div>
+
+          {/* Coming Soon games lined up horizontally below */}
+          <div className="slot-section-label" style={{ marginTop: 22, color: '#f39c12', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span>🔒</span>
+            <span>SEGERA HADIR (COMING SOON)</span>
+          </div>
+          <div className="slot-modal-coming-row">
+            {comingSoonGames.map(renderCard)}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =====================================================
+// DATA & INTERFACE UNTUK PILIHAN KAMAR QIUQIU (99)
+// =====================================================
+export interface QiuQiuRoomConfig {
+  id: string;
+  name: string;
+  blind: number;
+  ante: number;
+  buyIn: number;
+  entryLabel: string;
+  coinsRange: string;
+  playersCount: number;
+  img: string;
+  badge?: string;
+}
+
+export const QIUQIU_ROOMS: QiuQiuRoomConfig[] = [
+  {
+    id: 'qq_2k',
+    name: 'Kamar QiuQiu 2K',
+    blind: 2000,
+    ante: 2000,
+    buyIn: 40000,
+    entryLabel: '2K',
+    coinsRange: '40K - 1M',
+    playersCount: 14210,
+    img: '/assets/loby/room_2k.jpg',
+    badge: '🔥 PEMULA'
+  },
+  {
+    id: 'qq_5k',
+    name: 'Kamar QiuQiu 5K',
+    blind: 5000,
+    ante: 5000,
+    buyIn: 100000,
+    entryLabel: '5K',
+    coinsRange: '100K - 5M',
+    playersCount: 9840,
+    img: '/assets/loby/room_5k.jpg',
+    badge: '⭐ POPULER'
+  },
+  {
+    id: 'qq_10k',
+    name: 'Kamar QiuQiu 10K',
+    blind: 10000,
+    ante: 10000,
+    buyIn: 200000,
+    entryLabel: '10K',
+    coinsRange: '200K - 20M',
+    playersCount: 18230,
+    img: '/assets/loby/room_10k.jpg',
+    badge: '👑 HOT'
+  },
+  {
+    id: 'qq_50k',
+    name: 'Kamar QiuQiu 50K',
+    blind: 50000,
+    ante: 50000,
+    buyIn: 1000000,
+    entryLabel: '50K',
+    coinsRange: '1M - 100M',
+    playersCount: 5120,
+    img: '/assets/loby/room_50k.jpg',
+    badge: '💎 VIP'
+  },
+  {
+    id: 'qq_100k',
+    name: 'Kamar QiuQiu 100K',
+    blind: 100000,
+    ante: 100000,
+    buyIn: 2000000,
+    entryLabel: '100K',
+    coinsRange: '2M+',
+    playersCount: 3840,
+    img: '/assets/loby/room_50k.jpg',
+    badge: '🏆 SULTAN'
+  }
+];
+
+function QiuQiuRoomModal({ onClose, onSelectRoom, userCoins }: {
+  onClose: () => void;
+  onSelectRoom: (room: QiuQiuRoomConfig) => void;
+  userCoins: number;
+}) {
+  return (
+    <div className="qq-room-modal-overlay tm-overlay-fade" onClick={onClose}>
+      <div className="qq-room-modal-box tm-box-bounce" onClick={e => e.stopPropagation()}>
+        <div className="qq-room-modal-header">
+          <div className="qq-room-title-wrap">
+            <div className="qq-room-modal-title">
+              <span>🃏</span> PILIH KAMAR QIUQIU (99)
+            </div>
+            <div className="qq-room-modal-sub">
+              Pilih ruangan sesuai modal koin Anda untuk bertanding!
+            </div>
+          </div>
+
+          <div className="qq-room-header-right">
+            <div className="qq-room-user-balance">
+              <span>🪙</span>
+              <span>{userCoins.toLocaleString('id-ID')}</span>
+            </div>
+            <button className="qq-room-close-btn g-btn-press" onClick={onClose}>✕</button>
+          </div>
+        </div>
+
+        <div className="qq-room-cards-grid">
+          {QIUQIU_ROOMS.map(r => {
+            const canAfford = userCoins >= r.buyIn;
+            return (
+              <div
+                key={r.id}
+                className="qq-room-card g-btn-press"
+                onClick={() => {
+                  if (!canAfford) {
+                    alert(`Koin Anda (${userCoins.toLocaleString('id-ID')}) tidak mencukupi untuk Buy-In ${r.name} (${r.buyIn.toLocaleString('id-ID')})!`);
+                    return;
+                  }
+                  onSelectRoom(r);
+                }}
+              >
+                <div className="qq-room-img-wrap">
+                  <img src={r.img} alt={r.name} className="qq-room-img" />
+                  {r.badge && <div className="qq-room-badge">{r.badge}</div>}
+                  <div className="qq-room-blind-pill">Blind {r.entryLabel}</div>
+                </div>
+
+                <div className="qq-room-content">
+                  <div className="qq-room-name">{r.name}</div>
+                  <div className="qq-room-info-row">
+                    <span>Buy-In Meja:</span>
+                    <span className="qq-room-info-val">🪙 {r.buyIn.toLocaleString('id-ID')}</span>
+                  </div>
+                  <div className="qq-room-info-row">
+                    <span>Range Koin:</span>
+                    <span>{r.coinsRange}</span>
+                  </div>
+                  <div className="qq-room-info-row">
+                    <span>Pemain Online:</span>
+                    <span className="qq-room-players">👥 {r.playersCount.toLocaleString('id-ID')}</span>
+                  </div>
+
+                  <div className="qq-room-play-btn" style={{ opacity: canAfford ? 1 : 0.6 }}>
+                    {canAfford ? 'MASUK MEJA ▶' : 'KOIN KURANG 🔒'}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -3463,7 +3776,19 @@ function SlotGamesModal({ onClose, onPlaySlot }: { onClose: () => void, onPlaySl
 // =====================================================
 // HOME / LOBBY SCREEN — mirip referensi gambar
 // =====================================================
-function HomeScreen({ onLogout, onNavigate, socket }: { onLogout: () => void; onNavigate: (screen: any, category?: any) => void; socket?: any }) {
+function HomeScreen({
+  onLogout,
+  onNavigate,
+  socket,
+  initialShowSlotPopup = false,
+  onClearSlotPopup
+}: {
+  onLogout: () => void;
+  onNavigate: (screen: any, category?: any) => void;
+  socket?: any;
+  initialShowSlotPopup?: boolean;
+  onClearSlotPopup?: () => void;
+}) {
   const [profile, setProfile] = useState<any>(null);
   const [modal, setModal] = useState<{ title: string; message: string } | null>(null);
   const [showLogout, setShowLogout] = useState(false);
@@ -3481,13 +3806,68 @@ function HomeScreen({ onLogout, onNavigate, socket }: { onLogout: () => void; on
   const [canClaimBonus, setCanClaimBonus] = useState(false);
   const [showToko, setShowToko] = useState(false);
   const [showKirimKoin, setShowKirimKoin] = useState(false);
-  const [showSlotPopup, setShowSlotPopup] = useState(false);
+  const [showSlotPopup, setShowSlotPopup] = useState(initialShowSlotPopup);
+
+  useEffect(() => {
+    if (initialShowSlotPopup) {
+      setShowSlotPopup(true);
+      onClearSlotPopup?.();
+    }
+  }, [initialShowSlotPopup]);
   const [showAjakTeman, setShowAjakTeman] = useState(false);
   const [showFriendModal, setShowFriendModal] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showChatModal, setShowChatModal] = useState(false);
   const [showByOneRoomModal, setShowByOneRoomModal] = useState(false);
   const [showRiwayatTransfer, setShowRiwayatTransfer] = useState(false);
+  const [showQiuQiuRoomModal, setShowQiuQiuRoomModal] = useState(false);
+  const [bgmActive, setBgmActive] = useState(() => localStorage.getItem('set_bgm') !== 'off');
+  const [bgmTrack, setBgmTrack] = useState<BgmTrackType>(() => lobbyAudio.getTrack());
+
+  useEffect(() => {
+    const onBgmChange = (e: any) => {
+      if (e.detail?.enabled !== undefined) {
+        setBgmActive(e.detail.enabled);
+      }
+    };
+    const onTrackChange = (e: any) => {
+      if (e.detail?.track) {
+        setBgmTrack(e.detail.track);
+      }
+    };
+    window.addEventListener('bgm_setting_changed', onBgmChange);
+    window.addEventListener('bgm_track_changed', onTrackChange);
+    return () => {
+      window.removeEventListener('bgm_setting_changed', onBgmChange);
+      window.removeEventListener('bgm_track_changed', onTrackChange);
+    };
+  }, []);
+
+  const toggleBgm = () => {
+    const nextState = lobbyAudio.toggleMute();
+    setBgmActive(nextState);
+    window.dispatchEvent(new CustomEvent('bgm_setting_changed', { detail: { enabled: nextState } }));
+  };
+
+  const toggleBgmTrack = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const nextTrack: BgmTrackType = bgmTrack === 'tropical' ? 'royal_x' : 'tropical';
+    setBgmTrack(nextTrack);
+    lobbyAudio.setTrack(nextTrack);
+  };
+
+  useEffect(() => {
+    const refreshCoins = () => {
+      const savedUser = localStorage.getItem('domino_username');
+      if (!savedUser) return;
+      fetch(`${API_URL}/profile/${savedUser}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d) setProfile(d); })
+        .catch(() => { });
+    };
+    window.addEventListener('domino_coins_updated', refreshCoins);
+    return () => window.removeEventListener('domino_coins_updated', refreshCoins);
+  }, []);
 
   useEffect(() => {
     const u = localStorage.getItem('domino_username');
@@ -3760,6 +4140,31 @@ function HomeScreen({ onLogout, onNavigate, socket }: { onLogout: () => void; on
             </svg>
             <span className="ht-act-lbl">Ranking</span>
           </button>
+
+          {/* Lobby BGM Quick Toggle Button & Track Switcher */}
+          <div className="ht-bgm-group">
+            <button
+              className={`ht-act-btn ht-bgm-btn ${bgmActive ? 'on' : 'off'}`}
+              onClick={toggleBgm}
+              title={bgmActive ? "Musik Lobi Aktif (Klik untuk Matikan)" : "Musik Lobi Mati (Klik untuk Nyalakan)"}
+            >
+              <span className={`ht-act-ico ${bgmActive ? 'ht-bgm-icon-anim' : ''}`} style={{ fontSize: '2.1vh' }}>
+                {bgmActive ? '🎵' : '🔇'}
+              </span>
+              <span className="ht-act-lbl">
+                {bgmActive ? 'BGM ON' : 'BGM OFF'}
+              </span>
+            </button>
+            <button
+              className={`ht-bgm-track-pill g-btn-press ${bgmTrack === 'royal_x' ? 'gold' : ''}`}
+              onClick={toggleBgmTrack}
+              title="Klik untuk ganti lagu: Tropis vs Lagu Kita"
+            >
+              <span className="ht-bgm-pill-ico">{bgmTrack === 'tropical' ? '🎵' : '👑'}</span>
+              <span className="ht-bgm-pill-txt">{bgmTrack === 'tropical' ? 'Tropis' : 'Lagu Kita'}</span>
+            </button>
+          </div>
+
           <button className="ht-act-btn" onClick={() => setShowPengaturan(true)}>
             {/* Settings/Gear icon */}
             <svg className="ht-act-ico-svg" viewBox="0 0 24 24" fill="currentColor">
@@ -3777,7 +4182,16 @@ function HomeScreen({ onLogout, onNavigate, socket }: { onLogout: () => void; on
             <span className="ht-topup-txt">TOP UP</span>
           </button>
 
-          <button className="ht-menu-burger" onClick={() => setShowRightSidebar(v => !v)}>≡</button>
+          <button
+            className={`ht-menu-burger ${showRightSidebar ? 'active' : ''}`}
+            onClick={() => setShowRightSidebar(v => !v)}
+            title="Menu"
+            aria-label="Menu"
+          >
+            <span className="ht-burger-bar"></span>
+            <span className="ht-burger-bar"></span>
+            <span className="ht-burger-bar"></span>
+          </button>
         </div>
 
         {/* Right Sidebar Dropdown */}
@@ -3890,7 +4304,7 @@ function HomeScreen({ onLogout, onNavigate, socket }: { onLogout: () => void; on
             </div>
 
             {/* CARD 3: QIUQIU */}
-            <div className="home-game-card-v3 card-qiuqiu" onClick={() => onNavigate('qiuqiu-game')}>
+            <div className="home-game-card-v3 card-qiuqiu" onClick={() => setShowQiuQiuRoomModal(true)}>
               <div className="hgc-video-wrapper">
                 <video className="hgc-bg-video" autoPlay loop muted playsInline>
                   <source src="/assets/loby/1000137997.mp4" type="video/mp4" />
@@ -3986,7 +4400,7 @@ function HomeScreen({ onLogout, onNavigate, socket }: { onLogout: () => void; on
           <button className="hb3-nav-btn" onClick={() => setShowByOneRoomModal(true)}>
             <span className="hb3-ico">
               <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M6.92 5h-.01L4 7.91l2.92 2.92-1.42 1.42L2.59 9.33a1.996 1.996 0 0 1 0-2.83l3.5-3.5c.78-.78 2.05-.78 2.83 0l2.92 2.92-1.42 1.42L7.5 4.41l-.58.59zm12.67 4.33l-1.42-1.42 2.92-2.92-.58-.59-2.92 2.92-1.42-1.42 2.92-2.92a1.996 1.996 0 0 1 2.83 0l3.5 3.5c.78.78.78 2.05 0 2.83l-2.91 2.92-2.92-2.92zm-7.66 1.34l-1.41-1.41 7.07-7.07 1.41 1.41-7.07 7.07zm-4.95 4.95l1.41 1.41-5.66 5.66-1.41-1.41 5.66-5.66zM20 20.59l-1.41 1.41-5.66-5.66 1.41-1.41 5.66 5.66zm-7.07-7.07l1.41 1.41-7.07 7.07-1.41-1.41 7.07-7.07z"/>
+                <path d="M6.92 5h-.01L4 7.91l2.92 2.92-1.42 1.42L2.59 9.33a1.996 1.996 0 0 1 0-2.83l3.5-3.5c.78-.78 2.05-.78 2.83 0l2.92 2.92-1.42 1.42L7.5 4.41l-.58.59zm12.67 4.33l-1.42-1.42 2.92-2.92-.58-.59-2.92 2.92-1.42-1.42 2.92-2.92a1.996 1.996 0 0 1 2.83 0l3.5 3.5c.78.78.78 2.05 0 2.83l-2.91 2.92-2.92-2.92zm-7.66 1.34l-1.41-1.41 7.07-7.07 1.41 1.41-7.07 7.07zm-4.95 4.95l1.41 1.41-5.66 5.66-1.41-1.41 5.66-5.66zM20 20.59l-1.41 1.41-5.66-5.66 1.41-1.41 5.66 5.66zm-7.07-7.07l1.41 1.41-7.07 7.07-1.41-1.41 7.07-7.07z" />
               </svg>
             </span>
             <span className="hb3-lbl" style={{ color: '#ff7675', fontWeight: 'bold' }}>By One ⚔️</span>
@@ -4026,18 +4440,23 @@ function HomeScreen({ onLogout, onNavigate, socket }: { onLogout: () => void; on
       </div>
       {/* SLOT GAMES POPUP MODAL */}
       {showSlotPopup && (
-        <SlotGamesModal 
-          onClose={() => setShowSlotPopup(false)} 
-          onPlaySlot={(gameId) => {
+        <SlotGamesModal
+          onClose={() => {
             setShowSlotPopup(false);
-            if (gameId === 'duofuduocai') onNavigate('slot-game');
-            else if (gameId === 'zeus') onNavigate('zeus-game');
+            onClearSlotPopup?.();
+          }}
+          onPlaySlot={(gameId) => {
+            const COMING_SOON = ['duofugrand', 'duofuduocai', 'jinjibaoxi', 'wildwest', 'candyrush'];
+            if (COMING_SOON.includes(gameId)) {
+              alert('Game slot ini sedang dalam pengembangan (Coming Soon)!');
+              return;
+            }
+            setShowSlotPopup(false);
+            onClearSlotPopup?.();
+            if (gameId === 'zeus') onNavigate('zeus-game');
             else if (gameId === 'fafafa2') onNavigate('fafafa-game');
-            else if (gameId === 'jinjibaoxi') onNavigate('jinji-game');
             else if (gameId === 'mahjong2') onNavigate('mahjong2-game');
             else if (gameId === 'gatotkaca') onNavigate('gatokaca-game');
-            else if (gameId === 'candyrush') onNavigate('candy-game');
-            else if (gameId === 'wildwest') onNavigate('wildwest-game');
             else if (gameId === '5lions') onNavigate('fivelions-game');
           }}
         />
@@ -4053,10 +4472,35 @@ function HomeScreen({ onLogout, onNavigate, socket }: { onLogout: () => void; on
             if (mode === 'billiard') {
               onNavigate('billiard-game');
             } else if (mode === 'qiuqiu') {
-              onNavigate('qiuqiu-game');
+              onNavigate('qiuqiu-game', QIUQIU_ROOMS[0]);
             } else {
               onNavigate('byone-game', opp);
             }
+          }}
+        />
+      )}
+
+      {/* QIUQIU ROOM SELECTION MODAL */}
+      {showQiuQiuRoomModal && (
+        <QiuQiuRoomModal
+          onClose={() => setShowQiuQiuRoomModal(false)}
+          userCoins={profile?.coins || 0}
+          onSelectRoom={async (room) => {
+            setShowQiuQiuRoomModal(false);
+            const savedUser = localStorage.getItem('domino_username');
+            if (savedUser) {
+              try {
+                await fetch(`${API_URL}/users/update-coins`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ username: savedUser, amount: -room.buyIn }),
+                });
+                setProfile((prev: any) => prev ? { ...prev, coins: Math.max(0, prev.coins - room.buyIn) } : prev);
+              } catch (e) {
+                console.error('Failed to deduct buy-in:', e);
+              }
+            }
+            onNavigate('qiuqiu-game', room);
           }}
         />
       )}
@@ -4075,38 +4519,41 @@ export interface Room {
   entryLabel: string;
   coinsRange: string;
   playersCount: number;
+  img?: string;
+  tierName?: string;
+  badge?: string;
 }
 
 export const LOBBY_ROOMS: Record<string, Room[]> = {
   Biasa: [
-    { id: 'biasa_1', name: 'Kamar Biasa 1', entryFee: 2000, entryLabel: '2K', coinsRange: '100K-1M', playersCount: 12852 },
-    { id: 'biasa_2', name: 'Kamar Biasa 2', entryFee: 5000, entryLabel: '5K', coinsRange: '500K-5M', playersCount: 8103 },
-    { id: 'biasa_3', name: 'Kamar Biasa 3', entryFee: 10000, entryLabel: '10K', coinsRange: '1M-10M', playersCount: 15482 },
-    { id: 'biasa_4', name: 'Kamar Biasa 4', entryFee: 50000, entryLabel: '50K', coinsRange: '5M-50M', playersCount: 4923 },
+    { id: 'biasa_1', name: 'Kamar Biasa 2K', entryFee: 2000, entryLabel: '2K', coinsRange: '100K-1M', playersCount: 12852, img: '/assets/loby/room_pemula_decor.jpg', tierName: 'PEMULA', badge: '🔥 POPULER' },
+    { id: 'biasa_2', name: 'Kamar Biasa 5K', entryFee: 5000, entryLabel: '5K', coinsRange: '500K-5M', playersCount: 8103, img: '/assets/loby/room_menengah_decor.jpg', tierName: 'MENENGAH', badge: '⭐ SERU' },
+    { id: 'biasa_3', name: 'Kamar Biasa 10K', entryFee: 10000, entryLabel: '10K', coinsRange: '1M-10M', playersCount: 15482, img: '/assets/loby/room_master_decor.jpg', tierName: 'MASTER', badge: '👑 HOT' },
+    { id: 'biasa_4', name: 'Kamar Biasa 50K', entryFee: 50000, entryLabel: '50K', coinsRange: '5M-50M', playersCount: 4923, img: '/assets/loby/room_sultan_decor.jpg', tierName: 'SULTAN', badge: '💎 VIP' },
   ],
   Bet: [
-    { id: 'bet_1', name: 'Kamar Bet 1', entryFee: 20000, entryLabel: '20K', coinsRange: '1M-8M', playersCount: 27886 },
-    { id: 'bet_2', name: 'Kamar Bet 2', entryFee: 100000, entryLabel: '100K', coinsRange: '5M-30M', playersCount: 8560 },
-    { id: 'bet_3', name: 'Kamar Bet 3', entryFee: 500000, entryLabel: '500K', coinsRange: '20M-200M', playersCount: 6647 },
-    { id: 'bet_4', name: 'Kamar Bet 4', entryFee: 2000000, entryLabel: '2M', coinsRange: '100M+', playersCount: 8176 },
+    { id: 'bet_1', name: 'Kamar Bet 20K', entryFee: 20000, entryLabel: '20K', coinsRange: '1M-8M', playersCount: 27886, img: '/assets/loby/room_pemula_decor.jpg', tierName: 'BRONZE', badge: 'RAMAI' },
+    { id: 'bet_2', name: 'Kamar Bet 100K', entryFee: 100000, entryLabel: '100K', coinsRange: '5M-30M', playersCount: 8560, img: '/assets/loby/room_menengah_decor.jpg', tierName: 'SILVER', badge: 'POPULER' },
+    { id: 'bet_3', name: 'Kamar Bet 500K', entryFee: 500000, entryLabel: '500K', coinsRange: '20M-200M', playersCount: 6647, img: '/assets/loby/room_master_decor.jpg', tierName: 'GOLD', badge: 'HOT' },
+    { id: 'bet_4', name: 'Kamar Bet 2M', entryFee: 2000000, entryLabel: '2M', coinsRange: '100M+', playersCount: 8176, img: '/assets/loby/room_sultan_decor.jpg', tierName: 'PLATINUM', badge: 'VIP' },
   ],
   Wild: [
-    { id: 'wild_1', name: 'Kamar Wild 1', entryFee: 150000, entryLabel: '150K', coinsRange: '1M-8M', playersCount: 65883 },
-    { id: 'wild_2', name: 'Kamar Wild 2', entryFee: 500000, entryLabel: '500K', coinsRange: '5M-30M', playersCount: 18405 },
-    { id: 'wild_3', name: 'Kamar Wild 3', entryFee: 2000000, entryLabel: '2M', coinsRange: '20M+', playersCount: 14370 },
-    { id: 'wild_4', name: 'Kamar Wild 4', entryFee: 2000000, entryLabel: '2M', coinsRange: '20M+', playersCount: 14402 },
+    { id: 'wild_1', name: 'Kamar Wild 150K', entryFee: 150000, entryLabel: '150K', coinsRange: '1M-8M', playersCount: 65883, img: '/assets/loby/room_pemula_decor.jpg', tierName: 'WILD 1', badge: 'HOT' },
+    { id: 'wild_2', name: 'Kamar Wild 500K', entryFee: 500000, entryLabel: '500K', coinsRange: '5M-30M', playersCount: 18405, img: '/assets/loby/room_menengah_decor.jpg', tierName: 'WILD 2', badge: 'SERU' },
+    { id: 'wild_3', name: 'Kamar Wild 2M', entryFee: 2000000, entryLabel: '2M', coinsRange: '20M+', playersCount: 14370, img: '/assets/loby/room_master_decor.jpg', tierName: 'WILD 3', badge: 'SULTAN' },
+    { id: 'wild_4', name: 'Kamar Wild VIP', entryFee: 2000000, entryLabel: '2M', coinsRange: '20M+', playersCount: 14402, img: '/assets/loby/room_sultan_decor.jpg', tierName: 'WILD VIP', badge: 'JACKPOT' },
   ],
   '5 Kartu': [
-    { id: 'card5_1', name: 'Kamar 5 Kartu 1', entryFee: 10000, entryLabel: '10K', coinsRange: '1M-10M', playersCount: 1769 },
-    { id: 'card5_2', name: 'Kamar 5 Kartu 2', entryFee: 60000, entryLabel: '60K', coinsRange: '8M+', playersCount: 1109 },
-    { id: 'card5_3', name: 'Kamar 5 Kartu 3', entryFee: 60000, entryLabel: '60K', coinsRange: '8M+', playersCount: 1169 },
-    { id: 'card5_4', name: 'Kamar 5 Kartu 4', entryFee: 60000, entryLabel: '60K', coinsRange: '8M+', playersCount: 1100 },
+    { id: 'card5_1', name: '5 Kartu 10K', entryFee: 10000, entryLabel: '10K', coinsRange: '1M-10M', playersCount: 1769, img: '/assets/loby/room_pemula_decor.jpg', tierName: 'PEMULA', badge: 'POPULER' },
+    { id: 'card5_2', name: '5 Kartu 60K', entryFee: 60000, entryLabel: '60K', coinsRange: '8M+', playersCount: 1109, img: '/assets/loby/room_menengah_decor.jpg', tierName: 'PRO', badge: 'SERU' },
+    { id: 'card5_3', name: '5 Kartu 60K Pro', entryFee: 60000, entryLabel: '60K', coinsRange: '8M+', playersCount: 1169, img: '/assets/loby/room_master_decor.jpg', tierName: 'MASTER', badge: 'HOT' },
+    { id: 'card5_4', name: '5 Kartu 60K Elite', entryFee: 60000, entryLabel: '60K', coinsRange: '8M+', playersCount: 1100, img: '/assets/loby/room_sultan_decor.jpg', tierName: 'ELITE', badge: 'VIP' },
   ],
   Tantangan: [
-    { id: 'tantang_1', name: 'Tantangan 20M', entryFee: 20000000, entryLabel: '20M', coinsRange: 'Turnamen Tantangan', playersCount: 23086 },
-    { id: 'tantang_2', name: 'Tantangan 50M', entryFee: 50000000, entryLabel: '50M', coinsRange: 'Turnamen Tantangan', playersCount: 5567 },
-    { id: 'tantang_3', name: 'Tantangan 100M', entryFee: 100000000, entryLabel: '100M', coinsRange: 'Turnamen Tantangan', playersCount: 9592 },
-    { id: 'tantang_4', name: 'Tantangan 100M', entryFee: 100000000, entryLabel: '100M', coinsRange: 'Turnamen Tantangan', playersCount: 9518 },
+    { id: 'tantang_1', name: 'Tantangan 20M', entryFee: 20000000, entryLabel: '20M', coinsRange: 'Turnamen Tantangan', playersCount: 23086, img: '/assets/loby/room_master_decor.jpg', tierName: 'TURNAMEN', badge: 'TROFI' },
+    { id: 'tantang_2', name: 'Tantangan 50M', entryFee: 50000000, entryLabel: '50M', coinsRange: 'Turnamen Tantangan', playersCount: 5567, img: '/assets/loby/room_master_decor.jpg', tierName: 'CHAMPION', badge: 'SERU' },
+    { id: 'tantang_3', name: 'Tantangan 100M', entryFee: 100000000, entryLabel: '100M', coinsRange: 'Turnamen Tantangan', playersCount: 9592, img: '/assets/loby/room_sultan_decor.jpg', tierName: 'GRAND', badge: 'SULTAN' },
+    { id: 'tantang_4', name: 'Tantangan 100M Final', entryFee: 100000000, entryLabel: '100M', coinsRange: 'Turnamen Tantangan', playersCount: 9518, img: '/assets/loby/room_sultan_decor.jpg', tierName: 'FINAL', badge: 'ROYAL' },
   ],
 };
 
@@ -4937,6 +5384,7 @@ function KamarLobbyScreen({
               {(LOBBY_ROOMS[category] || []).map((room, idx) => {
                 const colorClasses = ['c-gold', 'c-orange', 'c-pink', 'c-purple'];
                 const cardColor = colorClasses[idx % colorClasses.length];
+                const cardImg = room.img || (idx === 0 ? '/assets/loby/room_pemula_decor.jpg' : idx === 1 ? '/assets/loby/room_menengah_decor.jpg' : idx === 2 ? '/assets/loby/room_master_decor.jpg' : '/assets/loby/room_sultan_decor.jpg');
                 return (
                   <div
                     key={room.id}
@@ -4944,15 +5392,36 @@ function KamarLobbyScreen({
                     onClick={() => handleSelectRoom(room)}
                   >
                     <div className="lob-card-shine" />
+
+                    {/* Top Tier & Status Badges */}
+                    <div className="lob-card-top-badges">
+                      <span className="lob-badge-tier">{room.tierName || (idx === 0 ? 'PEMULA' : idx === 1 ? 'MENENGAH' : idx === 2 ? 'MASTER' : 'SULTAN')}</span>
+                      {room.badge && <span className="lob-badge-status">{room.badge}</span>}
+                    </div>
+
+                    {/* Card Content (Classic Hierarchical Layout: Big Fee Top, Mascot Emblem Center, White Wave Bottom) */}
                     <div className="lob-card-content">
-                      <div className="lob-card-fee">{room.entryLabel}</div>
-                      {category === 'Tantangan' && (
-                        <div className="lob-card-subtitle">Turnamen Tantangan</div>
-                      )}
+                      <div className="lob-card-header-group">
+                        <div className="lob-card-fee">{room.entryLabel}</div>
+                        <div className="lob-card-title">{room.name}</div>
+                      </div>
+
+                      {/* Center 3D Mascot Graphic (Supaya tengahnya gak polos!) */}
+                      <div className="lob-card-center-emblem">
+                        <div className="lob-emblem-frame">
+                          <img src={cardImg} alt={room.name} className="lob-emblem-img" />
+                        </div>
+                        <div className="lob-emblem-glow" />
+                      </div>
+
                       <div className="lob-card-wave-box">
-                        <div className="lob-card-range">{room.coinsRange}</div>
+                        <div className="lob-card-range">🪙 {room.coinsRange}</div>
                         <div className="lob-card-players">
-                          <span className="lob-user-icon">👤</span> {room.playersCount.toLocaleString()}
+                          <span className="lob-online-dot">🟢</span> {room.playersCount.toLocaleString()} Pemain
+                        </div>
+                        <div className="lob-card-action-btn">
+                          <span>MAIN</span>
+                          <span className="lob-btn-arrow">❯</span>
                         </div>
                       </div>
                     </div>
@@ -5876,6 +6345,8 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
   const [winType, setWinType] = useState('normal');
   const [winningSymbols, setWinningSymbols] = useState<number[]>([]);
   const [showWinAlert, setShowWinAlert] = useState(false);
+  const [celebration, setCelebration] = useState<SlotCelebrationData | null>(null);
+  const [multInfo, setMultInfo] = useState<any>(null); // dari server: tangga pengali
   const [autoSpinCount, setAutoSpinCount] = useState(0);
   const [showAutoMenu, setShowAutoMenu] = useState(false);
   const [spinSpeed, setSpinSpeed] = useState(1);
@@ -5885,6 +6356,10 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
   const [musicOn, setMusicOn] = useState(true);
   const spinTimerRef = useRef<any>(null);
   const spinPressTimer = useRef<any>(null);
+
+  const spinningColsRef = useRef<boolean[]>([false, false, false, false, false]);
+  const spinSpeedRef = useRef(spinSpeed);
+  useEffect(() => { spinSpeedRef.current = spinSpeed; }, [spinSpeed]);
 
   // Symbol rendering helper
   const renderSymbol = (symVal: number) => {
@@ -5934,39 +6409,44 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
       .catch(() => { });
   }, [myUsername]);
 
-  // Spin animation effect
+  // Spin animation effect - checking synchronous spinningColsRef to prevent symbol flicker
   useEffect(() => {
+    let interval: any = null;
     if (isSpinning) {
-      spinTimerRef.current = setInterval(() => {
+      interval = setInterval(() => {
+        if (!spinningColsRef.current.some(Boolean)) return;
         setGrid(prev => {
           const next = prev.map(row => [...row]);
           for (let r = 0; r < numRows; r++) {
             for (let c = 0; c < numCols; c++) {
-              if (spinningCols[c]) {
+              if (spinningColsRef.current[c]) {
                 next[r][c] = Math.floor(Math.random() * 11);
               }
             }
           }
           return next;
         });
-      }, 80 / spinSpeed);
-    } else {
-      if (spinTimerRef.current) clearInterval(spinTimerRef.current);
+      }, Math.max(30, Math.floor(70 / spinSpeedRef.current)));
     }
-    return () => { if (spinTimerRef.current) clearInterval(spinTimerRef.current); };
-  }, [isSpinning, spinningCols, spinSpeed]);
+    return () => { if (interval) clearInterval(interval); };
+  }, [isSpinning]);
 
   // Socket listeners
   useEffect(() => {
     if (!socket) return;
 
     const handleSpinResult = (data: any) => {
-      let stopTime = 0;
-      const delayPerCol = 350 / spinSpeed;
+      const spd = spinSpeedRef.current;
+      const minSpinBase = spd >= 4 ? 180 : spd === 3 ? 240 : spd === 2 ? 400 : 750;
+      const delayPerCol = spd >= 4 ? 45 : spd === 3 ? 65 : spd === 2 ? 100 : 180;
+      const bounceDuration = spd >= 4 ? 120 : spd === 3 ? 160 : spd === 2 ? 240 : 380;
+      let stopTime = minSpinBase;
 
       for (let c = 0; c < numCols; c++) {
         const col = c;
         setTimeout(() => {
+          // 1. Matikan flag reel ini secara sinkron di ref TERLEBIH DAHULU agar interval shuffle tidak menimpa
+          spinningColsRef.current[col] = false;
           setSpinningCols(prev => {
             const next = [...prev];
             next[col] = false;
@@ -5983,23 +6463,43 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
         stopTime += delayPerCol;
       }
 
+      const allReelsSettled = stopTime + bounceDuration + 60;
       setTimeout(() => {
         setIsSpinning(false);
+        spinningColsRef.current = [false, false, false, false, false];
+        setSpinningCols([false, false, false, false, false]);
         setWinAmount(data.winAmount);
         setWinType(data.winType);
+        setMultInfo(data.multiplier || null);
         setWinningSymbols(data.winningSymbols || []);
         setProfile((prev: any) => prev ? { ...prev, coins: data.newBalance } : prev);
 
-        if (data.winAmount > 0) {
+        if (data.triggerFreeSpins) {
+          setCelebration({
+            type: 'scatter',
+            freeSpinsCount: data.freeSpinsAwarded || 10,
+            title: '🧧 SCATTER DUOFU! 🧧',
+            subtext: `SELAMAT! KAMU MEMICU ${data.freeSpinsAwarded || 10} PUTARAN GRATIS!`
+          });
+        } else if (data.winAmount > 0) {
           setShowWinAlert(true);
-          setTimeout(() => setShowWinAlert(false), 3000 / spinSpeed);
+          setTimeout(() => setShowWinAlert(false), Math.max(1500, 3000 / spd));
+          const ratio = data.winAmount / Math.max(1, betAmount);
+          if (ratio >= 30) {
+            setCelebration({ type: 'super_win', amount: data.winAmount });
+          } else if (ratio >= 12) {
+            setCelebration({ type: 'mega_win', amount: data.winAmount });
+          } else if (ratio >= 3) {
+            setCelebration({ type: 'big_win', amount: data.winAmount });
+          }
         }
-      }, stopTime);
+      }, allReelsSettled);
     };
 
     const handleSpinError = (data: any) => {
       alert(data.message);
       setIsSpinning(false);
+      spinningColsRef.current = [false, false, false, false, false];
       setSpinningCols([false, false, false, false, false]);
       setAutoSpinCount(0);
     };
@@ -6010,19 +6510,19 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
       socket.off('spin_result', handleSpinResult);
       socket.off('spin_error', handleSpinError);
     };
-  }, [socket]);
+  }, [socket, betAmount]);
 
   // Auto-spin
   useEffect(() => {
     let timer: any;
-    if (autoSpinCount > 0 && !isSpinning && !showWinAlert) {
+    if (autoSpinCount > 0 && !isSpinning && !showWinAlert && !celebration) {
       timer = setTimeout(() => {
         setAutoSpinCount(prev => prev > 0 ? prev - 1 : 0);
         handleSpin();
-      }, 1000 / spinSpeed); // Wait time scales with speed multiplier
+      }, Math.max(500, 1000 / spinSpeedRef.current));
     }
     return () => clearTimeout(timer);
-  }, [autoSpinCount, isSpinning, showWinAlert, spinSpeed]);
+  }, [autoSpinCount, isSpinning, showWinAlert, spinSpeed, celebration]);
 
   const handleSpin = () => {
     if (isSpinning || !socket) return;
@@ -6035,6 +6535,7 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
     setShowWinAlert(false);
     setWinningSymbols([]);
     setIsSpinning(true);
+    spinningColsRef.current = [true, true, true, true, true];
     setSpinningCols([true, true, true, true, true]);
     setProfile((prev: any) => prev ? { ...prev, coins: prev.coins - betAmount } : prev);
     socket.emit('spin_slot', { username: myUsername, betAmount });
@@ -6053,6 +6554,9 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
 
   return (
     <div className="dfdc-bg">
+
+      {/* MULTIPLIER BAR */}
+      <SlotMultiplierBar idx={multInfo?.idx ?? 0} />
 
       {/* ===== COIN BALANCE BAR (top) ===== */}
       <div className="dfdc-coin-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 2vw', position: 'relative' }}>
@@ -6255,10 +6759,20 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
               }
             }}
           >
-            {isSpinning ? 'STOP' : autoSpinCount > 0 ? `AUTO ${autoSpinCount === 99999 ? '~' : autoSpinCount}` : 'SPIN'}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>
+              <span style={{ fontSize: '3.2vh', fontWeight: 900 }}>{isSpinning ? 'STOP' : 'SPIN'}</span>
+              {autoSpinCount > 0 && (
+                <span style={{ fontSize: '1.2vh', fontWeight: 900, color: '#ffe082', textShadow: '0 1px 3px rgba(0,0,0,0.9)', marginTop: '0.2vh' }}>
+                  {autoSpinCount === 99999 ? 'AUTO ∞' : `AUTO: ${autoSpinCount}`}
+                </span>
+              )}
+            </div>
           </button>
         </div>
       </div>
+
+      {/* Universal Slot Celebration Modal */}
+      <SlotCelebrationModal data={celebration} onClose={() => setCelebration(null)} />
     </div>
   );
 }
@@ -6330,9 +6844,13 @@ function SlotLobbyScreen({ onBack, onPlaySlot }: { onBack: () => void; onPlaySlo
 
   const handleCardClick = (game: SlotGameDef) => {
     if (!game.locked) {
+      if (game.id === 'duofugrand') {
+        onPlaySlot('duofuduocai');
+        return;
+      }
       onPlaySlot(game.id);
     } else {
-      alert(`${game.name} akan terbuka segera. Naikkan level Anda!`);
+      alert(`${game.name} sedang dalam pengembangan (Coming Soon)!`);
     }
   };
 
@@ -6382,16 +6900,23 @@ function SlotLobbyScreen({ onBack, onPlaySlot }: { onBack: () => void; onPlaySlo
           <button className="sl-rail-btn g-btn-press" onClick={() => alert('Favorit Anda tersimpan di sini.')}>❤️</button>
         </div>
 
-        {/* Big Jackpot hero card */}
-        <div className="sl-hero-card g-btn-press" onClick={() => onPlaySlot('duofuduocai')}>
-          <div className="sl-hero-topicons">🎴</div>
-          <div className="sl-hero-jackpot-label">Jackpot</div>
-          <div className="sl-hero-jackpot-val">3,514,456,714</div>
-          <div className="sl-hero-img anim-bob">👶</div>
-          <div className="sl-hero-title">DUO FU<br />DUO CAI</div>
+        {/* Big Jackpot hero card - Gates of Olympus (Active) */}
+        <div
+          className="sl-hero-card g-btn-press"
+          style={{
+            backgroundImage: `linear-gradient(180deg, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.05) 45%, rgba(0, 0, 0, 0.92) 100%), url('/assets/zeus/bg_olympus_hd.jpg')`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+          onClick={() => onPlaySlot('zeus')}
+        >
+          <div className="sl-hero-topicons">⚡</div>
+          <div className="sl-hero-jackpot-label">Jackpot Olympus</div>
+          <div className="sl-hero-jackpot-val">5,000,000,000</div>
+          <div className="sl-hero-title">GATES OF<br />OLYMPUS</div>
           <div className="sl-hero-bottom">
             <span className="sl-card-lock-icon">🔓</span>
-            <span className="sl-hero-players">👤 411,890</span>
+            <span className="sl-hero-players">👤 320,450 main</span>
           </div>
         </div>
 
@@ -6408,30 +6933,30 @@ function SlotLobbyScreen({ onBack, onPlaySlot }: { onBack: () => void; onPlaySlo
             {SLOT_GAMES.map(game => (
               <div
                 key={game.id}
-                className="sl-card-v2 g-btn-press"
-                style={{ background: game.bg }}
+                className={`sl-card-v2 ${game.locked ? 'sl-card-locked is-coming-soon' : 'is-active-game'} g-btn-press`}
+                style={{
+                  backgroundImage: `linear-gradient(180deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.05) 45%, rgba(0, 0, 0, 0.92) 100%), url('${game.img}')`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                }}
                 onClick={() => handleCardClick(game)}
               >
                 <div className="sl-card-jackpot-pill">
                   {game.jackpot}
                   <span className="sl-card-jackpot-cardicon">🎴</span>
                 </div>
-                <div className="sl-card-illustration">
-                  {game.img.startsWith('/') ? (
-                    <img src={game.img} alt={game.name} style={{ width: '85%', height: '85%', objectFit: 'contain', filter: 'drop-shadow(0 0.4vh 0.8vh rgba(0,0,0,0.6))' }} />
-                  ) : (
-                    game.img
-                  )}
-                </div>
                 {game.lockText && (
                   <div className="sl-card-locktext">
+                    <span style={{ display: 'block', fontSize: '1.6vh', marginBottom: '0.2vh' }}>🔒</span>
                     {game.lockText.split('\n').map((l, i) => <div key={i}>{l}</div>)}
                   </div>
                 )}
-                <div className="sl-card-name-v2">{game.name}</div>
-                <div className="sl-card-bottom-info">
-                  <span className="sl-card-lock-icon">{game.locked ? '🔒' : '🔓'}</span>
-                  <span className="sl-card-players-v2">👤 {game.players.toLocaleString()}</span>
+                <div className="sl-card-bottom-area">
+                  <div className="sl-card-name-v2">{game.name}</div>
+                  <div className="sl-card-bottom-info">
+                    <span className="sl-card-lock-icon">{game.locked ? '🔒' : '🔓'}</span>
+                    <span className="sl-card-players-v2">👤 {game.players.toLocaleString()}</span>
+                  </div>
                 </div>
               </div>
             ))}
@@ -6465,9 +6990,9 @@ function SlotLobbyScreen({ onBack, onPlaySlot }: { onBack: () => void; onPlaySlo
           <span className="sl-bot-icon">🥇</span>
           <span className="sl-bot-label">PERINGKAT</span>
         </button>
-        <button className="sl-mulai-btn g-btn-press" onClick={() => onPlaySlot('duofuduocai')}>
+        <button className="sl-mulai-btn g-btn-press" onClick={() => onPlaySlot('zeus')}>
           <span className="sl-mulai-label">MULAI</span>
-          <span className="sl-mulai-sub">DuoFuDuoCai</span>
+          <span className="sl-mulai-sub">Gates of Olympus</span>
         </button>
       </div>
     </div>
@@ -6591,12 +7116,13 @@ const CENTER_POT_COORDS = { x: '50vw', y: '46vh' };
 // =====================================================
 // KOMPONEN GAME DOMINO QIUQIU (99) AUTHENTIC CASINO TABLE
 // =====================================================
-function QiuQiuGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket | null }) {
+function QiuQiuGameScreen({ onBack, socket, room }: { onBack: () => void; socket: Socket | null; room?: QiuQiuRoomConfig }) {
+  const activeRoom = room || QIUQIU_ROOMS[0];
   const myUsername = localStorage.getItem('domino_username') || 'V2043';
   const avatarEmoji = localStorage.getItem('domino_avatar') || '🐸';
 
   const [phase, setPhase] = useState<'round1_bet' | 'mix' | 'tentukan' | 'round2_bet' | 'showdown'>('round1_bet');
-  const [potAmount, setPotAmount] = useState(22759000);
+  const [potAmount, setPotAmount] = useState(activeRoom.ante * 6);
   const [tentukanCount, setTentukanCount] = useState(10);
   const [activeTurnIdx, setActiveTurnIdx] = useState(0);
   const [winnerNotice, setWinnerNotice] = useState<{ winnerName: string; amount: number; title: string } | null>(null);
@@ -6606,12 +7132,16 @@ function QiuQiuGameScreen({ onBack, socket }: { onBack: () => void; socket: Sock
   // Deck & Deal State
   const [deck, setDeck] = useState<QiuTile[]>([]);
 
-  const [currentBetTarget, setCurrentBetTarget] = useState(100000);
+  const [currentBetTarget, setCurrentBetTarget] = useState(activeRoom.blind);
 
   const [showMenu, setShowMenu] = useState(false);
   const [soundOn, setSoundOn] = useState(true);
   const [effectOn, setEffectOn] = useState(true);
   const [showRulesModal, setShowRulesModal] = useState(false);
+
+  // Exit Confirmation Modal & Safe Cashout
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
 
   const [tableCode, setTableCode] = useState(() => 'Q' + Math.floor(100 + Math.random() * 900));
   const [tableToast, setTableToast] = useState<string | null>(null);
@@ -6624,31 +7154,99 @@ function QiuQiuGameScreen({ onBack, socket }: { onBack: () => void; socket: Sock
     }, 2800);
   };
 
+  // 6 Players seating state initialized with active room buyIn
+  const [seats, setSeats] = useState<any[]>(() => {
+    const buyIn = activeRoom.buyIn;
+    const blind = activeRoom.blind;
+    return [
+      { id: 0, name: myUsername, coins: buyIn, avatar: avatarEmoji, isDealer: false, badge: 'Cek', currentBet: blind, turn: true, score: '9 : 7', hand: [[6, 3], [0, 0], [5, 4], [0, 0]], folded: false },
+      { id: 1, name: 'CPH2773', coins: Math.round(buyIn * 1.2), avatar: '🐯', isDealer: true, badge: 'Cek', currentBet: blind, turn: false, score: '9 : 1', hand: [[6, 6], [1, 6], [5, 2], [0, 4]], folded: false },
+      { id: 2, name: 'Infinix X669', coins: Math.round(buyIn * 0.9), avatar: '👩', isDealer: false, badge: 'Cek', currentBet: blind, turn: false, score: '8 : 2', hand: [[5, 3], [0, 0], [4, 4], [0, 4]], folded: false },
+      { id: 3, name: 'Sultan_QQ', coins: Math.round(buyIn * 3.5), avatar: '🧔‍♂️', isDealer: false, badge: 'Balik', currentBet: 0, turn: false, score: '9 : 5', hand: [[6, 5], [4, 4], [3, 2], [0, 0]], folded: true },
+      { id: 4, name: 'Dewi_QQ', coins: Math.round(buyIn * 1.5), avatar: '👩‍🦰', isDealer: false, badge: 'Cek', currentBet: blind, turn: false, score: '7 : 6', hand: [[4, 3], [0, 0], [3, 3], [0, 0]], folded: false },
+      { id: 5, name: 'V2043', coins: Math.round(buyIn * 0.8), avatar: '👨‍🦱', isDealer: false, badge: 'Cek', currentBet: blind, turn: false, score: '7 : 3', hand: [[5, 2], [0, 0], [2, 1], [0, 0]], folded: false },
+    ];
+  });
+
+  const seatsRef = useRef(seats);
+  useEffect(() => {
+    seatsRef.current = seats;
+  }, [seats]);
+
+  const hasCashedOutRef = useRef(false);
+
+  // Refund / Cashout player's table chips back to main wallet on exit
+  const handleExecuteCashoutAndExit = async () => {
+    if (isExiting || hasCashedOutRef.current) return;
+    setIsExiting(true);
+    hasCashedOutRef.current = true;
+    const remainingChips = seatsRef.current[0]?.coins || 0;
+    const savedUser = localStorage.getItem('domino_username');
+
+    if (savedUser && remainingChips > 0) {
+      try {
+        await fetch(`${API_URL}/users/update-coins`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: savedUser, amount: remainingChips }),
+        });
+      } catch (err) {
+        console.error('Failed to refund table coins on exit:', err);
+      }
+    }
+
+    window.dispatchEvent(new Event('domino_coins_updated'));
+    setShowExitConfirm(false);
+    onBack();
+  };
+
+  // Safe beforeunload handler to prevent losing coins if browser closed
+  useEffect(() => {
+    const handleUnload = () => {
+      if (hasCashedOutRef.current) return;
+      hasCashedOutRef.current = true;
+      const remainingChips = seatsRef.current[0]?.coins || 0;
+      const savedUser = localStorage.getItem('domino_username');
+      if (savedUser && remainingChips > 0) {
+        navigator.sendBeacon(
+          `${API_URL}/users/update-coins`,
+          new Blob([JSON.stringify({ username: savedUser, amount: remainingChips })], { type: 'application/json' })
+        );
+      }
+    };
+    window.addEventListener('beforeunload', handleUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleUnload);
+    };
+  }, []);
+
   const handleGantiMeja = () => {
     const newCode = 'Q' + Math.floor(100 + Math.random() * 900);
     setTableCode(newCode);
     setIsStanding(false);
     showToast(`🔄 Berpindah ke Meja Baru [Meja #${newCode}]...`);
 
+    const buyIn = activeRoom.buyIn;
     const BOT_POOLS = [
-      { name: 'CPH' + Math.floor(1000 + Math.random() * 9000), avatar: '🐯', coins: 1900000 },
-      { name: 'Infinix_' + Math.floor(100 + Math.random() * 900), avatar: '👩', coins: 1400000 },
-      { name: 'Sultan_' + Math.floor(10 + Math.random() * 90), avatar: '🧔‍♂️', coins: 16350000 },
-      { name: 'Dewi_QQ', avatar: '👩‍🦰', coins: 2500000 },
-      { name: 'Rizky_' + Math.floor(10 + Math.random() * 90), avatar: '👨‍🦱', coins: 1800000 },
-      { name: 'Baim99', avatar: '🦊', coins: 3400000 },
-      { name: 'Alfi_Win', avatar: '🐼', coins: 2100000 },
-      { name: 'KingDomino', avatar: '👑', coins: 5000000 }
+      { name: 'CPH' + Math.floor(1000 + Math.random() * 9000), avatar: '🐯', coins: Math.round(buyIn * 1.2) },
+      { name: 'Infinix_' + Math.floor(100 + Math.random() * 900), avatar: '👩', coins: Math.round(buyIn * 0.9) },
+      { name: 'Sultan_' + Math.floor(10 + Math.random() * 90), avatar: '🧔‍♂️', coins: Math.round(buyIn * 3.5) },
+      { name: 'Dewi_QQ', avatar: '👩‍🦰', coins: Math.round(buyIn * 1.5) },
+      { name: 'Rizky_' + Math.floor(10 + Math.random() * 90), avatar: '👨‍🦱', coins: Math.round(buyIn * 1.1) },
+      { name: 'Baim99', avatar: '🦊', coins: Math.round(buyIn * 2.0) },
+      { name: 'Alfi_Win', avatar: '🐼', coins: Math.round(buyIn * 1.3) },
+      { name: 'KingDomino', avatar: '👑', coins: Math.round(buyIn * 2.5) }
     ].sort(() => Math.random() - 0.5);
 
+    const playerCurrentCoins = seats[0]?.coins || buyIn;
     const shuffled = [...FULL_DOMINO_DECK].sort(() => Math.random() - 0.5);
     const newSeats = [
-      { id: 0, name: myUsername, coins: 1900000, avatar: avatarEmoji, isDealer: false, badge: 'Cek', currentBet: 100000, turn: true, score: '9 : 7', hand: [shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0]], folded: false },
-      { id: 1, name: BOT_POOLS[0].name, coins: BOT_POOLS[0].coins, avatar: BOT_POOLS[0].avatar, isDealer: true, badge: 'Cek', currentBet: 100000, turn: false, score: '9 : 1', hand: [shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0]], folded: false },
-      { id: 2, name: BOT_POOLS[1].name, coins: BOT_POOLS[1].coins, avatar: BOT_POOLS[1].avatar, isDealer: false, badge: 'Cek', currentBet: 100000, turn: false, score: '8 : 2', hand: [shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0]], folded: false },
+      { id: 0, name: myUsername, coins: playerCurrentCoins, avatar: avatarEmoji, isDealer: false, badge: 'Cek', currentBet: activeRoom.blind, turn: true, score: '9 : 7', hand: [shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0]], folded: false },
+      { id: 1, name: BOT_POOLS[0].name, coins: BOT_POOLS[0].coins, avatar: BOT_POOLS[0].avatar, isDealer: true, badge: 'Cek', currentBet: activeRoom.blind, turn: false, score: '9 : 1', hand: [shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0]], folded: false },
+      { id: 2, name: BOT_POOLS[1].name, coins: BOT_POOLS[1].coins, avatar: BOT_POOLS[1].avatar, isDealer: false, badge: 'Cek', currentBet: activeRoom.blind, turn: false, score: '8 : 2', hand: [shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0]], folded: false },
       { id: 3, name: BOT_POOLS[2].name, coins: BOT_POOLS[2].coins, avatar: BOT_POOLS[2].avatar, isDealer: false, badge: 'Balik', currentBet: 0, turn: false, score: '9 : 5', hand: [shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0]], folded: true },
-      { id: 4, name: BOT_POOLS[3].name, coins: BOT_POOLS[3].coins, avatar: BOT_POOLS[3].avatar, isDealer: false, badge: 'Cek', currentBet: 100000, turn: false, score: '7 : 6', hand: [shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0]], folded: false },
-      { id: 5, name: BOT_POOLS[4].name, coins: BOT_POOLS[4].coins, avatar: BOT_POOLS[4].avatar, isDealer: false, badge: 'Cek', currentBet: 100000, turn: false, score: '7 : 3', hand: [shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0]], folded: false },
+      { id: 4, name: BOT_POOLS[3].name, coins: BOT_POOLS[3].coins, avatar: BOT_POOLS[3].avatar, isDealer: false, badge: 'Cek', currentBet: activeRoom.blind, turn: false, score: '7 : 6', hand: [shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0]], folded: false },
+      { id: 5, name: BOT_POOLS[4].name, coins: BOT_POOLS[4].coins, avatar: BOT_POOLS[4].avatar, isDealer: false, badge: 'Cek', currentBet: activeRoom.blind, turn: false, score: '7 : 3', hand: [shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0]], folded: false },
     ];
 
     setSeats(newSeats);
@@ -6656,16 +7254,16 @@ function QiuQiuGameScreen({ onBack, socket }: { onBack: () => void; socket: Sock
     setPhase('round1_bet');
     setActiveTurnIdx(0);
     setUserComboIdx(0);
-    setCurrentBetTarget(100000);
-    setPotAmount(600000);
+    setCurrentBetTarget(activeRoom.blind);
+    setPotAmount(activeRoom.ante * 6);
     setWinnerNotice(null);
     setPotChips([
-      { id: 1, label: '100K', color: 'red', marginTop: 0, zIndex: 1 },
-      { id: 2, label: '100K', color: 'red', marginTop: -8, zIndex: 2 },
-      { id: 3, label: '100K', color: 'red', marginTop: 4, zIndex: 3 },
-      { id: 4, label: '100K', color: 'red', marginTop: -12, zIndex: 4 },
-      { id: 5, label: '100K', color: 'red', marginTop: 8, zIndex: 5 },
-      { id: 6, label: '100K', color: 'red', marginTop: -4, zIndex: 6 },
+      { id: 1, label: activeRoom.entryLabel, color: 'red', marginTop: 0, zIndex: 1 },
+      { id: 2, label: activeRoom.entryLabel, color: 'red', marginTop: -8, zIndex: 2 },
+      { id: 3, label: activeRoom.entryLabel, color: 'red', marginTop: 4, zIndex: 3 },
+      { id: 4, label: activeRoom.entryLabel, color: 'red', marginTop: -12, zIndex: 4 },
+      { id: 5, label: activeRoom.entryLabel, color: 'red', marginTop: 8, zIndex: 5 },
+      { id: 6, label: activeRoom.entryLabel, color: 'red', marginTop: -4, zIndex: 6 },
     ]);
 
     setIsFlipping3D(true);
@@ -6706,16 +7304,6 @@ function QiuQiuGameScreen({ onBack, socket }: { onBack: () => void; socket: Sock
     return () => clearInterval(marqueeTimer);
   }, []);
 
-  // 6 Players seating state matching screenshots
-  const [seats, setSeats] = useState<any[]>([
-    { id: 0, name: myUsername, coins: 1900000, avatar: avatarEmoji, isDealer: false, badge: 'Cek', currentBet: 100000, turn: true, score: '9 : 7', hand: [[6, 3], [0, 0], [5, 4], [0, 0]], folded: false },
-    { id: 1, name: 'CPH2773', coins: 1900000, avatar: '🐯', isDealer: true, badge: 'Cek', currentBet: 100000, turn: false, score: '9 : 1', hand: [[6, 6], [1, 6], [5, 2], [0, 4]], folded: false },
-    { id: 2, name: 'Infinix X669..', coins: 1400000, avatar: '👩', isDealer: false, badge: 'Cek', currentBet: 100000, turn: false, score: '8 : 2', hand: [[5, 3], [0, 0], [4, 4], [0, 4]], folded: false },
-    { id: 3, name: '23021RAA2Y', coins: 16350000, avatar: '🧔‍♂️', isDealer: false, badge: 'Balik', currentBet: 0, turn: false, score: '9 : 5', hand: [[6, 5], [4, 4], [3, 2], [0, 0]], folded: true },
-    { id: 4, name: '23053RN0..', coins: 1900000, avatar: '👨‍🦱', isDealer: false, badge: 'Cek', currentBet: 100000, turn: false, score: '7 : 6', hand: [[4, 3], [0, 0], [3, 3], [0, 0]], folded: false },
-    { id: 5, name: 'V2043', coins: 800000, avatar: '👩‍🦰', isDealer: false, badge: 'Cek', currentBet: 100000, turn: false, score: '7 : 3', hand: [[5, 2], [0, 0], [2, 1], [0, 0]], folded: false },
-  ]);
-
   // Helper to format currency labels
   const formatBetLabel = (n: number) => {
     if (!n) return '0';
@@ -6751,31 +7339,18 @@ function QiuQiuGameScreen({ onBack, socket }: { onBack: () => void; socket: Sock
   };
 
   const [potChips, setPotChips] = useState<Array<{ id: number; label: string; color: 'red' | 'blue' | 'purple' | 'gold'; marginTop: number; zIndex: number }>>([
-    { id: 1, label: '100K', color: 'red', marginTop: 0, zIndex: 1 },
-    { id: 2, label: '100K', color: 'red', marginTop: -8, zIndex: 2 },
-    { id: 3, label: '100K', color: 'red', marginTop: 4, zIndex: 3 },
-    { id: 4, label: '100K', color: 'red', marginTop: -12, zIndex: 4 },
-    { id: 5, label: '100K', color: 'red', marginTop: 8, zIndex: 5 },
-    { id: 6, label: '100K', color: 'red', marginTop: -4, zIndex: 6 },
+    { id: 1, label: activeRoom.entryLabel, color: 'red', marginTop: 0, zIndex: 1 },
+    { id: 2, label: activeRoom.entryLabel, color: 'red', marginTop: -8, zIndex: 2 },
+    { id: 3, label: activeRoom.entryLabel, color: 'red', marginTop: 4, zIndex: 3 },
+    { id: 4, label: activeRoom.entryLabel, color: 'red', marginTop: -12, zIndex: 4 },
+    { id: 5, label: activeRoom.entryLabel, color: 'red', marginTop: 8, zIndex: 5 },
+    { id: 6, label: activeRoom.entryLabel, color: 'red', marginTop: -4, zIndex: 6 },
   ]);
 
   const addBetToPotChips = (amount: number) => {
     const newItems: any[] = [];
     const baseId = Date.now() + Math.random();
-    if (amount >= 5000000) {
-      newItems.push({ id: baseId + 1, label: '5M', color: 'gold', marginTop: Math.floor(Math.random() * 16 - 8), zIndex: potChips.length + 1 });
-      newItems.push({ id: baseId + 2, label: '1M', color: 'blue', marginTop: Math.floor(Math.random() * 16 - 8), zIndex: potChips.length + 2 });
-    } else if (amount >= 1900000) {
-      newItems.push({ id: baseId + 1, label: '1M', color: 'blue', marginTop: Math.floor(Math.random() * 16 - 8), zIndex: potChips.length + 1 });
-      newItems.push({ id: baseId + 2, label: '500K', color: 'red', marginTop: Math.floor(Math.random() * 16 - 8), zIndex: potChips.length + 2 });
-    } else if (amount >= 500000) {
-      newItems.push({ id: baseId + 1, label: '500K', color: 'red', marginTop: Math.floor(Math.random() * 16 - 8), zIndex: potChips.length + 1 });
-    } else if (amount >= 200000) {
-      newItems.push({ id: baseId + 1, label: '200K', color: 'red', marginTop: Math.floor(Math.random() * 16 - 8), zIndex: potChips.length + 1 });
-    } else {
-      newItems.push({ id: baseId + 1, label: '100K', color: 'red', marginTop: Math.floor(Math.random() * 16 - 8), zIndex: potChips.length + 1 });
-    }
-
+    newItems.push({ id: baseId + 1, label: formatBetLabel(amount), color: amount >= activeRoom.blind * 5 ? 'gold' : amount >= activeRoom.blind * 2 ? 'blue' : 'red', marginTop: Math.floor(Math.random() * 16 - 8), zIndex: potChips.length + 1 });
     setPotChips(prev => [...prev, ...newItems]);
   };
 
@@ -6834,8 +7409,8 @@ function QiuQiuGameScreen({ onBack, socket }: { onBack: () => void; socket: Sock
         ...seat,
         hand: [tile1, tile2, tile3, tile4],
         badge: isMeStanding ? 'Berdiri' : 'Cek',
-        currentBet: isMeStanding ? 0 : 100000,
-        coins: isMeStanding ? seat.coins : Math.max(0, seat.coins - 100000), // Real-time Ante deduction!
+        currentBet: isMeStanding ? 0 : activeRoom.blind,
+        coins: isMeStanding ? seat.coins : Math.max(0, seat.coins - activeRoom.ante), // Real-time Ante deduction!
         folded: isMeStanding
       };
     });
@@ -6845,16 +7420,16 @@ function QiuQiuGameScreen({ onBack, socket }: { onBack: () => void; socket: Sock
     setPhase('round1_bet');
     setActiveTurnIdx(isStanding ? 1 : 0);
     setUserComboIdx(0);
-    setCurrentBetTarget(100000);
-    setPotAmount(isStanding ? 500000 : 600000);
+    setCurrentBetTarget(activeRoom.blind);
+    setPotAmount(isStanding ? (activeRoom.ante * 5) : (activeRoom.ante * 6));
     setWinnerNotice(null);
     setPotChips([
-      { id: 1, label: '100K', color: 'red', marginTop: 0, zIndex: 1 },
-      { id: 2, label: '100K', color: 'red', marginTop: -8, zIndex: 2 },
-      { id: 3, label: '100K', color: 'red', marginTop: 4, zIndex: 3 },
-      { id: 4, label: '100K', color: 'red', marginTop: -12, zIndex: 4 },
-      { id: 5, label: '100K', color: 'red', marginTop: 8, zIndex: 5 },
-      { id: 6, label: '100K', color: 'red', marginTop: -4, zIndex: 6 },
+      { id: 1, label: activeRoom.entryLabel, color: 'red', marginTop: 0, zIndex: 1 },
+      { id: 2, label: activeRoom.entryLabel, color: 'red', marginTop: -8, zIndex: 2 },
+      { id: 3, label: activeRoom.entryLabel, color: 'red', marginTop: 4, zIndex: 3 },
+      { id: 4, label: activeRoom.entryLabel, color: 'red', marginTop: -12, zIndex: 4 },
+      { id: 5, label: activeRoom.entryLabel, color: 'red', marginTop: 8, zIndex: 5 },
+      { id: 6, label: activeRoom.entryLabel, color: 'red', marginTop: -4, zIndex: 6 },
     ]);
 
     // 2. Trigger 3D Card Flip animation
@@ -6880,7 +7455,7 @@ function QiuQiuGameScreen({ onBack, socket }: { onBack: () => void; socket: Sock
           if (prev <= 1) {
             clearInterval(timer);
             // Auto Cek or Balik when 10s turn timer expires
-            handleActionClick(currentBetTarget > 100000 ? 'balik' : 'cek');
+            handleActionClick(currentBetTarget > activeRoom.blind ? 'balik' : 'cek');
             return 0;
           }
           return prev - 1;
@@ -6888,7 +7463,7 @@ function QiuQiuGameScreen({ onBack, socket }: { onBack: () => void; socket: Sock
       }, 1000);
     }
     return () => clearInterval(timer);
-  }, [activeTurnIdx, phase, seats]);
+  }, [activeTurnIdx, phase, seats, currentBetTarget, activeRoom.blind]);
 
   // Bot Turn Automation Loop (Clockwise sequential turn-by-turn with 1.5s thinking time!)
   useEffect(() => {
@@ -6910,9 +7485,9 @@ function QiuQiuGameScreen({ onBack, socket }: { onBack: () => void; socket: Sock
           let addBet = currentBetTarget;
 
           if (isRaise) {
-            const newTarget = currentBetTarget < 500000 ? 500000 : currentBetTarget === 500000 ? 1900000 : 5000000;
+            const newTarget = currentBetTarget + activeRoom.blind;
             setCurrentBetTarget(newTarget);
-            actionBadge = newTarget >= 5000000 ? 'ALL IN' : `Raise ${formatBetLabel(newTarget)}`;
+            actionBadge = `Raise ${formatBetLabel(newTarget)}`;
             addBet = newTarget;
           }
 
@@ -7024,11 +7599,11 @@ function QiuQiuGameScreen({ onBack, socket }: { onBack: () => void; socket: Sock
         setPotAmount(prev => prev + addBet);
         setSeats(prev => prev.map((s, idx) => idx === 0 ? { ...s, badge: badgeText, currentBet: addBet, coins: Math.max(0, s.coins - addBet) } : s));
       } else if (actionType === 'allin') {
-        addBet = 5000000;
-        setCurrentBetTarget(5000000);
+        addBet = seats[0]?.coins || activeRoom.buyIn;
+        setCurrentBetTarget(Math.max(currentBetTarget, addBet));
         addBetToPotChips(addBet);
         setPotAmount(prev => prev + addBet);
-        setSeats(prev => prev.map((s, idx) => idx === 0 ? { ...s, badge: 'ALL IN', currentBet: addBet, coins: Math.max(0, s.coins - addBet) } : s));
+        setSeats(prev => prev.map((s, idx) => idx === 0 ? { ...s, badge: 'ALL IN', currentBet: addBet, coins: 0 } : s));
       }
 
       // Move turn to Bot 1 (Seat 1)
@@ -7045,6 +7620,16 @@ function QiuQiuGameScreen({ onBack, socket }: { onBack: () => void; socket: Sock
 
   return (
     <div className="qq-screen-wrapper">
+      {/* Top Left Back Button to Lobby with Exit Confirmation */}
+      <button
+        className="qq-back-btn g-btn-press"
+        onClick={() => setShowExitConfirm(true)}
+        title="Kembali ke Lobi"
+      >
+        <span>«</span>
+        <span>Lobi</span>
+      </button>
+
       {/* Flying Chips Animation Overlay */}
       {flyingChips.map(c => (
         <div
@@ -7099,25 +7684,40 @@ function QiuQiuGameScreen({ onBack, socket }: { onBack: () => void; socket: Sock
       )}
 
       {/* Top Right Controls */}
-      <div className="qq-top-right-controls" style={{ position: 'relative' }}>
+      <div className="qq-top-right-controls">
         <div className="qq-rp-badge">
-          <span>Rp</span>
-          <span>200</span>
+          <span>Ante</span>
+          <span>{activeRoom.entryLabel}</span>
         </div>
-        <button className="qq-icon-btn g-btn-press" onClick={() => setShowMenu(v => !v)}>≡</button>
 
-        <GameMenuDropdown
-          isOpen={showMenu}
-          onClose={() => setShowMenu(false)}
-          items={[
-            { id: 'lobi', icon: '🚪', label: 'Lobi', onClick: () => { setShowMenu(false); onBack(); } },
-            { id: 'ganti', icon: '🔄', label: 'Ganti meja', onClick: () => { setShowMenu(false); handleGantiMeja(); } },
-            { id: 'berdiri', icon: '👤', label: isStanding ? 'Duduk Kembali' : 'Berdiri', onClick: () => { setShowMenu(false); if (isStanding) handleDudukKembali(); else handleBerdiri(); } },
-            { id: 'suara', icon: '🔊', label: 'Suara', badge: soundOn ? 'ON' : 'OFF', onClick: () => setSoundOn(v => !v) },
-            { id: 'efek', icon: '✨', label: 'Efek', badge: effectOn ? 'ON' : 'OFF', onClick: () => setEffectOn(v => !v) },
-            { id: 'bantuan', icon: '❓', label: 'Bantuan', onClick: () => { setShowMenu(false); setShowRulesModal(true); } }
-          ]}
-        />
+        <div className="qq-menu-wrap">
+          <button
+            className="qq-menu-btn g-btn-press"
+            onClick={() => setShowMenu(v => !v)}
+            title="Menu Pilihan"
+            aria-label="Menu"
+          >
+            <div className="qq-burger-bars">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </button>
+
+          <GameMenuDropdown
+            isOpen={showMenu}
+            onClose={() => setShowMenu(false)}
+            items={[
+              { id: 'lobi', icon: '🚪', label: 'Lobi', onClick: () => { setShowMenu(false); setShowExitConfirm(true); } },
+              { id: 'ganti', icon: '🔄', label: 'Ganti meja', onClick: () => { setShowMenu(false); handleGantiMeja(); } },
+              { id: 'berdiri', icon: '👤', label: isStanding ? 'Duduk Kembali' : 'Berdiri', onClick: () => { setShowMenu(false); if (isStanding) handleDudukKembali(); else handleBerdiri(); } },
+              { id: 'suara', icon: '🔊', label: 'Suara', badge: soundOn ? 'ON' : 'OFF', onClick: () => setSoundOn(v => !v) },
+              { id: 'efek', icon: '✨', label: 'Efek', badge: effectOn ? 'ON' : 'OFF', onClick: () => setEffectOn(v => !v) },
+              { id: 'bantuan', icon: '❓', label: 'Bantuan', onClick: () => { setShowMenu(false); setShowRulesModal(true); } }
+            ]}
+            style={{ top: '5.4vh', right: 0 }}
+          />
+        </div>
       </div>
 
       {showRulesModal && <RulesModal onClose={() => setShowRulesModal(false)} initialCategory="Qiu Qiu" />}
@@ -7132,7 +7732,7 @@ function QiuQiuGameScreen({ onBack, socket }: { onBack: () => void; socket: Sock
       {/* Oval Green Table Felt */}
       <div className="qq-table-felt">
         <div className="qq-table-watermark">QiuQiu</div>
-        <div className="qq-blind-tag">Meja #{tableCode} | Blind:100K</div>
+        <div className="qq-blind-tag">Meja #{tableCode} | Blind:{activeRoom.entryLabel}</div>
 
         {/* Central Digital Pot Scoreboard */}
         <div className="qq-pot-scoreboard">
@@ -7472,6 +8072,51 @@ function QiuQiuGameScreen({ onBack, socket }: { onBack: () => void; socket: Sock
           </button>
         </div>
       )}
+
+      {/* Exit Confirmation & Cashout Modal */}
+      {showExitConfirm && (
+        <div className="qq-room-modal-overlay tm-overlay-fade" onClick={() => setShowExitConfirm(false)}>
+          <div className="qq-exit-modal-box tm-box-bounce" onClick={e => e.stopPropagation()}>
+            <div className="qq-exit-modal-header">
+              <span>🚪</span> KONFIRMASI KELUAR MEJA
+            </div>
+            <div className="qq-exit-modal-body">
+              <div className="qq-exit-avatar-bubble">
+                {avatarEmoji}
+              </div>
+              <div className="qq-exit-title">
+                Apakah Anda yakin ingin keluar dari Meja QiuQiu?
+              </div>
+              <div className="qq-exit-info-box">
+                <div className="qq-exit-info-label">Sisa Koin Meja Anda</div>
+                <div className="qq-exit-info-amount">
+                  <span>🪙</span>
+                  <span>{(seats[0]?.coins || 0).toLocaleString('id-ID')}</span>
+                </div>
+                <div className="qq-exit-info-sub">
+                  Semua sisa koin meja ini akan otomatis dikembalikan ke dompet utama Anda secara utuh.
+                </div>
+              </div>
+              <div className="qq-exit-modal-actions">
+                <button
+                  className="qq-exit-btn-cancel g-btn-press"
+                  onClick={() => setShowExitConfirm(false)}
+                  disabled={isExiting}
+                >
+                  Batal
+                </button>
+                <button
+                  className="qq-exit-btn-confirm g-btn-press"
+                  onClick={handleExecuteCashoutAndExit}
+                  disabled={isExiting}
+                >
+                  {isExiting ? 'Mengembalikan Koin...' : 'Keluar & Ambil Koin'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -7482,6 +8127,7 @@ function QiuQiuGameScreen({ onBack, socket }: { onBack: () => void; socket: Sock
 
 function App() {
   const [screen, setScreen] = useState<string>('loading');
+  const [returnToSlotPopup, setReturnToSlotPopup] = useState(false);
   const [viewingProfile, setViewingProfile] = useState<string | null>(null);
   const [transferTarget, setTransferTarget] = useState<{ username: string } | null>(null);
   const [transferAmount, setTransferAmount] = useState('');
@@ -7495,6 +8141,7 @@ function App() {
 
   // Lobby states
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+  const [selectedQiuRoom, setSelectedQiuRoom] = useState<QiuQiuRoomConfig | null>(null);
   const [lobbyCategory, setLobbyCategory] = useState<'Biasa' | 'Bet' | 'Wild' | 'Domino Partner' | '5 Kartu' | 'Tantangan'>('5 Kartu');
 
   // Online multiplayer states
@@ -7503,7 +8150,7 @@ function App() {
 
   // Initialize socket connection once
   useEffect(() => {
-    const sock = io('http://localhost:8080', {
+    const sock = io(getBackendBase(), {
       transports: ['websocket', 'polling'],
       autoConnect: true
     });
@@ -7527,6 +8174,16 @@ function App() {
       sock.disconnect();
     };
   }, []);
+
+  // Manage Lobby BGM based on active screen
+  useEffect(() => {
+    const isLobby = screen === 'home' || screen === 'slot-lobby' || screen === 'kamar-lobby';
+    if (isLobby) {
+      lobbyAudio.start();
+    } else {
+      lobbyAudio.stop();
+    }
+  }, [screen]);
 
   const formatCoins = (n: number) => {
     if (!n) return '0';
@@ -7552,9 +8209,16 @@ function App() {
   };
 
   const handleNavigate = (targetScreen: any, categoryOverride?: any) => {
+    const COMING_SOON_SCREENS = ['slot-game', 'jinji-game', 'candy-game', 'wildwest-game'];
+    if (COMING_SOON_SCREENS.includes(targetScreen)) {
+      setAppAlert('Game slot ini sedang dalam pengembangan (Coming Soon)!');
+      return;
+    }
     if (categoryOverride) {
       if (targetScreen === 'byone-game') {
         setByoneOpponent(categoryOverride);
+      } else if (targetScreen === 'qiuqiu-game') {
+        setSelectedQiuRoom(categoryOverride);
       } else {
         setLobbyCategory(categoryOverride);
       }
@@ -7687,22 +8351,32 @@ function App() {
         />
       )}
       {screen === 'home' && (
-        <HomeScreen onLogout={() => setScreen('login')} onNavigate={handleNavigate} socket={socketRef.current} />
+        <HomeScreen
+          onLogout={() => setScreen('login')}
+          onNavigate={handleNavigate}
+          socket={socketRef.current}
+          initialShowSlotPopup={returnToSlotPopup}
+          onClearSlotPopup={() => setReturnToSlotPopup(false)}
+        />
       )}
 
       {screen === 'slot-lobby' && (
         <SlotLobbyScreen
-          onBack={() => setScreen('home')}
+          onBack={() => {
+            setReturnToSlotPopup(true);
+            setScreen('home');
+          }}
           onPlaySlot={(gameId) => {
+            const COMING_SOON = ['duofugrand', 'duofuduocai', 'jinjibaoxi', 'wildwest', 'candyrush'];
+            if (COMING_SOON.includes(gameId)) {
+              setAppAlert('Game slot ini sedang dalam pengembangan (Coming Soon)!');
+              return;
+            }
             const map: Record<string, string> = {
-              duofuduocai: 'slot-game',
               zeus: 'zeus-game',
               fafafa2: 'fafafa-game',
-              jinjibaoxi: 'jinji-game',
               mahjong2: 'mahjong2-game',
               gatotkaca: 'gatokaca-game',
-              candyrush: 'candy-game',
-              wildwest: 'wildwest-game',
               '5lions': 'fivelions-game',
             };
             const target = map[gameId];
@@ -7715,63 +8389,90 @@ function App() {
 
       {screen === 'slot-game' && (
         <SlotGameScreen
-          onBack={() => setScreen('home')}
+          onBack={() => {
+            setReturnToSlotPopup(true);
+            setScreen('home');
+          }}
           socket={socketRef.current}
         />
       )}
 
       {screen === 'zeus-game' && (
         <ZeusSlotScreen
-          onBack={() => setScreen('home')}
+          onBack={() => {
+            setReturnToSlotPopup(true);
+            setScreen('home');
+          }}
           socket={socketRef.current}
         />
       )}
 
       {screen === 'fafafa-game' && (
         <FafafaSlotScreen
-          onBack={() => setScreen('home')}
+          onBack={() => {
+            setReturnToSlotPopup(true);
+            setScreen('home');
+          }}
           socket={socketRef.current}
         />
       )}
 
       {screen === 'jinji-game' && (
         <JinJiBaoXiSlotScreen
-          onBack={() => setScreen('home')}
+          onBack={() => {
+            setReturnToSlotPopup(true);
+            setScreen('home');
+          }}
           socket={socketRef.current}
         />
       )}
 
       {screen === 'mahjong2-game' && (
         <MahjongWays2SlotScreen
-          onBack={() => setScreen('home')}
+          onBack={() => {
+            setReturnToSlotPopup(true);
+            setScreen('home');
+          }}
           socket={socketRef.current}
         />
       )}
 
       {screen === 'gatokaca-game' && (
         <GatesOfGatokacaSlotScreen
-          onBack={() => setScreen('home')}
+          onBack={() => {
+            setReturnToSlotPopup(true);
+            setScreen('home');
+          }}
           socket={socketRef.current}
         />
       )}
 
       {screen === 'candy-game' && (
         <CandyRushSlotScreen
-          onBack={() => setScreen('home')}
+          onBack={() => {
+            setReturnToSlotPopup(true);
+            setScreen('home');
+          }}
           socket={socketRef.current}
         />
       )}
 
       {screen === 'wildwest-game' && (
         <WildWestSlotScreen
-          onBack={() => setScreen('home')}
+          onBack={() => {
+            setReturnToSlotPopup(true);
+            setScreen('home');
+          }}
           socket={socketRef.current}
         />
       )}
 
       {screen === 'fivelions-game' && (
         <FiveLionsSlotScreen
-          onBack={() => setScreen('home')}
+          onBack={() => {
+            setReturnToSlotPopup(true);
+            setScreen('home');
+          }}
           socket={socketRef.current}
         />
       )}
@@ -7780,6 +8481,7 @@ function App() {
         <QiuQiuGameScreen
           onBack={() => setScreen('home')}
           socket={socketRef.current}
+          room={selectedQiuRoom || QIUQIU_ROOMS[0]}
         />
       )}
 

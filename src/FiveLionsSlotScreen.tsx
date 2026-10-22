@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Socket } from 'socket.io-client';
+import { API_URL } from './config';
 import './fivelions.css';
 import GameMenuDropdown from './GameMenuDropdown';
+import SlotCelebrationModal, { SlotCelebrationData } from './SlotCelebrationModal';
 
 interface Props {
   onBack: () => void;
@@ -27,16 +29,28 @@ const FIVES_SYMBOLS: Record<number, { name: string; label: string; img: string; 
 interface CellItem {
   symId: number;
   span: number;
+  multVal?: number;
 }
 
 // 10 Simbol Utama 5 Lions: Phoenix, Dragon, Frog, Fish, Turtle, A, K, Q, J, 10
 const REGULAR_SYM_IDS = [0, 1, 2, 3, 4, 7, 8, 9, 10, 11];
 
+// Authentic 5 Lions Megaways Multiplier Ranges
+const BASE_WILD_RANGE = [2, 3, 5, 8, 10, 15, 30, 40];
+const LION_MODE_CONFIG: Record<string, { spins: number; range: number[] }> = {
+  'Red Lion': { spins: 25, range: [2, 3, 5] },
+  'Blue Lion': { spins: 20, range: [3, 5, 8] },
+  'Green Lion': { spins: 15, range: [5, 8, 10] },
+  'Purple Lion': { spins: 10, range: [10, 15, 30] },
+  'Gold Lion': { spins: 6, range: [15, 30, 40] },
+  'Mystery Lion': { spins: 15, range: [10, 15, 30] },
+};
+
 // Helper: generate a random column layout strictly from the 10 main symbols (+ optional Wild on middle reels)
 function randomCol(cIdx: number = 0): CellItem[] {
   const getSym = () => {
     const r = Math.random();
-    if (r < 0.05 && cIdx >= 1 && cIdx <= 4) return 5; // Singa Wild (reels 2-5)
+    if (r < 0.12 && cIdx >= 1 && cIdx <= 4) return 5; // Singa Wild (reels 2-5)
     return REGULAR_SYM_IDS[Math.floor(Math.random() * REGULAR_SYM_IDS.length)];
   };
 
@@ -87,9 +101,36 @@ export default function FiveLionsSlotScreen({ onBack, socket }: Props) {
   const [myCoins, setMyCoins] = useState(8994600);
   const [totalWin, setTotalWin] = useState(0);
   const [freeSpinsLeft, setFreeSpinsLeft] = useState(0);
+
+  // Authentic 5 Lions Megaways Wild Multiplier state
+  const [wildMultiplier, setWildMultiplier] = useState(1);
+  const [isWildMultActive, setIsWildMultActive] = useState(false);
+  const [activeLionRange, setActiveLionRange] = useState<number[]>(BASE_WILD_RANGE);
+
   const [autoSpins, setAutoSpins] = useState(0);
   const autoSpinsRef = useRef<number>(0);
+  const isSpinningRef = useRef(false);
+  const doSpinRef = useRef<any>(null);
   const [spinSpeed, setSpinSpeed] = useState(1);
+  const spinSpeedRef = useRef(spinSpeed);
+  useEffect(() => { spinSpeedRef.current = spinSpeed; }, [spinSpeed]);
+
+  useEffect(() => {
+    const coinsStr = localStorage.getItem('domino_coins');
+    if (coinsStr) setMyCoins(parseInt(coinsStr));
+    const savedUser = localStorage.getItem('domino_username');
+    if (savedUser) {
+      fetch(`${API_URL}/profile/${savedUser}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          if (d?.coins != null) {
+            setMyCoins(d.coins);
+            localStorage.setItem('domino_coins', d.coins.toString());
+          }
+        })
+        .catch(() => {});
+    }
+  }, []);
   
   // Megaways Counter & Features
   const [megawaysCount, setMegawaysCount] = useState(144);
@@ -105,6 +146,7 @@ export default function FiveLionsSlotScreen({ onBack, socket }: Props) {
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [winningCells, setWinningCells] = useState<{ row: number; col: number }[]>([]);
+  const [celebration, setCelebration] = useState<SlotCelebrationData | null>(null);
 
   // Long press timers & timestamps
   const spinPressTimer = useRef<any>(null);
@@ -117,17 +159,96 @@ export default function FiveLionsSlotScreen({ onBack, socket }: Props) {
 
   const username = localStorage.getItem('domino_username') || '';
 
+  // Timers & slam-stop refs
+  const activeTimersRef = useRef<any[]>([]);
+  const pendingFinalizeRef = useRef<(() => void) | null>(null);
+  const freeSpinsLeftRef = useRef(freeSpinsLeft);
+  const isAutoFreeSpinRef = useRef<boolean>(true);
+  useEffect(() => {
+    freeSpinsLeftRef.current = freeSpinsLeft;
+  }, [freeSpinsLeft]);
+
+  // Rolling multiplier animation ref
+  const rollIntervalRef = useRef<any>(null);
+
+  // Free Spins Persistence Helper
+  const saveFreeSpinsState = (count: number, mode?: string | null, range?: number[] | null) => {
+    setFreeSpinsLeft(count);
+    freeSpinsLeftRef.current = count;
+    if (count > 0) {
+      localStorage.setItem('domino_fivelions_spins', count.toString());
+      if (mode) {
+        setSelectedLionMode(mode);
+        localStorage.setItem('domino_fivelions_mode', mode);
+      }
+      if (range) {
+        setActiveLionRange(range);
+        localStorage.setItem('domino_fivelions_range', JSON.stringify(range));
+      }
+    } else {
+      localStorage.removeItem('domino_fivelions_spins');
+      localStorage.removeItem('domino_fivelions_mode');
+      localStorage.removeItem('domino_fivelions_range');
+      setSelectedLionMode(null);
+    }
+  };
+
   // Auto Spin Helper Functions
   const startAutoSpin = (count: number) => {
-    autoSpinsRef.current = count;
-    setAutoSpins(count);
     setShowAutoMenu(false);
-    doSpin(count);
+    setAutoSpins(count);
   };
 
   const cancelAutoSpin = () => {
+    setAutoSpins(0);
+  };
+
+  // Auto-Spin Reactive Machine (proven identical to Zeus & DuoFu)
+  useEffect(() => {
+    let timer: any;
+    if (autoSpins > 0 && !isSpinning && !celebration) {
+      timer = setTimeout(() => {
+        setAutoSpins(prev => Math.max(0, prev - 1));
+        doSpin();
+      }, Math.max(400, 800 / spinSpeed));
+    }
+    return () => clearTimeout(timer);
+  }, [autoSpins, isSpinning, celebration, spinSpeed]);
+
+  // Free-Spins Reactive Machine
+  useEffect(() => {
+    let timer: any;
+    if (freeSpinsLeft > 0 && !isSpinning && !celebration && !showPickerModal && isAutoFreeSpinRef.current) {
+      timer = setTimeout(() => {
+        doSpin();
+      }, Math.max(500, 900 / spinSpeed));
+    }
+    return () => clearTimeout(timer);
+  }, [freeSpinsLeft, isSpinning, celebration, showPickerModal, spinSpeed]);
+
+  // Instant Slam-Stop: Immediately halts all reels, cancels auto-spin & pauses free spin
+  const stopCurrentSpin = () => {
+    // 1. Immediately cancel auto spin & pause free spin auto-advance
     autoSpinsRef.current = 0;
     setAutoSpins(0);
+    isAutoFreeSpinRef.current = false;
+
+    // 2. Clear all queued reel timeouts
+    activeTimersRef.current.forEach(t => clearTimeout(t));
+    activeTimersRef.current = [];
+
+    // 3. Immediately stop all reel spinning animations
+    setSpinningCols([false, false, false, false, false, false]);
+
+    // 4. Resolve the spin result instantly if pending
+    isSpinningRef.current = false;
+    if (pendingFinalizeRef.current) {
+      const finalize = pendingFinalizeRef.current;
+      pendingFinalizeRef.current = null;
+      finalize();
+    } else {
+      setIsSpinning(false);
+    }
   };
 
   // Spin long-press & click handlers
@@ -159,12 +280,20 @@ export default function FiveLionsSlotScreen({ onBack, socket }: Props) {
       setTimeout(() => { isSpinLongPress.current = false; }, 200);
       return;
     }
-    // If auto-spin is running, click stops it
+    // If spinning, clicking STOP immediately halts everything and preserves free spins!
+    if (isSpinning) {
+      stopCurrentSpin();
+      return;
+    }
     if (autoSpinsRef.current > 0 || autoSpins > 0) {
       cancelAutoSpin();
       return;
     }
-    // Normal single spin
+    // If free spins are available (e.g. stopped at 10), resume free spins!
+    if (freeSpinsLeftRef.current > 0) {
+      isAutoFreeSpinRef.current = true;
+    }
+    // Normal single spin or continue free spins
     doSpin();
   };
 
@@ -206,6 +335,22 @@ export default function FiveLionsSlotScreen({ onBack, socket }: Props) {
     const coinsStr = localStorage.getItem('domino_coins');
     if (coinsStr) setMyCoins(parseInt(coinsStr));
     else localStorage.setItem('domino_coins', '8994600');
+
+    // Restore saved Free Spins session if any
+    const savedSpins = localStorage.getItem('domino_fivelions_spins');
+    if (savedSpins) {
+      const count = parseInt(savedSpins);
+      if (count > 0) {
+        setFreeSpinsLeft(count);
+        freeSpinsLeftRef.current = count;
+        const savedMode = localStorage.getItem('domino_fivelions_mode');
+        if (savedMode) setSelectedLionMode(savedMode);
+        const savedRange = localStorage.getItem('domino_fivelions_range');
+        if (savedRange) {
+          try { setActiveLionRange(JSON.parse(savedRange)); } catch (e) {}
+        }
+      }
+    }
   }, []);
 
   // Smooth Megaways counter update during spin
@@ -219,105 +364,223 @@ export default function FiveLionsSlotScreen({ onBack, socket }: Props) {
     return () => { if (interval) clearInterval(interval); };
   }, [isSpinning]);
 
-  const doSpin = (overrideAutoCount?: number) => {
-    if (isSpinning) return;
-    const currentAuto = overrideAutoCount ?? autoSpinsRef.current;
+  const doSpin = () => {
+    if (isSpinningRef.current) return;
 
+    const isFreeRound = freeSpinsLeftRef.current > 0;
     const cost = anteBetActive ? Math.floor(betAmount * 1.25) : betAmount;
-    if (myCoins < cost && freeSpinsLeft === 0) {
+    if (myCoins < cost && !isFreeRound) {
       alert('Koin Anda tidak mencukupi!');
       autoSpinsRef.current = 0;
       setAutoSpins(0);
       return;
     }
 
-    // Generate target result immediately at start of spin so reels land on exact symbols
-    const newCols: CellItem[][] = [0, 1, 2, 3, 4, 5].map(cIdx => randomCol(cIdx));
-    setGridCols(newCols);
+    // Clear any previous timers
+    activeTimersRef.current.forEach(t => clearTimeout(t));
+    activeTimersRef.current = [];
 
-    setIsSpinning(true);
-    setSpinningCols([true, true, true, true, true, true]);
-    setWinningCells([]);
-    setTotalWin(0);
-
-    if (freeSpinsLeft === 0) {
+    // Deduct coins if normal round, or decrement & save free spins if free round
+    if (!isFreeRound) {
       setMyCoins(c => {
         const next = Math.max(0, c - cost);
         localStorage.setItem('domino_coins', next.toString());
         return next;
       });
+      if (username) {
+        fetch(`${API_URL}/users/update-coins`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, amount: -cost })
+        }).then(() => window.dispatchEvent(new Event('domino_coins_updated'))).catch(() => {});
+      }
+    } else {
+      const nextSpins = Math.max(0, freeSpinsLeftRef.current - 1);
+      saveFreeSpinsState(nextSpins, selectedLionMode, activeLionRange);
     }
 
-    const spd = spinSpeed;
-    let stopTime = 300 / spd;
+    // Pre-calculate whether this spin is a win and whether it includes Wild
+    // Doing this BEFORE spinning guarantees the reels land on the exact winning symbols without morphing!
+    const winOccurred = Math.random() > 0.45;
+    const precomputedWinCells: { row: number; col: number }[] = [];
+    const willHaveWild = winOccurred && Math.random() < (isFreeRound ? 0.80 : 0.55);
+    const wildCol = 1 + Math.floor(Math.random() * 3); // reel 2, 3, or 4 (cols 1, 2, 3)
+
+    // Generate base random columns
+    const newCols: CellItem[][] = [0, 1, 2, 3, 4, 5].map(cIdx => randomCol(cIdx));
+
+    let spinMult = 1;
+    let hasWildInWin = false;
+
+    // Embed winning symbols directly into newCols NOW before starting spin
+    if (winOccurred) {
+      const matchSym = REGULAR_SYM_IDS[Math.floor(Math.random() * REGULAR_SYM_IDS.length)];
+      [0, 1, 2].forEach(c => {
+        const r = Math.floor(Math.random() * (newCols[c]?.length || 3));
+        if (newCols[c] && newCols[c][r]) {
+          const symToUse = (willHaveWild && c === wildCol) ? 5 : matchSym;
+          newCols[c][r] = { ...newCols[c][r], symId: symToUse };
+          precomputedWinCells.push({ row: r, col: c });
+        }
+      });
+
+      if (Math.random() < 0.65 && newCols[3]) {
+        const r = Math.floor(Math.random() * newCols[3].length);
+        const symToUse = (willHaveWild && 3 === wildCol) ? 5 : matchSym;
+        newCols[3][r] = { ...newCols[3][r], symId: symToUse };
+        precomputedWinCells.push({ row: r, col: 3 });
+      }
+
+      hasWildInWin = precomputedWinCells.some(w => newCols[w.col]?.[w.row]?.symId === 5);
+      if (hasWildInWin) {
+        const range = isFreeRound ? activeLionRange : BASE_WILD_RANGE;
+        spinMult = range[Math.floor(Math.random() * range.length)];
+      }
+    }
+
+    // Scatter Trigger check (3+ Yin Yang Scatters, symId 6)
+    // When Taruhan Ganda is ON, scatter chance is doubled (24% vs 12%)
+    const scatterThreshold = anteBetActive ? 0.76 : 0.88;
+    const isScatterTrigger = !isFreeRound && Math.random() > scatterThreshold;
+    if (isScatterTrigger) {
+      [0, 2, 4].forEach(c => {
+        if (newCols[c] && newCols[c][0]) {
+          newCols[c][0] = { ...newCols[c][0], symId: 6 };
+        }
+      });
+    }
+
+    // Target symbols are set NOW: the reels scroll and stop on these EXACT symbols without morphing!
+    setGridCols(newCols);
+
+    isSpinningRef.current = true;
+    setIsSpinning(true);
+    setSpinningCols([true, true, true, true, true, true]);
+    setWinningCells([]);
+    setTotalWin(0);
+    setIsWildMultActive(false);
+    if (rollIntervalRef.current) clearInterval(rollIntervalRef.current);
+
+    const spd = spinSpeedRef.current;
+    const minSpinBase = spd === 3 ? 240 : spd === 2 ? 400 : 750;
+    const delayPerCol = spd === 3 ? 65 : spd === 2 ? 100 : 180;
+    const bounceDuration = spd === 3 ? 160 : spd === 2 ? 220 : 320;
+    let stopTime = minSpinBase;
 
     // Staggered Reel Stops 1..6
     for (let c = 0; c < 6; c++) {
       const col = c;
-      setTimeout(() => {
+      const t = setTimeout(() => {
         setSpinningCols(prev => {
           const next = [...prev];
           next[col] = false;
           return next;
         });
       }, stopTime);
-      stopTime += 180 / spd;
+      activeTimersRef.current.push(t);
+      stopTime += delayPerCol;
     }
 
-    // Final result calculation after reels stop
-    setTimeout(() => {
+    // Final result calculation after reels stop and settle cleanly
+    const allReelsSettled = stopTime + bounceDuration + 60;
+    const finalizeSpin = () => {
+      pendingFinalizeRef.current = null;
+      isSpinningRef.current = false;
       setIsSpinning(false);
+      setSpinningCols([false, false, false, false, false, false]);
       setMegawaysCount(144 + Math.floor(Math.random() * 2000));
 
-      // Calculate win
-      const winOccurred = Math.random() > 0.45;
+      let winAmt = 0;
       if (winOccurred) {
-        const winAmt = Math.floor(cost * (1.5 + Math.random() * 6));
+        // Highlight precomputed winning cells directly - NO MORE MORPHING!
+        setWinningCells(precomputedWinCells);
+
+        if (hasWildInWin) {
+          setIsWildMultActive(true);
+          const range = isFreeRound ? activeLionRange : BASE_WILD_RANGE;
+          // Authentic Pragmatic Play: Rolling multiplier reveal animation
+          let rollTicks = 0;
+          if (rollIntervalRef.current) clearInterval(rollIntervalRef.current);
+          rollIntervalRef.current = setInterval(() => {
+            rollTicks++;
+            setWildMultiplier(range[Math.floor(Math.random() * range.length)]);
+            if (rollTicks >= 7) {
+              clearInterval(rollIntervalRef.current);
+              rollIntervalRef.current = null;
+              setWildMultiplier(spinMult);
+            }
+          }, 45);
+        } else {
+          setWildMultiplier(1);
+          setIsWildMultActive(false);
+        }
+
+        winAmt = Math.floor(cost * (1.5 + Math.random() * 6)) * spinMult;
         setTotalWin(winAmt);
         setMyCoins(c => {
           const next = c + winAmt;
           localStorage.setItem('domino_coins', next.toString());
           return next;
         });
-        // Highlight winning cells
-        setWinningCells([
-          { row: 0, col: 0 }, { row: 0, col: 1 }, { row: 0, col: 2 },
-          { row: 1, col: 1 }, { row: 1, col: 2 }
-        ]);
+        if (username) {
+          fetch(`${API_URL}/users/update-coins`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, amount: winAmt })
+          }).then(() => window.dispatchEvent(new Event('domino_coins_updated'))).catch(() => {});
+        }
+        if (!isScatterTrigger && winAmt > 0) {
+          const ratio = winAmt / Math.max(1, cost);
+          if (ratio >= 50) {
+            setCelebration({ type: 'super_win', amount: winAmt });
+          } else if (ratio >= 25) {
+            setCelebration({ type: 'mega_win', amount: winAmt });
+          } else if (ratio >= 12) {
+            setCelebration({ type: 'big_win', amount: winAmt });
+          }
+        }
+      } else {
+        setWinningCells([]);
+        setWildMultiplier(1);
+        setIsWildMultActive(false);
       }
 
       // Scatter Trigger Free Game Picker
-      const isScatterTrigger = Math.random() > 0.85;
-      if (isScatterTrigger && freeSpinsLeft === 0) {
-        setTimeout(() => setShowPickerModal(true), 600);
-      } else if (freeSpinsLeft > 0) {
-        setFreeSpinsLeft(f => f - 1);
+      if (isScatterTrigger && freeSpinsLeftRef.current === 0) {
+        setCelebration({
+          type: 'scatter',
+          freeSpinsCount: 15,
+          title: '🦁 SCATTER 5 LIONS! 🦁',
+          subtext: 'SELAMAT! 3+ YIN YANG SCATTER MEMICU FREE GAMES!'
+        });
+        const scatterTimer = setTimeout(() => setShowPickerModal(true), 3800);
+        activeTimersRef.current.push(scatterTimer);
       }
+    };
 
-      // Auto Spin Continuation using autoSpinsRef
-      const remainingAuto = autoSpinsRef.current > 0 ? autoSpinsRef.current : currentAuto;
-      if (remainingAuto > 1) {
-        const nextCount = remainingAuto - 1;
-        autoSpinsRef.current = nextCount;
-        setAutoSpins(nextCount);
-        setTimeout(() => doSpin(), 600 / spd);
-      } else {
-        autoSpinsRef.current = 0;
-        setAutoSpins(0);
-      }
-    }, stopTime + 100);
+    pendingFinalizeRef.current = finalizeSpin;
+    const finalTimer = setTimeout(finalizeSpin, allReelsSettled);
+    activeTimersRef.current.push(finalTimer);
   };
+  doSpinRef.current = doSpin;
 
   const handleSelectLionMode = (mode: string, spins: number) => {
+    const cfg = LION_MODE_CONFIG[mode] || { spins, range: [10, 15, 30] };
     setSelectedLionMode(mode);
-    setFreeSpinsLeft(spins);
+    setActiveLionRange(cfg.range);
+    saveFreeSpinsState(spins, mode, cfg.range);
     setShowPickerModal(false);
+    isAutoFreeSpinRef.current = true;
+    setTimeout(() => {
+      if (doSpinRef.current) doSpinRef.current();
+    }, 600);
   };
 
   return (
     <div className="fivelions-screen">
       {/* ROYAL BLUE CHINESE CLOUD BACKGROUND */}
       <div className="fivelions-bg"></div>
+
 
       {/* TOP LEFT (Profile Avatar, Signal, Coins, Plus) */}
       <div className="fivelions-top-left">
@@ -388,14 +651,51 @@ export default function FiveLionsSlotScreen({ onBack, socket }: Props) {
 
       {/* LEFT SIDE FLOATING BADGES (BELI SPIN GRATIS & TARUHAN GANDA & RANSEL) */}
       <div className="fivelions-side-left">
-        <div className="fivelions-side-badge buy-spin-card" onClick={() => alert('Beli Spin Gratis 1M Koin!')}>
+        <div 
+          className={`fivelions-side-badge buy-spin-card ${anteBetActive ? 'disabled' : ''}`} 
+          onClick={() => {
+            if (anteBetActive) {
+              alert('Nonaktifkan Taruhan Ganda untuk Membeli Spin Gratis!');
+              return;
+            }
+            if (isSpinning) return;
+            const cost = betAmount * 100;
+            if (myCoins < cost) {
+              alert(`Koin tidak mencukupi untuk Beli Spin Gratis! Butuh ${cost.toLocaleString('id-ID')} koin.`);
+              return;
+            }
+            if (window.confirm(`Beli Spin Gratis seharga ${cost.toLocaleString('id-ID')} koin?`)) {
+              const newBal = myCoins - cost;
+              setMyCoins(newBal);
+              localStorage.setItem('domino_coins', newBal.toString());
+              setShowPickerModal(true);
+            }
+          }}
+          title={anteBetActive ? 'Nonaktif saat Taruhan Ganda aktif' : 'Beli Spin Gratis'}
+        >
           <div className="badge-hdr">BELI SPIN GRATIS</div>
-          <div className="badge-val">1M</div>
+          <div className="badge-val">
+            {(() => {
+              const buyCost = betAmount * 100;
+              if (buyCost >= 1e9) return (buyCost / 1e9).toFixed(1).replace(/\.0$/, '') + 'B';
+              if (buyCost >= 1e6) return (buyCost / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
+              if (buyCost >= 1e3) return (buyCost / 1e3).toFixed(0) + 'K';
+              return buyCost.toLocaleString('id-ID');
+            })()}
+          </div>
         </div>
 
         <div className="fivelions-side-badge double-chance-card" onClick={() => setAnteBetActive(v => !v)}>
-          <div className="badge-hdr">TARUHAN 12.5K GANDA</div>
-          <div className="badge-sub">PELUANG MENANG FITUR</div>
+          <div className="badge-hdr">
+            TARUHAN {(() => {
+              const anteCost = Math.floor(betAmount * 1.25);
+              if (anteCost >= 1e9) return (anteCost / 1e9).toFixed(1).replace(/\.0$/, '') + 'B';
+              if (anteCost >= 1e6) return (anteCost / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
+              if (anteCost >= 1e3) return (anteCost / 1e3).toFixed(1).replace(/\.0$/, '') + 'K';
+              return anteCost.toLocaleString('id-ID');
+            })()} GANDA
+          </div>
+          <div className="badge-sub">PELUANG MENANG FITUR 2X</div>
           <div className={`ante-switch ${anteBetActive ? 'on' : 'off'}`}>
             <span className="switch-knob"></span>
             <span className="switch-txt">{anteBetActive ? 'ON' : 'OFF'}</span>
@@ -410,6 +710,41 @@ export default function FiveLionsSlotScreen({ onBack, socket }: Props) {
 
       {/* SLOT MACHINE CONTAINER (6 REELS) */}
       <div className="fivelions-machine-container">
+        {/* AUTHENTIC 5 LIONS PENGALI WILD BANNER */}
+        <div className={`fivelions-wild-mult-bar ${isWildMultActive ? 'is-active' : ''} ${freeSpinsLeft > 0 ? 'is-freespin' : ''}`}>
+          <div className="fw-mult-dragon left">🐲</div>
+          <div className="fw-mult-content">
+            <div className="fw-mult-title-row">
+              <span className="fw-mult-cn">百搭乘数</span>
+              <span className="fw-mult-label">PENGALI WILD</span>
+              <span className="fw-mult-cn">百搭乘数</span>
+            </div>
+            <div className="fw-mult-display">
+              {isWildMultActive ? (
+                <div className="fw-mult-active-val">
+                  <span className="fw-mult-lion">🦁</span>
+                  <span className="fw-mult-num">{wildMultiplier}x</span>
+                  <span className="fw-mult-badge">AKTIF</span>
+                </div>
+              ) : (
+                <div className="fw-mult-idle-val">
+                  <span className="fw-mult-lion">🦁</span>
+                  {freeSpinsLeft > 0 ? (
+                    <div className="fw-mult-range-list">
+                      {activeLionRange.map((r, i) => (
+                        <span key={i} className="fw-range-item">{r}x</span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="fw-mult-idle-text">WILD MULTIPLIER 2X - 40X</span>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="fw-mult-dragon right">🐲</div>
+        </div>
+
         {freeSpinsLeft > 0 && (
           <div className="fivelions-freespin-banner">
             FREE GAME: {freeSpinsLeft} PUTARAN ({selectedLionMode || '5 LIONS'})
@@ -441,11 +776,12 @@ export default function FiveLionsSlotScreen({ onBack, socket }: Props) {
                     {stripItems.map((item, rIdx) => {
                       const sym = FIVES_SYMBOLS[item.symId] || FIVES_SYMBOLS[0];
                       const isWin = !isColSpinning && winningCells.some(w => w.row === rIdx && w.col === cIdx);
+                      const isWildWin = isWin && item.symId === 5;
 
                       return (
                         <div 
                           key={`cell-${cIdx}-${rIdx}`} 
-                          className={`fivelions-cell span-${item.span} ${isWin ? 'is-winning' : ''}`}
+                          className={`fivelions-cell span-${item.span} ${isWin ? 'is-winning' : ''} ${isWildWin ? 'is-wild-win' : ''}`}
                         >
                           <div className="fivelions-cell-inner">
                             <img 
@@ -454,6 +790,11 @@ export default function FiveLionsSlotScreen({ onBack, socket }: Props) {
                               className={`fivelions-sym-img sym-${sym.name.replace(/^sym-/, '')}`} 
                               draggable={false}
                             />
+                            {isWildWin && isWildMultActive && (
+                              <div className="fivelions-wild-glow-tag">
+                                <span>WILD {wildMultiplier}x</span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       );
@@ -595,18 +936,27 @@ export default function FiveLionsSlotScreen({ onBack, socket }: Props) {
                 </button>
               ) : (
                 <button 
-                  className={`fbot-spin-btn ${isSpinning ? 'spinning' : ''} ${autoSpins > 0 ? 'auto-active' : ''}`}
+                  className={`fbot-spin-btn ${isSpinning ? 'is-spinning-btn' : ''} ${freeSpinsLeft > 0 ? 'is-freespin-btn' : ''} ${autoSpins > 0 ? 'auto-active' : ''}`}
                   onClick={handleSpinClick}
                   onPointerDown={handleSpinPointerDown}
                   onPointerUp={handleSpinPointerUp}
                   onPointerLeave={handleSpinPointerUp}
                   onPointerCancel={handleSpinPointerUp}
                   onContextMenu={(e) => { e.preventDefault(); setShowAutoMenu(v => !v); }}
-                  title="Tekan lama untuk Auto Spin"
+                  title={isSpinning ? "Klik untuk BERHENTI / STOP" : (freeSpinsLeft > 0 ? "Klik untuk Lanjut Spin Gratis" : "Klik untuk Spin, tekan lama untuk Auto Spin")}
                 >
-                  <span className="fbot-spin-title">
-                    {autoSpins > 0 ? `AUTO ${autoSpins > 90000 ? '∞' : autoSpins}` : 'SPIN'}
-                  </span>
+                  <div className="fbot-spin-inner">
+                    <span className="fbot-spin-title">
+                      {isSpinning ? 'STOP' : (freeSpinsLeft > 0 ? 'FREE' : 'SPIN')}
+                    </span>
+                    {(autoSpins > 0 || freeSpinsLeft > 0 || isSpinning) && (
+                      <span className="fbot-spin-sub">
+                        {autoSpins > 0 
+                          ? (autoSpins > 90000 ? 'AUTO ∞' : `AUTO: ${autoSpins}`) 
+                          : (freeSpinsLeft > 0 ? `SISA: ${freeSpinsLeft}` : 'BERHENTI')}
+                      </span>
+                    )}
+                  </div>
                 </button>
               )}
             </div>
@@ -1088,6 +1438,9 @@ export default function FiveLionsSlotScreen({ onBack, socket }: Props) {
           </div>
         </div>
       )}
+
+      {/* Universal Slot Celebration Modal */}
+      <SlotCelebrationModal data={celebration} onClose={() => setCelebration(null)} />
     </div>
   );
 }

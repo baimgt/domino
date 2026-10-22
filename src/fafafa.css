@@ -395,6 +395,11 @@
 .fafafa-grid {
   display: flex;
   position: relative;
+  aspect-ratio: 5 / 3;
+  height: min(66vh, 380px);
+  width: auto;
+  max-width: 82vw;
+  margin: 0 auto;
   background: #1a0206;
   border: 0.25vh solid #d4af37;
   border-radius: 0.8vh;
@@ -420,6 +425,8 @@
 
 /* REEL COLUMNS */
 .fafafa-col {
+  flex: 1;
+  height: 100%;
   display: flex;
   flex-direction: column;
   border-right: 0.18vh solid rgba(212, 175, 55, 0.45);
@@ -430,19 +437,20 @@
   border-right: none;
 }
 .fafafa-col.is-spinning {
-  filter: blur(1.5px);
+  filter: none !important;
 }
 
 /* REEL CELLS */
 .fafafa-cell {
-  width: 11.2vw;
-  height: 21.2vh;
-  max-width: 185px;
-  max-height: 205px;
+  flex: 1;
+  aspect-ratio: 1 / 1;
+  width: 100%;
   border-bottom: 0.18vh solid rgba(212, 175, 55, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  box-sizing: border-box;
   position: relative;
   background: 
     linear-gradient(180deg, #ffffff 0%, #f6f7f9 50%, #e8eaee 100%);
@@ -1420,4 +1428,122 @@
   background: #ffd700;
   transform: scale(1.35);
   box-shadow: 0 0 1vh #ffd700;
+}
+
+/* ========================================================
+   FAFAFA MOBILE LANDSCAPE RESPONSIVE FIXES
+   ======================================================== */
+@media screen and (max-height: 600px), screen and (max-width: 1024px) and (orientation: landscape) {
+  .fafafa-topbar {
+    height: 38px !important;
+    padding: 0 8px !important;
+  }
+  .ftb-back-btn {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 16px !important;
+  }
+  .ftb-avatar {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 14px !important;
+  }
+  .ftb-coin-box {
+    height: 26px !important;
+    padding: 0 8px !important;
+    font-size: 11px !important;
+    gap: 4px !important;
+  }
+  .ftb-plus-btn {
+    width: 18px !important;
+    height: 18px !important;
+    font-size: 13px !important;
+  }
+  .ftb-info-btn {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 13px !important;
+  }
+
+  .fafafa-main-area {
+    top: 40px !important;
+    bottom: 44px !important;
+  }
+
+  .fafafa-grid {
+    aspect-ratio: 5 / 3 !important;
+    height: min(74vh, 360px) !important;
+    max-width: 82vw !important;
+    width: auto !important;
+    margin: 0 auto !important;
+  }
+
+  /* Bottom Bar */
+  .fafafa-bottombar-wrapper {
+    height: 44px !important;
+  }
+  .fafafa-bottombar {
+    height: 42px !important;
+    padding: 0 8px !important;
+  }
+
+  .fbot-left {
+    gap: 4px !important;
+  }
+  .fbot-icon-btn,
+  .fbot-bet-step-btn {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 8px !important;
+    font-size: 16px !important;
+  }
+
+  .fbot-bet-display {
+    min-width: 85px !important;
+    height: 34px !important;
+    padding: 0 4px !important;
+    border-radius: 8px !important;
+    justify-content: center !important;
+  }
+  .fbot-bet-label {
+    font-size: 7.5px !important;
+  }
+  .fbot-bet-val {
+    font-size: 11px !important;
+  }
+
+  .fbot-center {
+    flex: 1 !important;
+  }
+  .fbot-win-box {
+    height: 36px !important;
+    min-width: 100px !important;
+    padding: 0 8px !important;
+    border-radius: 10px !important;
+  }
+  .fbot-win-val {
+    font-size: 13px !important;
+  }
+
+  .fbot-right {
+    gap: 4px !important;
+  }
+  .fbot-maxbet-btn,
+  .fbot-speed-btn {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+  }
+  .fbot-spin-btn {
+    height: 36px !important;
+    padding: 0 14px !important;
+    border-radius: 8px !important;
+  }
+  .fbot-spin-title {
+    font-size: 14px !important;
+  }
+  .fbot-spin-sub {
+    font-size: 7.5px !important;
+  }
 }

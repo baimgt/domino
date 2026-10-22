@@ -4,6 +4,7 @@ import './gatokaca.css';
 import GameMenuDropdown from './GameMenuDropdown';
 import GatokacaCinematicBackground from './GatokacaCinematicBackground';
 import LeaderboardModal from './LeaderboardModal';
+import SlotCelebrationModal, { SlotCelebrationData } from './SlotCelebrationModal';
 
 interface Props {
   onBack: () => void;
@@ -61,6 +62,7 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
   const [myCoins, setMyCoins] = useState(8994600);
   const [totalWin, setTotalWin] = useState(0);
   const [currentMultiplier, setCurrentMultiplier] = useState(1);
+  const [freeMultVal, setFreeMultVal] = useState(0); // pengali menumpuk saat free spin
   const [freeSpinsLeft, setFreeSpinsLeft] = useState(0);
   const [autoSpins, setAutoSpins] = useState(0);
   const [spinSpeed, setSpinSpeed] = useState(1);
@@ -73,11 +75,14 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
   const [musicOn, setMusicOn] = useState(true);
   const [showAutoMenu, setShowAutoMenu] = useState(false);
   const [explodingCells, setExplodingCells] = useState<string[]>([]);
+  const [droppingCols, setDroppingCols] = useState<number[]>([]);
   const [statusText, setStatusText] = useState('GOOD LUCK');
   const [winningCells, setWinningCells] = useState<string[]>([]);
   const [scatterCount, setScatterCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [loadProgress, setLoadProgress] = useState(100);
+  const [droppedMultNotif, setDroppedMultNotif] = useState<string | null>(null);
+  const [celebration, setCelebration] = useState<SlotCelebrationData | null>(null);
 
   useEffect(() => {
     let current = 0;
@@ -103,6 +108,7 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
   const spinSpeedRef = useRef(spinSpeed);
   const doSpinRef = useRef<any>(null);
   const isStoppingRef = useRef(false);
+  const spinningColsRef = useRef<boolean[]>(Array(COLS).fill(false));
 
   useEffect(() => { autoSpinsRef.current = autoSpins; }, [autoSpins]);
   useEffect(() => { freeSpinsLeftRef.current = freeSpinsLeft; }, [freeSpinsLeft]);
@@ -122,35 +128,47 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
     setGrid(initGrid);
   }, []);
 
-  // Rapid reel shuffle
+  // Rapid reel shuffle - displays regular symbols during spin blur, checking synchronous spinningColsRef to prevent symbol flicker
   useEffect(() => {
     let interval: any = null;
     if (isSpinning) {
       interval = setInterval(() => {
+        if (!spinningColsRef.current.some(Boolean)) return;
         setGrid(prev => prev.map((row, r) =>
-          row.map((cell, c) => spinningCols[c] ? Math.floor(Math.random() * 10) : cell)
+          row.map((cell, c) => spinningColsRef.current[c] ? Math.floor(Math.random() * 10) : cell)
         ));
-      }, 70 / spinSpeedRef.current);
+        setMultGrid(prev => prev.map((row, r) =>
+          row.map((val, c) => spinningColsRef.current[c] ? 0 : val)
+        ));
+      }, Math.max(30, Math.floor(65 / spinSpeedRef.current)));
     }
     return () => { if (interval) clearInterval(interval); };
-  }, [isSpinning, spinningCols]);
+  }, [isSpinning]);
 
   useEffect(() => {
     if (!socket) return;
 
     const handleResult = async (data: any) => {
       const spd = spinSpeedRef.current;
-      let stopTime = 150 / spd;
-      const delayPerCol = 200 / spd;
+      // Sinkronisasi durasi putar & stagger reel berdasarkan kecepatan (x1, x2, x3)
+      const minSpinBase = spd === 3 ? 240 : spd === 2 ? 400 : 750;
+      const delayPerCol = spd === 3 ? 65 : spd === 2 ? 100 : 180;
+      const bounceDuration = spd === 3 ? 160 : spd === 2 ? 240 : 380;
+      let stopTime = minSpinBase;
 
-      // Staggered reel stop
+      // Staggered reel stop dengan proteksi sinkronisasi ref
       for (let c = 0; c < COLS; c++) {
         const col = c;
         setTimeout(() => {
+          // 1. Matikan flag reel ini secara sinkron di ref TERLEBIH DAHULU agar interval shuffle tidak menimpa
+          spinningColsRef.current[col] = false;
           setSpinningCols(prev => { const n = [...prev]; n[col] = false; return n; });
-          // Efek mendarat + pantulan ala Duofu
+          
+          // 2. Efek mendarat & pantulan
           setBouncingCols(prev => { const n = [...prev]; n[col] = true; return n; });
-          setTimeout(() => setBouncingCols(prev => { const n = [...prev]; n[col] = false; return n; }), 450);
+          setTimeout(() => setBouncingCols(prev => { const n = [...prev]; n[col] = false; return n; }), bounceDuration);
+          
+          // 3. Pasang simbol asli hasil server
           setGrid(prev => prev.map((row, r) =>
             row.map((cell, ci) => ci === col ? data.initialGrid[r][col] : cell)
           ));
@@ -161,53 +179,117 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
         stopTime += delayPerCol;
       }
 
+      // Seluruh rol selesai berhenti & mendarat rapi -> jalankan tumble
+      const allReelsSettledTime = stopTime + bounceDuration + 60;
       setTimeout(async () => {
+        // Tumble animation timing yang pas dan proporsional terhadap speed
+        const winDelay = spd === 3 ? 280 : spd === 2 ? 360 : 480;
+        const explodeDelay = spd === 3 ? 200 : spd === 2 ? 260 : 360;
+        const dropDelay = spd === 3 ? 220 : spd === 2 ? 300 : 420;
+        const settleDelay = spd === 3 ? 70 : spd === 2 ? 100 : 130;
+
         // Process tumble steps
         if (data.tumbleSteps && data.tumbleSteps.length > 0) {
           for (const step of data.tumbleSteps) {
             // Highlight winning cells
             if (step.winPositions?.length > 0) {
               setWinningCells(step.winPositions);
-              setCurrentMultiplier(step.multiplierValue || 1);
-              await new Promise(r => setTimeout(r, 500 / spd));
+              await new Promise(r => setTimeout(r, winDelay));
               // Explode
               setExplodingCells(step.winPositions);
-              await new Promise(r => setTimeout(r, 400 / spd));
+              await new Promise(r => setTimeout(r, explodeDelay));
             }
-            // Apply tumble
-            setGrid(step.newGrid);
-            setMultGrid(step.newMultGrid || Array(ROWS).fill(null).map(() => Array(COLS).fill(0)));
+
+            // Identify affected columns for cascade drop
+            const affectedCols = new Set<number>();
+            (step.winPositions || []).forEach((pos: string) => {
+              const parts = pos.split('-');
+              if (parts[1] !== undefined) affectedCols.add(Number(parts[1]));
+            });
+
+            // Clear exploding/winning and trigger smooth cascade drop
             setWinningCells([]);
             setExplodingCells([]);
-            await new Promise(r => setTimeout(r, 400 / spd));
+            setDroppingCols(Array.from(affectedCols));
+            setGrid(step.newGrid);
+            setMultGrid(step.newMultGrid || Array(ROWS).fill(null).map(() => Array(COLS).fill(0)));
+            await new Promise(r => setTimeout(r, dropDelay));
+            setDroppingCols([]);
+            await new Promise(r => setTimeout(r, settleDelay));
           }
         }
 
+        // Tumble selesai -> Aktifkan pengali petir Gatotkaca jika ada kemenangan
         setIsSpinning(false);
+        spinningColsRef.current = Array(COLS).fill(false);
         setSpinningCols(Array(COLS).fill(false));
         setMyCoins(data.newBalance);
         localStorage.setItem('domino_coins', data.newBalance.toString());
         setTotalWin(data.totalWinAmount || 0);
         setScatterCount(data.scatterCount || 0);
 
+        const appliedMult = data.appliedMultiplier || 1;
+        const orbsSum = data.roundOrbsSum || 0;
+        const isFreeRound = freeSpinsLeftRef.current > 0;
+
+        if (isFreeRound) {
+          setFreeMultVal(data.freeMult || 1);
+        }
+
         if (data.totalWinAmount > 0) {
-          setStatusText(`MENANG: ${Math.floor(data.totalWinAmount).toLocaleString('id-ID')}`);
+          if (appliedMult > 1 || orbsSum > 0) {
+            setCurrentMultiplier(appliedMult);
+            const isLegendary = appliedMult >= 500;
+            setDroppedMultNotif(
+              isLegendary
+                ? `⚡🔥 SULTAN GATOTKACA 1000! TOTAL PENGALI ${appliedMult}x! 🔥⚡`
+                : `⚡ PETIR GATOTKACA! TOTAL PENGALI ${appliedMult}x! ⚡`
+            );
+            setTimeout(() => setDroppedMultNotif(null), 3000);
+            setStatusText(`TOTAL MENANG: ${Math.floor(data.totalWinAmount).toLocaleString('id-ID')} (${appliedMult}x)`);
+          } else {
+            setCurrentMultiplier(1);
+            setStatusText(`TOTAL MENANG: ${Math.floor(data.totalWinAmount).toLocaleString('id-ID')}`);
+          }
         } else {
+          if (!isFreeRound) setCurrentMultiplier(1);
           setStatusText('GOOD LUCK');
         }
 
+        let totalFree = freeSpinsLeftRef.current;
         if (data.triggerFreeSpins) {
-          setFreeSpinsLeft(prev => prev + data.freeSpinsAwarded);
+          totalFree += data.freeSpinsAwarded;
+          setFreeSpinsLeft(totalFree);
+          setCelebration({
+            type: 'scatter',
+            freeSpinsCount: data.freeSpinsAwarded || (isFreeRound ? 5 : 15),
+            title: isFreeRound ? '⚡ +5 FREE SPINS! ⚡' : '⚡ SCATTER GATOTKACA! ⚡',
+            subtext: isFreeRound
+              ? `LUAR BIASA! 3+ SCATTER MEMBERIKAN +${data.freeSpinsAwarded || 5} PUTARAN GRATIS TAMBAHAN!`
+              : `SELAMAT! KAMU MEMICU ${data.freeSpinsAwarded || 15} PUTARAN GRATIS!`
+          });
+        } else if (data.totalWinAmount > 0) {
+          const ratio = data.totalWinAmount / Math.max(1, betAmount);
+          if (ratio >= 30) {
+            setCelebration({ type: 'super_win', amount: data.totalWinAmount });
+          } else if (ratio >= 12) {
+            setCelebration({ type: 'mega_win', amount: data.totalWinAmount });
+          } else if (ratio >= 5) {
+            setCelebration({ type: 'big_win', amount: data.totalWinAmount });
+          }
         }
 
-        if (autoSpinsRef.current > 1 || freeSpinsLeftRef.current > 0) {
+        const hasCelebration = data.triggerFreeSpins || (data.totalWinAmount > 0 && (data.totalWinAmount / Math.max(1, betAmount)) >= 5);
+        const nextDelay = hasCelebration ? 3900 : Math.max(800, 1200 / spd);
+
+        if (autoSpinsRef.current > 1 || totalFree > 0) {
           if (autoSpinsRef.current > 1) setAutoSpins(a => a - 1);
-          if (freeSpinsLeftRef.current > 0) setFreeSpinsLeft(f => f - 1);
-          setTimeout(() => doSpinRef.current?.(), 1200 / spd);
+          if (totalFree > 0) setFreeSpinsLeft(f => f - 1);
+          setTimeout(() => doSpinRef.current?.(), nextDelay);
         } else if (autoSpinsRef.current === 1) {
           setAutoSpins(0);
         }
-      }, stopTime + 150);
+      }, allReelsSettledTime);
     };
 
     const handleError = (data: any) => {
@@ -225,19 +307,48 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
     };
   }, [socket]);
 
+  const handleBuyFreeSpin = () => {
+    if (anteMode) {
+      alert('Nonaktifkan Taruhan Ganda untuk Membeli Spin Gratis!');
+      return;
+    }
+    if (isSpinning) return;
+    const cost = betAmount * 100;
+    if (myCoins < cost) {
+      alert(`Koin tidak cukup untuk beli Spin Gratis! Butuh ${cost.toLocaleString('id-ID')} koin.`);
+      return;
+    }
+    const newBal = myCoins - cost;
+    setMyCoins(newBal);
+    localStorage.setItem('domino_coins', newBal.toString());
+    setFreeSpinsLeft(15);
+    freeSpinsLeftRef.current = 15;
+    setFreeMultVal(1);
+    setCurrentMultiplier(1);
+    setStatusText('15 FREE SPINS DIMULAI!');
+    setTimeout(() => {
+      doSpinRef.current?.();
+    }, 400);
+  };
+
   const doSpin = () => {
     if (isSpinning || !socket) return;
     setIsSpinning(true);
+    spinningColsRef.current = Array(COLS).fill(true);
     setSpinningCols(Array(COLS).fill(true));
     setTotalWin(0);
-    setCurrentMultiplier(1);
+    if (freeSpinsLeftRef.current === 0) {
+      setCurrentMultiplier(1);
+      setFreeMultVal(1);
+    }
     setExplodingCells([]);
     setWinningCells([]);
     setStatusText('...');
 
     socket.emit('spin_gatokaca', {
       username,
-      betAmount: anteMode ? betAmount * 1.25 : betAmount,
+      betAmount, // base bet for payouts
+      actualBet: anteMode ? Math.floor(betAmount * 1.25) : betAmount, // deduction
       isFreeSpins: freeSpinsLeftRef.current > 0,
       anteMode,
       clientBalance: myCoins
@@ -245,51 +356,35 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
   };
   doSpinRef.current = doSpin;
 
-  const renderSymbol = (symId: number, multVal: number, isWin: boolean, isExplode: boolean) => {
+  const renderSymbol = (symId: number, multVal: number, isWin: boolean, isExplode: boolean, isDrop: boolean = false) => {
     const winCls = isWin    ? 'gato-tile-win'    : '';
     const expCls = isExplode? 'gato-tile-explode' : '';
+    const dropCls = isDrop  ? 'gato-tile-dropping' : '';
     const sym = GATO_SYMBOLS[symId] || GATO_SYMBOLS[4];
 
-    /* ── MULTIPLIER ORB (Image-based with CSS filters) ──────── */
+    /* ── MULTIPLIER ORB (AUTHENTIC WINGED ORB FROM PRAGMATIC PLAY) ──────── */
     if (symId === 10) {
-      // Base image is blue gem (sym_blue_gem.png). We use hue-rotate to change the color.
-      let filterStyle = 'hue-rotate(0deg)'; // Blue default
-      if (multVal >= 2 && multVal <= 4) filterStyle = 'hue-rotate(-90deg) brightness(1.2)'; // Green
-      else if (multVal >= 15 && multVal <= 25) filterStyle = 'hue-rotate(70deg)'; // Purple
-      else if (multVal >= 50 && multVal <= 100) filterStyle = 'hue-rotate(150deg) brightness(1.1)'; // Red
-      else if (multVal >= 500) filterStyle = 'hue-rotate(-160deg) brightness(1.4) sepia(0.5)'; // Gold
-      
-      const textColor = multVal >= 500 ? '#ffd700' : '#ffffff';
+      const v = multVal > 0 ? multVal : 2;
+      const orbImg = v >= 50
+        ? '/assets/orbs/orb_red.png'
+        : v >= 15
+        ? '/assets/orbs/orb_purple.png'
+        : v >= 6
+        ? '/assets/orbs/orb_blue.png'
+        : '/assets/orbs/orb_green.png';
+
+      const is1000 = v >= 1000;
+      const is500 = v >= 500;
 
       return (
-        <div className={`gato-tile ${winCls} ${expCls}`} style={{background:'none',border:'none',boxShadow:'none'}}>
-          <div className="gato-mult-img-wrap" style={{ position: 'relative', width: '90%', height: '90%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <img 
-              src="/assets/gatokaca/sym_blue_gem.png" 
-              alt="Multiplier" 
-              style={{ 
-                width: '100%', 
-                height: '100%', 
-                objectFit: 'contain', 
-                position: 'absolute', 
-                filter: `${filterStyle} drop-shadow(0 0 1vh rgba(0,0,0,0.8))`,
-                animation: 'multOrbPulse 2s ease-in-out infinite alternate' 
-              }} 
+        <div className={`gato-tile ${winCls} ${expCls} ${dropCls}`} style={{ background: 'none', border: 'none', boxShadow: 'none' }}>
+          <div className="gato-orb-real-wrap">
+            <img
+              src={orbImg}
+              alt={`Multiplier ${v}x`}
+              className={`gato-orb-real-img ${is1000 ? 'gato-orb-1000-img' : is500 ? 'gato-orb-500-img' : ''}`}
             />
-            {/* Dark overlay to make text pop */}
-            <div style={{ position: 'absolute', inset: '20%', background: 'radial-gradient(circle, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 70%)', borderRadius: '50%' }} />
-            <span 
-              className="gato-mult-val" 
-              style={{ 
-                color: textColor, 
-                position: 'relative',
-                zIndex: 2,
-                fontSize: multVal >= 500 ? 'clamp(1rem, 2vh, 2.2vh)' : 'clamp(1rem, 2.4vh, 2.6vh)',
-                textShadow: '0 0.2vh 0 #000, 0 -0.2vh 0 #000, 0.2vh 0 0 #000, -0.2vh 0 0 #000, 0 0.4vh 1vh rgba(0,0,0,1)'
-              }}
-            >
-              {multVal > 0 ? `${multVal}x` : '?x'}
-            </span>
+            <span className={`gato-orb-real-val ${is1000 ? 'gato-orb-val-1000' : ''}`}>{v}x</span>
           </div>
         </div>
       );
@@ -298,7 +393,7 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
     /* ── SCATTER (Gatokaca Face Image) ──────────────────── */
     if (symId === 9) {
       return (
-        <div className={`gato-tile gato-sym-img-wrap ${winCls} ${expCls}`}>
+        <div className={`gato-tile gato-sym-img-wrap ${winCls} ${expCls} ${dropCls}`}>
           <img
             src="/assets/gatokaca/sym_scatter.png"
             alt="SCATTER"
@@ -315,7 +410,7 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
     /* ── REGULAR SYMBOLS (0-8) ───────────────────────────── */
     if (sym.img) {
       return (
-        <div className={`gato-tile gato-sym-img-wrap ${winCls} ${expCls}`}>
+        <div className={`gato-tile gato-sym-img-wrap ${winCls} ${expCls} ${dropCls}`}>
           <img
             src={sym.img}
             alt={sym.label}
@@ -407,12 +502,43 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
         {/* LEFT PANEL */}
         <div className="gato-left-panel">
           {/* Buy Spin */}
-          <div className="gato-buy-spin" onClick={() => alert('Beli Free Spin: 1B')}>
+          <div 
+            className={`gato-buy-spin ${anteMode ? 'disabled' : ''}`} 
+            onClick={handleBuyFreeSpin}
+            title={anteMode ? 'Nonaktif saat Taruhan Ganda aktif' : 'Beli Spin Gratis'}
+          >
             <div className="gato-bs-circle">
               <div className="gato-bs-title">BELI<br/>SPIN<br/>GRATIS</div>
-              <div className="gato-bs-amount">1B</div>
+              <div className="gato-bs-amount">
+                {(betAmount * 100 / 1000000000) >= 1 
+                  ? `${(betAmount * 100 / 1000000000).toFixed(1)}B` 
+                  : `${Math.floor(betAmount * 100 / 1000000)}M`}
+              </div>
             </div>
           </div>
+
+          {/* TOTAL PENGALI (SIDE MULTIPLIER) - AUTHENTIC PRAGMATIC PLAY WIDGET */}
+          {(() => {
+            const isFree = freeSpinsLeft > 0;
+            const displayMult = isFree
+              ? Math.max(1, freeMultVal, currentMultiplier)
+              : Math.max(1, currentMultiplier);
+            return (
+              <div className={`gato-side-multiplier ${isFree ? 'is-free-spin' : ''} ${displayMult > 1 ? 'is-active' : ''}`}>
+                <div className="gsm-wing-top">✦ ✦ ✦</div>
+                <div className="gsm-title">{isFree ? 'TOTAL PENGALI' : 'PENGALI'}</div>
+                <div className="gsm-orb-wrap">
+                  <div className="gsm-orb-glow" />
+                  <div className="gsm-orb">
+                    <span className="gsm-val">{displayMult}x</span>
+                  </div>
+                </div>
+                <div className="gsm-sub">
+                  {isFree ? '★ TERSIMPAN ★' : (displayMult > 1 ? 'AKTIF' : 'BASE x1')}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Ransel */}
           <div className="gato-ransel" onClick={() => alert('Ransel')}>
@@ -423,10 +549,18 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
           {/* Taruhan panel */}
           <div className="gato-taruhan-panel">
             <div className="gato-tp-title">TARUHAN</div>
-            <div className="gato-tp-amount">12.5M</div>
+            <div className="gato-tp-amount">
+              {(() => {
+                const anteAmt = Math.floor(betAmount * 1.25);
+                if (anteAmt >= 1e9) return (anteAmt / 1e9).toFixed(1).replace(/\.0$/, '') + 'B';
+                if (anteAmt >= 1e6) return (anteAmt / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
+                if (anteAmt >= 1e3) return (anteAmt / 1e3).toFixed(1).replace(/\.0$/, '') + 'K';
+                return anteAmt.toLocaleString('id-ID');
+              })()}
+            </div>
             <div className="gato-tp-sub">FITUR</div>
             <div className="gato-tp-sub2">GANDA</div>
-            <div className="gato-tp-sub3">PELUANG MENANG</div>
+            <div className="gato-tp-sub3">PELUANG MENANG 2X</div>
             <div
               className={`gato-toggle ${anteMode ? 'on' : 'off'}`}
               onClick={() => setAnteMode(v => !v)}
@@ -435,12 +569,15 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
               <span>{anteMode ? 'ON' : 'OFF'}</span>
             </div>
           </div>
-
-          
         </div>
 
         {/* GRID */}
         <div className="gato-grid-wrap">
+          {/* Floating Drop Notification Banner */}
+          {droppedMultNotif && (
+            <div className="gato-mult-drop-banner">{droppedMultNotif}</div>
+          )}
+
           {/* Free Spins Banner */}
           {freeSpinsLeft > 0 && (
             <div className="gato-fs-banner">🌟 FREE SPIN: {freeSpinsLeft} 🌟</div>
@@ -457,7 +594,7 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
                   const isExp = explodingCells.includes(cellKey);
                   return (
                     <div key={cellKey} style={{ ['--r' as any]: r }} className={`gato-cell ${spinningCols[c] ? 'gato-cell-spin' : ''} ${bouncingCols[c] ? 'gato-cell-bounce' : ''}`}>
-                      {renderSymbol(symId === 10 && multVal === 0 ? 10 : symId, multVal, isWin, isExp)}
+                      {renderSymbol(symId === 10 && multVal === 0 ? 10 : symId, multVal, isWin, isExp, droppingCols.includes(c))}
                     </div>
                   );
                 })
@@ -468,23 +605,7 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
 
         {/* RIGHT: Gatotkaca Hero Character - Video with static fallback */}
         <div className="gato-right-panel">
-          <div className="gato-hero-container">
-            <video
-              className="gato-hero-video"
-              autoPlay
-              loop
-              muted
-              playsInline
-              poster="/assets/gatokaca/test_defringed.png"
-            >
-              <source src="/assets/gatokaca/animasi.webm" type="video/webm" />
-              <img
-                src="/assets/gatokaca/test_defringed.png"
-                alt="Gatotkaca Hero"
-                className="gato-hero-fallback-img"
-              />
-            </video>
-          </div>
+          
         </div>
       </div>
 
@@ -583,10 +704,14 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
               onContextMenu={e => { e.preventDefault(); setShowAutoMenu(v => !v); }}
             >
               <div className="gato-spin-title">
-                {autoSpins > 0 ? (autoSpins > 90000 ? 'AUTO ∞' : `AUTO ${autoSpins}`) : (isSpinning ? 'STOP' : 'SPIN')}
+                {isSpinning ? 'STOP' : 'SPIN'}
               </div>
               <div className="gato-spin-sub">
-                {autoSpins > 0 ? 'STOP' : (isSpinning ? 'BERHENTI' : 'HOLD FOR AUTO')}
+                {autoSpins > 0 ? (
+                  <span className="gato-auto-sub-badge">{autoSpins > 90000 ? 'AUTO ∞' : `AUTO: ${autoSpins}`}</span>
+                ) : (
+                  isSpinning ? 'BERHENTI' : 'HOLD FOR AUTO'
+                )}
               </div>
             </button>
           </div>
@@ -601,33 +726,64 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
           <div className="gato-modal" onClick={e => e.stopPropagation()}>
             {rulesPage === 0 && (
               <div className="gato-rules-page">
-                <h2>ATURAN GAME</h2>
-                <p className="gato-rules-desc">Simbol di mana saja di layar akan terbayar. Jumlah total simbol yang sama pada layar di akhir putaran menentukan jumlah kemenangan.</p>
+                <h2>ATURAN PERMAINAN GATOT KACA 1000</h2>
+                <p className="gato-rules-desc">
+                  SISTEM SCATTER PAYS (GRID 6 × 5): Delapan (8) atau lebih simbol sejenis di mana saja pada layar membentuk kombinasi kemenangan.
+                  Tabel di bawah otomatis menampilkan nilai pembayaran berdasarkan taruhan saat ini ({betAmount.toLocaleString('id-ID')} koin):
+                </p>
                 <div className="gato-paytable">
                   {[0,1,2,3,4,5,6,7,8].map(sid => {
                     const sym = GATO_SYMBOLS[sid];
+                    const PT_PAYS: Record<number, { p12: number; p10: number; p8: number }> = {
+                      0: { p12: 50,  p10: 25,   p8: 10   },
+                      1: { p12: 25,  p10: 10,   p8: 2.5  },
+                      2: { p12: 15,  p10: 5,    p8: 2    },
+                      3: { p12: 12,  p10: 2,    p8: 1.5  },
+                      4: { p12: 10,  p10: 1.5,  p8: 1    },
+                      5: { p12: 8,   p10: 1.2,  p8: 0.8  },
+                      6: { p12: 5,   p10: 1,    p8: 0.5  },
+                      7: { p12: 4,   p10: 0.9,  p8: 0.4  },
+                      8: { p12: 2,   p10: 0.75, p8: 0.25 },
+                    };
+                    const p = PT_PAYS[sid] || { p12: 2, p10: 1, p8: 0.5 };
+                    const f = (m: number) => {
+                      const v = Math.floor(betAmount * m);
+                      if (v >= 1e9) return `${(v / 1e9).toFixed(1).replace(/\.0$/, '')}B (${m}x)`;
+                      if (v >= 1e6) return `${(v / 1e6).toFixed(1).replace(/\.0$/, '')}M (${m}x)`;
+                      if (v >= 1e3) return `${(v / 1e3).toFixed(0)}K (${m}x)`;
+                      return `${v.toLocaleString('id-ID')} (${m}x)`;
+                    };
+
                     return (
                       <div key={sid} className="gato-pt-row">
-                        <span className="gato-pt-emoji">{sym.emoji}</span>
+                        <span className="gato-pt-emoji">
+                          {sym?.img ? (
+                            <img src={sym.img} alt={sym.label} style={{ width: '4.5vh', height: '4.5vh', objectFit: 'contain' }} />
+                          ) : (
+                            sym?.label || '💎'
+                          )}
+                        </span>
                         <div className="gato-pt-pays">
-                          <div>12-30 {sid === 0 ? '5M' : sid === 1 ? '2.5M' : sid === 2 ? '1.5M' : sid === 3 ? '1.2M' : sid === 4 ? '1M' : sid === 5 ? '800K' : sid === 6 ? '500K' : sid === 7 ? '400K' : '200K'}</div>
-                          <div>10-11 {sid === 0 ? '2.5M' : sid === 1 ? '1M' : sid === 2 ? '500K' : sid === 3 ? '200K' : sid === 4 ? '150K' : sid === 5 ? '120K' : sid === 6 ? '100K' : sid === 7 ? '90K' : '75K'}</div>
-                          <div>8-9 {sid === 0 ? '1M' : sid === 1 ? '250K' : sid === 2 ? '200K' : sid === 3 ? '150K' : sid === 4 ? '100K' : sid === 5 ? '80K' : sid === 6 ? '50K' : sid === 7 ? '40K' : '25K'}</div>
+                          <div>12-30: {f(p.p12)}</div>
+                          <div>10-11: {f(p.p10)}</div>
+                          <div>8-9: {f(p.p8)}</div>
                         </div>
                       </div>
                     );
                   })}
                   <div className="gato-pt-row gato-pt-scatter">
-                    <span className="gato-pt-emoji">⚡</span>
+                    <span className="gato-pt-emoji">
+                      <img src="/assets/gatokaca/sym_scatter.png" alt="SCATTER" style={{ width: '4.5vh', height: '4.5vh', objectFit: 'contain' }} />
+                    </span>
                     <div className="gato-pt-pays gato-scatter-pays">
-                      <div>6 → 10M</div>
-                      <div>5 → 500K</div>
-                      <div>4 → 300K</div>
+                      <div>6+: {Math.floor(betAmount * 100).toLocaleString('id-ID')} (100x)</div>
+                      <div>5: {Math.floor(betAmount * 5).toLocaleString('id-ID')} (5x)</div>
+                      <div>4: {Math.floor(betAmount * 3).toLocaleString('id-ID')} (3x)</div>
                     </div>
                     <div className="gato-pt-scatter-desc">
-                      <div>Ini adalah simbol SCATTER.</div>
-                      <div>Simbol SCATTER muncul di semua ROL.</div>
-                      <div>SCATTER terbayar di posisi apa pun.</div>
+                      <div>Simbol SCATTER Gatot Kaca muncul di semua rol.</div>
+                      <div>Membayar di posisi apa pun tanpa harus segaris.</div>
+                      <div>4 atau lebih Scatter memicu 15 PUTARAN GRATIS!</div>
                     </div>
                   </div>
                 </div>
@@ -635,31 +791,85 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
             )}
             {rulesPage === 1 && (
               <div className="gato-rules-page">
-                <h2>FITUR TUMBLE</h2>
-                <p>FITUR TUMBLE artinya bahwa setelah setiap spin, Kombonasi yang menang di bayar dan semua simbol yang menang menghilang. Simbol tersisa menghilang di bawah layar dan posisi kosong diganti dengan simbol yang berasal dari atas. Tumbling akan berlanjut hingga tak muncul lagi kombinasi kemenangan sebagai hasil dari tumble. Tidak ada batas jumblah tumble yang mungkin. Semua kemenangan ditambahkan ke Koin pemain setelah semua tumble dari spin dasar telah di mainkan.</p>
-                <div className="gato-mult-orbs">
-                  <div className="gato-orb-grn">⚡</div>
-                  <div className="gato-orb-blu">⚡</div>
-                  <div className="gato-orb-pur">⚡</div>
-                  <div className="gato-orb-red">⚡</div>
+                <h2>FITUR TUMBLE & PENGALI 2x - 1.000x</h2>
+                <p>FITUR TUMBLE: Setelah setiap spin, kombinasi simbol yang menang dibayar dan meledak menghilang. Simbol di atasnya jatuh mengisi ruang kosong dan simbol baru turun dari atas. Runtuhan berlanjut tanpa batas hingga tidak ada lagi kombinasi kemenangan baru.</p>
+                <div className="gato-math-formula-card">
+                  <div className="gato-math-formula-title">PERHITUNGAN PENGALI (MATEMATIKA RESMI PRAGMATIC PLAY)</div>
+                  <div className="gato-math-formula-eq">M_total = M₁ + M₂ + ... + Mₙ</div>
+                  <div className="gato-math-formula-sub">
+                    Contoh: <strong>20x + 10x + 5x = 35x</strong> Total Pengali!<br />
+                    Jumlah seluruh bola pengali yang muncul dalam satu rangkaian jatuhan dijumlahkan, lalu diterapkan pada total kemenangan runtuhan.
+                  </div>
                 </div>
-                <p>Ini adalah simbol multiplier. Muncul di semua rol dan dapat diraih secara acak selama pemutaran dan runtuhan di perminan dasar maupun FREE SPIN. Setiap kali ada simbol MULTIPLIER diraih, Simbol itu membawa nilai multiplier acak dari 2x hingga 500x. Ketika urutan runtuhan berakhir, Nilai semua simbol MULTIPLIER di layar di tambahkan seluruhnya dan total kemenangan urutan di kalikan dengan nilai akhir.</p>
+                <div className="gato-mult-orbs" style={{ display: 'flex', gap: '2vw', alignItems: 'center', justifyContent: 'center', margin: '2vh 0' }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <img src="/assets/orbs/orb_green.png" alt="2x-5x" style={{ width: '9vh', height: '7vh', objectFit: 'contain' }} />
+                    <div style={{ color: '#81c784', fontSize: '1.4vh', fontWeight: 'bold' }}>2x - 5x</div>
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <img src="/assets/orbs/orb_blue.png" alt="6x-12x" style={{ width: '9vh', height: '7vh', objectFit: 'contain' }} />
+                    <div style={{ color: '#64b5f6', fontSize: '1.4vh', fontWeight: 'bold' }}>6x - 12x</div>
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <img src="/assets/orbs/orb_purple.png" alt="15x-25x" style={{ width: '9vh', height: '7vh', objectFit: 'contain' }} />
+                    <div style={{ color: '#ba68c8', fontSize: '1.4vh', fontWeight: 'bold' }}>15x - 25x</div>
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <img src="/assets/orbs/orb_red.png" alt="50x-250x" style={{ width: '9vh', height: '7vh', objectFit: 'contain' }} />
+                    <div style={{ color: '#e57373', fontSize: '1.4vh', fontWeight: 'bold' }}>50x - 250x</div>
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <img src="/assets/orbs/orb_red.png" alt="500x-1000x" className="gato-orb-1000-img" style={{ width: '9vh', height: '7vh', objectFit: 'contain' }} />
+                    <div style={{ color: '#ffd700', fontSize: '1.4vh', fontWeight: 'bold' }}>500x - 1.000x!</div>
+                  </div>
+                </div>
+                <p>Simbol MULTIPLIER muncul acak di semua rol pada permainan dasar maupun ronde Putaran Gratis. Setiap simbol membawa nilai pengali dari <strong>2x sampai 1.000x</strong>!</p>
               </div>
             )}
             {rulesPage === 2 && (
               <div className="gato-rules-page">
-                <h2>ATURAN FREE SPIN</h2>
-                <p>FITUR FREE SPIN di berikan ketika 4 atau lebih simbol SCATTER diraih dimana saja di layar. Ronde itu dimulai dengan 15 free spin. Selama ronde FREE SPIN, Setiap kali ada simbol MULTIPLIER diraih dan pemutaran menghasilkan kemenangan, nilai MULTIPLIER ditambahkan ke total pengali. Untuk seluruh durasi ronde itu, Stiap kali ada simbol MULTIPLIERS baru yang diraih dan menghasilkan kemenangan, Nilai total pengali juga digunakan untuk mengalikan kemenangan. Mendapatkan 3 simbol SCATTER atau lebih saat MODE FREE SPIN. akan di tambahkan 5 free spin. ROL spesial dimainkan saat MODE FREE SPIN. Jumlah kemenangan maksimal dibatasi hingga 5000X taruhan. Jika total bonus putaran gratis mencapai 5000X, putaran segera berakhir dan bonus dibayarkan, dan semua free spin yang tersisa hangus.</p>
+                <h2>FITUR PUTARAN GRATIS (FREE SPINS)</h2>
+                <p>Fitur Putaran Gratis diberikan ketika 4 atau lebih simbol SCATTER muncul di mana saja di layar (diawali dengan <strong>15 Putaran Gratis</strong>).</p>
+                <div className="gato-math-formula-card" style={{ borderColor: '#64b5f6' }}>
+                  <div className="gato-math-formula-title" style={{ color: '#90caf9' }}>AKUMULASI TOTAL PENGALI (BANK MULTIPLIER)</div>
+                  <div className="gato-math-formula-sub" style={{ fontSize: '1.7vh' }}>
+                    Selama ronde Putaran Gratis, setiap kali simbol Pengali muncul dan menghasilkan kemenangan, nilai pengali tersebut <strong>diakumulasikan ke Total Pengali</strong> yang tersimpan.<br />
+                    Total pengali ini terus aktif dan melipatgandakan seluruh kemenangan berikutnya selama ronde bonus!
+                  </div>
+                </div>
+                <div className="gato-math-formula-card" style={{ borderColor: '#ffd700', marginTop: '1vh' }}>
+                  <div className="gato-math-formula-title" style={{ color: '#ffd700' }}>⚡ RE-TRIGGER PUTARAN GRATIS: +5 EXTRA SPINS! ⚡</div>
+                  <div className="gato-math-formula-sub" style={{ fontSize: '1.7vh' }}>
+                    Mendapatkan <strong>3 atau lebih simbol SCATTER</strong> selama ronde Putaran Gratis akan secara otomatis memberikan <strong>+5 Putaran Gratis tambahan</strong>!
+                  </div>
+                </div>
+                <p style={{ marginTop: '1.5vh' }}>
+                  <strong>BATAS KEMENANGAN MAKSIMAL (MAX WIN):</strong> Kemenangan maksimal dibatasi hingga <strong>15.000X taruhan</strong> (Gates of Gatot Kaca 1000). Jika total kemenangan mencapai 15.000x, ronde bonus segera selesai dan sisa putaran gratis hangus.
+                </p>
               </div>
             )}
             {rulesPage === 3 && (
               <div className="gato-rules-page">
-                <h2>TARUHAN ANTE</h2>
-                <p>Pemain memiliki opsi untuk memilih pengali taruhan. Tergantung taruhan yang dipilih, game akan berperilaku berbeda. Nilai yang mungkin adalah:</p>
-                <p>Pengali taruhan 25x - peluang menang free spun secara alami akan digandakan. Lebih banyak simbol SCATTER muncul pada rol. FITUR BUY FREE SPIN di nonaktifkan.</p>
-                <p>Pengali taruhan 20x - memberi kemampuan memberli MODE FREE SPIN dengan membayar nilai yang sama dengan 100x total taruhan.</p>
-                <h2 style={{marginTop:'2vh'}}>BUY FREE SPIN</h2>
-                <p>MODE FREE SPIN dapat langsung di picu dari permainan dasar dengan membeli sebesar 100x total taruhan saat ini. Ketika fitur 25x taruhan ante diaktifkan, Maka FITUR BUY FREE SPIN dinonaktifkan.</p>
+                <h2>RTP, VOLATILITAS & FITUR TARUHAN</h2>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5vh', margin: '1.5vh 0' }}>
+                  <div className="gato-math-formula-card" style={{ margin: 0, textAlign: 'left' }}>
+                    <div className="gato-math-formula-title" style={{ color: '#81c784' }}>📊 RTP & VOLATILITAS</div>
+                    <div className="gato-math-formula-sub" style={{ fontSize: '1.5vh' }}>
+                      • <strong>RTP (Return to Player):</strong> Perkiraan teoretis statistik jangka panjang.<br />
+                      • <strong>Volatilitas Sangat Tinggi:</strong> Hasil berfluktuasi tinggi. Kemenangan besar dapat terjadi dalam waktu singkat.
+                    </div>
+                  </div>
+                  <div className="gato-math-formula-card" style={{ margin: 0, textAlign: 'left' }}>
+                    <div className="gato-math-formula-title" style={{ color: '#ffb74d' }}>⚡ PENGALI MAKSIMUM 1.000X</div>
+                    <div className="gato-math-formula-sub" style={{ fontSize: '1.5vh' }}>
+                      Batas pengali yang dapat turun mencapai 1.000x dalam satu simbol. Hasil setiap putaran ditentukan secara acak dan independen.
+                    </div>
+                  </div>
+                </div>
+                <h3 style={{ color: '#ffd700', marginTop: '1.5vh' }}>TARUHAN ANTE (PENGALI TARUHAN 25X)</h3>
+                <p>Pemain memiliki opsi mengaktifkan Taruhan Ante (+25% biaya taruhan). Peluang memicu Putaran Gratis secara alami <strong>meningkat 2x lipat</strong> dengan kemunculan Scatter yang lebih sering. Fitur Beli Spin dinonaktifkan saat fitur ini aktif.</p>
+                <h3 style={{ color: '#ffd700', marginTop: '1.5vh' }}>BELI PUTARAN GRATIS (BUY FREE SPINS)</h3>
+                <p>Fitur Putaran Gratis dapat langsung dibeli dari permainan dasar seharga <strong>100x total taruhan</strong> untuk memulai 15 Putaran Gratis secara instan.</p>
               </div>
             )}
 
@@ -677,6 +887,9 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
           </div>
         </div>
       )}
+
+      {/* Win & Scatter Celebration Modal */}
+      <SlotCelebrationModal data={celebration} onClose={() => setCelebration(null)} />
     </div>
   );
 }

@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Socket } from 'socket.io-client';
+import SlotMultiplierBar from './SlotMultiplierBar';
 import GameMenuDropdown from './GameMenuDropdown';
+import SlotCelebrationModal, { SlotCelebrationData } from './SlotCelebrationModal';
+import './gatokaca.css';
 import './App.css'; // Make sure we use the old CSS
 
 interface Props {
@@ -8,7 +11,7 @@ interface Props {
   socket: Socket | null;
 }
 
-const API_URL = 'http://localhost:8080/api';
+import { API_URL } from './config';
 
 const ZEUS_SYMS  = ['♦️','🔺','🟡','🟩','🔷','👑','⏳','💍','🏆','👴'];
 const ZEUS_COLORS = ['#ff2a2a','#d822ee','#ffea00','#00e676','#00b0ff','#ffd700','#cccccc','#ffd700','#ffd700','#ffffff'];
@@ -71,14 +74,23 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
   const [freeSpins, setFreeSpins] = useState(0);
   const [inFreeMode, setInFreeMode] = useState(false);
   const [freeMult,  setFreeMult]  = useState(1);
+  const [multIdx, setMultIdx] = useState(0); // tangga x1>x2>x3>x5 (per tumble)
   const [showFSModal, setShowFSModal] = useState(false);
   const [clusterWins, setClusterWins] = useState<{ sym: number; count: number; winAmount: number; tumble?: number }[]>([]);
-  const [floatMults, setFloatMults] = useState<{id:number;val:number;r:number;c:number}[]>([]);
+  const [multGrid, setMultGrid] = useState<number[][]>(() => Array.from({ length: ROWS }, () => Array.from({ length: COLS }, () => 0)));
+  const [droppedMultNotif, setDroppedMultNotif] = useState<string | null>(null);
+  const [celebration, setCelebration] = useState<SlotCelebrationData | null>(null);
   const [autoCount, setAutoCount] = useState(0);
   const [showAutoMenu, setShowAutoMenu] = useState(false);
   const [speed, setSpeed] = useState(1);
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [errMsg, setErrMsg] = useState('');
+  const speedRef = useRef(speed);
+  useEffect(() => { speedRef.current = speed; }, [speed]);
+
+  const betAmountRef = useRef(betAmount);
+  useEffect(() => { betAmountRef.current = betAmount; }, [betAmount]);
+
   const spinAnim = useRef<any>(null);
   const spinTimer = useRef<any>(null);
   const spinDelay = useRef<any>(null);
@@ -200,17 +212,22 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
     const onResult = (data: any) => {
       if (spinTimer.current) clearTimeout(spinTimer.current);
 
+      const spd = speedRef.current;
       const elapsed = Date.now() - spinStartTime.current;
-      const minSpinMs = 1200 / speed;
+      const minSpinMs = spd === 3 ? 240 : spd === 2 ? 400 : 750;
       const delay = Math.max(0, minSpinMs - elapsed);
 
-      // Stop columns one-by-one (Duo Fu Duo Cai staggered stop)
-      const stopDelay = Math.max(120, 240 / speed); // ms between each column stop
+      // Stop columns one-by-one dengan durasi yang terkalibrasi kecepatan
+      const stopDelay = spd === 3 ? 65 : spd === 2 ? 100 : 180;
+      const bounceDuration = spd === 3 ? 160 : spd === 2 ? 240 : 380;
 
       const doStaggeredStop = (finalGrid: number[][]) => {
         // Stop col 0 first, then 1, 2, 3, 4, 5
         [0, 1, 2, 3, 4, 5].forEach(col => {
           setTimeout(() => {
+            // SINKRON: Hapus kolom ini dari spinningColsRef SEBELUM render agar shuffle tidak menimpa
+            spinningColsRef.current.delete(col);
+
             // Freeze this column's symbols to the final result
             setGrid(prev => {
               const next = prev.map(row => [...row]);
@@ -234,14 +251,13 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
                 next.delete(col);
                 return next;
               });
-            }, 380);
+            }, bounceDuration);
 
             // After last column stops and settles, run tumble cascade
             if (col === 5) {
               setTimeout(() => {
-                setIsSpinning(false);
                 runTumbleSequence();
-              }, 380);
+              }, bounceDuration);
             }
           }, col * stopDelay);
         });
@@ -292,35 +308,32 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
 
           if (roundWins.size === 0) continue;
 
-          // PHASE 1: Highlight winning symbols (glow and pulse)
+          setMultIdx(Math.min(t, 3));
+          // PHASE 1: Highlight winning symbols (smooth golden glow and pulse)
           setWinPos(roundWins);
-          await sleep(Math.max(250, 550 / speed));
+          await sleep(Math.max(300, 500 / spd));
           if (isCancelled) return;
 
-          // PHASE 2: Explode & vanish ("bikin supaya hilang gitu")
+          // PHASE 2: Explode & burst smoothly ("pecah simbol")
           setExplodingPos(roundWins);
           playExplodeSound();
-          await sleep(Math.max(180, 350 / speed));
+          await sleep(Math.max(250, 350 / spd));
           if (isCancelled) return;
 
-          // Clear explosion and show empty holes
-          setGrid(emptyGrid);
-          setExplodingPos(new Set());
+          // PHASE 3: Seamless cascade drop ("simbol baru turun mulus")
           setWinPos(new Set());
-          await sleep(Math.max(60, 120 / speed));
-          if (isCancelled) return;
-
-          // PHASE 3: Gravity drop ("yang di atas nya ngisi turun ke bawah")
+          setExplodingPos(new Set());
           setDroppingCols(colsWithWins);
           setIsDropping(true);
           setGrid(postGrid);
           playDropThudSound();
-          await sleep(Math.max(240, 420 / speed));
+          // Wait full animation duration so keyframe completes naturally
+          await sleep(Math.max(320, 420 / spd));
           if (isCancelled) return;
 
-          setDroppingCols(new Set());
           setIsDropping(false);
-          await sleep(Math.max(60, 120 / speed));
+          setDroppingCols(new Set());
+          await sleep(Math.max(80, 160 / spd));
         }
 
         if (!isCancelled) {
@@ -334,6 +347,17 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
         const finalGrid = data.gridHistory?.length > 0
           ? data.gridHistory[0]
           : data.grid;
+        if (data.multGrid) {
+          setMultGrid(data.multGrid);
+        } else if (data.randomMult) {
+          const mg = Array.from({ length: ROWS }, () => Array.from({ length: COLS }, () => 0));
+          for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+              if (finalGrid[r][c] === 10) mg[r][c] = data.randomMult;
+            }
+          }
+          setMultGrid(mg);
+        }
         doStaggeredStop(finalGrid);
       };
 
@@ -345,44 +369,59 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
         execute();
       };
     };
- 
+
     const finishSpin = (data: any) => {
-      setIsSpinning(false);
-      setSpinningCols(new Set());
-      setBouncingCols(new Set());
-      setExplodingPos(new Set());
-      setIsDropping(false);
-      setDroppingCols(new Set());
-      setMyCoins(data.newBalance);
-      setClusterWins(data.clusterWins || []);
- 
-      if (data.totalWinAmount > 0) {
-        const posSet = new Set<string>(
-          (data.allWinPositions || []).map(([r, c]: [number, number]) => `${r},${c}`)
-        );
-        setWinPos(posSet);
-        setTotalWin(data.totalWinAmount);
-        setWinType(data.winType || 'win');
-        setShowWin(true);
-        setTimeout(() => { setShowWin(false); setWinPos(new Set()); }, Math.max(2000, 3500 / speed));
-      }
- 
-      if (data.randomMult) {
-        const id = ++multId.current;
-        const r = Math.floor(Math.random() * 5);
-        const c = Math.floor(Math.random() * 5);
-        setFloatMults(prev => [...prev, { id, val: data.randomMult, r, c }]);
-        setTimeout(() => setFloatMults(prev => prev.filter(m => m.id !== id)), 2500);
-        setFreeMult(prev => prev * data.randomMult);
-      }
- 
-      if (data.triggerFreeSpins && data.freeSpinsAwarded > 0) {
-        setTimeout(() => {
-          setFreeSpins(data.freeSpinsAwarded);
-          setInFreeMode(true);
-          setFreeMult(1);
-          setShowFSModal(true);
-        }, Math.max(800, 1500 / speed));
+      try {
+        setIsSpinning(false);
+        setSpinningCols(new Set());
+        setBouncingCols(new Set());
+        setExplodingPos(new Set());
+        setIsDropping(false);
+        setDroppingCols(new Set());
+        setWinPos(new Set()); // Bersihkan posisi menang agar simbol baru tidak menyala salah!
+        setMyCoins(data.newBalance);
+        setClusterWins(data.clusterWins || []);
+        setMultIdx(Math.min(3, Math.max(0, ...((data.clusterWins || []).map((w: any) => w.tumble || 0)))));
+
+        if (data.totalWinAmount > 0) {
+          setTotalWin(data.totalWinAmount);
+          setWinType(data.winType || 'win');
+          setShowWin(true);
+          setTimeout(() => { setShowWin(false); }, Math.max(2000, 3500 / spd));
+          const currentBet = betAmountRef.current || 50000;
+          const ratio = data.totalWinAmount / Math.max(1, currentBet);
+          if (ratio >= 30) {
+            setCelebration({ type: 'super_win', amount: data.totalWinAmount });
+          } else if (ratio >= 12) {
+            setCelebration({ type: 'mega_win', amount: data.totalWinAmount });
+          } else if (ratio >= 5) {
+            setCelebration({ type: 'big_win', amount: data.totalWinAmount });
+          }
+        }
+
+        if (data.randomMult) {
+          setFreeMult(data.freeMult || 1);
+          setDroppedMultNotif(`⚡ PETIR ZEUS PENGALI ${data.randomMult}x TURUN! ⚡`);
+          setTimeout(() => setDroppedMultNotif(null), 2800);
+        }
+
+        if (data.triggerFreeSpins && data.freeSpinsAwarded > 0) {
+          setTimeout(() => {
+            setFreeSpins(data.freeSpinsAwarded);
+            setInFreeMode(true);
+            setFreeMult(1);
+            setCelebration({
+              type: 'scatter',
+              freeSpinsCount: data.freeSpinsAwarded || 15,
+              title: '⚡ SCATTER ZEUS! ⚡',
+              subtext: `SELAMAT! KAMU MEMICU ${data.freeSpinsAwarded || 15} PUTARAN GRATIS!`
+            });
+          }, Math.max(800, 1500 / spd));
+        }
+      } catch (err) {
+        console.error('Error in finishSpin:', err);
+      } finally {
+        setIsSpinning(false);
       }
     };
  
@@ -400,20 +439,20 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
       socket.off('zeus_result', onResult);
       socket.off('zeus_error',  onError);
     };
-  }, [socket, speed]);
+  }, [socket]);
  
   useEffect(() => {
-    if (autoCount > 0 && !isSpinning && !showWin && !showFSModal) {
+    if (autoCount > 0 && !isSpinning && !showWin && !showFSModal && !celebration) {
       const t = setTimeout(() => {
         setAutoCount(prev => Math.max(0, prev - 1));
         doSpin();
       }, Math.max(500, 800 / speed));
       return () => clearTimeout(t);
     }
-  }, [autoCount, isSpinning, showWin, showFSModal, speed]);
+  }, [autoCount, isSpinning, showWin, showFSModal, speed, celebration]);
  
   useEffect(() => {
-    if (inFreeMode && freeSpins > 0 && !isSpinning && !showWin && !showFSModal) {
+    if (inFreeMode && freeSpins > 0 && !isSpinning && !showWin && !showFSModal && !celebration) {
       const t = setTimeout(() => doSpin(), Math.max(600, 1000 / speed));
       return () => clearTimeout(t);
     }
@@ -421,7 +460,7 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
       setInFreeMode(false);
       setFreeMult(1);
     }
-  }, [inFreeMode, freeSpins, isSpinning, showWin, showFSModal, speed]);
+  }, [inFreeMode, freeSpins, isSpinning, showWin, showFSModal, speed, celebration]);
  
   const doSpin = () => {
     if (isSpinning) return;
@@ -434,9 +473,12 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
     setShowWin(false);
     setTotalWin(0);
     setClusterWins([]);
+    setMultIdx(0);
+    setMultGrid(Array.from({ length: ROWS }, () => Array.from({ length: COLS }, () => 0)));
     setPrevGrid(grid);
     setIsSpinning(true);
     // All 6 columns start spinning (Duo Fu Duo Cai style)
+    spinningColsRef.current = new Set([0, 1, 2, 3, 4, 5]);
     setSpinningCols(new Set([0, 1, 2, 3, 4, 5]));
     setBouncingCols(new Set());
     setExplodingPos(new Set());
@@ -467,7 +509,24 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
     return String(Math.floor(n));
   };
  
-  const renderGem = (sym: number) => {
+  const renderGem = (sym: number, multVal?: number) => {
+    if (sym === 10) {
+      const v = (multVal && multVal > 0) ? multVal : 2;
+      const orbImg = v >= 50
+        ? '/assets/orbs/orb_red.png'
+        : v >= 15
+        ? '/assets/orbs/orb_purple.png'
+        : v >= 6
+        ? '/assets/orbs/orb_blue.png'
+        : '/assets/orbs/orb_green.png';
+
+      return (
+        <div className="gato-orb-real-wrap">
+          <img src={orbImg} alt={`Multiplier ${v}x`} className="gato-orb-real-img" />
+          <span className="gato-orb-real-val">{v}x</span>
+        </div>
+      );
+    }
     const icon = ZEUS_ICONS[sym] || ZEUS_ICONS[sym % 10] || ZEUS_ICONS[0];
     if (sym === 9) {
       return (
@@ -556,17 +615,26 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
       <div className="zeus-main-content">
  
         <div className="zeus-left-panel">
-          <div className="zeus-buy-box" onClick={() => {
-            if (myCoins >= betAmount * 100) {
-               setMyCoins(prev => prev - (betAmount * 100));
-               setInFreeMode(true);
-               setFreeSpins(15);
-               setShowFSModal(true);
-            } else {
-               setErrMsg('Koin tidak cukup untuk membeli Spin Gratis!');
-               setTimeout(() => setErrMsg(''), 2000);
-            }
-          }}>
+          <div 
+            className={`zeus-buy-box ${anteBet ? 'disabled' : ''}`} 
+            onClick={() => {
+              if (anteBet) {
+                setErrMsg('Nonaktifkan Taruhan Ganda untuk membeli Spin Gratis!');
+                setTimeout(() => setErrMsg(''), 3000);
+                return;
+              }
+              if (myCoins >= betAmount * 100) {
+                 setMyCoins(prev => prev - (betAmount * 100));
+                 setInFreeMode(true);
+                 setFreeSpins(15);
+                 setShowFSModal(true);
+              } else {
+                 setErrMsg('Koin tidak cukup untuk membeli Spin Gratis!');
+                 setTimeout(() => setErrMsg(''), 2000);
+              }
+            }}
+            title={anteBet ? 'Nonaktif saat Taruhan Ganda aktif' : 'Beli Spin Gratis'}
+          >
             <div className="zeus-buy-inner">
               <div className="zbb-title notranslate" translate="no">BELI</div>
               <div className="zbb-sub notranslate" translate="no">SPIN GRATIS</div>
@@ -590,6 +658,29 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
               </div>
             </div>
           </div>
+
+          {/* TOTAL PENGALI (SIDE MULTIPLIER) - AUTHENTIC PRAGMATIC GATES OF OLYMPUS */}
+          {(() => {
+            const isFree = inFreeMode;
+            const displayMult = isFree
+              ? Math.max(1, freeMult)
+              : Math.max(1, [1, 2, 3, 5][multIdx] || 1);
+            return (
+              <div className={`gato-side-multiplier ${isFree ? 'is-free-spin' : ''} ${displayMult > 1 ? 'is-active' : ''}`} style={{ width: '100%', marginBottom: '1vh', boxSizing: 'border-box' }}>
+                <div className="gsm-wing-top">⚡ ⚡ ⚡</div>
+                <div className="gsm-title">{isFree ? 'TOTAL PENGALI' : 'PENGALI'}</div>
+                <div className="gsm-orb-wrap">
+                  <div className="gsm-orb-glow" />
+                  <div className="gsm-orb">
+                    <span className="gsm-val">{displayMult}x</span>
+                  </div>
+                </div>
+                <div className="gsm-sub">
+                  {isFree ? '★ TERSIMPAN ★' : (displayMult > 1 ? 'AKTIF' : 'BASE x1')}
+                </div>
+              </div>
+            );
+          })()}
 
           <div className="zeus-tumble-box">
             <div className="ztb-inner">
@@ -626,6 +717,11 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
         </div>
  
         <div className="zeus-grid-container">
+          {droppedMultNotif && (
+            <div className="gato-mult-drop-banner">{droppedMultNotif}</div>
+          )}
+          {/* MULTIPLIER BAR DIRECTLY ABOVE REELS */}
+          <SlotMultiplierBar inline={true} idx={multIdx} isFree={inFreeMode} freeMult={freeMult} />
           <div className="zeus-reel-wrapper">
             <div className="zeus-reel-frame">
               <div className="zeus-reel-grid">
@@ -667,12 +763,7 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
                             >
                               {isEmpty
                                 ? null
-                                : <>
-                                    {renderGem(sym)}
-                                    {floatMults.filter(m => m.r === r && m.c === c).map(m => (
-                                      <span key={m.id} className="zeus-float-mult">{m.val}x</span>
-                                    ))}
-                                  </>
+                                : renderGem(sym, multGrid[r]?.[c] || (sym === 10 ? 2 : undefined))
                               }
                             </div>
                           );
@@ -691,6 +782,7 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
           
         </div>
       </div>
+
 
       {showRules && (
         <div className="zeus-rules-modal">
@@ -800,11 +892,11 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
           {rulesPage === 1 && (
             <div className="zrm-page">
               <div className="zrm-title">PERKALIAN SIMBOL</div>
-              <div className="zrm-mult-orbs">
-                <div className="zrm-orb green"></div>
-                <div className="zrm-orb blue"></div>
-                <div className="zrm-orb purple"></div>
-                <div className="zrm-orb red"></div>
+              <div className="zrm-mult-orbs" style={{ display: 'flex', gap: '3vw', alignItems: 'center', justifyContent: 'center', margin: '4vh 0' }}>
+                <img src="/assets/orbs/orb_green.png" alt="2x-5x" style={{ width: '12vh', height: '9vh', objectFit: 'contain' }} />
+                <img src="/assets/orbs/orb_blue.png" alt="6x-12x" style={{ width: '12vh', height: '9vh', objectFit: 'contain' }} />
+                <img src="/assets/orbs/orb_purple.png" alt="15x-25x" style={{ width: '12vh', height: '9vh', objectFit: 'contain' }} />
+                <img src="/assets/orbs/orb_red.png" alt="50x-500x" style={{ width: '12vh', height: '9vh', objectFit: 'contain' }} />
               </div>
               <div className="zrm-desc">
                 Setiap kali simbol MULTIPLIER muncul memiliki nilai perkalian yang acak.<br/><br/>
@@ -904,9 +996,14 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
                   }}
                 >
                   <div className="zhb-spin-title">{isSpinning ? 'STOP' : 'SPIN'}</div>
-                  <div className="zhb-spin-sub">{isSpinning ? 'BERHENTI' : 'HOLD FOR AUTO'}</div>
+                  <div className="zhb-spin-sub">
+                    {autoCount > 0 ? (
+                      <span className="zhb-auto-sub-badge">{autoCount === 999 ? 'AUTO ∞' : `AUTO: ${autoCount}`}</span>
+                    ) : (
+                      isSpinning ? 'BERHENTI' : 'HOLD FOR AUTO'
+                    )}
+                  </div>
                 </button>
-                {autoCount > 0 && <div className="zhb-auto-overlay">{autoCount === 999 ? '∞' : autoCount}</div>}
     
                 {showAutoMenu && (
                   <div className="zeus-auto-menu">
@@ -950,6 +1047,9 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
           </div>
         </div>
       )}
+
+      {/* Universal Slot Celebration Modal */}
+      <SlotCelebrationModal data={celebration} onClose={() => setCelebration(null)} />
     </div>
   );
 }

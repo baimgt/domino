@@ -171,6 +171,25 @@
 }
 .cr-buy-spin:hover { filter: brightness(1.15); }
 .cr-buy-spin:active { transform: scale(0.93); }
+.cr-buy-spin.disabled {
+  opacity: 0.45;
+  filter: grayscale(0.85);
+  cursor: not-allowed;
+  position: relative;
+}
+.cr-buy-spin.disabled:hover {
+  transform: none;
+  filter: grayscale(0.85);
+}
+.cr-buy-spin.disabled::after {
+  content: '🔒';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 2.8vh;
+  text-shadow: 0 0 8px rgba(0,0,0,0.9);
+}
 .cr-bs-icon { font-size: 3vh; }
 .cr-bs-title { color: #fff; font-size: 1.2vh; font-weight: 900; line-height: 1.2; }
 .cr-bs-amount { color: #fff176; font-size: 2.2vh; font-weight: 900; }
@@ -232,10 +251,13 @@
   box-shadow: 0 0.5vh 1.5vh rgba(255,20,147,0.7); z-index: 10;
 }
 .cr-grid-frame {
-  width: 100%; height: 100%;
+  aspect-ratio: 6 / 5;
+  height: min(68vh, 420px);
+  width: auto;
+  max-width: 82vw;
+  margin: 0 auto;
   background: linear-gradient(180deg, rgba(255,20,147,0.08), rgba(100,0,200,0.15));
-  border: 0.4vh solid;
-  border-image: linear-gradient(135deg, #ff69b4, #fff, #c084fc, #ff69b4) 1;
+  border: 0.4vh solid #ff69b4;
   border-radius: 1.5vh;
   box-shadow:
     0 0 3vh rgba(255,20,147,0.4),
@@ -270,14 +292,13 @@
   overflow: hidden;
 }
 .cr-cell.cr-cell-spin {
-  animation: crCellSpin 0.08s linear infinite;
+  animation: crCellSpin 0.12s ease-in-out infinite alternate;
 }
 @keyframes crCellSpin {
-  0%   { transform: translateY(0); }
-  50%  { transform: translateY(-5px); }
-  100% { transform: translateY(0); }
+  0%   { transform: translateY(-7px); }
+  100% { transform: translateY(7px); }
 }
-.cr-cell.cr-cell-spin .cr-tile { filter: blur(2.5px) brightness(1.1); }
+.cr-cell.cr-cell-spin .cr-tile { filter: none !important; }
 
 /* ===========================
    TILE BASE
@@ -299,11 +320,41 @@
   0%   { box-shadow: 0 0 1.5vh 0.5vh rgba(255,255,0,0.7); }
   100% { box-shadow: 0 0 3.5vh 2vh rgba(255,255,0,1), 0 0 6vh 3vh rgba(255,100,200,0.7); }
 }
-.cr-tile-explode { animation: crBlast 0.4s ease-out forwards; }
+.cr-tile-explode {
+  animation: crBlast 0.35s ease-out forwards;
+  pointer-events: none;
+}
 @keyframes crBlast {
   0%   { transform: scale(1); opacity: 1; }
-  40%  { transform: scale(1.35); filter: brightness(3) drop-shadow(0 0 1vh #ff69b4); }
-  100% { transform: scale(0); opacity: 0; }
+  35%  { transform: scale(1.3); filter: brightness(2.2) drop-shadow(0 0 1vh #ff69b4); opacity: 1; }
+  100% { transform: scale(0); opacity: 0; filter: brightness(3); }
+}
+
+/* Cascade drop for newly landed candies */
+.cr-tile.cr-tile-dropping {
+  animation: crTileCascadeDrop 0.38s cubic-bezier(0.22, 1, 0.36, 1) both !important;
+  will-change: transform;
+  filter: none !important;
+}
+@keyframes crTileCascadeDrop {
+  0% {
+    transform: translateY(-38px);
+    opacity: 0.3;
+    filter: none;
+  }
+  65% {
+    transform: translateY(6px);
+    opacity: 1;
+    filter: none;
+  }
+  85% {
+    transform: translateY(-2px);
+  }
+  100% {
+    transform: translateY(0px);
+    opacity: 1;
+    filter: none;
+  }
 }
 
 /* ===========================
@@ -737,4 +788,148 @@
 }
 .cr-dot.active {
   background: #ff69b4; box-shadow: 0 0 0.8vh #ff69b4; transform: scale(1.3);
+}
+
+/* ========================================================
+   CANDY RUSH MOBILE LANDSCAPE RESPONSIVE FIXES
+   ======================================================== */
+@media screen and (max-height: 600px), screen and (max-width: 1024px) and (orientation: landscape) {
+  .cr-top-bar {
+    height: 38px !important;
+    padding: 0 8px !important;
+  }
+  .cr-tb-btn {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 13px !important;
+  }
+  .cr-tb-avatar {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 14px !important;
+  }
+  .cr-tb-coins {
+    height: 26px !important;
+    padding: 0 8px !important;
+    font-size: 11px !important;
+    gap: 4px !important;
+  }
+  .cr-tb-plus {
+    width: 18px !important;
+    height: 18px !important;
+    font-size: 13px !important;
+  }
+
+  .cr-main-area {
+    top: 40px !important;
+    bottom: 44px !important;
+    gap: 6px !important;
+    padding: 0 8px !important;
+  }
+
+  .cr-left-panel {
+    width: 110px !important;
+    gap: 4px !important;
+    flex-shrink: 0 !important;
+    justify-content: center !important;
+  }
+  .cr-candy-deco-left {
+    display: none !important;
+  }
+
+  .cr-buy-spin {
+    padding: 3px 5px !important;
+    border-radius: 8px !important;
+  }
+  .cr-bs-title {
+    font-size: 9.5px !important;
+  }
+  .cr-bs-sub {
+    font-size: 8px !important;
+  }
+  .cr-bs-cost {
+    font-size: 11px !important;
+    margin-top: 1px !important;
+  }
+
+  .cr-ante-bet {
+    padding: 3px 5px !important;
+    border-radius: 8px !important;
+  }
+  .cr-ante-title {
+    font-size: 8.5px !important;
+  }
+  .cr-ante-amount {
+    font-size: 11.5px !important;
+    margin: 1px 0 !important;
+  }
+  .cr-ante-bet p {
+    font-size: 7.5px !important;
+  }
+
+  .cr-grid-frame {
+    aspect-ratio: 6 / 5 !important;
+    height: min(72vh, 360px) !important;
+    max-width: 78vw !important;
+    width: auto !important;
+    margin: 0 auto !important;
+  }
+
+  .cr-bottom-bar {
+    height: 42px !important;
+    padding: 0 8px !important;
+    border-radius: 12px 12px 0 0 !important;
+    gap: 6px !important;
+  }
+  .cr-bot-left, .cr-bot-right {
+    gap: 4px !important;
+  }
+  .cr-bot-btn {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 8px !important;
+  }
+  .cr-minus, .cr-plus-bet {
+    font-size: 18px !important;
+  }
+
+  .cr-bet-box {
+    min-width: 85px !important;
+    height: 34px !important;
+    padding: 0 4px !important;
+    border-radius: 8px !important;
+    justify-content: center !important;
+  }
+  .cr-bet-label {
+    font-size: 7.5px !important;
+  }
+  .cr-bet-val {
+    font-size: 11px !important;
+  }
+
+  .cr-status-pill {
+    padding: 2px 12px !important;
+    font-size: 13px !important;
+    min-width: 100px !important;
+    border-radius: 14px !important;
+  }
+
+  .cr-maxbet-btn, .cr-speed-btn {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+  }
+  .cr-spin-btn {
+    min-width: 85px !important;
+    height: 36px !important;
+    padding: 0 8px !important;
+    border-radius: 8px !important;
+  }
+  .cr-spin-txt {
+    font-size: 14px !important;
+  }
+  .cr-spin-sub {
+    font-size: 7.5px !important;
+  }
 }

@@ -13,20 +13,27 @@ interface GameMenuDropdownProps {
   onClose: () => void;
   items: GameMenuItem[];
   style?: React.CSSProperties;
+  align?: 'left' | 'right';
+  className?: string;
 }
 
 export default function GameMenuDropdown({
   isOpen,
   onClose,
   items,
-  style
+  style,
+  align = 'right',
+  className = '',
 }: GameMenuDropdownProps) {
   if (!isOpen) return null;
 
   return (
     <>
       <div className="game-menu-backdrop" onClick={onClose} />
-      <div className="game-menu-popover" style={style}>
+      <div
+        className={`game-menu-popover ${align === 'left' ? 'align-left' : ''} ${className}`.trim()}
+        style={style}
+      >
         <div className="menu-arrow" />
         {items.map(item => (
           <div

@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Socket } from 'socket.io-client';
 import './candyrush.css';
+import './gatokaca.css';
 import GameMenuDropdown from './GameMenuDropdown';
+import SlotMultiplierBar from './SlotMultiplierBar';
+import SlotCelebrationModal, { SlotCelebrationData } from './SlotCelebrationModal';
 
 interface Props {
   onBack: () => void;
@@ -33,9 +36,14 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
   const [musicOn, setMusicOn] = useState(true);
   const [showAutoMenu, setShowAutoMenu] = useState(false);
   const [explodingCells, setExplodingCells] = useState<string[]>([]);
+  const [droppingCols, setDroppingCols] = useState<number[]>([]);
   const [winningCells, setWinningCells] = useState<string[]>([]);
   const [statusText, setStatusText] = useState('GOOD LUCK');
   const [rainbowActive, setRainbowActive] = useState(false);
+  const [multIdx, setMultIdx] = useState(0);        // tangga x1>x2>x3>x5
+  const [freeMultVal, setFreeMultVal] = useState(0); // pengali menumpuk saat free spin
+  const [droppedMultNotif, setDroppedMultNotif] = useState<string | null>(null);
+  const [celebration, setCelebration] = useState<SlotCelebrationData | null>(null);
 
   const spinPressTimer = useRef<any>(null);
   const username = localStorage.getItem('domino_username') || '';
@@ -43,6 +51,7 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
   const freeSpinsLeftRef = useRef(freeSpinsLeft);
   const spinSpeedRef = useRef(spinSpeed);
   const doSpinRef = useRef<any>(null);
+  const spinningColsRef = useRef<boolean[]>(Array(COLS).fill(false));
 
   useEffect(() => { autoSpinsRef.current = autoSpins; }, [autoSpins]);
   useEffect(() => { freeSpinsLeftRef.current = freeSpinsLeft; }, [freeSpinsLeft]);
@@ -53,28 +62,34 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
     if (coinsStr) setMyCoins(parseInt(coinsStr));
   }, []);
 
+  // Rapid reel shuffle - displays regular symbols during spin blur, checking synchronous spinningColsRef to prevent symbol flicker
   useEffect(() => {
     let interval: any = null;
     if (isSpinning) {
       interval = setInterval(() => {
+        if (!spinningColsRef.current.some(Boolean)) return;
         setGrid(prev => prev.map((row, r) =>
-          row.map((cell, c) => spinningCols[c] ? Math.floor(Math.random() * 9) : cell)
+          row.map((cell, c) => spinningColsRef.current[c] ? Math.floor(Math.random() * 11) : cell)
         ));
-      }, 70 / spinSpeedRef.current);
+      }, Math.max(30, Math.floor(65 / spinSpeedRef.current)));
     }
     return () => { if (interval) clearInterval(interval); };
-  }, [isSpinning, spinningCols]);
+  }, [isSpinning]);
 
   useEffect(() => {
     if (!socket) return;
     const handleResult = async (data: any) => {
       const spd = spinSpeedRef.current;
-      let stopTime = 150 / spd;
-      const delayPerCol = 200 / spd;
+      const minSpinBase = spd === 3 ? 240 : spd === 2 ? 400 : 750;
+      const delayPerCol = spd === 3 ? 65 : spd === 2 ? 100 : 180;
+      const bounceDuration = spd === 3 ? 160 : spd === 2 ? 240 : 380;
+      let stopTime = minSpinBase;
 
       for (let c = 0; c < COLS; c++) {
         const col = c;
         setTimeout(() => {
+          // Matikan flag reel ini secara sinkron di ref TERLEBIH DAHULU agar interval shuffle tidak menimpa
+          spinningColsRef.current[col] = false;
           setSpinningCols(prev => { const n = [...prev]; n[col] = false; return n; });
           setGrid(prev => prev.map((row, r) =>
             row.map((cell, ci) => ci === col ? data.initialGrid[r][col] : cell)
@@ -86,41 +101,101 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
         stopTime += delayPerCol;
       }
 
+      // Detect landed multiplier orbs and show drop notification after reels settle
+      let initialOrbsSum = 0;
+      let initialOrbsCount = 0;
+      if (data.initialMultGrid) {
+        data.initialMultGrid.forEach((row: number[]) => {
+          row.forEach((v: number) => {
+            if (v > 0) {
+              initialOrbsSum += v;
+              initialOrbsCount++;
+            }
+          });
+        });
+      }
+
+      const allReelsSettled = stopTime + bounceDuration + 60;
       setTimeout(async () => {
+        if (initialOrbsCount > 0) {
+          setFreeMultVal(prev => (prev || 0) + initialOrbsSum);
+          setDroppedMultNotif(`🍬 BOLA PENGALI ${initialOrbsSum}x TURUN! 🍬`);
+          setTimeout(() => setDroppedMultNotif(null), 2800);
+        }
+        const winDelay = spd === 3 ? 280 : spd === 2 ? 360 : 480;
+        const explodeDelay = spd === 3 ? 200 : spd === 2 ? 260 : 360;
+        const dropDelay = spd === 3 ? 220 : spd === 2 ? 300 : 420;
+        const settleDelay = spd === 3 ? 70 : spd === 2 ? 100 : 130;
+
         if (data.tumbleSteps?.length > 0) {
           for (const step of data.tumbleSteps) {
             if (step.winPositions?.length > 0) {
               setWinningCells(step.winPositions);
+              setMultIdx(step.ladderIdx ?? 0);
               setRainbowActive(true);
-              await new Promise(r => setTimeout(r, 500 / spd));
+              await new Promise(r => setTimeout(r, winDelay));
               setExplodingCells(step.winPositions);
-              await new Promise(r => setTimeout(r, 400 / spd));
+              await new Promise(r => setTimeout(r, explodeDelay));
             }
-            setGrid(step.newGrid);
-            setMultGrid(step.newMultGrid || Array(ROWS).fill(null).map(() => Array(COLS).fill(0)));
+
+            // Identify affected columns for cascade drop
+            const affectedCols = new Set<number>();
+            (step.winPositions || []).forEach((pos: string) => {
+              const parts = pos.split('-');
+              if (parts[1] !== undefined) affectedCols.add(Number(parts[1]));
+            });
+
             setWinningCells([]);
             setExplodingCells([]);
             setRainbowActive(false);
-            await new Promise(r => setTimeout(r, 350 / spd));
+            setDroppingCols(Array.from(affectedCols));
+            setGrid(step.newGrid);
+            setMultGrid(step.newMultGrid || Array(ROWS).fill(null).map(() => Array(COLS).fill(0)));
+            await new Promise(r => setTimeout(r, dropDelay));
+            setDroppingCols([]);
+            await new Promise(r => setTimeout(r, settleDelay));
           }
         }
         setIsSpinning(false);
+        spinningColsRef.current = Array(COLS).fill(false);
         setSpinningCols(Array(COLS).fill(false));
         setMyCoins(data.newBalance);
+        setFreeMultVal(data.freeMult || 0);
         localStorage.setItem('domino_coins', data.newBalance.toString());
         setTotalWin(data.totalWinAmount || 0);
-        setStatusText(data.totalWinAmount > 0 ? `MENANG: ${Math.floor(data.totalWinAmount).toLocaleString('id-ID')}` : 'GOOD LUCK');
-        if (data.triggerFreeSpins) setFreeSpinsLeft(p => p + data.freeSpinsAwarded);
-        if (autoSpinsRef.current > 1 || freeSpinsLeftRef.current > 0) {
+        let totalFree = freeSpinsLeftRef.current;
+        if (data.triggerFreeSpins) {
+          totalFree += data.freeSpinsAwarded;
+          setFreeSpinsLeft(totalFree);
+          setCelebration({
+            type: 'scatter',
+            freeSpinsCount: data.freeSpinsAwarded || 10,
+            title: '🍬 SCATTER CANDY RUSH! 🍬',
+            subtext: `SELAMAT! KAMU MEMICU ${data.freeSpinsAwarded || 10} PUTARAN GRATIS!`
+          });
+        } else if (data.totalWinAmount > 0) {
+          const ratio = data.totalWinAmount / Math.max(1, betAmount);
+          if (ratio >= 30) {
+            setCelebration({ type: 'super_win', amount: data.totalWinAmount });
+          } else if (ratio >= 12) {
+            setCelebration({ type: 'mega_win', amount: data.totalWinAmount });
+          } else if (ratio >= 3) {
+            setCelebration({ type: 'big_win', amount: data.totalWinAmount });
+          }
+        }
+        const hasCelebration = data.triggerFreeSpins || (data.totalWinAmount > 0 && (data.totalWinAmount / Math.max(1, betAmount)) >= 3);
+        const nextDelay = hasCelebration ? 3900 : Math.max(700, 1000 / spd);
+        if (autoSpinsRef.current > 1 || totalFree > 0) {
           if (autoSpinsRef.current > 1) setAutoSpins(a => a - 1);
-          if (freeSpinsLeftRef.current > 0) setFreeSpinsLeft(f => f - 1);
-          setTimeout(() => doSpinRef.current?.(), 1000 / spd);
+          if (totalFree > 0) setFreeSpinsLeft(f => f - 1);
+          setTimeout(() => doSpinRef.current?.(), nextDelay);
         } else if (autoSpinsRef.current === 1) setAutoSpins(0);
-      }, stopTime + 150);
+      }, allReelsSettled);
     };
 
     const handleError = () => {
       setIsSpinning(false);
+      spinningColsRef.current = Array(COLS).fill(false);
       setSpinningCols(Array(COLS).fill(false));
       setAutoSpins(0);
       setStatusText('GOOD LUCK');
@@ -131,39 +206,75 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
     return () => { socket.off('candy_result', handleResult); socket.off('candy_error', handleError); };
   }, [socket]);
 
+  const handleBuyFreeSpin = () => {
+    if (anteMode) {
+      alert('Nonaktifkan Taruhan Ganda untuk Membeli Spin Gratis!');
+      return;
+    }
+    if (isSpinning) return;
+    const cost = betAmount * 100;
+    if (myCoins < cost) {
+      alert(`Koin tidak cukup! Butuh ${cost.toLocaleString('id-ID')} koin.`);
+      return;
+    }
+    const newBal = myCoins - cost;
+    setMyCoins(newBal);
+    localStorage.setItem('domino_coins', newBal.toString());
+    setFreeSpinsLeft(10);
+    freeSpinsLeftRef.current = 10;
+    setFreeMultVal(1);
+    setStatusText('10 FREE SPINS DIMULAI!');
+    setTimeout(() => {
+      doSpinRef.current?.();
+    }, 400);
+  };
+
   const doSpin = () => {
     if (isSpinning || !socket) return;
     setIsSpinning(true);
+    spinningColsRef.current = Array(COLS).fill(true);
     setSpinningCols(Array(COLS).fill(true));
+    if (freeSpinsLeftRef.current === 0) {
+      setMultIdx(0);
+      setFreeMultVal(1);
+    }
     setTotalWin(0);
     setExplodingCells([]);
     setWinningCells([]);
     setStatusText('...');
-    socket.emit('spin_candy', { username, betAmount: anteMode ? Math.round(betAmount * 1.25) : betAmount, isFreeSpins: freeSpinsLeftRef.current > 0, anteMode, clientBalance: myCoins });
+    socket.emit('spin_candy', { 
+      username, 
+      betAmount, // base bet for payouts
+      actualBet: anteMode ? Math.round(betAmount * 1.25) : betAmount, // deduction
+      isFreeSpins: freeSpinsLeftRef.current > 0, 
+      anteMode, 
+      clientBalance: myCoins 
+    });
   };
   doSpinRef.current = doSpin;
 
   // CSS-art candy tile renderer
-  const renderCandy = (symId: number, multVal: number, isWin: boolean, isExp: boolean) => {
+  const renderCandy = (symId: number, multVal: number, isWin: boolean, isExp: boolean, isDrop: boolean = false) => {
     const winCls = isWin ? 'cr-tile-win' : '';
     const expCls = isExp ? 'cr-tile-explode' : '';
+    const dropCls = isDrop ? 'cr-tile-dropping' : '';
 
-    // BOMB MULTIPLIER
+    // MULTIPLIER ORB (AUTHENTIC WINGED ORB FROM PRAGMATIC PLAY)
     if (symId === 10) {
-      const bombColors: Record<number, [string, string]> = {
-        2: ['#ff80ab','#c2185b'], 3: ['#ff80ab','#c2185b'],
-        5: ['#80d8ff','#0277bd'], 8: ['#80d8ff','#0277bd'],
-        10:['#b9f6ca','#1b5e20'], 15:['#b9f6ca','#1b5e20'],
-        25:['#ffe57f','#f57f17'], 50:['#ffe57f','#f57f17'],
-        100:['#ea80fc','#6a1b9a'],500:['#ea80fc','#6a1b9a'],
-      };
-      const [c1, c2] = bombColors[multVal] ?? ['#ffe57f','#f57f17'];
+      const v = multVal > 0 ? multVal : 2;
+      const orbImg = v >= 50
+        ? '/assets/orbs/orb_red.png'
+        : v >= 15
+        ? '/assets/orbs/orb_purple.png'
+        : v >= 6
+        ? '/assets/orbs/orb_blue.png'
+        : '/assets/orbs/orb_green.png';
+
       return (
-        <div className={`cr-tile ${winCls} ${expCls}`} style={{background:'none',border:'none',boxShadow:'none'}}>
-          <div className="cr-bomb" style={{background:`radial-gradient(circle at 30% 25%, #fff 0%, ${c1} 40%, ${c2} 85%)`}}>
-            <div className="cr-bomb-shine"/>
-            <div className="cr-bomb-fuse"/>
-            <span className="cr-bomb-val">{multVal > 0 ? `${multVal}x` : '?x'}</span>
+        <div className={`cr-tile ${winCls} ${expCls} ${dropCls}`} style={{ background: 'none', border: 'none', boxShadow: 'none' }}>
+          <div className="gato-orb-real-wrap">
+            <img src={orbImg} alt={`Multiplier ${v}x`} className="gato-orb-real-img" />
+            <span className="gato-orb-real-val">{v}x</span>
           </div>
         </div>
       );
@@ -172,7 +283,7 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
     // SCATTER - candy bag / gift
     if (symId === 9) {
       return (
-        <div className={`cr-tile cr-sym-scatter ${winCls} ${expCls}`}>
+        <div className={`cr-tile cr-sym-scatter ${winCls} ${expCls} ${dropCls}`}>
           <div className="cr-scatter-body">
             <div className="cr-bag-top"/>
             <div className="cr-bag-ribbon"/>
@@ -188,7 +299,7 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
     // LOLLIPOP (0) - highest
     if (symId === 0) {
       return (
-        <div className={`cr-tile cr-sym-lollipop ${winCls} ${expCls}`}>
+        <div className={`cr-tile cr-sym-lollipop ${winCls} ${expCls} ${dropCls}`}>
           <div className="cr-lolly-stick"/>
           <div className="cr-lolly-head">
             <div className="cr-lolly-swirl cr-swirl-1"/>
@@ -202,7 +313,7 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
     // CANDY CANE (1)
     if (symId === 1) {
       return (
-        <div className={`cr-tile cr-sym-cane ${winCls} ${expCls}`}>
+        <div className={`cr-tile cr-sym-cane ${winCls} ${expCls} ${dropCls}`}>
           <div className="cr-cane-body">
             <div className="cr-cane-stripe cr-cs-1"/>
             <div className="cr-cane-stripe cr-cs-2"/>
@@ -215,7 +326,7 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
     // GUMMY BEAR (2)
     if (symId === 2) {
       return (
-        <div className={`cr-tile cr-sym-gummy ${winCls} ${expCls}`}>
+        <div className={`cr-tile cr-sym-gummy ${winCls} ${expCls} ${dropCls}`}>
           <div className="cr-gummy-body">
             <div className="cr-gummy-ears">
               <div className="cr-gummy-ear"/>
@@ -247,7 +358,7 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
     const cc = CANDY_CFG[symId] ?? CANDY_CFG[8];
 
     return (
-      <div className={`cr-tile cr-sym-candy ${winCls} ${expCls}`}>
+      <div className={`cr-tile cr-sym-candy ${winCls} ${expCls} ${dropCls}`}>
         <div className="cr-candy-wrap" style={{borderColor: cc.wrap}}>
           <div className="cr-candy-sphere"
                style={{background:`radial-gradient(circle at 30% 28%, ${cc.c1} 0%, ${cc.c2} 50%, ${cc.c3} 100%)`}}>
@@ -294,6 +405,7 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
       {/* TOP INFO */}
       <div className="cr-top-info">🍭 Simbol di mana saja di layar akan terbayar 🍭</div>
 
+
       {/* TOP RIGHT */}
       <div className="cr-topright" style={{ position: 'relative' }}>
         <button className="cr-tr-btn" onClick={() => alert('Trophy')}>🏆</button>
@@ -320,11 +432,46 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
       <div className="cr-main-area">
         {/* LEFT PANEL */}
         <div className="cr-left-panel">
-          <div className="cr-buy-spin" onClick={() => alert('Beli Free Spin: ' + (betAmount * 100).toLocaleString('id-ID'))}>
+          <div 
+            className={`cr-buy-spin ${anteMode ? 'disabled' : ''}`} 
+            onClick={handleBuyFreeSpin}
+            title={anteMode ? 'Nonaktif saat Taruhan Ganda aktif' : 'Beli Spin Gratis'}
+          >
             <div className="cr-bs-icon">🍭</div>
             <div className="cr-bs-title">BELI<br/>SPIN<br/>GRATIS</div>
-            <div className="cr-bs-amount">{Math.floor(betAmount * 100 / 1000000) > 0 ? Math.floor(betAmount * 100 / 1000000) + 'M' : (betAmount * 100 / 1000).toFixed(0) + 'K'}</div>
+            <div className="cr-bs-amount">
+              {(() => {
+                const buyCost = betAmount * 100;
+                if (buyCost >= 1e9) return (buyCost / 1e9).toFixed(1).replace(/\.0$/, '') + 'B';
+                if (buyCost >= 1e6) return (buyCost / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
+                if (buyCost >= 1e3) return (buyCost / 1e3).toFixed(0) + 'K';
+                return buyCost.toLocaleString('id-ID');
+              })()}
+            </div>
           </div>
+
+          {/* TOTAL PENGALI (SIDE MULTIPLIER) - SWEET BONANZA STYLE */}
+          {(() => {
+            const isFree = freeSpinsLeft > 0;
+            const displayMult = isFree
+              ? Math.max(1, freeMultVal, [1, 2, 3, 5][multIdx] || 1)
+              : Math.max(1, [1, 2, 3, 5][multIdx] || 1);
+            return (
+              <div className={`gato-side-multiplier ${isFree ? 'is-free-spin' : ''} ${displayMult > 1 ? 'is-active' : ''}`} style={{ width: '100%', boxSizing: 'border-box' }}>
+                <div className="gsm-wing-top">🍭 🍬 🍭</div>
+                <div className="gsm-title">{isFree ? 'TOTAL PENGALI' : 'PENGALI'}</div>
+                <div className="gsm-orb-wrap">
+                  <div className="gsm-orb-glow" />
+                  <div className="gsm-orb">
+                    <span className="gsm-val">{displayMult}x</span>
+                  </div>
+                </div>
+                <div className="gsm-sub">
+                  {isFree ? '★ TERSIMPAN ★' : (displayMult > 1 ? 'AKTIF' : 'BASE x1')}
+                </div>
+              </div>
+            );
+          })()}
 
           <div className="cr-ransel" onClick={() => alert('Ransel')}>
             <span>🎒</span>
@@ -333,9 +480,17 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
 
           <div className="cr-ante-panel">
             <div className="cr-ante-title">TARUHAN</div>
-            <div className="cr-ante-amt">{Math.floor(effectiveBet / 1000)}K</div>
+            <div className="cr-ante-amt">
+              {(() => {
+                const anteAmt = Math.round(betAmount * 1.25);
+                if (anteAmt >= 1e9) return (anteAmt / 1e9).toFixed(1).replace(/\.0$/, '') + 'B';
+                if (anteAmt >= 1e6) return (anteAmt / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
+                if (anteAmt >= 1e3) return (anteAmt / 1e3).toFixed(0) + 'K';
+                return anteAmt.toLocaleString('id-ID');
+              })()}
+            </div>
             <div className="cr-ante-sub">FITUR GANDA</div>
-            <div className="cr-ante-sub2">PELUANG MENANG</div>
+            <div className="cr-ante-sub2">PELUANG MENANG 2X</div>
             <div className={`cr-toggle ${anteMode ? 'on' : 'off'}`} onClick={() => setAnteMode(v => !v)}>
               <div className="cr-toggle-knob"/>
               <span>{anteMode ? 'ON' : 'OFF'}</span>
@@ -348,6 +503,11 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
 
         {/* GRID */}
         <div className="cr-grid-wrap">
+          {droppedMultNotif && (
+            <div className="gato-mult-drop-banner">{droppedMultNotif}</div>
+          )}
+          {/* MULTIPLIER BAR DIRECTLY ABOVE REELS */}
+          <SlotMultiplierBar inline={true} idx={multIdx} isFree={freeSpinsLeft > 0} freeMult={freeMultVal || 1} />
           {freeSpinsLeft > 0 && (
             <div className="cr-fs-banner">🍬 FREE SPIN: {freeSpinsLeft} 🍬</div>
           )}
@@ -360,7 +520,7 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
                   const cellKey = `${r}-${c}`;
                   return (
                     <div key={cellKey} className={`cr-cell ${spinningCols[c] ? 'cr-cell-spin' : ''}`}>
-                      {renderCandy(symId, multVal, winningCells.includes(cellKey), explodingCells.includes(cellKey))}
+                      {renderCandy(symId, multVal, winningCells.includes(cellKey), explodingCells.includes(cellKey), droppingCols.includes(c))}
                     </div>
                   );
                 })
@@ -435,9 +595,14 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
               }}
               onContextMenu={e => { e.preventDefault(); setShowAutoMenu(v => !v); }}
             >
-              <span className="cr-spin-text">
-                {autoSpins > 0 ? (autoSpins > 90000 ? 'AUTO ∞' : `AUTO ${autoSpins}`) : 'SPIN'}
-              </span>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>
+                <span className="cr-spin-text">{isSpinning ? 'STOP' : 'SPIN'}</span>
+                {autoSpins > 0 && (
+                  <span style={{ fontSize: '1.2vh', fontWeight: 900, color: '#fff9c4', textShadow: '0 1px 3px rgba(0,0,0,0.8)', marginTop: '0.2vh' }}>
+                    {autoSpins > 90000 ? 'AUTO ∞' : `AUTO: ${autoSpins}`}
+                  </span>
+                )}
+              </div>
             </button>
           </div>
         </div>
@@ -515,6 +680,9 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
           </div>
         </div>
       )}
+
+      {/* Universal Slot Celebration Modal */}
+      <SlotCelebrationModal data={celebration} onClose={() => setCelebration(null)} />
     </div>
   );
 }

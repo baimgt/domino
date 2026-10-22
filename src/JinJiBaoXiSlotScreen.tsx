@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { Socket } from 'socket.io-client';
 import './jinjibaoxi.css';
 import GameMenuDropdown from './GameMenuDropdown';
+import SlotMultiplierBar from './SlotMultiplierBar';
+import SlotCelebrationModal, { SlotCelebrationData } from './SlotCelebrationModal';
 
 interface Props {
   onBack: () => void;
@@ -30,6 +32,11 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
   const [, setWinType] = useState<string>('normal');
   const [winningSymbols, setWinningSymbols] = useState<number[]>([]);
   const [freeSpinsLeft, setFreeSpinsLeft] = useState(0);
+  const [multInfo, setMultInfo] = useState<any>(null); // dari server: tangga & pengali free spin
+  const [multGrid, setMultGrid] = useState<number[][]>(() => [[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]]);
+  const [droppedMultNotif, setDroppedMultNotif] = useState<string | null>(null);
+  const [celebration, setCelebration] = useState<SlotCelebrationData | null>(null);
+  const [currentMultiplier, setCurrentMultiplier] = useState(1);
   const [autoSpins, setAutoSpins] = useState(0);
   const [spinSpeed, setSpinSpeed] = useState(1);
   const [showRules, setShowRules] = useState(false);
@@ -61,6 +68,7 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
   const freeSpinsLeftRef = useRef(freeSpinsLeft);
   const spinSpeedRef = useRef(spinSpeed);
   const doSpinRef = useRef<any>(null);
+  const spinningColsRef = useRef<boolean[]>([false, false, false, false, false]);
 
   useEffect(() => { autoSpinsRef.current = autoSpins; }, [autoSpins]);
   useEffect(() => { freeSpinsLeftRef.current = freeSpinsLeft; }, [freeSpinsLeft]);
@@ -87,40 +95,47 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
     if (coinsStr) setMyCoins(parseInt(coinsStr));
   }, []);
 
-  // Rapid Reel Symbol Shuffle (DFDC Style)
+  // Rapid Reel Symbol Shuffle (DFDC Style), checking synchronous spinningColsRef to prevent symbol flicker
   useEffect(() => {
     let interval: any = null;
     if (isSpinning) {
       interval = setInterval(() => {
+        if (!spinningColsRef.current.some(Boolean)) return;
         setGrid(prev => {
           const next = prev.map(row => [...row]);
           for (let r = 0; r < 3; r++) {
             for (let c = 0; c < 5; c++) {
-              if (spinningCols[c]) {
+              if (spinningColsRef.current[c]) {
                 next[r][c] = Math.floor(Math.random() * 8);
               }
             }
           }
           return next;
         });
-      }, 70 / spinSpeedRef.current);
+      }, Math.max(30, Math.floor(65 / spinSpeedRef.current)));
     }
     return () => { if (interval) clearInterval(interval); };
-  }, [isSpinning, spinningCols]);
+  }, [isSpinning]);
 
   // Socket Response Handling
   useEffect(() => {
     if (!socket) return;
 
     const handleResult = (data: any) => {
+      setMultInfo(data.multiplier || null);
+      if (data.multGrid) setMultGrid(data.multGrid);
       const spd = spinSpeedRef.current;
-      let stopTime = 200 / spd;
-      const delayPerCol = 250 / spd;
+      const minSpinBase = spd === 3 ? 240 : spd === 2 ? 400 : 750;
+      const delayPerCol = spd === 3 ? 65 : spd === 2 ? 100 : 180;
+      const bounceDuration = spd === 3 ? 160 : spd === 2 ? 240 : 380;
+      let stopTime = minSpinBase;
 
       // Staggered Reel Stopping (Reel 1 -> 5)
       for (let c = 0; c < 5; c++) {
         const col = c;
         setTimeout(() => {
+          // Matikan flag reel ini secara sinkron di ref TERLEBIH DAHULU agar interval shuffle tidak menimpa
+          spinningColsRef.current[col] = false;
           setSpinningCols(prev => {
             const next = [...prev];
             next[col] = false;
@@ -137,40 +152,83 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
         stopTime += delayPerCol;
       }
 
-      // Finish spin sequence
+      // Finish spin sequence after all reels settled cleanly
+      const allReelsSettled = stopTime + bounceDuration + 60;
       setTimeout(() => {
         setIsSpinning(false);
+        spinningColsRef.current = [false, false, false, false, false];
+        setSpinningCols([false, false, false, false, false]);
         setMyCoins(data.newBalance);
         localStorage.setItem('domino_coins', data.newBalance.toString());
         setWinAmount(data.winAmount);
         setWinType(data.winType);
         setWinningSymbols(data.winningSymbols || []);
 
+        // Calculate landed multiplier sum
+        let landedMultSum = 0;
+        if (data.multGrid) {
+          for (let r = 0; r < 3; r++) {
+            for (let c = 0; c < 5; c++) {
+              if (data.multGrid[r]?.[c] > 0) landedMultSum += data.multGrid[r][c];
+            }
+          }
+        }
+        if (landedMultSum > 0) {
+          setCurrentMultiplier(landedMultSum);
+          setDroppedMultNotif(`🏮 PENGALI JINJI ${landedMultSum}x TURUN! 🏮`);
+          setTimeout(() => setDroppedMultNotif(null), 3000);
+        } else if (data.multiplier?.applied && data.multiplier.applied > 1) {
+          setCurrentMultiplier(data.multiplier.applied);
+        } else {
+          setCurrentMultiplier(1);
+        }
+
         // Trigger Jackpot Pick Feature if won
         if (data.triggerJackpot) {
           initJackpotPickGame(data.jackpotType, data.jackpotWinAmount);
         }
 
+        let totalFree = freeSpinsLeftRef.current;
         if (data.triggerFreeSpins) {
-          setFreeSpinsLeft(prev => prev + data.freeSpinsAwarded);
+          totalFree += data.freeSpinsAwarded;
+          setFreeSpinsLeft(totalFree);
+          setCelebration({
+            type: 'scatter',
+            freeSpinsCount: data.freeSpinsAwarded || 10,
+            title: '🏮 SCATTER JIN JI BAO XI! 🏮',
+            subtext: `SELAMAT! KAMU MEMICU ${data.freeSpinsAwarded || 10} PUTARAN GRATIS!`
+          });
+        } else if (data.winAmount > 0) {
+          const ratio = data.winAmount / Math.max(1, betAmount);
+          if (ratio >= 30) {
+            setCelebration({ type: 'super_win', amount: data.winAmount });
+          } else if (ratio >= 12) {
+            setCelebration({ type: 'mega_win', amount: data.winAmount });
+          } else if (ratio >= 3) {
+            setCelebration({ type: 'big_win', amount: data.winAmount });
+          }
         }
 
         // Handle auto spin / free spin continuation
-        if (autoSpinsRef.current > 1 || (freeSpinsLeftRef.current > 0 && !data.triggerFreeSpins)) {
+        const hasCelebration = data.triggerFreeSpins || (data.winAmount > 0 && (data.winAmount / Math.max(1, betAmount)) >= 3);
+        const nextDelay = hasCelebration ? 3900 : Math.max(700, 1000 / spd);
+
+        if (autoSpinsRef.current > 1 || totalFree > 0) {
           if (autoSpinsRef.current > 1) setAutoSpins(a => a - 1);
-          if (freeSpinsLeftRef.current > 0) setFreeSpinsLeft(f => f - 1);
+          if (totalFree > 0) setFreeSpinsLeft(f => f - 1);
           setTimeout(() => {
             if (doSpinRef.current) doSpinRef.current();
-          }, 1000 / spd);
+          }, nextDelay);
         } else if (autoSpinsRef.current === 1) {
           setAutoSpins(0);
         }
-      }, stopTime + 50);
+      }, allReelsSettled);
     };
 
     const handleError = (data: any) => {
       alert(data.message);
       setIsSpinning(false);
+      spinningColsRef.current = [false, false, false, false, false];
       setSpinningCols([false, false, false, false, false]);
       setAutoSpins(0);
     };
@@ -231,6 +289,7 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
   const doSpin = () => {
     if (isSpinning || !socket) return;
     setIsSpinning(true);
+    spinningColsRef.current = [true, true, true, true, true];
     setSpinningCols([true, true, true, true, true]);
     setWinAmount(0);
     setWinningSymbols([]);
@@ -248,7 +307,24 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
   const lineBetMultiplier = goldTier === 5 ? 88 : goldTier === 4 ? 78 : goldTier === 3 ? 68 : goldTier === 2 ? 38 : 18;
   const lineBetUnit = Math.max(1, Math.round(betAmount / lineBetMultiplier));
 
-  const renderSymbolComponent = (symId: number) => {
+  const renderSymbolComponent = (symId: number, multVal?: number) => {
+    if (symId === 12) {
+      const v = multVal || 5;
+      const orbImg = v >= 50
+        ? '/assets/orbs/orb_red.png'
+        : v >= 15
+        ? '/assets/orbs/orb_purple.png'
+        : v >= 6
+        ? '/assets/orbs/orb_blue.png'
+        : '/assets/orbs/orb_green.png';
+      return (
+        <div className="gato-orb-real-wrap" style={{ width: '100%', height: '100%' }}>
+          <img src={orbImg} alt={`Multiplier ${v}x`} className="gato-orb-real-img" />
+          <span className="gato-orb-real-val">{v}x</span>
+        </div>
+      );
+    }
+
     let src = '/assets/jinji/sym_card_a.png';
     let alt = 'Symbol';
     let isGold = false;
@@ -524,6 +600,7 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
         </svg>
       </div>
 
+
       {/* TOP LEFT (Profile & Coins) */}
       <div className="jinji-top-left">
         <div className="jinji-avatar" onClick={() => alert('Profil VIP')}>
@@ -622,8 +699,33 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
         <button onClick={() => alert('Side Panel')}>◀</button>
       </div>
 
+      {/* SIDE MULTIPLIER WIDGET (right side panel) */}
+      <div className="jinji-mult-side">
+        <div className={`gato-side-multiplier ${freeSpinsLeft > 0 ? 'is-free-spin' : ''} ${currentMultiplier > 1 ? 'is-active' : ''}`}>
+          <div className="gsm-wing-top">🏮 🐓 🏮</div>
+          <div className="gsm-title">{freeSpinsLeft > 0 ? 'TOTAL PENGALI' : 'PENGALI'}</div>
+          <div className="gsm-orb-wrap">
+            <div className="gsm-orb-glow" />
+            <div className="gsm-orb">
+              <span className="gsm-val">{currentMultiplier}x</span>
+            </div>
+          </div>
+          <div className="gsm-sub">
+            {freeSpinsLeft > 0 ? '★ TERSIMPAN ★' : (currentMultiplier > 1 ? 'AKTIF' : 'BASE x1')}
+          </div>
+        </div>
+      </div>
+
       {/* MAIN SLOT REEL BOARD */}
       <div className="jinji-machine-container">
+        {droppedMultNotif && (
+          <div className="gato-mult-drop-banner notranslate" translate="no">
+            {droppedMultNotif}
+          </div>
+        )}
+
+        {/* MULTIPLIER BAR - PLACED DIRECTLY ABOVE REELS */}
+        <SlotMultiplierBar inline={true} idx={multInfo?.idx ?? 0} isFree={freeSpinsLeft > 0} freeMult={multInfo?.freeMult || 1} />
         {freeSpinsLeft > 0 && (
           <div className="jinji-freespin-banner">FREE GAME: {freeSpinsLeft}</div>
         )}
@@ -648,7 +750,7 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
                   const isWinning = winningSymbols.includes(symId);
                   return (
                     <div key={`cell-${rIdx}-${cIdx}`} className={`jinji-cell ${isWinning ? 'win-highlight' : ''}`}>
-                      {renderSymbolComponent(symId)}
+                      {renderSymbolComponent(symId, multGrid[rIdx]?.[cIdx])}
                     </div>
                   );
                 })}
@@ -795,9 +897,11 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
                   }}
                   onContextMenu={(e) => { e.preventDefault(); setShowAutoMenu(!showAutoMenu); }}
                 >
-                  <div className="jbot-spin-title">{autoSpins > 0 ? `AUTO ${autoSpins > 90000 ? '∞' : autoSpins}` : 'SPIN'}</div>
+                  <div className="jbot-spin-title">{isSpinning ? 'STOP' : 'SPIN'}</div>
                   <div className="jbot-spin-sub-pill">
-                    <span className="jbot-spin-sub">{autoSpins > 0 ? 'STOP' : 'HOLD FOR AUTO'}</span>
+                    <span className="jbot-spin-sub">
+                      {autoSpins > 0 ? (autoSpins > 90000 ? 'AUTO ∞' : `AUTO: ${autoSpins}`) : (isSpinning ? 'BERHENTI' : 'HOLD FOR AUTO')}
+                    </span>
                   </div>
                 </button>
               )}
@@ -1591,6 +1695,9 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
           </div>
         </div>
       )}
+
+      {/* Universal Slot Celebration Modal */}
+      <SlotCelebrationModal data={celebration} onClose={() => setCelebration(null)} />
     </div>
   );
 }

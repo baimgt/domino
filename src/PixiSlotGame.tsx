@@ -120,7 +120,9 @@ export const PixiSlotGame: React.FC<PixiSlotGameProps> = ({
         reelsData.push({
           container: rc,
           sprites: sprites,
-          yOffset: 0
+          yOffset: 0,
+          wasSpinning: false,
+          bounceTime: 0
         });
       }
 
@@ -132,12 +134,15 @@ export const PixiSlotGame: React.FC<PixiSlotGameProps> = ({
 
         for (let c = 0; c < COL_COUNT; c++) {
           const reel = reelsData[c];
+          const isColSpinning = Boolean(state.spinningCols[c]);
           
-          if (state.spinningCols[c]) {
-            // Spin down
-            reel.yOffset += 40 * delta * state.speedMultiplier;
+          if (isColSpinning) {
+            reel.wasSpinning = true;
+            // Spin down smoothly, scaling speed without extreme overshoot
+            const effectiveSpeed = Math.min(2.5, Math.max(1, state.speedMultiplier));
+            reel.yOffset += 42 * delta * effectiveSpeed;
 
-            if (reel.yOffset > SYMBOL_SIZE) {
+            while (reel.yOffset > SYMBOL_SIZE) {
               reel.yOffset -= SYMBOL_SIZE;
               // Cycle sprites: move bottom one to top
               const bottomSpriteObj = reel.sprites.pop();
@@ -150,8 +155,26 @@ export const PixiSlotGame: React.FC<PixiSlotGameProps> = ({
               }
             }
           } else {
+            if (reel.wasSpinning) {
+              reel.wasSpinning = false;
+              reel.bounceTime = performance.now();
+            }
+
+            // Smooth landing bounce
+            if (reel.bounceTime > 0) {
+              const elapsed = performance.now() - reel.bounceTime;
+              if (elapsed < 200) {
+                const p = elapsed / 200;
+                reel.yOffset = Math.sin(p * Math.PI) * 14 * (1 - p);
+              } else {
+                reel.yOffset = 0;
+                reel.bounceTime = 0;
+              }
+            } else {
+              reel.yOffset = 0;
+            }
+
             // Snap to target grid if not spinning
-            reel.yOffset = 0;
             if (state.grid.length >= 3) {
               // Target symbols (row 0, 1, 2)
               const t0 = state.grid[0]?.[c] ?? Math.floor(Math.random()*11);
@@ -159,15 +182,15 @@ export const PixiSlotGame: React.FC<PixiSlotGameProps> = ({
               const t2 = state.grid[2]?.[c] ?? Math.floor(Math.random()*11);
               
               // sprites[0] is at y=-1 (above visible). sprites[1,2,3] are visible
-              if (reel.sprites[1]) {
+              if (reel.sprites[1] && reel.sprites[1].symVal !== t0) {
                  reel.sprites[1].symVal = t0;
                  reel.sprites[1].sprite.texture = Assets.get(symbolTextures[t0] || symbolTextures[0]);
               }
-              if (reel.sprites[2]) {
+              if (reel.sprites[2] && reel.sprites[2].symVal !== t1) {
                  reel.sprites[2].symVal = t1;
                  reel.sprites[2].sprite.texture = Assets.get(symbolTextures[t1] || symbolTextures[0]);
               }
-              if (reel.sprites[3]) {
+              if (reel.sprites[3] && reel.sprites[3].symVal !== t2) {
                  reel.sprites[3].symVal = t2;
                  reel.sprites[3].sprite.texture = Assets.get(symbolTextures[t2] || symbolTextures[0]);
               }

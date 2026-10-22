@@ -354,8 +354,11 @@ button:hover, .jinji-side-card:hover, .jinji-avatar:hover, .jinji-plus-btn:hover
     0 0 0 0.82vh #8c5500,
     0 1.8vh 4vh rgba(0,0,0,0.95),
     inset 0 0 2vh rgba(255,200,50,0.25);
-  width: 78vw; max-width: 1140px;
-  height: 58vh;
+  aspect-ratio: 5 / 3.4;
+  height: min(64vh, 400px);
+  width: auto;
+  max-width: 82vw;
+  margin: 0 auto;
   display: flex; position: relative; align-items: center;
 }
 
@@ -474,19 +477,18 @@ button:hover, .jinji-side-card:hover, .jinji-avatar:hover, .jinji-plus-btn:hover
 
 /* REEL MOTION BLUR (DFDC Style) */
 .jinji-col.is-spinning {
-  will-change: transform, filter;
-  animation: reelVibe 0.08s linear infinite;
+  will-change: transform;
+  animation: reelVibe 0.12s ease-in-out infinite alternate;
 }
 .jinji-col.is-spinning .jinji-sym-wrapper {
-  filter: blur(4px) brightness(1.1);
-  transform: scaleY(1.08);
-  opacity: 0.9;
+  filter: none !important;
+  transform: none !important;
+  opacity: 1;
 }
 
 @keyframes reelVibe {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-6px); }
-  100% { transform: translateY(0px); }
+  0% { transform: translateY(-8px); }
+  100% { transform: translateY(8px); }
 }
 
 /* SYMBOL ARTWORK */
@@ -1759,3 +1761,189 @@ button:hover, .jinji-side-card:hover, .jinji-avatar:hover, .jinji-plus-btn:hover
   box-shadow: 0 0.5vh 1.2vh rgba(0,0,0,0.6), 0 0 1.5vh #4ef0a8;
   text-shadow: 0 0.2vh 0.4vh #000; letter-spacing: 0.05vw; line-height: 1.1;
 }
+
+/* =====================================================
+   LAYOUT FIX + ILLUSTRATED BACKGROUND (override)
+   ===================================================== */
+
+/* Latar belakang bergambar: istana Tiongkok + lentera + kolam teratai */
+.jinji-bg-sky {
+  background:
+    radial-gradient(ellipse at 50% 55%, rgba(8, 10, 40, 0.55) 0%, rgba(8, 10, 40, 0.15) 55%, transparent 80%),
+    linear-gradient(180deg, rgba(5, 8, 35, 0.45) 0%, rgba(5, 8, 35, 0) 25%, rgba(5, 5, 25, 0.35) 100%),
+    url('/assets/jinji/bg_temple.jpg') center / cover no-repeat,
+    #1a1450;
+  animation: jinjiBgDrift 40s ease-in-out infinite alternate;
+}
+@keyframes jinjiBgDrift {
+  0%   { background-position: 0 0, 0 0, 48% 50%, 0 0; }
+  100% { background-position: 0 0, 0 0, 52% 50%, 0 0; }
+}
+/* SVG lama diganti gambar */
+.jinji-bg-svg { display: none; }
+/* Vignette tipis supaya reel & UI tetap terbaca */
+.jinji-bg-sky::before {
+  background:
+    radial-gradient(ellipse at 50% 50%, transparent 45%, rgba(0, 0, 0, 0.5) 100%),
+    radial-gradient(circle at 50% 8%, rgba(255, 235, 150, 0.14) 0%, transparent 40%);
+}
+.jinji-bg-sky::after { background: none; }
+
+/* Container mesin: susun VERTIKAL (bar pengali di atas, mesin di bawah) */
+.jinji-machine-container {
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding-top: 11.5vh;
+  padding-bottom: 1.2vh;
+  gap: 0.4vh;
+}
+.jinji-machine-container .smb-wrap.smb-inline { margin: 0 auto; flex-shrink: 0; }
+.jinji-machine { flex-shrink: 0; height: 54vh; }
+
+/* Banner free game tidak lagi nabrak jackpot */
+.jinji-freespin-banner {
+  top: 11.5vh;
+  left: 3vw;
+  transform: none;
+  font-size: 1.8vh;
+  padding: 0.5vh 1.4vw;
+}
+
+/* Panel pengali di sisi kanan */
+.jinji-mult-side {
+  position: absolute;
+  right: 1.2vw;
+  top: 24vh;
+  width: 9vw;
+  min-width: 96px;
+  max-width: 130px;
+  z-index: 30;
+}
+.jinji-mult-side .gato-side-multiplier { width: 100%; box-sizing: border-box; }
+
+/* ========================================================
+   JIN JI BAO XI MOBILE LANDSCAPE RESPONSIVE FIXES
+   ======================================================== */
+@media screen and (max-height: 600px), screen and (max-width: 1024px) and (orientation: landscape) {
+  .jinji-topbar {
+    height: 38px !important;
+    padding: 0 8px !important;
+  }
+  .jtb-btn {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 13px !important;
+  }
+  .jtb-avatar {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 14px !important;
+  }
+  .jtb-coins {
+    height: 26px !important;
+    padding: 0 8px !important;
+    font-size: 11px !important;
+    gap: 4px !important;
+  }
+  .jtb-plus {
+    width: 18px !important;
+    height: 18px !important;
+    font-size: 13px !important;
+  }
+
+  .jinji-fu-pot-container {
+    transform: scale(0.65) !important;
+    transform-origin: center center !important;
+  }
+  .jinji-jackpot-item {
+    padding: 1px 4px !important;
+  }
+  .jp-tag {
+    font-size: 7.5px !important;
+  }
+  .jp-val {
+    font-size: 9px !important;
+  }
+
+  .jinji-side-left,
+  .jinji-side-right-arrow,
+  .jinji-mult-side {
+    display: none !important;
+  }
+
+  .jinji-machine-container {
+    padding-top: 38px !important;
+    padding-bottom: 44px !important;
+    gap: 2px !important;
+  }
+
+  .jinji-machine {
+    aspect-ratio: 5 / 3.4 !important;
+    height: min(72vh, 350px) !important;
+    max-width: 82vw !important;
+    width: auto !important;
+    margin: 0 auto !important;
+  }
+
+  .jinji-bottombar {
+    height: 42px !important;
+    padding: 0 8px !important;
+    border-radius: 12px 12px 0 0 !important;
+  }
+  .jbot-left, .jbot-right {
+    gap: 4px !important;
+  }
+  .jbot-btn {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 8px !important;
+  }
+
+  .jinji-bet-display {
+    min-width: 85px !important;
+    height: 34px !important;
+    padding: 0 4px !important;
+    border-radius: 8px !important;
+    justify-content: center !important;
+  }
+  .jinji-bet-label {
+    font-size: 7.5px !important;
+  }
+  .jinji-bet-val {
+    font-size: 11px !important;
+  }
+
+  .jinji-win-pill {
+    min-width: 110px !important;
+    height: 36px !important;
+    padding: 1px 8px !important;
+    border-radius: 12px !important;
+  }
+  .jinji-win-label {
+    font-size: 8px !important;
+  }
+  .jinji-win-val {
+    font-size: 14px !important;
+  }
+
+  .jbot-maxbet-btn, .jbot-speed-btn {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+  }
+  .jinji-spin-btn {
+    min-width: 85px !important;
+    height: 36px !important;
+    padding: 0 8px !important;
+    border-radius: 8px !important;
+  }
+  .spin-txt-main {
+    font-size: 14px !important;
+  }
+  .spin-txt-sub {
+    font-size: 7.5px !important;
+  }
+}
+

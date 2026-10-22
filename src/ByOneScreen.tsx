@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Socket } from 'socket.io-client';
+import { API_URL } from './config';
 import './byone.css';
 
 // =====================================================
@@ -251,7 +252,7 @@ export default function ByOneScreen({
   // Fetch local user profile
   const fetchMyProfile = useCallback(async () => {
     try {
-      const res = await fetch(`http://localhost:8080/api/profile/${myUsername}`);
+      const res = await fetch(`${API_URL}/profile/${myUsername}`);
       if (res.ok) {
         const data = await res.json();
         setMyCoins(data.coins || 0);
@@ -348,7 +349,7 @@ export default function ByOneScreen({
   // Deduct/Add coins via backend API
   const syncCoins = async (amount: number) => {
     try {
-      const res = await fetch('http://localhost:8080/api/users/update-coins', {
+      const res = await fetch(`${API_URL}/users/update-coins`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: myUsername, amount }),
@@ -682,7 +683,7 @@ export default function ByOneScreen({
     setIsMeWinner(meWon);
     setWinPayout(currentPot);
 
-    if (meWon) {
+    if (meWon && isOpponentBot) {
       syncCoins(currentPot);
     }
 
