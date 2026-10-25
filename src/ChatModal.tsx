@@ -20,7 +20,7 @@ interface Props {
 function Avatar({ src, name }: { src: string; name: string }) {
   const isImg = src && (src.startsWith('/') || src.startsWith('http') || src.startsWith('data:'));
   if (isImg) {
-    return <img className="chat-avatar-img" src={src} alt={name} onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />;
+    return <img className="chat-avatar-img" src={src} alt={name} referrerPolicy="no-referrer" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />;
   }
   return <span className="chat-avatar-emoji">{src || name.charAt(0).toUpperCase()}</span>;
 }

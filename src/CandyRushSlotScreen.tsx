@@ -5,6 +5,8 @@ import './gatokaca.css';
 import GameMenuDropdown from './GameMenuDropdown';
 import SlotMultiplierBar from './SlotMultiplierBar';
 import SlotCelebrationModal, { SlotCelebrationData } from './SlotCelebrationModal';
+import SlotProfileModal, { renderSlotAvatar } from './SlotProfileModal';
+import { useSlotProfile } from './useSlotProfile';
 
 interface Props {
   onBack: () => void;
@@ -22,8 +24,13 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
   );
   const [isSpinning, setIsSpinning] = useState(false);
   const [spinningCols, setSpinningCols] = useState<boolean[]>(Array(COLS).fill(false));
-  const [betAmount, setBetAmount] = useState(100000);
-  const [myCoins, setMyCoins] = useState(0);
+  const userProfile = useSlotProfile();
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [betAmount, setBetAmount] = useState(10000);
+  const [myCoins, setMyCoins] = useState<number>(() => {
+    const saved = localStorage.getItem('domino_coins');
+    return saved ? parseInt(saved, 10) : 100000;
+  });
   const [totalWin, setTotalWin] = useState(0);
   const [freeSpinsLeft, setFreeSpinsLeft] = useState(0);
   const [autoSpins, setAutoSpins] = useState(0);
@@ -36,7 +43,7 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
   const [musicOn, setMusicOn] = useState(true);
   const [showAutoMenu, setShowAutoMenu] = useState(false);
   const [explodingCells, setExplodingCells] = useState<string[]>([]);
-  const [droppingCols, setDroppingCols] = useState<number[]>([]);
+  const [droppingCells, setDroppingCells] = useState<Record<string, number>>({});
   const [winningCells, setWinningCells] = useState<string[]>([]);
   const [statusText, setStatusText] = useState('GOOD LUCK');
   const [rainbowActive, setRainbowActive] = useState(false);
@@ -52,6 +59,7 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
   const spinSpeedRef = useRef(spinSpeed);
   const doSpinRef = useRef<any>(null);
   const spinningColsRef = useRef<boolean[]>(Array(COLS).fill(false));
+  const spinTimer = useRef<any>(null);
 
   useEffect(() => { autoSpinsRef.current = autoSpins; }, [autoSpins]);
   useEffect(() => { freeSpinsLeftRef.current = freeSpinsLeft; }, [freeSpinsLeft]);
@@ -79,6 +87,7 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
   useEffect(() => {
     if (!socket) return;
     const handleResult = async (data: any) => {
+      if (spinTimer.current) clearTimeout(spinTimer.current);
       const spd = spinSpeedRef.current;
       const minSpinBase = spd === 3 ? 240 : spd === 2 ? 400 : 750;
       const delayPerCol = spd === 3 ? 65 : spd === 2 ? 100 : 180;
@@ -129,30 +138,53 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
 
         if (data.tumbleSteps?.length > 0) {
           for (const step of data.tumbleSteps) {
-            if (step.winPositions?.length > 0) {
-              setWinningCells(step.winPositions);
+            const wins = step.winPositions || [];
+            if (wins.length > 0) {
+              // 1. Highlight winning cells
+              setWinningCells(wins);
               setMultIdx(step.ladderIdx ?? 0);
               setRainbowActive(true);
               await new Promise(r => setTimeout(r, winDelay));
-              setExplodingCells(step.winPositions);
+
+              // 2. Explode winning candies
+              setExplodingCells(wins);
               await new Promise(r => setTimeout(r, explodeDelay));
+
+              // 3. Briefly reveal empty holes where candies exploded
+              setGrid(prev => prev.map((row, r) =>
+                row.map((cell, c) => wins.includes(`${r}-${c}`) ? null as any : cell)
+              ));
+              setWinningCells([]);
+              setExplodingCells([]);
+              setRainbowActive(false);
+              await new Promise(r => setTimeout(r, Math.max(70, 110 / spd)));
             }
 
-            // Identify affected columns for cascade drop
-            const affectedCols = new Set<number>();
-            (step.winPositions || []).forEach((pos: string) => {
-              const parts = pos.split('-');
-              if (parts[1] !== undefined) affectedCols.add(Number(parts[1]));
-            });
+            // 4. Calculate drop distance ONLY for cells strictly above the exploded slots
+            // Candies below exploded slots stay completely stationary!
+            const dropsMap: Record<string, number> = {};
+            for (let c = 0; c < COLS; c++) {
+              const expRowsInCol: number[] = [];
+              for (let r = 0; r < ROWS; r++) {
+                if (wins.includes(`${r}-${c}`)) {
+                  expRowsInCol.push(r);
+                }
+              }
+              if (expRowsInCol.length === 0) continue;
 
-            setWinningCells([]);
-            setExplodingCells([]);
-            setRainbowActive(false);
-            setDroppingCols(Array.from(affectedCols));
+              const maxExpRow = Math.max(...expRowsInCol);
+              const expCount = expRowsInCol.length;
+              for (let r = 0; r <= maxExpRow; r++) {
+                dropsMap[`${r}-${c}`] = expCount;
+              }
+            }
+
+            // 5. Cascade drop: top candies slide down and new candies land from above
+            setDroppingCells(dropsMap);
             setGrid(step.newGrid);
             setMultGrid(step.newMultGrid || Array(ROWS).fill(null).map(() => Array(COLS).fill(0)));
             await new Promise(r => setTimeout(r, dropDelay));
-            setDroppingCols([]);
+            setDroppingCells({});
             await new Promise(r => setTimeout(r, settleDelay));
           }
         }
@@ -193,12 +225,16 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
       }, allReelsSettled);
     };
 
-    const handleError = () => {
+    const handleError = (data: any) => {
+      if (spinTimer.current) clearTimeout(spinTimer.current);
       setIsSpinning(false);
       spinningColsRef.current = Array(COLS).fill(false);
       setSpinningCols(Array(COLS).fill(false));
       setAutoSpins(0);
-      setStatusText('GOOD LUCK');
+      setStatusText(data?.message || 'GOOD LUCK');
+      if (data?.message) {
+        alert(data.message);
+      }
     };
 
     socket.on('candy_result', handleResult);
@@ -230,7 +266,18 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
   };
 
   const doSpin = () => {
-    if (isSpinning || !socket) return;
+    if (isSpinning) return;
+    if (!socket) {
+      setStatusText('Tidak terhubung ke server!');
+      return;
+    }
+    const actualBet = anteMode ? Math.round(betAmount * 1.25) : betAmount;
+    if (freeSpinsLeftRef.current === 0 && myCoins < actualBet) {
+      alert(`Koin tidak cukup! Taruhan: ${actualBet.toLocaleString('id-ID')} koin.`);
+      setAutoSpins(0);
+      return;
+    }
+
     setIsSpinning(true);
     spinningColsRef.current = Array(COLS).fill(true);
     setSpinningCols(Array(COLS).fill(true));
@@ -242,10 +289,20 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
     setExplodingCells([]);
     setWinningCells([]);
     setStatusText('...');
+
+    if (spinTimer.current) clearTimeout(spinTimer.current);
+    spinTimer.current = setTimeout(() => {
+      setIsSpinning(false);
+      spinningColsRef.current = Array(COLS).fill(false);
+      setSpinningCols(Array(COLS).fill(false));
+      setAutoSpins(0);
+      setStatusText('Koneksi timeout, coba lagi.');
+    }, 8000);
+
     socket.emit('spin_candy', { 
       username, 
       betAmount, // base bet for payouts
-      actualBet: anteMode ? Math.round(betAmount * 1.25) : betAmount, // deduction
+      actualBet, // deduction
       isFreeSpins: freeSpinsLeftRef.current > 0, 
       anteMode, 
       clientBalance: myCoins 
@@ -254,10 +311,15 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
   doSpinRef.current = doSpin;
 
   // CSS-art candy tile renderer
-  const renderCandy = (symId: number, multVal: number, isWin: boolean, isExp: boolean, isDrop: boolean = false) => {
+  const renderCandy = (symId: number | null | undefined, multVal: number, isWin: boolean, isExp: boolean, isDrop: boolean = false, dropDist: number = 1) => {
+    if (symId === null || symId === undefined) {
+      return <div className="cr-tile cr-tile-empty" style={{ opacity: 0, pointerEvents: 'none' }} />;
+    }
+
     const winCls = isWin ? 'cr-tile-win' : '';
     const expCls = isExp ? 'cr-tile-explode' : '';
     const dropCls = isDrop ? 'cr-tile-dropping' : '';
+    const dropStyle = { ['--drop-dist' as any]: dropDist };
 
     // MULTIPLIER ORB (AUTHENTIC WINGED ORB FROM PRAGMATIC PLAY)
     if (symId === 10) {
@@ -271,7 +333,7 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
         : '/assets/orbs/orb_green.png';
 
       return (
-        <div className={`cr-tile ${winCls} ${expCls} ${dropCls}`} style={{ background: 'none', border: 'none', boxShadow: 'none' }}>
+        <div className={`cr-tile ${winCls} ${expCls} ${dropCls}`} style={{ background: 'none', border: 'none', boxShadow: 'none', ...dropStyle }}>
           <div className="gato-orb-real-wrap">
             <img src={orbImg} alt={`Multiplier ${v}x`} className="gato-orb-real-img" />
             <span className="gato-orb-real-val">{v}x</span>
@@ -283,7 +345,7 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
     // SCATTER - candy bag / gift
     if (symId === 9) {
       return (
-        <div className={`cr-tile cr-sym-scatter ${winCls} ${expCls} ${dropCls}`}>
+        <div className={`cr-tile cr-sym-scatter ${winCls} ${expCls} ${dropCls}`} style={dropStyle}>
           <div className="cr-scatter-body">
             <div className="cr-bag-top"/>
             <div className="cr-bag-ribbon"/>
@@ -299,7 +361,7 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
     // LOLLIPOP (0) - highest
     if (symId === 0) {
       return (
-        <div className={`cr-tile cr-sym-lollipop ${winCls} ${expCls} ${dropCls}`}>
+        <div className={`cr-tile cr-sym-lollipop ${winCls} ${expCls} ${dropCls}`} style={dropStyle}>
           <div className="cr-lolly-stick"/>
           <div className="cr-lolly-head">
             <div className="cr-lolly-swirl cr-swirl-1"/>
@@ -313,7 +375,7 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
     // CANDY CANE (1)
     if (symId === 1) {
       return (
-        <div className={`cr-tile cr-sym-cane ${winCls} ${expCls} ${dropCls}`}>
+        <div className={`cr-tile cr-sym-cane ${winCls} ${expCls} ${dropCls}`} style={dropStyle}>
           <div className="cr-cane-body">
             <div className="cr-cane-stripe cr-cs-1"/>
             <div className="cr-cane-stripe cr-cs-2"/>
@@ -326,7 +388,7 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
     // GUMMY BEAR (2)
     if (symId === 2) {
       return (
-        <div className={`cr-tile cr-sym-gummy ${winCls} ${expCls} ${dropCls}`}>
+        <div className={`cr-tile cr-sym-gummy ${winCls} ${expCls} ${dropCls}`} style={dropStyle}>
           <div className="cr-gummy-body">
             <div className="cr-gummy-ears">
               <div className="cr-gummy-ear"/>
@@ -358,7 +420,7 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
     const cc = CANDY_CFG[symId] ?? CANDY_CFG[8];
 
     return (
-      <div className={`cr-tile cr-sym-candy ${winCls} ${expCls} ${dropCls}`}>
+      <div className={`cr-tile cr-sym-candy ${winCls} ${expCls} ${dropCls}`} style={dropStyle}>
         <div className="cr-candy-wrap" style={{borderColor: cc.wrap}}>
           <div className="cr-candy-sphere"
                style={{background:`radial-gradient(circle at 30% 28%, ${cc.c1} 0%, ${cc.c2} 50%, ${cc.c3} 100%)`}}>
@@ -391,9 +453,11 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
 
       {/* TOP LEFT */}
       <div className="cr-topleft">
-        <div className="cr-avatar-wrap">
-          <img className="cr-avatar-img" src="https://i.pravatar.cc/100?img=11" alt="avatar"/>
-          <div className="cr-vip-badge">VIP 1</div>
+        <div className="cr-avatar-wrap g-btn-press" onClick={() => setShowProfileModal(true)} title="Lihat Profil VIP" style={{ cursor: 'pointer' }}>
+          <div style={{ width: '6.5vh', height: '6.5vh', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '0.3vh solid #ff69b4', boxShadow: '0 0 1vh rgba(255,105,180,0.6)', background: 'radial-gradient(circle, #ff69b4, #800080)' }}>
+            {renderSlotAvatar(userProfile.avatar, 'cr-avatar-img', '🐸')}
+          </div>
+          <div className="cr-vip-badge">VIP {userProfile.vipLevel}</div>
         </div>
         <div className="cr-coins-row">
           <span className="cr-coin-ico">🍬</span>
@@ -409,9 +473,7 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
       {/* TOP RIGHT */}
       <div className="cr-topright" style={{ position: 'relative' }}>
         <button className="cr-tr-btn" onClick={() => alert('Trophy')}>🏆</button>
-        <button className="cr-tr-btn cr-tr-room" onClick={onBack}>
-          <span>🔄</span><span className="cr-tr-label">Ganti<br/>room</span>
-        </button>
+        
         <button className="cr-tr-btn" onClick={() => setShowMenu(v => !v)}>≡</button>
 
         <GameMenuDropdown
@@ -515,12 +577,14 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
             <div className="cr-grid-inner">
               {Array.from({length: ROWS}, (_, r) =>
                 Array.from({length: COLS}, (_, c) => {
-                  const symId = grid[r]?.[c] ?? 4;
+                  const symId = grid[r]?.[c];
                   const multVal = multGrid[r]?.[c] ?? 0;
                   const cellKey = `${r}-${c}`;
+                  const dropDist = droppingCells[cellKey] || 0;
+                  const isDropping = dropDist > 0;
                   return (
                     <div key={cellKey} className={`cr-cell ${spinningCols[c] ? 'cr-cell-spin' : ''}`}>
-                      {renderCandy(symId, multVal, winningCells.includes(cellKey), explodingCells.includes(cellKey), droppingCols.includes(c))}
+                      {renderCandy(symId, multVal, winningCells.includes(cellKey), explodingCells.includes(cellKey), isDropping, dropDist)}
                     </div>
                   );
                 })
@@ -546,12 +610,12 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
         <div className="cr-bot-left">
           <button className="cr-bot-btn" onClick={() => alert('Chat')}>💬</button>
           <button className="cr-bot-btn" onClick={() => { setShowRules(true); setRulesPage(0); }}>i</button>
-          <button className="cr-bot-btn cr-minus" onClick={() => setBetAmount(b => Math.max(25000, b - 25000))}>−</button>
+          <button className="cr-bot-btn cr-minus" onClick={() => setBetAmount(b => Math.max(10000, b - 10000))}>−</button>
           <div className="cr-bet-box">
             <div className="cr-bet-label">BET</div>
             <div className="cr-bet-val">{betAmount.toLocaleString('id-ID')}</div>
           </div>
-          <button className="cr-bot-btn cr-plus-bet" onClick={() => setBetAmount(b => Math.min(10000000, b + 25000))}>+</button>
+          <button className="cr-bot-btn cr-plus-bet" onClick={() => setBetAmount(b => Math.min(200000, b + 10000))}>+</button>
         </div>
 
         <div className="cr-bot-center">
@@ -561,7 +625,7 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
         </div>
 
         <div className="cr-bot-right">
-          <button className="cr-maxbet-btn" onClick={() => setBetAmount(10000000)}>MAX<br/>BET</button>
+          <button className="cr-maxbet-btn" onClick={() => setBetAmount(200000)}>MAX<br/>BET</button>
           <button className="cr-speed-btn" onClick={() => setSpinSpeed(s => s === 1 ? 2 : s === 2 ? 3 : 1)}>
             X{spinSpeed}
           </button>
@@ -683,6 +747,15 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
 
       {/* Universal Slot Celebration Modal */}
       <SlotCelebrationModal data={celebration} onClose={() => setCelebration(null)} />
+
+      {/* Synchronized Profile Modal */}
+      {showProfileModal && (
+        <SlotProfileModal
+          profile={userProfile}
+          coins={myCoins}
+          onClose={() => setShowProfileModal(false)}
+        />
+      )}
     </div>
   );
 }

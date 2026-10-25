@@ -112,15 +112,17 @@ button:hover, .jinji-side-card:hover, .jinji-avatar:hover, .jinji-plus-btn:hover
 }
 .jinji-vip-badge {
   position: absolute;
-  bottom: -0.8vh; left: 50%; transform: translateX(-50%);
+  bottom: -0.5vh; left: 50%; transform: translateX(-50%);
   background: linear-gradient(180deg, #ff1744, #b71c1c);
   color: #fff;
-  font-size: 1.1vh; font-weight: 900;
-  padding: 0.1vh 0.8vh;
-  border-radius: 1vh;
-  border: 0.15vh solid #ffe082;
+  font-size: 0.82vh; font-weight: 900;
+  line-height: 1;
+  padding: 0.15vh 0.5vh;
+  border-radius: 0.6vh;
+  border: 0.12vh solid #ffe082;
   box-shadow: 0 0.2vh 0.4vh rgba(0,0,0,0.5);
   white-space: nowrap;
+  letter-spacing: 0.02em;
 }
 .jinji-signal-icon {
   margin-left: 0.5vw;

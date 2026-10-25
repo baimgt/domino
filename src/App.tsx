@@ -15,6 +15,8 @@ import FiveLionsSlotScreen from './FiveLionsSlotScreen';
 import BilliardScreen from './BilliardScreen';
 import GameMenuDropdown from './GameMenuDropdown';
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
+import { Capacitor } from '@capacitor/core';
+import { NativePurchases, PURCHASE_TYPE } from '@capgo/native-purchases';
 import OlympusCinematicBackground from './OlympusCinematicBackground';
 import RoyalLoadingBackground from './RoyalLoadingBackground';
 import LeaderboardModal from './LeaderboardModal';
@@ -25,50 +27,138 @@ import './byone.css';
 import SlotLoadingScreen from './SlotLoadingScreen';
 import RiwayatTransferModal from './RiwayatTransferModal';
 import SlotCelebrationModal, { SlotCelebrationData } from './SlotCelebrationModal';
+import SlotProfileModal, { renderSlotAvatar } from './SlotProfileModal';
+import { useSlotProfile } from './useSlotProfile';
 import lobbyAudio, { type BgmTrackType } from './LobbyAudio';
+import { preloadHomeAssets } from './slotAssetPreloader';
+import AvatarSelectionModal from './AvatarSelectionModal';
+import ChangeNameModal from './ChangeNameModal';
 
-import { API_URL, getBackendBase } from './config';
+import { API_URL, getBackendBase, DEFAULT_LAN_SERVER } from './config';
 
 // =====================================================
-// LAYAR 1: LOADING SCREEN
+// HELPER LOGOUT AMAN (MENCEGAH NATIVE CRASH DI ANDROID)
+// =====================================================
+const safeGoogleSignOut = async () => {
+  try {
+    const isGoogleUser = (localStorage.getItem('domino_username') || '').startsWith('Google_') ||
+                         localStorage.getItem('domino_login_provider') === 'google';
+    if (!isGoogleUser) {
+      // User Tamu / Guest TIDAK boleh memanggil native GoogleAuth.signOut() karena googleSignInClient null di Android!
+      return;
+    }
+    if (Capacitor.isPluginAvailable('GoogleAuth')) {
+      await GoogleAuth.initialize({
+        clientId: '933896189377-hphu2lam3pj4okj9ravdvd3od1oqr6s1.apps.googleusercontent.com',
+        scopes: ['profile', 'email'],
+        grantOfflineAccess: false
+      });
+      await GoogleAuth.signOut();
+    }
+  } catch (err) {
+    console.warn('safeGoogleSignOut non-fatal warning (ignored):', err);
+  }
+};
+
+export const performFullLogout = async (onDone?: () => void) => {
+  try {
+    await safeGoogleSignOut();
+  } catch (e) {
+    console.warn('Logout sign-out warning:', e);
+  }
+
+  // Bersihkan data sesi login pemain
+  const sessionKeys = [
+    'domino_username',
+    'domino_avatar',
+    'domino_user_id',
+    'domino_vip',
+    'domino_is_vip',
+    'domino_coins',
+    'domino_rp',
+    'domino_custom_frame',
+    'domino_login_provider'
+  ];
+  sessionKeys.forEach(k => localStorage.removeItem(k));
+
+  if (onDone) onDone();
+};
+
+// =====================================================
+// LAYAR 1: LOADING SCREEN (HOME & LOBBY ASSET PRELOADER)
 // =====================================================
 function LoadingScreen({ onFinish }: { onFinish: (target: 'login' | 'home') => void }) {
   const [progress, setProgress] = useState(0);
+  const [statusText, setStatusText] = useState('🎱 MENGHUBUNGKAN KE SERVER KINGS BILLIARD...');
   const animEnabled = localStorage.getItem('set_anim') !== 'off';
+  const realPreloadDoneRef = useRef(false);
+  const targetPercentRef = useRef(15);
+  const hasFinishedRef = useRef(false);
 
+  // Real-time Home & Lobby Asset Preloader & GPU Texture Decoder
   useEffect(() => {
-    const stepSpeed = animEnabled ? 28 : 10;
+    let isMounted = true;
+    preloadHomeAssets((info) => {
+      if (!isMounted) return;
+      targetPercentRef.current = Math.max(targetPercentRef.current, info.percent);
+      setStatusText(info.statusText);
+    }).then(() => {
+      if (!isMounted) return;
+      realPreloadDoneRef.current = true;
+      targetPercentRef.current = 100;
+      setStatusText('👑 SEMUA ASET HOME TERMUAT LENGKAP! ✨');
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Smooth synchronized progress animation
+  useEffect(() => {
+    const totalDuration = animEnabled ? 2400 : 1200;
+    const startTime = Date.now();
     const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setTimeout(() => onFinish('login'), 350);
-          return 100;
+      const elapsed = Date.now() - startTime;
+      const timeRatio = Math.min(1, elapsed / totalDuration);
+
+      const timeP = Math.floor(timeRatio * 92);
+      const assetP = targetPercentRef.current;
+      let nextP = Math.max(timeP, Math.min(assetP, 92));
+
+      // Once all assets are 100% preloaded & decoded and minimum cinematic time has elapsed:
+      if (realPreloadDoneRef.current && elapsed >= Math.min(1500, totalDuration * 0.7)) {
+        nextP = Math.min(100, Math.max(nextP + 5, 96));
+        if (elapsed >= totalDuration || nextP >= 100) {
+          nextP = 100;
         }
-        return prev + 1;
-      });
-    }, stepSpeed);
+      }
+
+      setProgress((prev) => Math.min(100, Math.max(prev, nextP)));
+
+      if (nextP >= 100 && realPreloadDoneRef.current && !hasFinishedRef.current) {
+        hasFinishedRef.current = true;
+        clearInterval(interval);
+        const target: 'login' | 'home' = localStorage.getItem('domino_username') ? 'home' : 'login';
+        setTimeout(() => onFinish(target), 350);
+      }
+    }, 35);
+
     return () => clearInterval(interval);
   }, [onFinish, animEnabled]);
-
-  const getStatusText = (p: number) => {
-    if (p < 25) return '👑 MEMPERSIAPKAN RUANG PERMAINAN...';
-    if (p < 55) return '👑 MENGHUBUNGKAN KE SERVER...';
-    if (p < 85) return '👑 MEMUAT SUMBER DAYA GAME...';
-    if (p < 100) return '👑 MENYIAPKAN PENGALAMAN ROYAL X...';
-    return '👑 SELAMAT DATANG DI ROYAL X! ✨';
-  };
 
   return (
     <RoyalLoadingBackground>
       <div className="royal-progress-panel">
         <div className="royal-brand-badge">
-          <span className="royal-brand-icon">👑</span>
-          <span className="royal-brand-name">ROYAL X</span>
+          <img src="/assets/kings_billiards_logo.png" alt="Kings Billiards" className="royal-brand-img" />
+          <span className="royal-brand-name">KINGS BILLIARDS</span>
         </div>
 
         <div className="royal-progress-info">
-          <span className="royal-status-text">{getStatusText(progress)}</span>
+          <span className="royal-status-text">
+            {progress >= 100 ? '👑 SEMUA ASET HOME TERMUAT LENGKAP! ✨' : statusText}
+          </span>
           <span className="royal-percent-val">{progress}%</span>
         </div>
 
@@ -96,10 +186,13 @@ function LoginScreen({ onLoginSuccess }: { onLoginSuccess: () => void }) {
     if (user) setSavedUser(user);
 
     // Initialize Google Auth early on web so the GSI script is loaded before clicking
-    try {
-      GoogleAuth.initialize({ clientId: '933896189377-s9gkhtjnjkpn0dvsio8orl7cdc9k13mc.apps.googleusercontent.com', scopes: ['profile', 'email'] });
-    } catch (e) {
-      console.warn('Failed to initialize Google Auth', e);
+    if (Capacitor.isPluginAvailable('GoogleAuth')) {
+      GoogleAuth.initialize({
+        clientId: '933896189377-hphu2lam3pj4okj9ravdvd3od1oqr6s1.apps.googleusercontent.com',
+        scopes: ['profile', 'email']
+      }).catch(e => {
+        console.warn('Failed to initialize Google Auth', e);
+      });
     }
   }, []);
 
@@ -114,6 +207,9 @@ function LoginScreen({ onLoginSuccess }: { onLoginSuccess: () => void }) {
           const profileData = await checkRes.json();
           if (profileData && profileData.username) {
             localStorage.setItem('domino_username', existingGuest);
+            if (profileData.userId || profileData.id) {
+              localStorage.setItem('domino_user_id', String(profileData.userId || profileData.id));
+            }
             onLoginSuccess();
             return;
           }
@@ -129,11 +225,15 @@ function LoginScreen({ onLoginSuccess }: { onLoginSuccess: () => void }) {
       const res = await fetch(`${API_URL}/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: guestName, coins: 6000000, rp: 0, score: 50 })
+        body: JSON.stringify({ username: guestName, coins: 10000, rp: 0, score: 50 })
       });
       if (res.ok) {
+        const uData = await res.json().catch(() => ({}));
+        if (uData.userId) localStorage.setItem('domino_user_id', uData.userId);
         localStorage.setItem('domino_username', guestName);
         localStorage.setItem('domino_device_guest_username', guestName);
+        localStorage.setItem('domino_login_provider', 'guest');
+        localStorage.setItem('domino_coins', '10000');
         onLoginSuccess();
       } else {
         alert('Gagal mendaftar. Pastikan server dan MongoDB menyala.');
@@ -158,20 +258,33 @@ function LoginScreen({ onLoginSuccess }: { onLoginSuccess: () => void }) {
   const handleSocialLogin = async (platform: string = 'Google') => {
     setIsLoggingIn(true);
     let username = '';
+    let googleAvatar = '';
 
     try {
       // Ensure GoogleAuth is initialized before signing in
       await GoogleAuth.initialize({
-        clientId: '933896189377-s9gkhtjnjkpn0dvsio8orl7cdc9k13mc.apps.googleusercontent.com',
+        clientId: '933896189377-hphu2lam3pj4okj9ravdvd3od1oqr6s1.apps.googleusercontent.com',
         scopes: ['profile', 'email'],
         grantOfflineAccess: false
       });
+      // Always sign out any previous session first so Android opens the account selection popup
+      try {
+        await GoogleAuth.signOut();
+      } catch (soErr) {
+        // Ignored if no session was active
+      }
       // Attempt Native Google Login
-      const user = await GoogleAuth.signIn();
+      const user: any = await GoogleAuth.signIn();
       username = `Google_${user.name || user.givenName || Math.floor(Math.random() * 9999)}`;
+      googleAvatar = user.imageUrl || user.picture || user.photoUrl || (user.authentication as any)?.picture || '';
     } catch (error: any) {
       console.warn('Google Native Login error:', error);
       const errStr = String(error?.message || error?.error || error || '');
+      // If user canceled the account picker dialog, simply abort without prompting
+      if (errStr.includes('canceled') || errStr.includes('cancelled') || errStr.includes('12501')) {
+        setIsLoggingIn(false);
+        return;
+      }
       const defaultName = `Google_${Math.floor(Math.random() * 9999)}`;
       let infoMsg = '';
       if (errStr.includes('10')) {
@@ -192,43 +305,107 @@ function LoginScreen({ onLoginSuccess }: { onLoginSuccess: () => void }) {
 
     try {
       // Sanitize username (remove spaces and special chars to prevent API issues)
-      const sanitizedUsername = username.replace(/[^a-zA-Z0-9_]/g, '');
+      const sanitizedUsername = username.replace(/[^a-zA-Z0-9_]/g, '') || `Google_${Math.floor(1000 + Math.random() * 9000)}`;
 
       // 1. Check if user already exists
-      const checkRes = await fetch(`${API_URL}/profile/${sanitizedUsername}`);
+      const checkRes = await fetch(`${API_URL}/profile/${encodeURIComponent(sanitizedUsername)}`);
+      const checkContentType = checkRes.headers.get('content-type') || '';
+
+      // If server returned HTML (e.g. index.html from Vite or Capacitor web view) instead of JSON
+      if (checkContentType.includes('text/html') || !checkContentType.includes('application/json')) {
+        if (localStorage.getItem('domino_server_ip')) {
+          localStorage.removeItem('domino_server_ip');
+        }
+        throw new Error(`Server mengembalikan halaman web (HTML/<!DOCTYPE>), bukan API backend port 8080. Pastikan aplikasi terhubung ke ${DEFAULT_LAN_SERVER}. Pengaturan server di-reset.`);
+      }
+
       if (checkRes.ok) {
-        localStorage.setItem('domino_username', sanitizedUsername);
-        onLoginSuccess();
-        return;
+        const existingData = await checkRes.json().catch(() => null);
+        if (existingData) {
+          localStorage.setItem('domino_username', sanitizedUsername);
+          if (existingData.userId || existingData.id) {
+            localStorage.setItem('domino_user_id', String(existingData.userId || existingData.id));
+          }
+          // If user already has an avatar in DB, preserve it instead of resetting to Google photo!
+          const hasCustomAvatar = existingData.avatar && existingData.avatar !== '/bg.png';
+          if (hasCustomAvatar) {
+            localStorage.setItem('domino_avatar', existingData.avatar);
+            if (existingData.customFrame) localStorage.setItem('domino_custom_frame', existingData.customFrame);
+          } else if (googleAvatar) {
+            localStorage.setItem('domino_avatar', googleAvatar);
+            fetch(`${API_URL}/users/avatar`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ username: sanitizedUsername, avatar: googleAvatar })
+            }).catch(() => {});
+          }
+          onLoginSuccess();
+          return;
+        }
       }
 
       // 2. If not exists, create new user
+      const initialAvatar = googleAvatar || '🐸';
       const res = await fetch(`${API_URL}/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: sanitizedUsername, coins: 6000000, rp: 0, score: 50 })
+        body: JSON.stringify({
+          username: sanitizedUsername,
+          coins: 100000,
+          rp: 0,
+          score: 50,
+          avatar: initialAvatar
+        })
       });
 
+      const resContentType = res.headers.get('content-type') || '';
+      if (resContentType.includes('text/html') || !resContentType.includes('application/json')) {
+        throw new Error(`Server backend tidak mengembalikan JSON yang valid. Pastikan terhubung ke port 8080.`);
+      }
+
       if (res.ok) {
+        const uData = await res.json().catch(() => ({}));
+        if (uData.userId) localStorage.setItem('domino_user_id', uData.userId);
         localStorage.setItem('domino_username', sanitizedUsername);
+        localStorage.setItem('domino_avatar', initialAvatar);
+        localStorage.setItem('domino_coins', '100000');
         onLoginSuccess();
       } else {
-        const errorData = await res.json();
+        const errorData = await res.json().catch(() => ({ error: 'Respon server tidak valid' }));
         alert(`Gagal mendaftarkan akun ${platform}: ${errorData.error || 'Server error'}`);
         setIsLoggingIn(false);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Login error:', err);
       const currentHost = getBackendBase();
-      const promptIp = prompt(
-        `Gagal terhubung ke server (${currentHost})!\n\n` +
-        `Pastikan HP dan Laptop terhubung ke WiFi yang sama dan server backend menyala.\n` +
-        `Jika alamat IP laptop Anda berbeda, silakan masukkan URL server di bawah:`,
-        currentHost
-      );
-      if (promptIp && promptIp.trim() !== currentHost) {
-        localStorage.setItem('domino_server_ip', promptIp.trim());
+      const errStr = String(err?.message || err || '');
+      const isDoctypeErr = errStr.includes('DOCTYPE') || errStr.includes('Unexpected token') || errStr.includes('halaman web');
+      const isNetworkErr = errStr.toLowerCase().includes('fetch') || errStr.toLowerCase().includes('network') || errStr.toLowerCase().includes('failed');
+      
+      if (isDoctypeErr) {
+        localStorage.removeItem('domino_server_ip');
+        alert(
+          `Terjadi kesalahan komunikasi:\n${errStr}\n\n` +
+          `Aplikasi terhubung ke server web/HTML bukan ke API backend Node.js (port 8080).\n` +
+          `Alamat server telah di-reset ke default (${DEFAULT_LAN_SERVER}). Silakan coba klik tombol Login kembali!`
+        );
         window.location.reload();
+        return;
+      }
+
+      if (isNetworkErr) {
+        const promptIp = prompt(
+          `Gagal terhubung ke server (${currentHost})!\n\n` +
+          `Pastikan HP dan Laptop terhubung ke WiFi yang sama dan server backend menyala.\n` +
+          `Jika alamat IP laptop Anda berbeda, silakan masukkan URL server di bawah:`,
+          currentHost
+        );
+        if (promptIp && promptIp.trim() !== currentHost) {
+          localStorage.setItem('domino_server_ip', promptIp.trim());
+          window.location.reload();
+        }
+      } else {
+        alert(`Gagal login ${platform}: ${errStr}`);
       }
       setIsLoggingIn(false);
     }
@@ -241,13 +418,14 @@ function LoginScreen({ onLoginSuccess }: { onLoginSuccess: () => void }) {
         onClick={savedUser ? onLoginSuccess : undefined}
         style={{ cursor: savedUser ? 'pointer' : 'default', zIndex: 10, justifyContent: 'flex-end', paddingBottom: '7vh' }}
       >
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '2vh' }}>
-          <div className="royal-brand-badge">
-            <span className="royal-brand-icon">👑</span>
-            <span className="royal-brand-name">ROYAL X</span>
-          </div>
-          <p className="royal-status-text" style={{ fontSize: '13px', margin: 0, textShadow: '0 2px 8px rgba(0,0,0,0.9)' }}>
-            {savedUser ? `Selamat Datang Kembali, ${savedUser}!` : '✨ VIP CLUB DOMINO & CARD GAMES ✨'}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1.5vh' }}>
+          <img
+            src="/assets/kings_billiards_logo.png"
+            alt="Kings Billiards"
+            className="royal-main-emblem-logo"
+          />
+          <p className="royal-status-text" style={{ fontSize: '13px', margin: '2px 0 0', textShadow: '0 2px 8px rgba(0,0,0,0.9)' }}>
+            {savedUser ? `Selamat Datang Kembali, ${savedUser}!` : '✨ VIP CLUB KINGS BILLIARDS ✨'}
           </p>
         </div>
 
@@ -358,11 +536,19 @@ function PengaturanModal({ onClose, onLogout }: { onClose: () => void; onLogout:
     ['domino_friends', 'domino_avatar', 'set_bgm', 'set_sfx', 'set_anim'].forEach(k => localStorage.removeItem(k));
     setShowDel(null);
   };
-  const doHapusData = () => { localStorage.clear(); setShowDel(null); onLogout(); };
-  const doHapusAkun = () => {
+  const doHapusData = async () => {
+    await performFullLogout();
+    localStorage.clear();
+    setShowDel(null);
+    onLogout();
+  };
+  const doHapusAkun = async () => {
     const u = localStorage.getItem('domino_username');
     if (u) fetch(`${API_URL}/users/${u}`, { method: 'DELETE' }).catch(() => { });
-    localStorage.clear(); setShowDel(null); onLogout();
+    await performFullLogout();
+    localStorage.clear();
+    setShowDel(null);
+    onLogout();
   };
 
   return (
@@ -419,7 +605,7 @@ function PengaturanModal({ onClose, onLogout }: { onClose: () => void; onLogout:
               <div className="peng-track-card-badge gold">👑 OPSI 2</div>
               <div className="peng-track-card-name">Lagu Kita</div>
               <div className="peng-track-card-desc">
-                {customSongName ? `File: ${customSongName}` : 'Tema Khas Royal X (VIP Anthem)'}
+                {customSongName ? `File: ${customSongName}` : 'Tema Khas Kings Billiard (VIP Anthem)'}
               </div>
               <div className="peng-track-card-indicator">
                 {bgmTrack === 'royal_x' ? '✓ Aktif' : 'Pilih'}
@@ -450,7 +636,7 @@ function PengaturanModal({ onClose, onLogout }: { onClose: () => void; onLogout:
                     type="button"
                     className="peng-custom-reset-btn g-btn-press"
                     onClick={handleRemoveCustomSong}
-                    title="Kembali ke lagu tema bawaan Royal X"
+                    title="Kembali ke lagu tema bawaan Kings Billiard"
                   >
                     ↺ Reset ke Tema Asli
                   </button>
@@ -473,8 +659,8 @@ function PengaturanModal({ onClose, onLogout }: { onClose: () => void; onLogout:
           <button className="peng-action-btn g-btn-press" onClick={() => setShowDel('data')}>📁 Hapus Data <span className="peng-help">❓</span></button>
         </div>
 
-        <button className="peng-keluar-btn g-btn-press" onClick={() => {
-          localStorage.removeItem('domino_username');
+        <button className="peng-keluar-btn g-btn-press" onClick={async () => {
+          await performFullLogout();
           onLogout();
         }}>Keluar</button>
         <span className="peng-hapus-akun" onClick={() => setShowDel('akun')}>Hapus Akun</span>
@@ -555,6 +741,35 @@ function CSModal({ onClose }: { onClose: () => void }) {
       </div>
     </div>
   );
+}
+
+// =====================================================
+// HELPER RENDER AVATAR (Mendukung URL Foto Google & Emoji)
+// =====================================================
+export function renderPlayerAvatar(avatar: string | undefined | null, fallback: string = '🐸', className?: string) {
+  const isImg = avatar && (avatar.startsWith('http://') || avatar.startsWith('https://') || avatar.startsWith('data:') || (avatar.startsWith('/') && !avatar.endsWith('undefined')));
+  if (isImg) {
+    return (
+      <img
+        src={avatar}
+        alt="avatar"
+        className={className || "avatar-photo-img"}
+        referrerPolicy="no-referrer"
+        crossOrigin="anonymous"
+        onError={(e) => {
+          const target = e.currentTarget as HTMLImageElement;
+          target.style.display = 'none';
+          if (target.parentElement && !target.parentElement.querySelector('.avatar-fallback-text')) {
+            const span = document.createElement('span');
+            span.className = 'avatar-fallback-text';
+            span.textContent = fallback;
+            target.parentElement.appendChild(span);
+          }
+        }}
+      />
+    );
+  }
+  return <span>{avatar || fallback}</span>;
 }
 
 // =====================================================
@@ -658,8 +873,10 @@ function OtherProfileModal({ username, onClose, onAddFriend, onSendCoins, onChal
         <div className="op-body">
           {/* Kiri: Avatar & Basic Info */}
           <div className="op-left-card">
-            <div className="op-avatar-glow">
-              <span className="op-avatar-emoji">🐸</span>
+            <div className="op-avatar-glow" style={{ overflow: 'hidden' }}>
+              <span className="op-avatar-emoji" style={{ display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
+                {renderPlayerAvatar(profile.avatar, '🐸', 'op-avatar-pic')}
+              </span>
             </div>
             <div className="op-name">{profile.username}</div>
             <div className="op-coins">🪙 {formatCoins(profile.coins)}</div>
@@ -745,10 +962,11 @@ function TemanModal({ defaultTab = 'Teman', onViewProfile, onClose }: { defaultT
   const [activeTab, setActiveTab] = useState(defaultTab);
   const myUsername = localStorage.getItem('domino_username') || '';
 
+  type PlayerProfile = { username: string; userId?: string; avatar: string; coins: number; vipLevel?: number };
   const [myCoins, setMyCoins] = useState(0);
-  const [friends, setFriends] = useState<{ username: string; avatar: string; coins: number }[]>([]);
-  const [recommendations, setRecommendations] = useState<{ username: string; avatar: string; coins: number }[]>([]);
-  const [incomingRequests, setIncomingRequests] = useState<{ username: string; avatar: string; coins: number }[]>([]);
+  const [friends, setFriends] = useState<PlayerProfile[]>([]);
+  const [recommendations, setRecommendations] = useState<PlayerProfile[]>([]);
+  const [incomingRequests, setIncomingRequests] = useState<PlayerProfile[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [searchId, setSearchId] = useState('');
@@ -890,20 +1108,22 @@ function TemanModal({ defaultTab = 'Teman', onViewProfile, onClose }: { defaultT
   };
 
   const handleSearchAndAdd = async () => {
-    if (!searchId.trim()) return;
+    const target = searchId.trim();
+    if (!target) return;
     try {
       const res = await fetch(`${API_URL}/friends/add`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: myUsername, friendUsername: searchId })
+        body: JSON.stringify({ username: myUsername, friendId: target, friendUsername: target })
       });
       if (res.ok) {
-        showAlert(`Permintaan pertemanan dikirim ke ${searchId}!`);
+        const data = await res.json().catch(() => ({}));
+        showAlert(data.message || `Permintaan pertemanan dikirim ke ID ${target}!`);
         setSearchId('');
         fetchData();
       } else {
-        const err = await res.json();
-        showAlert(err.error || 'Pemain tidak ditemukan atau sudah berteman');
+        const err = await res.json().catch(() => ({}));
+        showAlert(err.error || `Pemain dengan ID "${target}" tidak ditemukan atau sudah berteman`);
       }
     } catch {
       showAlert('Koneksi server gagal');
@@ -987,10 +1207,12 @@ function TemanModal({ defaultTab = 'Teman', onViewProfile, onClose }: { defaultT
           {friends.map(f => (
             <div className="tm-list-item" key={f.username}>
               <div className="tm-li-left">
-                <span className="tm-li-avatar g-btn-press" style={{ cursor: 'pointer' }} onClick={() => onViewProfile(f.username)}>🐸</span>
+                <span className="tm-li-avatar g-btn-press" style={{ cursor: 'pointer', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => onViewProfile(f.username)}>
+                  {renderPlayerAvatar(f.avatar, '🐸', 'tm-avatar-pic')}
+                </span>
                 <div>
                   <div className="tm-li-name">{f.username}</div>
-                  <div className="tm-li-id">Koin: {formatCoins(f.coins)}</div>
+                  <div className="tm-li-id">{f.userId ? `ID: ${f.userId} • ` : ''}Koin: {formatCoins(f.coins)}</div>
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '1vw' }}>
@@ -1004,26 +1226,39 @@ function TemanModal({ defaultTab = 'Teman', onViewProfile, onClose }: { defaultT
     }
 
     if (activeTab === 'Rekomendasi') {
+      const q = searchId.trim().toLowerCase();
+      const filteredRecs = recommendations.filter(r => {
+        if (!q) return true;
+        const matchId = r.userId && String(r.userId).toLowerCase().includes(q);
+        const matchUser = r.username && r.username.toLowerCase().includes(q);
+        return matchId || matchUser;
+      });
+
       return (
         <div className="tm-list-container tm-fade-in">
           <div className="tm-search-row">
             <input
               type="text"
-              placeholder="Cari Username Pemain..."
+              placeholder="Cari ID Teman (8 digit) atau Username..."
               value={searchId}
               onChange={e => setSearchId(e.target.value)}
               className="tm-input"
             />
             <button className="tm-search-add-btn g-btn-press" onClick={handleSearchAndAdd}>Cari & Tambah</button>
           </div>
-          {recommendations.length > 0 ? (
-            recommendations.map(r => (
+          {filteredRecs.length > 0 ? (
+            filteredRecs.map(r => (
               <div className="tm-list-item" key={r.username}>
                 <div className="tm-li-left">
-                  <span className="tm-li-avatar g-btn-press" style={{ cursor: 'pointer' }} onClick={() => onViewProfile(r.username)}>🐸</span>
+                  <span className="tm-li-avatar g-btn-press" style={{ cursor: 'pointer', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => onViewProfile(r.username)}>
+                    {renderPlayerAvatar(r.avatar, '🐸', 'tm-avatar-pic')}
+                  </span>
                   <div>
                     <div className="tm-li-name">{r.username}</div>
-                    <div className="tm-li-id">Koin: {formatCoins(r.coins)}</div>
+                    <div className="tm-li-id">
+                      {r.userId && <span style={{ color: '#ffd54f', fontWeight: 'bold', marginRight: '6px' }}>ID: {r.userId} • </span>}
+                      Koin: {formatCoins(r.coins)}
+                    </div>
                   </div>
                 </div>
                 <button className="tm-action-btn g-btn-press" onClick={() => handleAddFriend(r.username)}>+ Tambah</button>
@@ -1031,7 +1266,9 @@ function TemanModal({ defaultTab = 'Teman', onViewProfile, onClose }: { defaultT
             ))
           ) : (
             <div className="tm-empty-state">
-              <div className="tm-empty-text">Tidak ada rekomendasi saat ini.</div>
+              <div className="tm-empty-text">
+                {searchId ? `Tidak ditemukan pemain dengan ID/Username "${searchId}"` : 'Tidak ada rekomendasi saat ini.'}
+              </div>
             </div>
           )}
         </div>
@@ -1056,7 +1293,9 @@ function TemanModal({ defaultTab = 'Teman', onViewProfile, onClose }: { defaultT
           {incomingRequests.map(r => (
             <div className="tm-list-item" key={r.username}>
               <div className="tm-li-left">
-                <span className="tm-li-avatar">🐸</span>
+                <span className="tm-li-avatar" style={{ overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {renderPlayerAvatar(r.avatar, '🐸', 'tm-avatar-pic')}
+                </span>
                 <div>
                   <div className="tm-li-name">{r.username}</div>
                   <div className="tm-li-id">Koin: {formatCoins(r.coins)}</div>
@@ -1538,8 +1777,18 @@ function KirimKoinModal({ onClose, onCoinsTransferred, onOpenShop, onOpenHistory
 
   const handleSend = async () => {
     const amount = parseInt(amountInput, 10);
-    if (!recipient.trim()) { setAlert('Masukkan username penerima!'); return; }
+    if (!recipient.trim()) { setAlert('Masukkan ID atau username penerima!'); return; }
     if (isNaN(amount) || amount <= 0) { setAlert('Masukkan jumlah koin yang valid!'); return; }
+
+    const usableForTransfer = Math.max(0, (profile?.coins || 0) - (profile?.bonusCoins || 0));
+    if (amount > usableForTransfer) {
+      if ((profile?.bonusCoins || 0) > 0 && amount <= (profile?.coins || 0)) {
+        setAlert(`⚠️ Koin dari klaim bonus harian (${(profile?.bonusCoins || 0).toLocaleString('id-ID')} koin) hanya dapat dimainkan di SLOT dan tidak dapat ditransfer!`);
+      } else {
+        setAlert('⚠️ Saldo koin Anda tidak mencukupi untuk transfer!');
+      }
+      return;
+    }
 
     setLoading(true);
     setAlert(null);
@@ -1566,12 +1815,9 @@ function KirimKoinModal({ onClose, onCoinsTransferred, onOpenShop, onOpenHistory
     }
   };
 
-  const vipLevel = profile?.vipLevel || 0;
-  const isVip0 = vipLevel === 0;
-  const isVip1 = vipLevel === 1;
-  const isVip2 = vipLevel >= 2;
-
-  const remaining = profile?.remainingDailySend ?? (isVip0 ? 0 : isVip1 ? 100000 : -1);
+  const totalCoins = profile?.coins || 0;
+  const bonusCoins = profile?.bonusCoins || 0;
+  const transferrableCoins = Math.max(0, totalCoins - bonusCoins);
 
   return (
     <div className="modal-overlay kirim-koin-overlay" onClick={onClose}>
@@ -1581,8 +1827,8 @@ function KirimKoinModal({ onClose, onCoinsTransferred, onOpenShop, onOpenHistory
           <div className="kirim-koin-header-title">
             <span className="kirim-koin-icon">🎁</span>
             <div>
-              <div className="kirim-title">FITUR KIRIM KOIN (VIP)</div>
-              <div className="kirim-sub">Transfer koin antar pemain berdasarkan Level VIP</div>
+              <div className="kirim-title">FITUR KIRIM KOIN</div>
+              <div className="kirim-sub">Transfer koin ke teman atau sesama pemain</div>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1620,36 +1866,31 @@ function KirimKoinModal({ onClose, onCoinsTransferred, onOpenShop, onOpenHistory
           </div>
         )}
 
-        {/* VIP Status Banner */}
-        <div className={`kirim-vip-banner ${isVip0 ? 'vip-0' : isVip1 ? 'vip-1' : 'vip-2'}`}>
+        {/* Akses Terbuka Tanpa VIP Banner */}
+        <div className="kirim-vip-banner vip-2">
           <div className="kirim-vip-badge-row">
             <span className="kirim-vip-badge-tag">
-              {isVip0 ? '👑 VIP 0 (Non-VIP)' : isVip1 ? '⭐️ VIP 1 (BRONZE)' : `🚀 VIP ${vipLevel} (SULTAN)`}
+              🎉 AKSES TERBUKA UNTUK SEMUA PEMAIN
             </span>
-            <span className="kirim-vip-status">Status Akun Anda</span>
+            <span className="kirim-vip-status">Bebas Transfer Tanpa Syarat VIP</span>
           </div>
           <div className="kirim-vip-desc">
-            {isVip0 && '🔒 VIP 0 tidak dapat mengirim koin. Upgrade ke VIP 1 di Toko untuk kirim 100K/hari, atau VIP 2+ untuk TANPA BATASAN!'}
-            {isVip1 && `📊 Batas Kirim VIP 1: 100.000 (100K) koin/hari. Sisa kuota hari ini: ${(remaining >= 0 ? remaining : 100000).toLocaleString('id-ID')} koin.`}
-            {isVip2 && '🔥 Hak VIP 2+ SULTAN: Kirim koin TANPA BATASAN (UNLIMITED) setiap hari!'}
+            🚀 Selama masa pra-rilis (sebelum rilis Play Store), fitur kirim koin dapat digunakan oleh semua pemain secara langsung!
+            <br />
+            💰 <b>Saldo yang Dapat Dikirim:</b> {transferrableCoins.toLocaleString('id-ID')} koin {bonusCoins > 0 ? `(${bonusCoins.toLocaleString('id-ID')} koin bonus harian khusus untuk bermain Slot)` : ''}
           </div>
-          {isVip0 && (
-            <button className="kirim-upgrade-link-btn" onClick={() => { onClose(); onOpenShop?.(); }}>
-              👑 Upgrade Ke VIP Sekarang
-            </button>
-          )}
         </div>
 
         {/* Input Form */}
         <div className="kirim-koin-form">
           <div className="kirim-field">
-            <label>Username Penerima:</label>
+            <label>ID / Username Penerima:</label>
             <input
               type="text"
-              placeholder="Masukkan username penerima..."
+              placeholder="Masukkan ID (8 digit) atau Username penerima..."
               value={recipient}
               onChange={e => setRecipient(e.target.value)}
-              disabled={isVip0 || loading}
+              disabled={loading}
             />
           </div>
 
@@ -1659,8 +1900,8 @@ function KirimKoinModal({ onClose, onCoinsTransferred, onOpenShop, onOpenHistory
               <span className="quick-label">Pilihan pemain:</span>
               <div className="quick-chips">
                 {userList.slice(0, 6).map(u => (
-                  <button key={u.username} className={`quick-chip ${recipient === u.username ? 'selected' : ''}`} onClick={() => setRecipient(u.username)}>
-                    {u.avatar || '👤'} {u.username}
+                  <button key={u.username} className={`quick-chip ${recipient === (u.userId || u.username) ? 'selected' : ''}`} onClick={() => setRecipient(u.userId || u.username)}>
+                    {u.avatar || '👤'} {u.username} {u.userId ? `(ID: ${u.userId})` : ''}
                   </button>
                 ))}
               </div>
@@ -1674,7 +1915,7 @@ function KirimKoinModal({ onClose, onCoinsTransferred, onOpenShop, onOpenHistory
               placeholder="Contoh: 50000"
               value={amountInput}
               onChange={e => setAmountInput(e.target.value)}
-              disabled={isVip0 || loading}
+              disabled={loading}
             />
           </div>
 
@@ -1685,7 +1926,7 @@ function KirimKoinModal({ onClose, onCoinsTransferred, onOpenShop, onOpenHistory
                 key={val}
                 className="kirim-preset-btn"
                 onClick={() => setAmountInput(val.toString())}
-                disabled={isVip0 || (isVip1 && val > (remaining >= 0 ? remaining : 100000))}
+                disabled={loading}
               >
                 +{(val >= 1000 ? `${val / 1000}K` : val)}
               </button>
@@ -1693,15 +1934,9 @@ function KirimKoinModal({ onClose, onCoinsTransferred, onOpenShop, onOpenHistory
           </div>
 
           {/* Submit button */}
-          {isVip0 ? (
-            <button className="kirim-submit-btn locked-btn" onClick={() => { onClose(); onOpenShop?.(); }}>
-              🔒 UPGRADE VIP DI TOKO UNTUK BUKA FITUR KIRIM KOIN
-            </button>
-          ) : (
-            <button className="kirim-submit-btn" onClick={handleSend} disabled={loading}>
-              {loading ? 'Mengirim...' : '🎁 KIRIM KOIN SEKARANG'}
-            </button>
-          )}
+          <button className="kirim-submit-btn" onClick={handleSend} disabled={loading}>
+            {loading ? 'Mengirim...' : '🎁 KIRIM KOIN SEKARANG'}
+          </button>
         </div>
       </div>
     </div>
@@ -1879,8 +2114,10 @@ function FriendModal({ onClose, onOpenKirimKoin, socket }: {
 
   const FriendCard = ({ f, showRemove = false }: { f: FriendEntry; showRemove?: boolean }) => (
     <div className="fm-friend-card" style={{ background: onlineSet.has(f.username) ? 'rgba(74,222,128,0.08)' : 'rgba(255,255,255,0.04)' }}>
-      <div className="fm-friend-avatar">
-        <span style={{ fontSize: '28px' }}>{f.avatar && f.avatar.startsWith('/') ? '🎮' : (f.avatar || '🐸')}</span>
+      <div className="fm-friend-avatar" style={{ overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ fontSize: '28px', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {renderPlayerAvatar(f.avatar, '🐸', 'fm-avatar-pic')}
+        </span>
         <div className={`fm-online-dot ${onlineSet.has(f.username) ? 'online' : 'offline'}`} />
       </div>
       <div className="fm-friend-info">
@@ -1981,8 +2218,10 @@ function FriendModal({ onClose, onOpenKirimKoin, socket }: {
                   ) : (
                     requests.map(r => (
                       <div key={r.username} className="fm-friend-card">
-                        <div className="fm-friend-avatar">
-                          <span style={{ fontSize: '28px' }}>{r.avatar && !r.avatar.startsWith('/') ? r.avatar : '🐸'}</span>
+                        <div className="fm-friend-avatar" style={{ overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{ fontSize: '28px', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            {renderPlayerAvatar(r.avatar, '🐸', 'fm-avatar-pic')}
+                          </span>
                           <div className="fm-online-dot offline" />
                         </div>
                         <div className="fm-friend-info">
@@ -2024,8 +2263,10 @@ function FriendModal({ onClose, onOpenKirimKoin, socket }: {
                     const isFriend = friends.some(f => f.username === r.username);
                     return (
                       <div key={r.username} className="fm-friend-card">
-                        <div className="fm-friend-avatar">
-                          <span style={{ fontSize: '28px' }}>{r.avatar && !r.avatar.startsWith('/') ? r.avatar : '🐸'}</span>
+                        <div className="fm-friend-avatar" style={{ overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{ fontSize: '28px', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            {renderPlayerAvatar(r.avatar, '🐸', 'fm-avatar-pic')}
+                          </span>
                           <div className={`fm-online-dot ${onlineSet.has(r.username) ? 'online' : 'offline'}`} />
                         </div>
                         <div className="fm-friend-info">
@@ -2131,8 +2372,8 @@ function DailyBonusModal({ onClose, onBonusClaimed }: { onClose: () => void; onB
           <div className="daily-bonus-header-left">
             <span className="daily-bonus-icon">🎁</span>
             <div>
-              <div className="daily-bonus-title">BONUS HARIAN</div>
-              <div className="daily-bonus-sub">Klaim setiap hari, gratis!</div>
+              <div className="daily-bonus-title">BONUS HARIAN (SLOT)</div>
+              <div className="daily-bonus-sub">Klaim saldo gratis khusus game Slot!</div>
             </div>
           </div>
           <button className="daily-bonus-close-btn" onClick={onClose}>✖</button>
@@ -2153,8 +2394,8 @@ function DailyBonusModal({ onClose, onBonusClaimed }: { onClose: () => void; onB
           <div className="db-simple-body">
             {/* Reward card */}
             <div className={`db-reward-card ${claimed ? 'claimed' : canClaim ? 'available' : 'used'}`}>
-              <div className="db-reward-icon">{claimed ? '✅' : canClaim ? '🎁' : '⏰'}</div>
-              <div className="db-reward-amount">+5.000 Koin</div>
+              <div className="db-reward-icon">{claimed ? '✅' : canClaim ? '🎰' : '⏰'}</div>
+              <div className="db-reward-amount">+5.000 Koin Slot</div>
               <div className="db-reward-label">
                 {claimed ? 'Sudah Diklaim Hari Ini!' : canClaim ? 'Tersedia Sekarang!' : 'Sudah Diklaim'}
               </div>
@@ -2169,10 +2410,12 @@ function DailyBonusModal({ onClose, onBonusClaimed }: { onClose: () => void; onB
               onClick={handleClaim}
               disabled={!canClaim || claiming}
             >
-              {claiming ? 'Mengklaim...' : canClaim ? '🎁 KLAIM 5.000 KOIN' : '✓ SUDAH DIKLAIM — KEMBALI BESOK'}
+              {claiming ? 'Mengklaim...' : canClaim ? '🎰 KLAIM 5.000 KOIN SLOT' : '✓ SUDAH DIKLAIM — KEMBALI BESOK'}
             </button>
 
-            <div className="db-note">⏰ Bonus berlaku 24 jam, gunakan sebelum hangus!</div>
+            <div className="db-note" style={{ color: '#ffd700', fontWeight: 600 }}>
+              🎰 <b>KHUSUS GAME SLOT</b>: Koin bonus harian hanya dapat dimainkan di game Slot (tidak bisa dipakai di Domino, QQ, Billiard, atau By One). Berlaku 24 jam!
+            </div>
           </div>
         )}
       </div>
@@ -2223,22 +2466,102 @@ function TokoModal({ onClose, onProfileUpdated, onOpenKirimKoin }: { onClose: ()
 
   const handleBuyCoins = async (pkg: CoinPkg) => {
     setBuyingId(pkg.id);
+
+    // Cek jika berjalan di web browser (bukan Android native APK)
+    if (!Capacitor.isNativePlatform()) {
+      setAlert('⚠️ Pembelian koin via Google Play Store hanya dapat diproses melalui aplikasi Android (APK) di HP.');
+      setBuyingId(null);
+      return;
+    }
+
+    setAlert('🔄 Menghubungkan ke Google Play Store...');
+
     try {
-      const res = await fetch(`${API_URL}/shop/buy-coins`, {
+      // 1. Munculkan sheet pembayaran resmi Google Play Store di Android
+      const transaction = await NativePurchases.purchaseProduct({
+        productIdentifier: pkg.id,
+        productType: PURCHASE_TYPE.INAPP,
+        isConsumable: true
+      });
+
+      // Validasi bahwa transaksi mengembalikan token atau ID
+      const orderId = transaction.orderId || transaction.transactionId;
+      const purchaseToken = transaction.purchaseToken;
+
+      if (!orderId && !purchaseToken) {
+        throw new Error('Data transaksi dari Google Play tidak lengkap.');
+      }
+
+      setAlert('🔄 Memverifikasi bukti pembayaran Google Play...');
+
+      // 2. Kirim bukti pembelian ke server untuk diverifikasi dan ditambahkan koinnya
+      const res = await fetch(`${API_URL}/shop/verify-playstore-purchase`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: myUsername, packageId: pkg.id })
+        body: JSON.stringify({
+          username: myUsername,
+          packageId: pkg.id,
+          itemType: 'coin',
+          paymentMethod: 'Google Play Store',
+          orderId: orderId || `GPA.${Date.now()}`,
+          purchaseToken
+        })
       });
+
       if (res.ok) {
+        // 3. Konsumsi item di Google Play agar koin bisa dibeli lagi di kemudian hari
+        if (purchaseToken) {
+          try {
+            await NativePurchases.consumePurchase({ purchaseToken });
+          } catch (cErr) {
+            console.warn('Google Play consume warning:', cErr);
+          }
+        }
+
         const data = await res.json();
         setProfile((prev: any) => prev ? { ...prev, coins: data.coins } : prev);
-        setAlert(`🎉 Pembelian ${pkg.name} Berhasil! (+${pkg.coins.toLocaleString('id-ID')} Koin)`);
+        setAlert(`🎉 Pembayaran Google Play Berhasil! (+${pkg.coins.toLocaleString('id-ID')} Koin)`);
+
+        try {
+          const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+          if (AudioCtx) {
+            const ctx = new AudioCtx();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+            osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1);
+            osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2);
+            osc.frequency.setValueAtTime(1046.50, ctx.currentTime + 0.3);
+            gain.gain.setValueAtTime(0.25, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.55);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.56);
+          }
+        } catch {}
+
         onProfileUpdated?.();
       } else {
-        const err = await res.json(); setAlert(err.error || 'Gagal membeli');
+        const err = await res.json();
+        setAlert(err.error || 'Gagal memverifikasi pembayaran dengan server');
       }
-    } catch { setAlert('Koneksi gagal'); }
-    setBuyingId(null);
+    } catch (err: any) {
+      const msg = err?.message || String(err);
+      if (
+        msg.toLowerCase().includes('cancel') ||
+        msg.toLowerCase().includes('batal') ||
+        msg.toLowerCase().includes('user_canceled') ||
+        err?.code === '1'
+      ) {
+        setAlert('❌ Pembelian dibatalkan oleh pengguna.');
+      } else {
+        setAlert(`❌ Google Play: ${msg || 'Pembayaran dibatalkan atau gagal'}`);
+      }
+    } finally {
+      setBuyingId(null);
+    }
   };
 
   const handleBuyAvatar = async (item: AvatarItem) => {
@@ -2264,22 +2587,77 @@ function TokoModal({ onClose, onProfileUpdated, onOpenKirimKoin }: { onClose: ()
 
   const handleBuyVip = async (vip: VipPkg) => {
     setBuyingId(vip.id);
+
+    // Cek jika berjalan di web browser (bukan Android native APK)
+    if (!Capacitor.isNativePlatform()) {
+      setAlert('⚠️ Upgrade VIP via Google Play Store hanya dapat diproses melalui aplikasi Android (APK) di HP.');
+      setBuyingId(null);
+      return;
+    }
+
+    setAlert('🔄 Menghubungkan ke Google Play Store...');
+
     try {
-      const res = await fetch(`${API_URL}/shop/buy-vip`, {
+      // 1. Panggil billing sheet Google Play
+      const transaction = await NativePurchases.purchaseProduct({
+        productIdentifier: vip.id,
+        productType: PURCHASE_TYPE.INAPP,
+        isConsumable: true
+      });
+
+      const orderId = transaction.orderId || transaction.transactionId;
+      const purchaseToken = transaction.purchaseToken;
+
+      if (!orderId && !purchaseToken) {
+        throw new Error('Data transaksi dari Google Play tidak lengkap.');
+      }
+
+      setAlert('🔄 Memverifikasi upgrade VIP dengan Google Play...');
+
+      // 2. Verifikasi di server
+      const res = await fetch(`${API_URL}/shop/verify-playstore-purchase`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: myUsername, vipId: vip.id })
+        body: JSON.stringify({
+          username: myUsername,
+          packageId: vip.id,
+          itemType: 'vip',
+          paymentMethod: 'Google Play Store',
+          orderId: orderId || `GPA.${Date.now()}`,
+          purchaseToken
+        })
       });
+
       if (res.ok) {
+        if (purchaseToken) {
+          try {
+            await NativePurchases.consumePurchase({ purchaseToken });
+          } catch {}
+        }
+
         const data = await res.json();
         setProfile((prev: any) => prev ? { ...prev, coins: data.coins, vipLevel: data.vipLevel } : prev);
         setAlert(`👑 Selamat! Anda berhasil upgrade ke ${vip.name}!`);
         onProfileUpdated?.();
       } else {
-        const err = await res.json(); setAlert(err.error || 'Gagal upgrade VIP');
+        const err = await res.json();
+        setAlert(err.error || 'Gagal memproses upgrade VIP');
       }
-    } catch { setAlert('Koneksi gagal'); }
-    setBuyingId(null);
+    } catch (err: any) {
+      const msg = err?.message || String(err);
+      if (
+        msg.toLowerCase().includes('cancel') ||
+        msg.toLowerCase().includes('batal') ||
+        msg.toLowerCase().includes('user_canceled') ||
+        err?.code === '1'
+      ) {
+        setAlert('❌ Upgrade VIP dibatalkan oleh pengguna.');
+      } else {
+        setAlert(`❌ Google Play: ${msg || 'Gagal memproses upgrade VIP'}`);
+      }
+    } finally {
+      setBuyingId(null);
+    }
   };
 
   const handleConvertRp = async () => {
@@ -2320,8 +2698,8 @@ function TokoModal({ onClose, onProfileUpdated, onOpenKirimKoin }: { onClose: ()
           <div className="toko-header-left">
             <span className="toko-header-icon">🛒</span>
             <div>
-              <div className="toko-header-title">TOKO EKSKLUSIF</div>
-              <div className="toko-header-sub">Beli koin, avatar sultan, & keuntungan VIP!</div>
+              <div className="toko-header-title">TOKO</div>
+              <div className="toko-header-sub">Beli koin emas, avatar sultan, & keuntungan VIP!</div>
             </div>
           </div>
           <div className="toko-header-right">
@@ -2379,7 +2757,7 @@ function TokoModal({ onClose, onProfileUpdated, onOpenKirimKoin }: { onClose: ()
                     onClick={() => handleBuyCoins(pkg)}
                     disabled={buyingId === pkg.id}
                   >
-                    {buyingId === pkg.id ? 'Memproses...' : '🛒 BELI SEKARANG'}
+                    {buyingId === pkg.id ? 'Memproses...' : 'BELI'}
                   </button>
                 </div>
               ))}
@@ -2434,7 +2812,7 @@ function TokoModal({ onClose, onProfileUpdated, onOpenKirimKoin }: { onClose: ()
                           onClick={() => handleBuyVip(vip)}
                           disabled={buyingId === vip.id || isOwned}
                         >
-                          {isOwned ? '✓ AKTIF' : buyingId === vip.id ? 'Memproses...' : '👑 UPGRADE VIP'}
+                          {isOwned ? '✓ AKTIF' : buyingId === vip.id ? 'Memproses...' : 'BELI'}
                         </button>
                       </div>
                     </div>
@@ -2628,50 +3006,31 @@ function VIPLoginAnimationOverlay({ username, onComplete }: { username: string; 
 }
 
 // =====================================================
-// MODAL PILIH AVATAR
+// KOMPONEN PROFILE MODAL (VIP EXECUTIVE CASINO THEME)
 // =====================================================
-function AvatarSelectionModal({ currentAvatar, onSelect, onClose }: { currentAvatar: string; onSelect: (avatar: string) => void; onClose: () => void }) {
-  const avatars = ['🐸', '🐶', '🦊', '🐻', '🐼', '🐯', '🦁', '🐵', '🦉', '👽', '👻', '🤖', '🥷', '🐱', '🐭', '🐰', '🐷', '🦄', '🦖', '🐙'];
-  const [selected, setSelected] = useState(currentAvatar);
-
-  return (
-    <div className="modal-overlay" onClick={onClose} style={{ zIndex: 1000 }}>
-      <div className="modal-box" style={{ minWidth: '40vw' }} onClick={e => e.stopPropagation()}>
-        <div className="modal-title">Pilih Avatar</div>
-        <div className="avatar-grid">
-          {avatars.map(a => (
-            <div
-              key={a}
-              className={`avatar-grid-item ${selected === a ? 'selected' : ''}`}
-              onClick={() => setSelected(a)}
-            >
-              {a}
-            </div>
-          ))}
-        </div>
-        <div style={{ display: 'flex', gap: '2vw', justifyContent: 'center', marginTop: '3vh' }}>
-          <button className="modal-close-btn cancel" onClick={onClose}>Batal</button>
-          <button className="modal-close-btn" style={{ background: 'linear-gradient(135deg, #27ae60, #1e8449)' }} onClick={() => onSelect(selected)}>Simpan</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// =====================================================
-// KOMPONEN PROFILE MODAL
-// =====================================================
-function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onClose }: { profile: any; avatarEmoji: string; onOpenAvatarSelection: () => void; onClose: () => void }) {
+function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onOpenChangeName, onClose }: { profile: any; avatarEmoji: string; onOpenAvatarSelection: () => void; onOpenChangeName?: () => void; onClose: () => void }) {
   const [activeTab, setActiveTab] = useState('informasi');
   const [isProfileOpen, setIsProfileOpen] = useState(true);
+  const [copiedId, setCopiedId] = useState(false);
 
   const [selectedFrame, setSelectedFrame] = useState(() => localStorage.getItem('domino_custom_frame') || 'crown');
   const [selectedTable, setSelectedTable] = useState(() => localStorage.getItem('domino_custom_table') || 'green');
   const [equippedBadge, setEquippedBadge] = useState(() => localStorage.getItem('domino_equipped_badge') || 'domi_master');
 
+  useEffect(() => {
+    const handleAvatarUpdate = (e: any) => {
+      if (e?.detail?.frame) {
+        setSelectedFrame(e.detail.frame);
+      }
+    };
+    window.addEventListener('domino_avatar_updated', handleAvatarUpdate);
+    return () => window.removeEventListener('domino_avatar_updated', handleAvatarUpdate);
+  }, []);
+
   const handleEquipFrame = (id: string) => {
     setSelectedFrame(id);
     localStorage.setItem('domino_custom_frame', id);
+    window.dispatchEvent(new CustomEvent('domino_avatar_updated', { detail: { frame: id } }));
   };
 
   const handleEquipTable = (id: string) => {
@@ -2684,11 +3043,21 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onClose }: 
     localStorage.setItem('domino_equipped_badge', id);
   };
 
+  const handleCopyUserId = () => {
+    const uid = profile?.userId || profile?.id || localStorage.getItem('domino_user_id') || '';
+    if (uid && navigator.clipboard) {
+      navigator.clipboard.writeText(uid);
+      setCopiedId(true);
+      setTimeout(() => setCopiedId(false), 2000);
+    }
+  };
+
   const frames = [
-    { id: 'crown', name: 'Mahkota VIP', icon: '👑' },
-    { id: 'fire', name: 'Api Inferno', icon: '🔥' },
-    { id: 'diamond', name: 'Kristal Neon', icon: '💎' },
-    { id: 'lightning', name: 'Petir Quantum', icon: '⚡' },
+    { id: 'crown', name: 'Mahkota VIP', icon: '👑', color: '#ffd700' },
+    { id: 'fire', name: 'Api Inferno', icon: '🔥', color: '#ff4500' },
+    { id: 'diamond', name: 'Kristal Neon', icon: '💎', color: '#00f2fe' },
+    { id: 'lightning', name: 'Petir Quantum', icon: '⚡', color: '#ffe600' },
+    { id: 'dragon', name: 'Aura Naga Emas', icon: '🐉', color: '#f39c12' },
   ];
 
   const tables = [
@@ -2744,7 +3113,6 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onClose }: 
     }, 3200);
   };
 
-  // Mock stats logic using profile score (or default if null)
   const baseScore = profile?.score || 50;
   const stats = {
     ronde: baseScore * 5 + 12,
@@ -2833,7 +3201,7 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onClose }: 
           {angles.map((a, i) => (
             <line key={i} x1={center} y1={center} x2={center + radius * Math.sin(a)} y2={center - radius * Math.cos(a)} stroke="rgba(255,255,255,0.2)" strokeWidth="0.5" />
           ))}
-          <polygon points={valPts} fill="rgba(241,196,15,0.6)" stroke="#f1c40f" strokeWidth="1.5" />
+          <polygon points={valPts} fill="rgba(255,215,0,0.6)" stroke="#ffd700" strokeWidth="1.5" />
         </svg>
         <span className="rl rl-top">Domino</span>
         <span className="rl rl-tr">Poker</span>
@@ -2891,13 +3259,14 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onClose }: 
         </div>
       );
     }
+
     if (activeTab === 'custom') {
       return (
         <div className="pm-tab-pane pm-custom-pane">
           {/* Section 1: Bingkai Avatar */}
           <div className="pm-custom-section">
             <div className="pm-custom-title">
-              <span>🖼️</span> <span>Bingkai Avatar Keren</span>
+              <span>🖼️</span> <span>Bingkai Avatar Keren & Efek Aura</span>
             </div>
             <div className="pm-custom-grid">
               {frames.map(f => (
@@ -2964,6 +3333,7 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onClose }: 
         </div>
       );
     }
+
     if (activeTab === 'statistik') {
       return (
         <div className="pm-tab-pane pm-stats-view">
@@ -2981,17 +3351,20 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onClose }: 
       );
     }
 
-    // Default 'informasi' / 'profil' view
+    // Default 'informasi' view
     return (
       <div className="pm-tab-pane pm-flex-row" style={{ height: '100%', alignItems: 'stretch' }}>
         {/* MIDDLE COLUMN */}
         <div className="pm-center" style={{ flex: 1, justifyContent: 'space-between', display: 'flex', flexDirection: 'column' }}>
           {/* Level Box */}
           <div className="pm-level-box pm-anim-bump" style={{ flex: 1 }}>
-            <div className="pm-level-star"><span className="pm-star-num">1</span></div>
+            <div className="pm-level-star"><span className="pm-star-num">{profile?.level || localStorage.getItem('domino_level') || '1'}</span></div>
             <div className="pm-level-info">
-              <div className="pm-level-text">Level 1 <span>0%</span></div>
-              <div className="pm-level-bar-bg"><div className="pm-level-bar-fill"></div></div>
+              <div className="pm-level-text">
+                <span>Level {profile?.level || localStorage.getItem('domino_level') || '1'} (Master Kasino)</span>
+                <span style={{ color: '#ffd700' }}>35% XP</span>
+              </div>
+              <div className="pm-level-bar-bg"><div className="pm-level-bar-fill" style={{ width: '35%' }}></div></div>
             </div>
           </div>
 
@@ -2999,11 +3372,11 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onClose }: 
           <div className="pm-vip-prestasi-box pm-anim-bump" style={{ animationDelay: '0.1s', flex: 1 }}>
             <div className="pm-vp-item" style={{ flex: 1, justifyContent: 'center' }}>
               <div className="pm-vp-icon vip-icon">V</div>
-              <div className="pm-vp-text">VIP<br /><span>0/10K</span></div>
+              <div className="pm-vp-text">VIP TIER<br /><span>VIP {profile?.vipLevel || localStorage.getItem('domino_vip') || '3'}</span></div>
             </div>
             <div className="pm-vp-item" style={{ flex: 1, justifyContent: 'center' }}>
               <div className="pm-vp-icon prestasi-icon">💎</div>
-              <div className="pm-vp-text">Prestasi<br /><span>0</span></div>
+              <div className="pm-vp-text">Prestasi<br /><span>{Object.values(claimedPrestasi).filter(Boolean).length}/6</span></div>
             </div>
           </div>
 
@@ -3024,42 +3397,134 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onClose }: 
               </div>
             </div>
             <div className="pm-stats-col pm-radar-col" style={{ flex: 1.5, justifyContent: 'center' }}>
-              <div className="pm-stat-label">Master</div>
+              <div className="pm-stat-label">Master Kasino</div>
               {renderRadar()}
             </div>
           </div>
         </div>
 
         {/* RIGHT COLUMN */}
-        <div className="pm-right pm-anim-bump" style={{ animationDelay: '0.3s', flex: '0 0 32%', height: '100%', justifyContent: 'center' }}>
+        <div className="pm-right pm-anim-bump" style={{ animationDelay: '0.3s', flex: '0 0 27%', height: '100%', justifyContent: 'center' }}>
           <div className="pm-avatar-area">
-            <div className="pm-avatar-circle pm-hover-glow">
-              <span className="pm-avatar-emoji">{avatarEmoji}</span>
-              <div className="pm-avatar-refresh pm-btn-anim" onClick={onOpenAvatarSelection}>🔄</div>
+            {/* Dynamic Avatar Frame Wrap */}
+            <div
+              className={`pm-avatar-circle pm-hover-glow avatar-frame-${selectedFrame}`}
+              onClick={onOpenAvatarSelection}
+              title="Klik untuk Ganti Avatar & Bingkai"
+              style={{
+                position: 'relative',
+                overflow: 'visible',
+              }}
+            >
+              {selectedFrame === 'crown' && (
+                <span style={{ position: 'absolute', top: '-2.8vh', fontSize: '3.6vh', filter: 'drop-shadow(0 2px 5px rgba(0,0,0,0.8))' }}>👑</span>
+              )}
+              {selectedFrame === 'fire' && (
+                <span style={{ position: 'absolute', top: '-2.2vh', fontSize: '3vh', filter: 'drop-shadow(0 0 10px #ff4500)' }}>🔥</span>
+              )}
+              {selectedFrame === 'lightning' && (
+                <span style={{ position: 'absolute', top: '-2.2vh', fontSize: '3vh', filter: 'drop-shadow(0 0 10px #ffe600)' }}>⚡</span>
+              )}
+              {selectedFrame === 'dragon' && (
+                <span style={{ position: 'absolute', top: '-2.2vh', fontSize: '3vh', filter: 'drop-shadow(0 0 10px #f39c12)' }}>🐉</span>
+              )}
+
+              {/* Clean, 100% Unobstructed Photo Avatar Container */}
+              <div style={{ width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span className="pm-avatar-emoji" style={{ display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
+                  {renderPlayerAvatar(avatarEmoji, '🐸', 'pm-avatar-pic')}
+                </span>
+              </div>
+
+              {/* Edit Icon on Avatar Corner */}
+              <div className="pm-avatar-refresh pm-btn-anim" onClick={(e) => { e.stopPropagation(); onOpenAvatarSelection(); }} title="Ganti Avatar">
+                ✏️
+              </div>
             </div>
-            <div className="pm-userid">ID:1126418823 <span className="pm-copy-icon pm-btn-anim" onClick={() => alert('ID disalin!')}>📋</span></div>
+
+            {/* Subrow: VIP Tag (Placed neatly below photo, NEVER blocking the face!) & Ganti Avatar button */}
+            <div className="pm-avatar-subrow">
+              <div className="pm-avatar-vip-pill">
+                <span className="pm-vip-crown-icon">👑</span> VIP {profile?.vipLevel || localStorage.getItem('domino_vip') || '3'}
+              </div>
+              <button
+                className="pm-change-avatar-btn g-btn-press"
+                onClick={onOpenAvatarSelection}
+                title="Ganti Avatar & Bingkai Keren"
+              >
+                <span>🎨</span> Ganti Avatar
+              </button>
+            </div>
+
+            {/* User ID Row: Spacious, un-cramped with beautiful copy button */}
+            <div className="pm-userid">
+              <div className="pm-userid-left">
+                <span className="pm-userid-prefix">ID:</span>
+                <span className="pm-userid-number">{profile?.userId || profile?.id || localStorage.getItem('domino_user_id') || '...'}</span>
+              </div>
+              <button
+                className="pm-copy-btn pm-btn-anim g-btn-press"
+                onClick={handleCopyUserId}
+                title="Salin ID Akun"
+              >
+                {copiedId ? '✓ Tersalin!' : '📋 Salin'}
+              </button>
+            </div>
           </div>
 
           <div className="pm-info-list">
-            <div className="pm-info-row pm-hover-glow">
-              <span className="pm-info-icon" style={{ color: '#3498db' }}>♂</span>
-              <span className="pm-info-text">{profile?.username || 'Guest'}</span>
+            <div className="pm-info-row pm-hover-glow" style={{ justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, overflow: 'hidden' }}>
+                <span className="pm-info-icon" style={{ color: '#60a5fa' }}>👤</span>
+                <span className="pm-info-text" style={{ maxWidth: '110px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {profile?.username || 'Guest'}
+                </span>
+                <span style={{ color: '#00e676', fontSize: '1.4vh' }} title="Akun Terverifikasi">✓</span>
+              </div>
+              {onOpenChangeName && (
+                <button
+                  className="g-btn-press"
+                  onClick={onOpenChangeName}
+                  title={(profile?.nameChangeCount || 0) === 0 ? "Ubah Nama (Gratis 1x untuk Pengguna Baru)" : "Ubah Nama (Biaya: 50.000 Koin)"}
+                  style={{
+                    background: (profile?.nameChangeCount || 0) === 0 ? 'rgba(16, 185, 129, 0.25)' : 'rgba(255, 215, 0, 0.25)',
+                    border: (profile?.nameChangeCount || 0) === 0 ? '1px solid #10b981' : '1px solid rgba(255, 215, 0, 0.6)',
+                    color: (profile?.nameChangeCount || 0) === 0 ? '#34d399' : '#ffd700',
+                    borderRadius: '6px',
+                    padding: '2px 8px',
+                    fontSize: '1.1vh',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '3px',
+                    marginLeft: 'auto'
+                  }}
+                >
+                  ✏️ {(profile?.nameChangeCount || 0) === 0 ? 'Gratis 1x' : '50K'}
+                </button>
+              )}
             </div>
             <div className="pm-info-row pm-hover-glow">
-              <span className="pm-info-icon" style={{ color: '#f1c40f' }}>🪙</span>
+              <span className="pm-info-icon" style={{ color: '#ffd700' }}>🪙</span>
               <span className="pm-info-text">{formatCoins(profile?.coins || 0)}</span>
+              <span style={{ fontSize: '1.2vh', color: '#ffd700', marginLeft: 'auto', fontWeight: 800 }}>Koin</span>
             </div>
             <div className="pm-info-row pm-hover-glow">
               <span className="pm-info-icon rp-tag">Rp</span>
               <span className="pm-info-text">{formatCoins(profile?.rp || 0)}</span>
+              <span style={{ fontSize: '1.2vh', color: '#ffedd5', marginLeft: 'auto', fontWeight: 800 }}>Kupon</span>
             </div>
             <div className="pm-info-row pm-hover-glow">
-              <span className="pm-info-icon" style={{ color: '#9b59b6' }}>💎</span>
-              <span className="pm-info-text">0</span>
+              <span className="pm-info-icon" style={{ color: '#c084fc' }}>💎</span>
+              <span className="pm-info-text">100</span>
+              <span style={{ fontSize: '1.2vh', color: '#c084fc', marginLeft: 'auto', fontWeight: 800 }}>Berlian</span>
             </div>
           </div>
 
-          <div className="pm-login-days">Login: 1 hari</div>
+          <div className="pm-login-days">
+            <span>🔥 Login Streak: 1 Hari</span> • <span style={{ color: '#00e676' }}>Online 🟢</span>
+          </div>
         </div>
       </div>
     );
@@ -3086,7 +3551,7 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onClose }: 
       <div className="profile-modal-box" onClick={e => e.stopPropagation()}>
         {/* Header Label */}
         <div className="pm-header-label">
-          <span className="pm-header-icon">🌴</span> Beranda
+          <span className="pm-header-icon">👑</span> PROFIL VIP EKSEKUTIF
         </div>
         {/* Close Button */}
         <button className="pm-close-btn" onClick={onClose}>✖</button>
@@ -3095,24 +3560,45 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onClose }: 
           {/* LEFT SIDEBAR */}
           <div className="pm-sidebar">
             <button className="pm-sidebar-item static pm-btn-anim" onClick={() => setIsProfileOpen(!isProfileOpen)}>
-              <span className="pm-sb-icon">👤</span> Profil <span className="pm-sb-arrow">{isProfileOpen ? '▼' : '▶'}</span>
+              <div className="pm-sb-left-group">
+                <span className="pm-sb-icon">👤</span>
+                <span className="pm-sb-title">Profil</span>
+              </div>
+              <span className="pm-sb-arrow">{isProfileOpen ? '▼' : '▶'}</span>
             </button>
             <div className={`pm-accordion-content ${isProfileOpen ? 'open' : 'closed'}`}>
               <button className={`pm-sidebar-item sub-item pm-btn-anim ${activeTab === 'informasi' ? 'active-sub' : ''}`} onClick={() => setActiveTab('informasi')}>
-                Informasi
+                <span className="pm-sub-dot">•</span> Informasi
               </button>
               <button className={`pm-sidebar-item sub-item pm-btn-anim ${activeTab === 'statistik' ? 'active-sub' : ''}`} onClick={() => setActiveTab('statistik')}>
-                Statistik
+                <span className="pm-sub-dot">•</span> Statistik
               </button>
               <button className={`pm-sidebar-item sub-item pm-btn-anim ${activeTab === 'custom' ? 'active-sub' : ''}`} onClick={() => setActiveTab('custom')}>
-                Custom
+                <span className="pm-sub-dot">•</span> Custom
               </button>
               <button className={`pm-sidebar-item sub-item pm-btn-anim ${activeTab === 'lencana' ? 'active-sub' : ''}`} onClick={() => setActiveTab('lencana')}>
-                Lencana
+                <span className="pm-sub-dot">•</span> Lencana
               </button>
             </div>
-            <button className={`pm-sidebar-item pm-btn-anim ${activeTab === 'prestasi' ? 'active' : ''}`} onClick={() => setActiveTab('prestasi')} style={{ marginTop: '1vh' }}>
-              <span className="pm-sb-icon">🏆</span> Prestasi <span className="pm-sb-arrow">▶</span>
+
+            <button
+              className="pm-sidebar-item pm-btn-anim"
+              onClick={onOpenAvatarSelection}
+              style={{ marginTop: '0.8vh', background: 'linear-gradient(90deg, rgba(139, 92, 246, 0.25), rgba(109, 40, 217, 0.1))', color: '#e9d5ff', borderLeft: '3px solid #c084fc' }}
+            >
+              <div className="pm-sb-left-group">
+                <span className="pm-sb-icon">🎨</span>
+                <span className="pm-sb-title">Ganti Avatar</span>
+              </div>
+              <span className="pm-sb-arrow">⚡</span>
+            </button>
+
+            <button className={`pm-sidebar-item pm-btn-anim ${activeTab === 'prestasi' ? 'active' : ''}`} onClick={() => setActiveTab('prestasi')} style={{ marginTop: '0.8vh' }}>
+              <div className="pm-sb-left-group">
+                <span className="pm-sb-icon">🏆</span>
+                <span className="pm-sb-title">Prestasi</span>
+              </div>
+              <span className="pm-sb-arrow">▶</span>
             </button>
           </div>
 
@@ -3470,22 +3956,22 @@ interface SlotGameDef {
 }
 
 const SLOT_GAMES: SlotGameDef[] = [
-  // ===== 5 ACTIVE GAMES (Semua di depan / berdampingan) =====
+  // ===== 8 ACTIVE GAMES (Semua di depan / berdampingan) =====
   { id: 'zeus', name: 'Gates of Olympus', img: '/assets/zeus/bg_olympus_hd.jpg', jackpot: '5,000,000,000', players: 320450, bg: 'linear-gradient(160deg,#1a1a6e,#4a0e8f)', locked: false },
+  { id: 'gatotkaca', name: 'Gates of Gatotkaca 1000', img: '/assets/gatokaca/loading_art.jpg', jackpot: '100,000,000,000', players: 39464, bg: 'linear-gradient(160deg,#f39c12,#8a4b0e)', locked: false },
   { id: 'mahjong2', name: 'Mahjong Ways 2', img: '/assets/mahjong2/loading.jpg', jackpot: '100,000,000,000', players: 161974, bg: 'linear-gradient(160deg,#27ae60,#145a32)', locked: false },
   { id: '5lions', name: '5 Lions Megaways', img: '/assets/fivelions/loading.jpg', jackpot: '200,000,000,000', players: 156431, bg: 'linear-gradient(160deg,#172c72,#050b24)', locked: false },
-  { id: 'gatotkaca', name: 'Gates of Gatotkaca 1000', img: '/assets/gatokaca/loading_art.jpg', jackpot: '100,000,000,000', players: 39464, bg: 'linear-gradient(160deg,#f39c12,#8a4b0e)', locked: false },
   { id: 'fafafa2', name: 'Fafafa 2 Deluxe', img: '/assets/fafafa2/loading.jpg', jackpot: '10,000,000,000', players: 104598, bg: 'linear-gradient(160deg,#8b0000,#ff0000)', locked: false },
 
   // ===== COMING SOON GAMES =====
   { id: 'duofugrand', name: 'DuoFu DuoCai Grand', img: '/assets/duofuduocai/loading_art.jpg', jackpot: '99,899,264,448', players: 22728, bg: 'linear-gradient(160deg,#800010,#311b92)', locked: true, lockText: 'COMING SOON' },
-  { id: 'jinjibaoxi', name: 'Jin Ji Bao Xi', img: '/assets/jinji/loading.jpg', jackpot: '2,835,374,165', players: 184598, bg: 'linear-gradient(160deg,#800010,#311b92)', locked: true, lockText: 'COMING SOON' },
-  { id: 'wildwest', name: 'Wild West Gold', img: '/assets/wildwest/loading.jpg', jackpot: '100,000,000,000', players: 48291, bg: 'linear-gradient(160deg,#e65100,#4e342e)', locked: true, lockText: 'COMING SOON' },
-  { id: 'candyrush', name: 'Candy Rush Bonanza', img: '/assets/candyrush/loading.jpg', jackpot: '100,000,000,000', players: 13680, bg: 'linear-gradient(160deg,#ff80ab,#c2185b)', locked: true, lockText: 'COMING SOON' },
   { id: 'superace', name: 'Super Ace', img: '/assets/slot_loading_bg.jpg', jackpot: '200,000,000,000', players: 150598, bg: 'linear-gradient(160deg,#8e44ad,#3a0e5c)', locked: true, lockText: 'COMING SOON' },
   { id: 'speedwinner', name: 'Speed Winner', img: '/assets/slot_loading_bg.jpg', jackpot: '100,000,000,000', players: 59273, bg: 'linear-gradient(160deg,#2c3e50,#0f1c2e)', locked: true, lockText: 'COMING SOON' },
   { id: 'yingcaishen', name: 'Ying Cai Shen', img: '/assets/fafafa2/bg_temple_clean.jpg', jackpot: '176,000,000,000', players: 12181, bg: 'linear-gradient(160deg,#b91d47,#5c0e22)', locked: true, lockText: 'COMING SOON' },
   { id: 'richmine', name: 'Rich Mine Blast', img: '/assets/slot_loading_bg.jpg', jackpot: '19,978,165,368', players: 29740, bg: 'linear-gradient(160deg,#8a5a2c,#4a2c0e)', locked: true, lockText: 'COMING SOON' },
+  { id: 'wildwest', name: 'Wild West Gold', img: '/assets/wildwest/loading.jpg', jackpot: '100,000,000,000', players: 48291, bg: 'linear-gradient(160deg,#e65100,#4e342e)', locked: true, lockText: 'COMING SOON' },
+  { id: 'jinjibaoxi', name: 'Jin Ji Bao Xi', img: '/assets/jinji/loading.jpg', jackpot: '2,835,374,165', players: 184598, bg: 'linear-gradient(160deg,#800010,#311b92)', locked: true, lockText: 'COMING SOON' },
+  { id: 'candyrush', name: 'Candy Rush Bonanza', img: '/assets/candyrush/loading.jpg', jackpot: '100,000,000,000', players: 13680, bg: 'linear-gradient(160deg,#ff80ab,#c2185b)', locked: true, lockText: 'COMING SOON' },
 ];
 
 function AjakTemanModal({ onClose }: { onClose: () => void }) {
@@ -3821,8 +4307,25 @@ function HomeScreen({
   const [showByOneRoomModal, setShowByOneRoomModal] = useState(false);
   const [showRiwayatTransfer, setShowRiwayatTransfer] = useState(false);
   const [showQiuQiuRoomModal, setShowQiuQiuRoomModal] = useState(false);
+  const [showChangeNameModal, setShowChangeNameModal] = useState(false);
   const [bgmActive, setBgmActive] = useState(() => localStorage.getItem('set_bgm') !== 'off');
   const [bgmTrack, setBgmTrack] = useState<BgmTrackType>(() => lobbyAudio.getTrack());
+
+  // Listen for username updates globally
+  useEffect(() => {
+    const onUsernameChange = (e: any) => {
+      if (e.detail?.newUsername) {
+        setProfile((prev: any) => prev ? {
+          ...prev,
+          username: e.detail.newUsername,
+          coins: e.detail.coins !== undefined ? e.detail.coins : prev.coins,
+          nameChangeCount: e.detail.nameChangeCount !== undefined ? e.detail.nameChangeCount : ((prev.nameChangeCount || 0) + 1)
+        } : prev);
+      }
+    };
+    window.addEventListener('domino_username_updated', onUsernameChange);
+    return () => window.removeEventListener('domino_username_updated', onUsernameChange);
+  }, []);
 
   useEffect(() => {
     const onBgmChange = (e: any) => {
@@ -3879,7 +4382,20 @@ function HomeScreen({
     if (!savedUser) return;
     fetch(`${API_URL}/profile/${savedUser}`)
       .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d) setProfile(d); })
+      .then(d => {
+        if (d) {
+          setProfile(d);
+          if (d.userId || d.id) localStorage.setItem('domino_user_id', String(d.userId || d.id));
+          if (d.vipLevel !== undefined) localStorage.setItem('domino_vip', String(d.vipLevel));
+          if (d.coins !== undefined) localStorage.setItem('domino_coins', String(d.coins));
+          if (d.rp !== undefined) localStorage.setItem('domino_rp', String(d.rp));
+          if (d.customFrame) localStorage.setItem('domino_custom_frame', d.customFrame);
+          if (d.avatar && d.avatar !== '/bg.png') {
+            setAvatarEmoji(d.avatar);
+            localStorage.setItem('domino_avatar', d.avatar);
+          }
+        }
+      })
       .catch(() => { });
     // Check inbox unread count
     fetch(`${API_URL}/inbox/${savedUser}`)
@@ -3902,14 +4418,26 @@ function HomeScreen({
 
   const pop = (title: string, message: string) => setModal({ title, message });
 
-  const confirmLogout = () => {
-    localStorage.removeItem('domino_username');
+  const confirmLogout = async () => {
+    setShowLogout(false);
+    await performFullLogout();
     onLogout();
   };
 
-  const handleSaveAvatar = (newAvatar: string) => {
+  const handleSaveAvatar = (newAvatar: string, newFrame?: string) => {
     setAvatarEmoji(newAvatar);
     localStorage.setItem('domino_avatar', newAvatar);
+    if (newFrame) localStorage.setItem('domino_custom_frame', newFrame);
+    setProfile((prev: any) => prev ? { ...prev, avatar: newAvatar, customFrame: newFrame || prev.customFrame } : prev);
+    const u = localStorage.getItem('domino_username');
+    const uid = localStorage.getItem('domino_user_id');
+    if (u || uid) {
+      fetch(`${API_URL}/users/avatar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: u, userId: uid, avatar: newAvatar, frame: newFrame })
+      }).catch(() => {});
+    }
     setShowAvatarSelect(false);
   };
 
@@ -3962,7 +4490,34 @@ function HomeScreen({
       {showCS && <CSModal onClose={() => setShowCS(false)} />}
 
       {/* Profile Modal */}
-      {showProfile && <ProfileModal profile={profile} avatarEmoji={avatarEmoji} onOpenAvatarSelection={() => setShowAvatarSelect(true)} onClose={() => setShowProfile(false)} />}
+      {showProfile && (
+        <ProfileModal
+          profile={profile}
+          avatarEmoji={avatarEmoji}
+          onOpenAvatarSelection={() => setShowAvatarSelect(true)}
+          onOpenChangeName={() => setShowChangeNameModal(true)}
+          onClose={() => setShowProfile(false)}
+        />
+      )}
+
+      {/* Change Name Modal (1x Free for New Users, 50K Coins thereafter) */}
+      {showChangeNameModal && (
+        <ChangeNameModal
+          currentUsername={profile?.username || localStorage.getItem('domino_username') || ''}
+          userCoins={profile?.coins || 0}
+          userId={profile?.userId || profile?.id || localStorage.getItem('domino_user_id') || ''}
+          onSuccess={(newName, updatedCoins) => {
+            setProfile((prev: any) => ({
+              ...prev,
+              username: newName,
+              coins: updatedCoins !== undefined ? updatedCoins : prev?.coins,
+              nameChangeCount: (prev?.nameChangeCount || 0) + 1,
+            }));
+            setShowChangeNameModal(false);
+          }}
+          onClose={() => setShowChangeNameModal(false)}
+        />
+      )}
 
       {/* Avatar Selection Modal */}
       {showAvatarSelect && (
@@ -4097,15 +4652,48 @@ function HomeScreen({
         {/* Kiri: Avatar + User Info + VIP 3 */}
         <div className="ht-user-block">
           <div className="ht-avatar" onClick={() => setShowProfile(true)}>
-            <span className="ht-avatar-img">{avatarEmoji}</span>
+            <span className="ht-avatar-img">
+              {renderPlayerAvatar(avatarEmoji, '🐸', 'ht-avatar-pic')}
+            </span>
             <div className="ht-avatar-ring" />
           </div>
           <div className="ht-user-meta">
-            <div className="ht-username">{profile?.username ?? 'Gamerstore'}</div>
-            <div className="ht-userid">ID: {profile?.id ?? '12345678'}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div className="ht-username">{profile?.username ?? 'Pemain'}</div>
+              <button
+                className="g-btn-press"
+                onClick={() => setShowChangeNameModal(true)}
+                title={(profile?.nameChangeCount || 0) === 0 ? "Ubah Nama (Gratis 1x untuk Pengguna Baru)" : "Ubah Nama (Biaya 50.000 Koin)"}
+                style={{
+                  background: (profile?.nameChangeCount || 0) === 0 ? 'rgba(16, 185, 129, 0.3)' : 'rgba(255, 215, 0, 0.25)',
+                  border: (profile?.nameChangeCount || 0) === 0 ? '1px solid #10b981' : '1px solid rgba(255, 215, 0, 0.6)',
+                  color: (profile?.nameChangeCount || 0) === 0 ? '#34d399' : '#ffd700',
+                  borderRadius: '6px',
+                  padding: '1px 6px',
+                  fontSize: '10px',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '2px',
+                  lineHeight: '1.2'
+                }}
+              >
+                ✏️ {(profile?.nameChangeCount || 0) === 0 ? 'Gratis 1x' : '50K'}
+              </button>
+            </div>
+            <div className="ht-userid" onClick={() => {
+              const uid = profile?.userId || profile?.id || localStorage.getItem('domino_user_id') || '';
+              if (uid) {
+                navigator.clipboard.writeText(uid);
+                alert(`ID ${uid} berhasil disalin!`);
+              }
+            }} style={{ cursor: 'pointer' }} title="Klik untuk salin ID">
+              ID: {profile?.userId || profile?.id || localStorage.getItem('domino_user_id') || '...'} 📋
+            </div>
           </div>
           <div className="ht-vip-pill" onClick={() => setShowKirimKoin(true)}>
-            <span>VIP 3</span>
+            <span>VIP {profile?.vipLevel ?? 0}</span>
           </div>
         </div>
 
@@ -4288,18 +4876,29 @@ function HomeScreen({
             </div>
 
             {/* CARD 2: BILLAR */}
-            <div className="home-game-card-v3 card-billar" onClick={() => onNavigate('billiard-game')}>
+            <div className="home-game-card-v3 card-billar" onClick={() => {
+              const usable = Math.max(0, (profile?.coins || 0) - (profile?.bonusCoins || 0));
+              if (usable < 50000 && (profile?.bonusCoins || 0) > 0 && (profile?.coins || 0) >= 50000) {
+                setModal({
+                  title: 'Koin Bonus Khusus Slot',
+                  message: `⚠️ Koin dari klaim bonus harian (${(profile?.bonusCoins || 0).toLocaleString('id-ID')} koin) hanya dapat dimainkan di SLOT!\n\nKoin biliar Anda: ${usable.toLocaleString('id-ID')} koin (Butuh minimal 50.000 koin untuk masuk meja biliar).`
+                });
+                return;
+              }
+              onNavigate('billiard-game');
+            }}>
               <div className="hgc-video-wrapper">
                 <video className="hgc-bg-video" autoPlay loop muted playsInline>
-                  <source src="/assets/loby/qq.mp4" type="video/mp4" />
+                  <source src="/assets/loby/billiard.mp4" type="video/mp4" />
+                  <source src="/assets/loby/1000137991.mp4" type="video/mp4" />
                 </video>
                 <div className="hgc-video-overlay billar-overlay" />
               </div>
               <div className="hgc-shine" />
               <div className="hgc-info">
-                <div className="hgc-badge badge-billar">⭐ NEW</div>
-                <div className="hgc-title title-billar">BILLAR</div>
-                <div className="hgc-sub">MAIN • LATIH SKILL • JADI JUARA</div>
+                <div className="hgc-badge badge-billar">⭐ POPULER</div>
+                <div className="hgc-title title-billar">BILLIARD</div>
+                <div className="hgc-sub">8-BALL POOL • VIP TOURNAMENT</div>
               </div>
             </div>
 
@@ -4320,7 +4919,17 @@ function HomeScreen({
             </div>
 
             {/* CARD 4: DOMINO */}
-            <div className="home-game-card-v3 card-domino" onClick={() => onNavigate('kamar-lobby', 'Biasa')}>
+            <div className="home-game-card-v3 card-domino" onClick={() => {
+              const usable = Math.max(0, (profile?.coins || 0) - (profile?.bonusCoins || 0));
+              if (usable < 10000 && (profile?.bonusCoins || 0) > 0 && (profile?.coins || 0) >= 10000) {
+                setModal({
+                  title: 'Koin Bonus Khusus Slot',
+                  message: `⚠️ Koin dari klaim bonus harian (${(profile?.bonusCoins || 0).toLocaleString('id-ID')} koin) hanya dapat dimainkan di SLOT!\n\nKoin umum Domino Anda: ${usable.toLocaleString('id-ID')} koin (Butuh minimal 10.000 koin untuk modal kamar Domino).`
+                });
+                return;
+              }
+              onNavigate('kamar-lobby', 'Biasa');
+            }}>
               <div className="hgc-video-wrapper">
                 <video className="hgc-bg-video" autoPlay loop muted playsInline>
                   <source src="/assets/loby/1000138010.mp4" type="video/mp4" />
@@ -4446,7 +5055,7 @@ function HomeScreen({
             onClearSlotPopup?.();
           }}
           onPlaySlot={(gameId) => {
-            const COMING_SOON = ['duofugrand', 'duofuduocai', 'jinjibaoxi', 'wildwest', 'candyrush'];
+            const COMING_SOON = ['duofugrand', 'duofuduocai', 'superace', 'speedwinner', 'yingcaishen', 'richmine'];
             if (COMING_SOON.includes(gameId)) {
               alert('Game slot ini sedang dalam pengembangan (Coming Soon)!');
               return;
@@ -4458,6 +5067,9 @@ function HomeScreen({
             else if (gameId === 'mahjong2') onNavigate('mahjong2-game');
             else if (gameId === 'gatotkaca') onNavigate('gatokaca-game');
             else if (gameId === '5lions') onNavigate('fivelions-game');
+            else if (gameId === 'jinjibaoxi') onNavigate('jinji-game');
+            else if (gameId === 'wildwest') onNavigate('wildwest-game');
+            else if (gameId === 'candyrush') onNavigate('candy-game');
           }}
         />
       )}
@@ -4467,14 +5079,26 @@ function HomeScreen({
         <ByOneRoomModal
           onClose={() => setShowByOneRoomModal(false)}
           socket={socket}
-          onLaunchGame={(mode, bet, opp) => {
+          onLaunchGame={(mode, bet, players, code) => {
             setShowByOneRoomModal(false);
+            const myU = localStorage.getItem('domino_username') || 'Player';
+            const otherPlayers = (players || []).filter((p: any) => p.username !== myU);
+            const oppName = otherPlayers.length > 0 ? otherPlayers[0].username : null;
+
+            const extra = {
+              byone: true,
+              bet,
+              players,
+              code,
+              opponent: oppName,
+            };
+
             if (mode === 'billiard') {
-              onNavigate('billiard-game');
+              onNavigate('billiard-game', null, extra);
             } else if (mode === 'qiuqiu') {
-              onNavigate('qiuqiu-game', QIUQIU_ROOMS[0]);
+              onNavigate('qiuqiu-game', null, extra);
             } else {
-              onNavigate('byone-game', opp);
+              onNavigate('byone-game', oppName, extra);
             }
           }}
         />
@@ -4484,8 +5108,16 @@ function HomeScreen({
       {showQiuQiuRoomModal && (
         <QiuQiuRoomModal
           onClose={() => setShowQiuQiuRoomModal(false)}
-          userCoins={profile?.coins || 0}
+          userCoins={Math.max(0, (profile?.coins || 0) - (profile?.bonusCoins || 0))}
           onSelectRoom={async (room) => {
+            const usable = Math.max(0, (profile?.coins || 0) - (profile?.bonusCoins || 0));
+            if (usable < room.buyIn) {
+              setModal({
+                title: 'Koin Bonus Khusus Slot',
+                message: `⚠️ Koin dari klaim bonus harian (${(profile?.bonusCoins || 0).toLocaleString('id-ID')} koin) hanya dapat dimainkan di SLOT!\n\nKoin umum QiuQiu Anda: ${usable.toLocaleString('id-ID')} koin (Butuh: ${room.buyIn.toLocaleString('id-ID')} koin).`
+              });
+              return;
+            }
             setShowQiuQiuRoomModal(false);
             const savedUser = localStorage.getItem('domino_username');
             if (savedUser) {
@@ -4493,7 +5125,7 @@ function HomeScreen({
                 await fetch(`${API_URL}/users/update-coins`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ username: savedUser, amount: -room.buyIn }),
+                  body: JSON.stringify({ username: savedUser, amount: -room.buyIn, gameType: 'qiuqiu' }),
                 });
                 setProfile((prev: any) => prev ? { ...prev, coins: Math.max(0, prev.coins - room.buyIn) } : prev);
               } catch (e) {
@@ -5121,8 +5753,13 @@ function KamarLobbyScreen({
   const handleSelectRoom = (room: Room) => {
     if (!profile) return;
     const requiredBuyIn = (room as any).buyIn || (room.entryFee * 10);
-    if (profile.coins < requiredBuyIn) {
-      showAlert(`⚠️ KOIN TIDAK CUKUP!\n\nUntuk masuk kamar ${room.name}, Anda harus memiliki minimal modal taruhan (Buy-In) sebesar ${requiredBuyIn.toLocaleString('id-ID')} koin.\n\nSaldo koin Anda saat ini: ${profile.coins.toLocaleString('id-ID')} koin.`, 'Koin Tidak Cukup');
+    const usableCoins = Math.max(0, (profile.coins || 0) - (profile.bonusCoins || 0));
+    if (usableCoins < requiredBuyIn) {
+      if ((profile.bonusCoins || 0) > 0 && profile.coins >= requiredBuyIn) {
+        showAlert(`⚠️ KOIN KLAIM BONUS HARIAN HANYA UNTUK SLOT!\n\nKoin dari bonus harian (${(profile.bonusCoins || 0).toLocaleString('id-ID')} koin) tidak dapat dipakai di Domino.\n\nKoin umum Domino Anda: ${usableCoins.toLocaleString('id-ID')} koin (Butuh minimal: ${requiredBuyIn.toLocaleString('id-ID')} koin).`, 'Koin Bonus Khusus Slot');
+      } else {
+        showAlert(`⚠️ KOIN TIDAK CUKUP!\n\nUntuk masuk kamar ${room.name}, Anda harus memiliki minimal modal taruhan (Buy-In) sebesar ${requiredBuyIn.toLocaleString('id-ID')} koin.\n\nSaldo koin Anda saat ini: ${profile.coins.toLocaleString('id-ID')} koin.`, 'Koin Tidak Cukup');
+      }
       return;
     }
 
@@ -6332,6 +6969,8 @@ function DominoPlayScreen({
 function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket | null }) {
   const [profile, setProfile] = useState<any>(null);
   const myUsername = localStorage.getItem('domino_username') || '';
+  const userProfile = useSlotProfile();
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   const numRows = 3;
   const numCols = 5;
@@ -6340,7 +6979,7 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
   );
   const [isSpinning, setIsSpinning] = useState(false);
   const [spinningCols, setSpinningCols] = useState([false, false, false, false, false]);
-  const [betAmount, setBetAmount] = useState(4400000);
+  const [betAmount, setBetAmount] = useState(10000);
   const [winAmount, setWinAmount] = useState(0);
   const [winType, setWinType] = useState('normal');
   const [winningSymbols, setWinningSymbols] = useState<number[]>([]);
@@ -6541,7 +7180,7 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
     socket.emit('spin_slot', { username: myUsername, betAmount });
   };
 
-  const betSteps = [100000, 500000, 1000000, 2000000, 4400000, 10000000, 20000000];
+  const betSteps = [10000, 20000, 50000, 100000, 150000, 200000];
   const changeBet = (dir: number) => {
     const idx = betSteps.indexOf(betAmount);
     if (idx === -1) {
@@ -6560,7 +7199,23 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
 
       {/* ===== COIN BALANCE BAR (top) ===== */}
       <div className="dfdc-coin-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 2vw', position: 'relative' }}>
-        <button className="g-btn-press" style={{ width: '4.5vh', height: '4.5vh', borderRadius: '50%', background: 'rgba(0,0,0,0.5)', border: '1.5px solid #f1c40f', color: '#fff', fontSize: '2vh', cursor: 'pointer' }} onClick={onBack}>‹</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.2vw' }}>
+          <button className="g-btn-press" style={{ width: '4.5vh', height: '4.5vh', borderRadius: '50%', background: 'rgba(0,0,0,0.5)', border: '1.5px solid #f1c40f', color: '#fff', fontSize: '2vh', cursor: 'pointer' }} onClick={onBack}>‹</button>
+          <div
+            className="g-btn-press"
+            onClick={() => setShowProfileModal(true)}
+            title="Lihat Profil VIP"
+            style={{ display: 'flex', alignItems: 'center', gap: '0.8vw', background: 'rgba(0,0,0,0.6)', border: '1.5px solid #f1c40f', borderRadius: '25px', padding: '0.3vh 1.2vw 0.3vh 0.4vh', cursor: 'pointer' }}
+          >
+            <div style={{ width: '4.5vh', height: '4.5vh', borderRadius: '50%', overflow: 'hidden', border: '1.5px solid #ffd700', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#111' }}>
+              {renderSlotAvatar(userProfile.avatar, '', '🐸')}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ color: '#fff', fontSize: '1.3vh', fontWeight: 900, lineHeight: 1.1 }}>{userProfile.username || 'Pemain'}</span>
+              <span style={{ color: '#ffd54f', fontSize: '1.1vh', fontWeight: 'bold' }}>VIP {userProfile.vipLevel}</span>
+            </div>
+          </div>
+        </div>
         <div className="dfdc-coin-display">
           <span className="dfdc-coin-icon">🪙</span>
           <span className="dfdc-coin-amount">{profile ? profile.coins.toLocaleString() : '0'}</span>
@@ -6713,7 +7368,7 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
         </div>
 
 
-        <button className="dfdc-max-btn g-btn-press" onClick={() => setBetAmount(20000000)}>
+        <button className="dfdc-max-btn g-btn-press" onClick={() => setBetAmount(200000)}>
           MAX
           <span className="dfdc-max-sub">BET</span>
         </button>
@@ -6773,6 +7428,15 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
 
       {/* Universal Slot Celebration Modal */}
       <SlotCelebrationModal data={celebration} onClose={() => setCelebration(null)} />
+
+      {/* User VIP Profile Modal */}
+      {showProfileModal && (
+        <SlotProfileModal
+          profile={userProfile}
+          coins={profile ? profile.coins : 0}
+          onClose={() => setShowProfileModal(false)}
+        />
+      )}
     </div>
   );
 }
@@ -6790,6 +7454,8 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
 function SlotLobbyScreen({ onBack, onPlaySlot }: { onBack: () => void; onPlaySlot: (gameId: string) => void }) {
   const [profile, setProfile] = useState<any>(null);
   const myUsername = localStorage.getItem('domino_username') || '';
+  const userProfile = useSlotProfile();
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isMouseDown, setIsMouseDown] = useState(false);
@@ -6860,7 +7526,14 @@ function SlotLobbyScreen({ onBack, onPlaySlot }: { onBack: () => void; onPlaySlo
       <div className="sl-topbar">
         {/* Kiri */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '1vh', flex: 1 }}>
-          <div className="sl-topbar-avatar">🐸</div>
+          <div
+            className="sl-topbar-avatar g-btn-press"
+            onClick={() => setShowProfileModal(true)}
+            title="Lihat Profil VIP"
+            style={{ cursor: 'pointer', overflow: 'hidden' }}
+          >
+            {renderSlotAvatar(userProfile.avatar, '', '🐸')}
+          </div>
           <div className="sl-topbar-coins">
             <span className="sl-coin-icon">🪙</span>
             <span className="sl-coin-val">{profile ? formatCoins(profile.coins) : '6.270.000'}</span>
@@ -6995,6 +7668,14 @@ function SlotLobbyScreen({ onBack, onPlaySlot }: { onBack: () => void; onPlaySlo
           <span className="sl-mulai-sub">Gates of Olympus</span>
         </button>
       </div>
+
+      {showProfileModal && (
+        <SlotProfileModal
+          profile={userProfile}
+          coins={profile ? profile.coins : 6270000}
+          onClose={() => setShowProfileModal(false)}
+        />
+      )}
     </div>
   );
 }
@@ -7116,13 +7797,25 @@ const CENTER_POT_COORDS = { x: '50vw', y: '46vh' };
 // =====================================================
 // KOMPONEN GAME DOMINO QIUQIU (99) AUTHENTIC CASINO TABLE
 // =====================================================
-function QiuQiuGameScreen({ onBack, socket, room }: { onBack: () => void; socket: Socket | null; room?: QiuQiuRoomConfig }) {
+function QiuQiuGameScreen({
+  onBack,
+  socket,
+  room,
+  customPlayers,
+  customBet,
+}: {
+  onBack: () => void;
+  socket: Socket | null;
+  room?: QiuQiuRoomConfig;
+  customPlayers?: any[] | null;
+  customBet?: number | null;
+}) {
   const activeRoom = room || QIUQIU_ROOMS[0];
   const myUsername = localStorage.getItem('domino_username') || 'V2043';
   const avatarEmoji = localStorage.getItem('domino_avatar') || '🐸';
 
   const [phase, setPhase] = useState<'round1_bet' | 'mix' | 'tentukan' | 'round2_bet' | 'showdown'>('round1_bet');
-  const [potAmount, setPotAmount] = useState(activeRoom.ante * 6);
+  const [potAmount, setPotAmount] = useState((customBet ? Math.round(customBet * 0.1) : activeRoom.ante) * (customPlayers?.length || 6));
   const [tentukanCount, setTentukanCount] = useState(10);
   const [activeTurnIdx, setActiveTurnIdx] = useState(0);
   const [winnerNotice, setWinnerNotice] = useState<{ winnerName: string; amount: number; title: string } | null>(null);
@@ -7132,7 +7825,7 @@ function QiuQiuGameScreen({ onBack, socket, room }: { onBack: () => void; socket
   // Deck & Deal State
   const [deck, setDeck] = useState<QiuTile[]>([]);
 
-  const [currentBetTarget, setCurrentBetTarget] = useState(activeRoom.blind);
+  const [currentBetTarget, setCurrentBetTarget] = useState(customBet ? Math.round(customBet * 0.1) : activeRoom.blind);
 
   const [showMenu, setShowMenu] = useState(false);
   const [soundOn, setSoundOn] = useState(true);
@@ -7154,17 +7847,64 @@ function QiuQiuGameScreen({ onBack, socket, room }: { onBack: () => void; socket
     }, 2800);
   };
 
-  // 6 Players seating state initialized with active room buyIn
+  // 6 Players seating state initialized with active room buyIn or By One custom players
   const [seats, setSeats] = useState<any[]>(() => {
-    const buyIn = activeRoom.buyIn;
-    const blind = activeRoom.blind;
+    const buyIn = customBet || activeRoom.buyIn;
+    const blind = customBet ? Math.round(customBet * 0.1) : activeRoom.blind;
+
+    if (customPlayers && customPlayers.length > 0) {
+      const myPlayer = customPlayers.find((p: any) => p.username === myUsername) || { username: myUsername, avatar: avatarEmoji, coins: buyIn };
+      const otherPlayers = customPlayers.filter((p: any) => p.username !== myUsername);
+
+      const realSeats = [
+        { id: 0, name: myPlayer.username, coins: myPlayer.coins || buyIn, avatar: myPlayer.avatar || avatarEmoji, isDealer: false, badge: 'Cek', currentBet: blind, turn: true, score: '9 : 7', hand: [[6, 3], [0, 0], [5, 4], [0, 0]], folded: false, isEmpty: false }
+      ];
+
+      otherPlayers.forEach((p: any, idx: number) => {
+        realSeats.push({
+          id: idx + 1,
+          name: p.username,
+          coins: p.coins || buyIn,
+          avatar: p.avatar || '🐯',
+          isDealer: idx === 0,
+          badge: 'Cek',
+          currentBet: blind,
+          turn: false,
+          score: '9 : 5',
+          hand: [[6, 6], [1, 6], [5, 2], [0, 4]],
+          folded: false,
+          isEmpty: false,
+        });
+      });
+
+      // Fill remaining seats as EMPTY (not bots!)
+      for (let i = realSeats.length; i < 6; i++) {
+        realSeats.push({
+          id: i,
+          name: 'Kursi Kosong',
+          coins: 0,
+          avatar: '🪑',
+          isDealer: false,
+          badge: '',
+          currentBet: 0,
+          turn: false,
+          score: '',
+          hand: [],
+          folded: true,
+          isEmpty: true,
+        });
+      }
+
+      return realSeats;
+    }
+
     return [
-      { id: 0, name: myUsername, coins: buyIn, avatar: avatarEmoji, isDealer: false, badge: 'Cek', currentBet: blind, turn: true, score: '9 : 7', hand: [[6, 3], [0, 0], [5, 4], [0, 0]], folded: false },
-      { id: 1, name: 'CPH2773', coins: Math.round(buyIn * 1.2), avatar: '🐯', isDealer: true, badge: 'Cek', currentBet: blind, turn: false, score: '9 : 1', hand: [[6, 6], [1, 6], [5, 2], [0, 4]], folded: false },
-      { id: 2, name: 'Infinix X669', coins: Math.round(buyIn * 0.9), avatar: '👩', isDealer: false, badge: 'Cek', currentBet: blind, turn: false, score: '8 : 2', hand: [[5, 3], [0, 0], [4, 4], [0, 4]], folded: false },
-      { id: 3, name: 'Sultan_QQ', coins: Math.round(buyIn * 3.5), avatar: '🧔‍♂️', isDealer: false, badge: 'Balik', currentBet: 0, turn: false, score: '9 : 5', hand: [[6, 5], [4, 4], [3, 2], [0, 0]], folded: true },
-      { id: 4, name: 'Dewi_QQ', coins: Math.round(buyIn * 1.5), avatar: '👩‍🦰', isDealer: false, badge: 'Cek', currentBet: blind, turn: false, score: '7 : 6', hand: [[4, 3], [0, 0], [3, 3], [0, 0]], folded: false },
-      { id: 5, name: 'V2043', coins: Math.round(buyIn * 0.8), avatar: '👨‍🦱', isDealer: false, badge: 'Cek', currentBet: blind, turn: false, score: '7 : 3', hand: [[5, 2], [0, 0], [2, 1], [0, 0]], folded: false },
+      { id: 0, name: myUsername, coins: buyIn, avatar: avatarEmoji, isDealer: false, badge: 'Cek', currentBet: blind, turn: true, score: '9 : 7', hand: [[6, 3], [0, 0], [5, 4], [0, 0]], folded: false, isEmpty: false },
+      { id: 1, name: 'CPH2773', coins: Math.round(buyIn * 1.2), avatar: '🐯', isDealer: true, badge: 'Cek', currentBet: blind, turn: false, score: '9 : 1', hand: [[6, 6], [1, 6], [5, 2], [0, 4]], folded: false, isEmpty: false },
+      { id: 2, name: 'Infinix X669', coins: Math.round(buyIn * 0.9), avatar: '👩', isDealer: false, badge: 'Cek', currentBet: blind, turn: false, score: '8 : 2', hand: [[5, 3], [0, 0], [4, 4], [0, 4]], folded: false, isEmpty: false },
+      { id: 3, name: 'Sultan_QQ', coins: Math.round(buyIn * 3.5), avatar: '🧔‍♂️', isDealer: false, badge: 'Balik', currentBet: 0, turn: false, score: '9 : 5', hand: [[6, 5], [4, 4], [3, 2], [0, 0]], folded: true, isEmpty: false },
+      { id: 4, name: 'Dewi_QQ', coins: Math.round(buyIn * 1.5), avatar: '👩‍🦰', isDealer: false, badge: 'Cek', currentBet: blind, turn: false, score: '7 : 6', hand: [[4, 3], [0, 0], [3, 3], [0, 0]], folded: false, isEmpty: false },
+      { id: 5, name: 'V2043', coins: Math.round(buyIn * 0.8), avatar: '👨‍🦱', isDealer: false, badge: 'Cek', currentBet: blind, turn: false, score: '7 : 3', hand: [[5, 2], [0, 0], [2, 1], [0, 0]], folded: false, isEmpty: false },
     ];
   });
 
@@ -7476,6 +8216,21 @@ function QiuQiuGameScreen({ onBack, socket, room }: { onBack: () => void; socket
       }
 
       if (activeTurnIdx > 0 && activeTurnIdx < 6) {
+        if (seats[activeTurnIdx]?.isEmpty) {
+          if (activeTurnIdx === 5 || seats.slice(activeTurnIdx + 1).every(s => s.isEmpty)) {
+            setActiveTurnIdx(0);
+            if (phase === 'round1_bet') {
+              setPhase('round2_bet');
+            } else {
+              setPhase('tentukan');
+              setTentukanCount(10);
+            }
+          } else {
+            setActiveTurnIdx(prev => prev + 1);
+          }
+          return;
+        }
+
         const botTimer = setTimeout(() => {
           const fromPos = SEAT_COORDS[activeTurnIdx] || SEAT_COORDS[1];
           spawnFlyingChips(fromPos, CENTER_POT_COORDS);
@@ -7495,8 +8250,9 @@ function QiuQiuGameScreen({ onBack, socket, room }: { onBack: () => void; socket
           setSeats(prev => prev.map((s, idx) => idx === activeTurnIdx ? { ...s, badge: actionBadge, currentBet: addBet, coins: Math.max(0, s.coins - addBet) } : s));
           setPotAmount(prev => prev + addBet);
 
-          if (activeTurnIdx === 5) {
-            // Last bot turn completed
+          const isLastPlayer = activeTurnIdx === 5 || seats.slice(activeTurnIdx + 1).every(s => s.isEmpty);
+          if (isLastPlayer) {
+            // Last player turn completed
             setActiveTurnIdx(0);
             if (phase === 'round1_bet') {
               // Stage 1 completed -> Move to Stage 2 (4th card bet round!)
@@ -7755,171 +8511,181 @@ function QiuQiuGameScreen({ onBack, socket, room }: { onBack: () => void; socket
 
       {/* Seats around Table */}
       {/* Seat 1: Bottom Right */}
-      <div className={`qq-seat pos-bottom-right ${activeTurnIdx === 5 ? 'turn' : ''}`}>
-        <div className="qq-avatar-wrapper">
-          {seats[5]?.badge && <div className={`qq-action-badge ${seats[5]?.badge === 'ALL IN' ? 'allin' : ''}`}>{seats[5].badge}</div>}
-          <div className="qq-avatar-circle">{seats[5]?.avatar}</div>
-          {seats[5]?.currentBet > 0 && (
-            <div className="qq-player-bet-chips">
-              <div className="qq-mini-chip blue">1M</div>
-              <span>{formatBetLabel(seats[5].currentBet)}</span>
+      {!seats[5]?.isEmpty && (
+        <div className={`qq-seat pos-bottom-right ${activeTurnIdx === 5 ? 'turn' : ''}`}>
+          <div className="qq-avatar-wrapper">
+            {seats[5]?.badge && <div className={`qq-action-badge ${seats[5]?.badge === 'ALL IN' ? 'allin' : ''}`}>{seats[5].badge}</div>}
+            <div className="qq-avatar-circle">{renderPlayerAvatar(seats[5]?.avatar, '🐸', 'qq-avatar-img')}</div>
+            {seats[5]?.currentBet > 0 && (
+              <div className="qq-player-bet-chips">
+                <div className="qq-mini-chip blue">1M</div>
+                <span>{formatBetLabel(seats[5].currentBet)}</span>
+              </div>
+            )}
+          </div>
+          <div className="qq-player-info">
+            <span className="qq-player-name">{seats[5]?.name}</span>
+            <span className="qq-player-coins">🪙 {seats[5]?.coins?.toLocaleString()}</span>
+          </div>
+          {/* Showdown Revealed Cards for Opponent */}
+          {phase === 'showdown' && !seats[5]?.folded && (
+            <div className="qq-opponent-showdown-hand">
+              <div className="qq-score-pill-header" style={{ fontSize: '1.2vh', padding: '0.1vh 0.8vw' }}>
+                {evaluateQiuHand(seats[5].hand).title}
+              </div>
+              <div className="qq-opponent-tiles-mini">
+                <DominoTile left={evaluateQiuHand(seats[5].hand).bestPairs[0][0]} right={evaluateQiuHand(seats[5].hand).bestPairs[0][1]} isSmall />
+                <DominoTile left={evaluateQiuHand(seats[5].hand).bestPairs[1][0]} right={evaluateQiuHand(seats[5].hand).bestPairs[1][1]} isSmall />
+                <DominoTile left={evaluateQiuHand(seats[5].hand).bestPairs[2][0]} right={evaluateQiuHand(seats[5].hand).bestPairs[2][1]} isSmall />
+                <DominoTile left={evaluateQiuHand(seats[5].hand).bestPairs[3][0]} right={evaluateQiuHand(seats[5].hand).bestPairs[3][1]} isSmall />
+              </div>
             </div>
           )}
         </div>
-        <div className="qq-player-info">
-          <span className="qq-player-name">{seats[5]?.name}</span>
-          <span className="qq-player-coins">🪙 {seats[5]?.coins?.toLocaleString()}</span>
-        </div>
-        {/* Showdown Revealed Cards for Opponent */}
-        {phase === 'showdown' && !seats[5]?.folded && (
-          <div className="qq-opponent-showdown-hand">
-            <div className="qq-score-pill-header" style={{ fontSize: '1.2vh', padding: '0.1vh 0.8vw' }}>
-              {evaluateQiuHand(seats[5].hand).title}
-            </div>
-            <div className="qq-opponent-tiles-mini">
-              <DominoTile left={evaluateQiuHand(seats[5].hand).bestPairs[0][0]} right={evaluateQiuHand(seats[5].hand).bestPairs[0][1]} isSmall />
-              <DominoTile left={evaluateQiuHand(seats[5].hand).bestPairs[1][0]} right={evaluateQiuHand(seats[5].hand).bestPairs[1][1]} isSmall />
-              <DominoTile left={evaluateQiuHand(seats[5].hand).bestPairs[2][0]} right={evaluateQiuHand(seats[5].hand).bestPairs[2][1]} isSmall />
-              <DominoTile left={evaluateQiuHand(seats[5].hand).bestPairs[3][0]} right={evaluateQiuHand(seats[5].hand).bestPairs[3][1]} isSmall />
-            </div>
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Seat 2: Right */}
-      <div className={`qq-seat pos-right ${activeTurnIdx === 1 ? 'turn' : ''}`}>
-        <div className="qq-avatar-wrapper">
-          {seats[1]?.isDealer && <div className="qq-dealer-btn">D</div>}
-          {seats[1]?.badge && <div className="qq-action-badge">{seats[1].badge}</div>}
-          <div className="qq-avatar-circle">{seats[1]?.avatar}</div>
-          {seats[1]?.currentBet > 0 && (
-            <div className="qq-player-bet-chips">
-              <div className="qq-mini-chip">200K</div>
-              <span>{formatBetLabel(seats[1].currentBet)}</span>
+      {!seats[1]?.isEmpty && (
+        <div className={`qq-seat pos-right ${activeTurnIdx === 1 ? 'turn' : ''}`}>
+          <div className="qq-avatar-wrapper">
+            {seats[1]?.isDealer && <div className="qq-dealer-btn">D</div>}
+            {seats[1]?.badge && <div className="qq-action-badge">{seats[1].badge}</div>}
+            <div className="qq-avatar-circle">{renderPlayerAvatar(seats[1]?.avatar, '🐸', 'qq-avatar-img')}</div>
+            {seats[1]?.currentBet > 0 && (
+              <div className="qq-player-bet-chips">
+                <div className="qq-mini-chip">200K</div>
+                <span>{formatBetLabel(seats[1].currentBet)}</span>
+              </div>
+            )}
+          </div>
+          <div className="qq-player-info">
+            <span className="qq-player-name">{seats[1]?.name}</span>
+            <span className="qq-player-coins">🪙 {formatBetLabel(seats[1]?.coins)}</span>
+          </div>
+          {/* Showdown Revealed Cards for Opponent */}
+          {phase === 'showdown' && !seats[1]?.folded && (
+            <div className="qq-opponent-showdown-hand">
+              <div className="qq-score-pill-header" style={{ fontSize: '1.2vh', padding: '0.1vh 0.8vw' }}>
+                {evaluateQiuHand(seats[1].hand).title}
+              </div>
+              <div className="qq-opponent-tiles-mini">
+                <DominoTile left={evaluateQiuHand(seats[1].hand).bestPairs[0][0]} right={evaluateQiuHand(seats[1].hand).bestPairs[0][1]} isSmall />
+                <DominoTile left={evaluateQiuHand(seats[1].hand).bestPairs[1][0]} right={evaluateQiuHand(seats[1].hand).bestPairs[1][1]} isSmall />
+                <DominoTile left={evaluateQiuHand(seats[1].hand).bestPairs[2][0]} right={evaluateQiuHand(seats[1].hand).bestPairs[2][1]} isSmall />
+                <DominoTile left={evaluateQiuHand(seats[1].hand).bestPairs[3][0]} right={evaluateQiuHand(seats[1].hand).bestPairs[3][1]} isSmall />
+              </div>
             </div>
           )}
         </div>
-        <div className="qq-player-info">
-          <span className="qq-player-name">{seats[1]?.name}</span>
-          <span className="qq-player-coins">🪙 {formatBetLabel(seats[1]?.coins)}</span>
-        </div>
-        {/* Showdown Revealed Cards for Opponent */}
-        {phase === 'showdown' && !seats[1]?.folded && (
-          <div className="qq-opponent-showdown-hand">
-            <div className="qq-score-pill-header" style={{ fontSize: '1.2vh', padding: '0.1vh 0.8vw' }}>
-              {evaluateQiuHand(seats[1].hand).title}
-            </div>
-            <div className="qq-opponent-tiles-mini">
-              <DominoTile left={evaluateQiuHand(seats[1].hand).bestPairs[0][0]} right={evaluateQiuHand(seats[1].hand).bestPairs[0][1]} isSmall />
-              <DominoTile left={evaluateQiuHand(seats[1].hand).bestPairs[1][0]} right={evaluateQiuHand(seats[1].hand).bestPairs[1][1]} isSmall />
-              <DominoTile left={evaluateQiuHand(seats[1].hand).bestPairs[2][0]} right={evaluateQiuHand(seats[1].hand).bestPairs[2][1]} isSmall />
-              <DominoTile left={evaluateQiuHand(seats[1].hand).bestPairs[3][0]} right={evaluateQiuHand(seats[1].hand).bestPairs[3][1]} isSmall />
-            </div>
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Seat 3: Top Right */}
-      <div className={`qq-seat pos-top-right ${activeTurnIdx === 2 ? 'turn' : ''}`}>
-        <div className="qq-avatar-wrapper">
-          {seats[2]?.badge && <div className="qq-action-badge">{seats[2].badge}</div>}
-          <div className="qq-avatar-circle">{seats[2]?.avatar}</div>
-          {seats[2]?.currentBet > 0 && (
-            <div className="qq-player-bet-chips">
-              <div className="qq-mini-chip blue">1M</div>
-              <span>{formatBetLabel(seats[2].currentBet)}</span>
+      {!seats[2]?.isEmpty && (
+        <div className={`qq-seat pos-top-right ${activeTurnIdx === 2 ? 'turn' : ''}`}>
+          <div className="qq-avatar-wrapper">
+            {seats[2]?.badge && <div className="qq-action-badge">{seats[2].badge}</div>}
+            <div className="qq-avatar-circle">{renderPlayerAvatar(seats[2]?.avatar, '🐸', 'qq-avatar-img')}</div>
+            {seats[2]?.currentBet > 0 && (
+              <div className="qq-player-bet-chips">
+                <div className="qq-mini-chip blue">1M</div>
+                <span>{formatBetLabel(seats[2].currentBet)}</span>
+              </div>
+            )}
+          </div>
+          <div className="qq-player-info">
+            <span className="qq-player-name">{seats[2]?.name}</span>
+            <span className="qq-player-coins">🪙 {formatBetLabel(seats[2]?.coins)}</span>
+          </div>
+          {/* Showdown Revealed Cards for Opponent */}
+          {phase === 'showdown' && !seats[2]?.folded && (
+            <div className="qq-opponent-showdown-hand">
+              <div className="qq-score-pill-header" style={{ fontSize: '1.2vh', padding: '0.1vh 0.8vw' }}>
+                {evaluateQiuHand(seats[2].hand).title}
+              </div>
+              <div className="qq-opponent-tiles-mini">
+                <DominoTile left={evaluateQiuHand(seats[2].hand).bestPairs[0][0]} right={evaluateQiuHand(seats[2].hand).bestPairs[0][1]} isSmall />
+                <DominoTile left={evaluateQiuHand(seats[2].hand).bestPairs[1][0]} right={evaluateQiuHand(seats[2].hand).bestPairs[1][1]} isSmall />
+                <DominoTile left={evaluateQiuHand(seats[2].hand).bestPairs[2][0]} right={evaluateQiuHand(seats[2].hand).bestPairs[2][1]} isSmall />
+                <DominoTile left={evaluateQiuHand(seats[2].hand).bestPairs[3][0]} right={evaluateQiuHand(seats[2].hand).bestPairs[3][1]} isSmall />
+              </div>
             </div>
           )}
         </div>
-        <div className="qq-player-info">
-          <span className="qq-player-name">{seats[2]?.name}</span>
-          <span className="qq-player-coins">🪙 {formatBetLabel(seats[2]?.coins)}</span>
-        </div>
-        {/* Showdown Revealed Cards for Opponent */}
-        {phase === 'showdown' && !seats[2]?.folded && (
-          <div className="qq-opponent-showdown-hand">
-            <div className="qq-score-pill-header" style={{ fontSize: '1.2vh', padding: '0.1vh 0.8vw' }}>
-              {evaluateQiuHand(seats[2].hand).title}
-            </div>
-            <div className="qq-opponent-tiles-mini">
-              <DominoTile left={evaluateQiuHand(seats[2].hand).bestPairs[0][0]} right={evaluateQiuHand(seats[2].hand).bestPairs[0][1]} isSmall />
-              <DominoTile left={evaluateQiuHand(seats[2].hand).bestPairs[1][0]} right={evaluateQiuHand(seats[2].hand).bestPairs[1][1]} isSmall />
-              <DominoTile left={evaluateQiuHand(seats[2].hand).bestPairs[2][0]} right={evaluateQiuHand(seats[2].hand).bestPairs[2][1]} isSmall />
-              <DominoTile left={evaluateQiuHand(seats[2].hand).bestPairs[3][0]} right={evaluateQiuHand(seats[2].hand).bestPairs[3][1]} isSmall />
-            </div>
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Seat 4: Top Left */}
-      <div className={`qq-seat pos-top-left ${activeTurnIdx === 3 ? 'turn' : ''}`}>
-        <div className="qq-avatar-wrapper">
-          {seats[3]?.badge && <div className="qq-action-badge">{seats[3].badge}</div>}
-          <div className="qq-avatar-circle">{seats[3]?.avatar}</div>
-          {seats[3]?.currentBet > 0 && (
-            <div className="qq-player-bet-chips">
-              <div className="qq-mini-chip purple">10M</div>
-              <span>{formatBetLabel(seats[3].currentBet)}</span>
+      {!seats[3]?.isEmpty && (
+        <div className={`qq-seat pos-top-left ${activeTurnIdx === 3 ? 'turn' : ''}`}>
+          <div className="qq-avatar-wrapper">
+            {seats[3]?.badge && <div className="qq-action-badge">{seats[3].badge}</div>}
+            <div className="qq-avatar-circle">{renderPlayerAvatar(seats[3]?.avatar, '🐸', 'qq-avatar-img')}</div>
+            {seats[3]?.currentBet > 0 && (
+              <div className="qq-player-bet-chips">
+                <div className="qq-mini-chip purple">10M</div>
+                <span>{formatBetLabel(seats[3].currentBet)}</span>
+              </div>
+            )}
+          </div>
+          <div className="qq-player-info">
+            <span className="qq-player-name">{seats[3]?.name}</span>
+            <span className="qq-player-coins">🪙 {formatBetLabel(seats[3]?.coins)}</span>
+          </div>
+          {/* Showdown Revealed Cards for Opponent */}
+          {phase === 'showdown' && !seats[3]?.folded && (
+            <div className="qq-opponent-showdown-hand">
+              <div className="qq-score-pill-header" style={{ fontSize: '1.2vh', padding: '0.1vh 0.8vw' }}>
+                {evaluateQiuHand(seats[3].hand).title}
+              </div>
+              <div className="qq-opponent-tiles-mini">
+                <DominoTile left={evaluateQiuHand(seats[3].hand).bestPairs[0][0]} right={evaluateQiuHand(seats[3].hand).bestPairs[0][1]} isSmall />
+                <DominoTile left={evaluateQiuHand(seats[3].hand).bestPairs[1][0]} right={evaluateQiuHand(seats[3].hand).bestPairs[1][1]} isSmall />
+                <DominoTile left={evaluateQiuHand(seats[3].hand).bestPairs[2][0]} right={evaluateQiuHand(seats[3].hand).bestPairs[2][1]} isSmall />
+                <DominoTile left={evaluateQiuHand(seats[3].hand).bestPairs[3][0]} right={evaluateQiuHand(seats[3].hand).bestPairs[3][1]} isSmall />
+              </div>
             </div>
           )}
         </div>
-        <div className="qq-player-info">
-          <span className="qq-player-name">{seats[3]?.name}</span>
-          <span className="qq-player-coins">🪙 {formatBetLabel(seats[3]?.coins)}</span>
-        </div>
-        {/* Showdown Revealed Cards for Opponent */}
-        {phase === 'showdown' && !seats[3]?.folded && (
-          <div className="qq-opponent-showdown-hand">
-            <div className="qq-score-pill-header" style={{ fontSize: '1.2vh', padding: '0.1vh 0.8vw' }}>
-              {evaluateQiuHand(seats[3].hand).title}
-            </div>
-            <div className="qq-opponent-tiles-mini">
-              <DominoTile left={evaluateQiuHand(seats[3].hand).bestPairs[0][0]} right={evaluateQiuHand(seats[3].hand).bestPairs[0][1]} isSmall />
-              <DominoTile left={evaluateQiuHand(seats[3].hand).bestPairs[1][0]} right={evaluateQiuHand(seats[3].hand).bestPairs[1][1]} isSmall />
-              <DominoTile left={evaluateQiuHand(seats[3].hand).bestPairs[2][0]} right={evaluateQiuHand(seats[3].hand).bestPairs[2][1]} isSmall />
-              <DominoTile left={evaluateQiuHand(seats[3].hand).bestPairs[3][0]} right={evaluateQiuHand(seats[3].hand).bestPairs[3][1]} isSmall />
-            </div>
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Seat 5: Bottom Left */}
-      <div className={`qq-seat pos-bottom-left ${activeTurnIdx === 4 ? 'turn' : ''}`}>
-        <div className="qq-avatar-wrapper">
-          {seats[4]?.badge && <div className="qq-action-badge">{seats[4].badge}</div>}
-          <div className="qq-avatar-circle">{seats[4]?.avatar}</div>
-          {seats[4]?.currentBet > 0 && (
-            <div className="qq-player-bet-chips">
-              <div className="qq-mini-chip blue">1M</div>
-              <span>{formatBetLabel(seats[4].currentBet)}</span>
+      {!seats[4]?.isEmpty && (
+        <div className={`qq-seat pos-bottom-left ${activeTurnIdx === 4 ? 'turn' : ''}`}>
+          <div className="qq-avatar-wrapper">
+            {seats[4]?.badge && <div className="qq-action-badge">{seats[4].badge}</div>}
+            <div className="qq-avatar-circle">{renderPlayerAvatar(seats[4]?.avatar, '🐸', 'qq-avatar-img')}</div>
+            {seats[4]?.currentBet > 0 && (
+              <div className="qq-player-bet-chips">
+                <div className="qq-mini-chip blue">1M</div>
+                <span>{formatBetLabel(seats[4].currentBet)}</span>
+              </div>
+            )}
+          </div>
+          <div className="qq-player-info">
+            <span className="qq-player-name">{seats[4]?.name}</span>
+            <span className="qq-player-coins">🪙 {formatBetLabel(seats[4]?.coins)}</span>
+          </div>
+          {/* Showdown Revealed Cards for Opponent */}
+          {phase === 'showdown' && !seats[4]?.folded && (
+            <div className="qq-opponent-showdown-hand">
+              <div className="qq-score-pill-header" style={{ fontSize: '1.2vh', padding: '0.1vh 0.8vw' }}>
+                {evaluateQiuHand(seats[4].hand).title}
+              </div>
+              <div className="qq-opponent-tiles-mini">
+                <DominoTile left={evaluateQiuHand(seats[4].hand).bestPairs[0][0]} right={evaluateQiuHand(seats[4].hand).bestPairs[0][1]} isSmall />
+                <DominoTile left={evaluateQiuHand(seats[4].hand).bestPairs[1][0]} right={evaluateQiuHand(seats[4].hand).bestPairs[1][1]} isSmall />
+                <DominoTile left={evaluateQiuHand(seats[4].hand).bestPairs[2][0]} right={evaluateQiuHand(seats[4].hand).bestPairs[2][1]} isSmall />
+                <DominoTile left={evaluateQiuHand(seats[4].hand).bestPairs[3][0]} right={evaluateQiuHand(seats[4].hand).bestPairs[3][1]} isSmall />
+              </div>
             </div>
           )}
         </div>
-        <div className="qq-player-info">
-          <span className="qq-player-name">{seats[4]?.name}</span>
-          <span className="qq-player-coins">🪙 {formatBetLabel(seats[4]?.coins)}</span>
-        </div>
-        {/* Showdown Revealed Cards for Opponent */}
-        {phase === 'showdown' && !seats[4]?.folded && (
-          <div className="qq-opponent-showdown-hand">
-            <div className="qq-score-pill-header" style={{ fontSize: '1.2vh', padding: '0.1vh 0.8vw' }}>
-              {evaluateQiuHand(seats[4].hand).title}
-            </div>
-            <div className="qq-opponent-tiles-mini">
-              <DominoTile left={evaluateQiuHand(seats[4].hand).bestPairs[0][0]} right={evaluateQiuHand(seats[4].hand).bestPairs[0][1]} isSmall />
-              <DominoTile left={evaluateQiuHand(seats[4].hand).bestPairs[1][0]} right={evaluateQiuHand(seats[4].hand).bestPairs[1][1]} isSmall />
-              <DominoTile left={evaluateQiuHand(seats[4].hand).bestPairs[2][0]} right={evaluateQiuHand(seats[4].hand).bestPairs[2][1]} isSmall />
-              <DominoTile left={evaluateQiuHand(seats[4].hand).bestPairs[3][0]} right={evaluateQiuHand(seats[4].hand).bestPairs[3][1]} isSmall />
-            </div>
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Seat 0: Me (Bottom Center) */}
       <div className={`qq-seat pos-bottom ${activeTurnIdx === 0 ? 'turn' : ''}`} style={isStanding ? { opacity: 0.6 } : {}}>
         <div className="qq-avatar-wrapper">
           <div className={`qq-action-badge ${seats[0]?.badge === 'ALL IN' ? 'allin' : ''}`}>{isStanding ? 'Menonton' : seats[0]?.badge}</div>
-          <div className="qq-avatar-circle">{isStanding ? '🧍' : avatarEmoji}</div>
+          <div className="qq-avatar-circle">{isStanding ? '🧍' : renderPlayerAvatar(avatarEmoji, '🐸', 'qq-avatar-img')}</div>
           {!isStanding && seats[0]?.currentBet > 0 && (
             <div className="qq-player-bet-chips">
               <div className="qq-mini-chip blue">1M</div>
@@ -8082,7 +8848,7 @@ function QiuQiuGameScreen({ onBack, socket, room }: { onBack: () => void; socket
             </div>
             <div className="qq-exit-modal-body">
               <div className="qq-exit-avatar-bubble">
-                {avatarEmoji}
+                {renderPlayerAvatar(avatarEmoji, '🐸', 'qq-avatar-img')}
               </div>
               <div className="qq-exit-title">
                 Apakah Anda yakin ingin keluar dari Meja QiuQiu?
@@ -8137,6 +8903,8 @@ function App() {
   // By One 1v1 state
   const [byoneOpponent, setByoneOpponent] = useState<string | null>(null);
   const [byoneBet, setByoneBet] = useState<number | null>(null);
+  const [byonePlayers, setByonePlayers] = useState<any[] | null>(null);
+  const [byoneRoomCode, setByoneRoomCode] = useState<string | null>(null);
   const [incomingChallenge, setIncomingChallenge] = useState<{ fromUsername: string; betAmount: number; tierName: string; mode: string } | null>(null);
 
   // Lobby states
@@ -8208,11 +8976,17 @@ function App() {
     'fivelions-game': '5lions',
   };
 
-  const handleNavigate = (targetScreen: any, categoryOverride?: any) => {
-    const COMING_SOON_SCREENS = ['slot-game', 'jinji-game', 'candy-game', 'wildwest-game'];
+  const handleNavigate = (targetScreen: any, categoryOverride?: any, extraData?: any) => {
+    const COMING_SOON_SCREENS = ['slot-game'];
     if (COMING_SOON_SCREENS.includes(targetScreen)) {
       setAppAlert('Game slot ini sedang dalam pengembangan (Coming Soon)!');
       return;
+    }
+    if (extraData && extraData.byone) {
+      setByoneBet(extraData.bet);
+      setByonePlayers(extraData.players);
+      setByoneRoomCode(extraData.code);
+      setByoneOpponent(extraData.opponent);
     }
     if (categoryOverride) {
       if (targetScreen === 'byone-game') {
@@ -8352,7 +9126,12 @@ function App() {
       )}
       {screen === 'home' && (
         <HomeScreen
-          onLogout={() => setScreen('login')}
+          onLogout={() => {
+            if (socketRef.current) {
+              socketRef.current.emit('user-logout');
+            }
+            setScreen('login');
+          }}
           onNavigate={handleNavigate}
           socket={socketRef.current}
           initialShowSlotPopup={returnToSlotPopup}
@@ -8367,7 +9146,7 @@ function App() {
             setScreen('home');
           }}
           onPlaySlot={(gameId) => {
-            const COMING_SOON = ['duofugrand', 'duofuduocai', 'jinjibaoxi', 'wildwest', 'candyrush'];
+            const COMING_SOON = ['duofugrand', 'duofuduocai', 'superace', 'speedwinner', 'yingcaishen', 'richmine'];
             if (COMING_SOON.includes(gameId)) {
               setAppAlert('Game slot ini sedang dalam pengembangan (Coming Soon)!');
               return;
@@ -8378,6 +9157,9 @@ function App() {
               mahjong2: 'mahjong2-game',
               gatotkaca: 'gatokaca-game',
               '5lions': 'fivelions-game',
+              jinjibaoxi: 'jinji-game',
+              wildwest: 'wildwest-game',
+              candyrush: 'candy-game',
             };
             const target = map[gameId];
             if (target) {
@@ -8479,24 +9261,51 @@ function App() {
 
       {screen === 'qiuqiu-game' && (
         <QiuQiuGameScreen
-          onBack={() => setScreen('home')}
+          onBack={() => {
+            setByonePlayers(null);
+            setByoneRoomCode(null);
+            setByoneOpponent(null);
+            setByoneBet(null);
+            setScreen('home');
+          }}
           socket={socketRef.current}
           room={selectedQiuRoom || QIUQIU_ROOMS[0]}
+          customPlayers={byonePlayers}
+          customBet={byoneBet}
         />
       )}
 
       {screen === 'billiard-game' && (
         <BilliardScreen
-          onBack={() => setScreen('home')}
+          onBack={() => {
+            setByonePlayers(null);
+            setByoneRoomCode(null);
+            setByoneOpponent(null);
+            setByoneBet(null);
+            setScreen('home');
+          }}
+          socket={socketRef.current}
+          roomCode={byoneRoomCode}
+          players={byonePlayers}
+          opponent={byoneOpponent}
+          betAmount={byoneBet}
         />
       )}
 
       {screen === 'byone-game' && (
         <ByOneScreen
-          onBack={() => { setByoneOpponent(null); setByoneBet(null); setScreen('home'); }}
+          onBack={() => {
+            setByoneOpponent(null);
+            setByoneBet(null);
+            setByonePlayers(null);
+            setByoneRoomCode(null);
+            setScreen('home');
+          }}
           socket={socketRef.current}
           initialOpponent={byoneOpponent}
           initialBet={byoneBet}
+          customPlayers={byonePlayers}
+          customCode={byoneRoomCode}
         />
       )}
 

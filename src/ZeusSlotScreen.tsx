@@ -3,6 +3,8 @@ import { Socket } from 'socket.io-client';
 import SlotMultiplierBar from './SlotMultiplierBar';
 import GameMenuDropdown from './GameMenuDropdown';
 import SlotCelebrationModal, { SlotCelebrationData } from './SlotCelebrationModal';
+import SlotProfileModal, { renderSlotAvatar } from './SlotProfileModal';
+import { useSlotProfile } from './useSlotProfile';
 import './gatokaca.css';
 import './App.css'; // Make sure we use the old CSS
 
@@ -45,9 +47,14 @@ const ZEUS_GEMS: { shape: string; color: string }[] = [
 ];
  
 export default function ZeusSlotScreen({ onBack, socket }: Props) {
+  const userProfile = useSlotProfile();
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const myUsername = localStorage.getItem('domino_username') || '';
-  const [myCoins,  setMyCoins]  = useState(6000000);
-  const [betAmount, setBetAmount] = useState(50000);
+  const [myCoins,  setMyCoins]  = useState<number>(() => {
+    const saved = localStorage.getItem('domino_coins');
+    return saved ? parseInt(saved, 10) : 100000;
+  });
+  const [betAmount, setBetAmount] = useState(10000);
   const [anteBet, setAnteBet] = useState(false);
   const [grid, setGrid] = useState<number[][]>(initGrid());
   const [prevGrid, setPrevGrid] = useState<number[][]>(initGrid());
@@ -58,9 +65,8 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
   const [bouncingCols, setBouncingCols] = useState<Set<number>>(new Set());
   // Winning positions that are currently exploding/vanishing
   const [explodingPos, setExplodingPos] = useState<Set<string>>(new Set());
-  // Columns and active state for tumble gravity drop
-  const [isDropping, setIsDropping] = useState(false);
-  const [droppingCols, setDroppingCols] = useState<Set<number>>(new Set());
+  // Per-cell drop distance for tumble gravity cascade
+  const [droppingCells, setDroppingCells] = useState<Record<string, number>>({});
   const [winPos,    setWinPos]    = useState<Set<string>>(new Set());
   const [totalWin,  setTotalWin]  = useState(0);
   const [showWin,   setShowWin]   = useState(false);
@@ -85,29 +91,86 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
   const [speed, setSpeed] = useState(1);
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [errMsg, setErrMsg] = useState('');
+
   const speedRef = useRef(speed);
   useEffect(() => { speedRef.current = speed; }, [speed]);
 
   const betAmountRef = useRef(betAmount);
   useEffect(() => { betAmountRef.current = betAmount; }, [betAmount]);
 
-  const spinAnim = useRef<any>(null);
+  const autoCountRef = useRef(autoCount);
+  useEffect(() => { autoCountRef.current = autoCount; }, [autoCount]);
+
+  const freeSpinsRef = useRef(freeSpins);
+  useEffect(() => { freeSpinsRef.current = freeSpins; }, [freeSpins]);
+
+  const inFreeModeRef = useRef(inFreeMode);
+  useEffect(() => { inFreeModeRef.current = inFreeMode; }, [inFreeMode]);
+
+  const isStoppingRef = useRef(false);
+  const isLongPressRef = useRef(false);
+  const isInfiniteAutoRef = useRef(false);
+  const isQuickStopRequested = useRef(false);
+  const doSpinRef = useRef<(() => void) | null>(null);
+
   const spinTimer = useRef<any>(null);
   const spinDelay = useRef<any>(null);
+  const autoTimerRef = useRef<any>(null);
+  const activeTimersRef = useRef<any[]>([]);
   const skipSpinRef = useRef<(() => void) | null>(null);
   const pressTimer = useRef<any>(null);
-  const multId = useRef(0);
+
   // Ref mirror of spinningCols for synchronous reads inside setInterval
   const spinningColsRef = useRef<Set<number>>(new Set());
- 
+
+  const safeTimeout = (fn: () => void, ms: number) => {
+    const t = setTimeout(() => {
+      activeTimersRef.current = activeTimersRef.current.filter(id => id !== t);
+      fn();
+    }, ms);
+    activeTimersRef.current.push(t);
+    return t;
+  };
+
+  const clearAllSlotTimers = () => {
+    activeTimersRef.current.forEach(t => clearTimeout(t));
+    activeTimersRef.current = [];
+    if (spinTimer.current) clearTimeout(spinTimer.current);
+    if (spinDelay.current) clearTimeout(spinDelay.current);
+    if (autoTimerRef.current) clearTimeout(autoTimerRef.current);
+  };
+
+  const forceStopReels = (fallbackGrid?: number[][], errorMsg?: string) => {
+    clearAllSlotTimers();
+    setIsSpinning(false);
+    spinningColsRef.current = new Set();
+    setSpinningCols(new Set());
+    setBouncingCols(new Set());
+    setExplodingPos(new Set());
+    setDroppingCells({});
+    setWinPos(new Set());
+    if (fallbackGrid) {
+      setGrid(fallbackGrid);
+    }
+    if (errorMsg) {
+      setErrMsg(errorMsg);
+      setTimeout(() => setErrMsg(''), 3000);
+    }
+  };
+
   useEffect(() => {
     if (!myUsername) return;
     fetch(`${API_URL}/profile/${myUsername}`)
       .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.coins) setMyCoins(d.coins); })
+      .then(d => {
+        if (d?.coins !== undefined) {
+          setMyCoins(d.coins);
+          localStorage.setItem('domino_coins', d.coins.toString());
+        }
+      })
       .catch(() => {});
   }, [myUsername]);
- 
+
   // Keep ref in sync with state
   useEffect(() => {
     spinningColsRef.current = spinningCols;
@@ -212,174 +275,248 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
     const onResult = (data: any) => {
       if (spinTimer.current) clearTimeout(spinTimer.current);
 
-      const spd = speedRef.current;
-      const elapsed = Date.now() - spinStartTime.current;
-      const minSpinMs = spd === 3 ? 240 : spd === 2 ? 400 : 750;
-      const delay = Math.max(0, minSpinMs - elapsed);
-
-      // Stop columns one-by-one dengan durasi yang terkalibrasi kecepatan
-      const stopDelay = spd === 3 ? 65 : spd === 2 ? 100 : 180;
-      const bounceDuration = spd === 3 ? 160 : spd === 2 ? 240 : 380;
-
-      const doStaggeredStop = (finalGrid: number[][]) => {
-        // Stop col 0 first, then 1, 2, 3, 4, 5
-        [0, 1, 2, 3, 4, 5].forEach(col => {
-          setTimeout(() => {
-            // SINKRON: Hapus kolom ini dari spinningColsRef SEBELUM render agar shuffle tidak menimpa
-            spinningColsRef.current.delete(col);
-
-            // Freeze this column's symbols to the final result
-            setGrid(prev => {
-              const next = prev.map(row => [...row]);
-              for (let r = 0; r < ROWS; r++) {
-                next[r][col] = finalGrid[r][col];
-              }
-              return next;
-            });
-            // Remove this col from spinning set
-            setSpinningCols(prev => {
-              const next = new Set(prev);
-              next.delete(col);
-              return next;
-            });
-            // Trigger landing bounce & audio
-            setBouncingCols(prev => new Set(prev).add(col));
-            playReelStopSound();
-            setTimeout(() => {
-              setBouncingCols(prev => {
-                const next = new Set(prev);
-                next.delete(col);
-                return next;
-              });
-            }, bounceDuration);
-
-            // After last column stops and settles, run tumble cascade
-            if (col === 5) {
-              setTimeout(() => {
-                runTumbleSequence();
-              }, bounceDuration);
-            }
-          }, col * stopDelay);
-        });
-      };
-
-      const sleep = (ms: number) => new Promise(res => setTimeout(res, ms));
-
-      const runTumbleSequence = async () => {
-        const history = data.gridHistory;
-        if (!history || history.length <= 1) {
-          finishSpin(data);
-          skipSpinRef.current = null;
-          return;
-        }
-
-        let isCancelled = false;
-        skipSpinRef.current = () => {
-          isCancelled = true;
-          setGrid(history[history.length - 1]);
-          setWinPos(new Set());
-          setExplodingPos(new Set());
-          setIsDropping(false);
-          setDroppingCols(new Set());
-          finishSpin(data);
-          skipSpinRef.current = null;
-        };
-
-        const totalTumbles = Math.floor((history.length - 1) / 2);
-
-        for (let t = 0; t < totalTumbles; t++) {
-          if (isCancelled) return;
-
-          const preGrid = history[2 * t];
-          const emptyGrid = history[2 * t + 1];
-          const postGrid = history[2 * t + 2];
-
-          // 1. Identify winning positions for this tumble round
-          const roundWins = new Set<string>();
-          const colsWithWins = new Set<number>();
-          for (let r = 0; r < ROWS; r++) {
-            for (let c = 0; c < COLS; c++) {
-              if (preGrid[r][c] !== null && preGrid[r][c] !== undefined && emptyGrid[r][c] === null) {
-                roundWins.add(`${r},${c}`);
-                colsWithWins.add(c);
-              }
-            }
-          }
-
-          if (roundWins.size === 0) continue;
-
-          setMultIdx(Math.min(t, 3));
-          // PHASE 1: Highlight winning symbols (smooth golden glow and pulse)
-          setWinPos(roundWins);
-          await sleep(Math.max(300, 500 / spd));
-          if (isCancelled) return;
-
-          // PHASE 2: Explode & burst smoothly ("pecah simbol")
-          setExplodingPos(roundWins);
-          playExplodeSound();
-          await sleep(Math.max(250, 350 / spd));
-          if (isCancelled) return;
-
-          // PHASE 3: Seamless cascade drop ("simbol baru turun mulus")
-          setWinPos(new Set());
-          setExplodingPos(new Set());
-          setDroppingCols(colsWithWins);
-          setIsDropping(true);
-          setGrid(postGrid);
-          playDropThudSound();
-          // Wait full animation duration so keyframe completes naturally
-          await sleep(Math.max(320, 420 / spd));
-          if (isCancelled) return;
-
-          setIsDropping(false);
-          setDroppingCols(new Set());
-          await sleep(Math.max(80, 160 / spd));
-        }
-
-        if (!isCancelled) {
-          finishSpin(data);
-          skipSpinRef.current = null;
-        }
-      };
-
-      const execute = () => {
-        // Use final grid (last history frame or data.grid)
-        const finalGrid = data.gridHistory?.length > 0
+      try {
+        const finalGrid = (data.gridHistory && data.gridHistory.length > 0)
           ? data.gridHistory[0]
-          : data.grid;
+          : (data.grid || grid);
+
         if (data.multGrid) {
           setMultGrid(data.multGrid);
         } else if (data.randomMult) {
           const mg = Array.from({ length: ROWS }, () => Array.from({ length: COLS }, () => 0));
           for (let r = 0; r < ROWS; r++) {
             for (let c = 0; c < COLS; c++) {
-              if (finalGrid[r][c] === 10) mg[r][c] = data.randomMult;
+              if (finalGrid[r]?.[c] === 10) mg[r][c] = data.randomMult;
             }
           }
           setMultGrid(mg);
         }
-        doStaggeredStop(finalGrid);
-      };
 
-      spinDelay.current = setTimeout(execute, delay);
+        // If the user already requested STOP while waiting for server response:
+        if (isStoppingRef.current || isQuickStopRequested.current) {
+          isQuickStopRequested.current = false;
+          finishSpin(data);
+          return;
+        }
 
-      skipSpinRef.current = () => {
-        if (spinDelay.current) clearTimeout(spinDelay.current);
-        skipSpinRef.current = null;
-        execute();
-      };
+        const spd = speedRef.current;
+        const elapsed = Date.now() - spinStartTime.current;
+        const minSpinMs = spd === 3 ? 200 : spd === 2 ? 350 : 650;
+        const delay = Math.max(0, minSpinMs - elapsed);
+
+        const stopDelay = spd === 3 ? 55 : spd === 2 ? 90 : 160;
+        const bounceDuration = spd === 3 ? 140 : spd === 2 ? 220 : 340;
+
+        let isSkipped = false;
+
+        const execute = () => {
+          if (isSkipped) return;
+
+          // Wire skipSpinRef so pressing STOP during staggered stopping halts immediately
+          skipSpinRef.current = () => {
+            isSkipped = true;
+            clearAllSlotTimers();
+            spinningColsRef.current = new Set();
+            setSpinningCols(new Set());
+            setBouncingCols(new Set());
+            if (data.finalGrid) setGrid(data.finalGrid);
+            else if (data.gridHistory?.length > 0) setGrid(data.gridHistory[data.gridHistory.length - 1]);
+            else setGrid(finalGrid);
+            finishSpin(data);
+            skipSpinRef.current = null;
+          };
+
+          // Staggered stop for cols 0..5
+          [0, 1, 2, 3, 4, 5].forEach(col => {
+            safeTimeout(() => {
+              if (isSkipped) return;
+              spinningColsRef.current.delete(col);
+
+              setGrid(prev => {
+                const next = prev.map(row => [...row]);
+                for (let r = 0; r < ROWS; r++) {
+                  if (finalGrid[r]?.[col] !== undefined) {
+                    next[r][col] = finalGrid[r][col];
+                  }
+                }
+                return next;
+              });
+
+              setSpinningCols(prev => {
+                const next = new Set(prev);
+                next.delete(col);
+                return next;
+              });
+
+              setBouncingCols(prev => new Set(prev).add(col));
+              playReelStopSound();
+              safeTimeout(() => {
+                setBouncingCols(prev => {
+                  const next = new Set(prev);
+                  next.delete(col);
+                  return next;
+                });
+              }, bounceDuration);
+
+              // Last column settled -> run tumble cascade
+              if (col === 5) {
+                safeTimeout(() => {
+                  if (isSkipped) return;
+                  runTumbleSequence().catch((e) => {
+                    console.error('Error in runTumbleSequence:', e);
+                    finishSpin(data);
+                  });
+                }, bounceDuration);
+              }
+            }, col * stopDelay);
+          });
+        };
+
+        spinDelay.current = safeTimeout(execute, delay);
+
+        skipSpinRef.current = () => {
+          isSkipped = true;
+          clearAllSlotTimers();
+          if (data.finalGrid) setGrid(data.finalGrid);
+          else if (data.gridHistory?.length > 0) setGrid(data.gridHistory[data.gridHistory.length - 1]);
+          else setGrid(finalGrid);
+          finishSpin(data);
+          skipSpinRef.current = null;
+        };
+
+        const sleep = (ms: number) => new Promise(res => {
+          const t = setTimeout(res, ms);
+          activeTimersRef.current.push(t);
+        });
+
+        const runTumbleSequence = async () => {
+          try {
+            const history = data.gridHistory;
+            if (!history || !Array.isArray(history) || history.length <= 1) {
+              finishSpin(data);
+              skipSpinRef.current = null;
+              return;
+            }
+
+            let isCancelled = false;
+            skipSpinRef.current = () => {
+              isCancelled = true;
+              clearAllSlotTimers();
+              if (data.finalGrid) setGrid(data.finalGrid);
+              else if (history.length > 0) setGrid(history[history.length - 1]);
+              setWinPos(new Set());
+              setExplodingPos(new Set());
+              setDroppingCells({});
+              finishSpin(data);
+              skipSpinRef.current = null;
+            };
+
+            const totalTumbles = Math.floor((history.length - 1) / 2);
+
+            for (let t = 0; t < totalTumbles; t++) {
+              if (isCancelled || isSkipped) return;
+
+              const preGrid = history[2 * t];
+              const emptyGrid = history[2 * t + 1];
+              const postGrid = history[2 * t + 2];
+
+              if (!preGrid || !emptyGrid || !postGrid) continue;
+
+              const roundWins = new Set<string>();
+              for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                  if (preGrid[r]?.[c] !== null && preGrid[r]?.[c] !== undefined && emptyGrid[r]?.[c] === null) {
+                    roundWins.add(`${r},${c}`);
+                  }
+                }
+              }
+
+              if (roundWins.size === 0) continue;
+
+              setMultIdx(Math.min(t, 3));
+              // PHASE 1: Highlight winning symbols
+              setWinPos(roundWins);
+              await sleep(Math.max(220, 400 / spd));
+              if (isCancelled || isSkipped) return;
+
+              // PHASE 2: Explode
+              setExplodingPos(roundWins);
+              playExplodeSound();
+              await sleep(Math.max(180, 280 / spd));
+              if (isCancelled || isSkipped) return;
+
+              // PHASE 3: Empty spaces
+              setGrid(emptyGrid);
+              setWinPos(new Set());
+              setExplodingPos(new Set());
+              await sleep(Math.max(60, 100 / spd));
+              if (isCancelled || isSkipped) return;
+
+              // PHASE 4: Drop distance
+              const dropsMap: Record<string, number> = {};
+              for (let c = 0; c < COLS; c++) {
+                const expRowsInCol: number[] = [];
+                for (let r = 0; r < ROWS; r++) {
+                  if (emptyGrid[r]?.[c] === null) expRowsInCol.push(r);
+                }
+                if (expRowsInCol.length === 0) continue;
+                const maxExpRow = Math.max(...expRowsInCol);
+                const expCount = expRowsInCol.length;
+                for (let r = 0; r <= maxExpRow; r++) {
+                  dropsMap[`${r},${c}`] = expCount;
+                }
+              }
+
+              // PHASE 5: Cascade fall
+              setDroppingCells(dropsMap);
+              if (Array.isArray(postGrid)) setGrid(postGrid);
+              playDropThudSound();
+              await sleep(Math.max(260, 360 / spd));
+              if (isCancelled || isSkipped) return;
+
+              setDroppingCells({});
+              await sleep(Math.max(50, 100 / spd));
+            }
+
+            if (!isCancelled && !isSkipped) {
+              finishSpin(data);
+              skipSpinRef.current = null;
+            }
+          } catch (err) {
+            console.error('Tumble sequence caught error:', err);
+            finishSpin(data);
+            skipSpinRef.current = null;
+          }
+        };
+
+      } catch (err) {
+        console.error('onResult caught top-level error:', err);
+        finishSpin(data);
+      }
     };
 
     const finishSpin = (data: any) => {
       try {
         setIsSpinning(false);
+        spinningColsRef.current = new Set();
         setSpinningCols(new Set());
         setBouncingCols(new Set());
         setExplodingPos(new Set());
-        setIsDropping(false);
-        setDroppingCols(new Set());
-        setWinPos(new Set()); // Bersihkan posisi menang agar simbol baru tidak menyala salah!
-        setMyCoins(data.newBalance);
+        setDroppingCells({});
+        setWinPos(new Set());
+        skipSpinRef.current = null;
+
+        if (data.finalGrid) {
+          setGrid(data.finalGrid);
+        } else if (data.gridHistory && data.gridHistory.length > 0) {
+          setGrid(data.gridHistory[data.gridHistory.length - 1]);
+        }
+
+        if (data.newBalance != null) {
+          setMyCoins(data.newBalance);
+          localStorage.setItem('domino_coins', data.newBalance.toString());
+        }
+
         setClusterWins(data.clusterWins || []);
         setMultIdx(Math.min(3, Math.max(0, ...((data.clusterWins || []).map((w: any) => w.tumble || 0)))));
 
@@ -387,8 +524,8 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
           setTotalWin(data.totalWinAmount);
           setWinType(data.winType || 'win');
           setShowWin(true);
-          setTimeout(() => { setShowWin(false); }, Math.max(2000, 3500 / spd));
-          const currentBet = betAmountRef.current || 50000;
+          safeTimeout(() => { setShowWin(false); }, 1800);
+          const currentBet = betAmountRef.current || 10000;
           const ratio = data.totalWinAmount / Math.max(1, currentBet);
           if (ratio >= 30) {
             setCelebration({ type: 'super_win', amount: data.totalWinAmount });
@@ -402,37 +539,69 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
         if (data.randomMult) {
           setFreeMult(data.freeMult || 1);
           setDroppedMultNotif(`⚡ PETIR ZEUS PENGALI ${data.randomMult}x TURUN! ⚡`);
-          setTimeout(() => setDroppedMultNotif(null), 2800);
+          safeTimeout(() => setDroppedMultNotif(null), 2800);
         }
 
+        // Handle Free Spins Award
         if (data.triggerFreeSpins && data.freeSpinsAwarded > 0) {
-          setTimeout(() => {
-            setFreeSpins(data.freeSpinsAwarded);
-            setInFreeMode(true);
-            setFreeMult(1);
-            setCelebration({
-              type: 'scatter',
-              freeSpinsCount: data.freeSpinsAwarded || 15,
-              title: '⚡ SCATTER ZEUS! ⚡',
-              subtext: `SELAMAT! KAMU MEMICU ${data.freeSpinsAwarded || 15} PUTARAN GRATIS!`
-            });
-          }, Math.max(800, 1500 / spd));
+          const awarded = data.freeSpinsAwarded;
+          const totalF = (inFreeModeRef.current ? freeSpinsRef.current : 0) + awarded;
+          freeSpinsRef.current = totalF;
+          setFreeSpins(totalF);
+          setInFreeMode(true);
+          inFreeModeRef.current = true;
+          setFreeMult(1);
+          setCelebration({
+            type: 'scatter',
+            freeSpinsCount: awarded,
+            title: '⚡ SCATTER ZEUS! ⚡',
+            subtext: `SELAMAT! KAMU MEMICU ${awarded} PUTARAN GRATIS!`
+          });
         }
+
+        // Automatic Next Spin Sequencing (Auto Spins / Free Spins)
+        const totalFree = inFreeModeRef.current ? freeSpinsRef.current : 0;
+        const remainingAuto = isInfiniteAutoRef.current ? 999 : autoCountRef.current;
+        const shouldContinue = !isStoppingRef.current && (totalFree > 0 || remainingAuto > 0);
+
+        if (totalFree === 0 && inFreeModeRef.current) {
+          setInFreeMode(false);
+          inFreeModeRef.current = false;
+          setFreeMult(1);
+        }
+
+        if (shouldContinue) {
+          const hasCelebration = Boolean(
+            data.triggerFreeSpins ||
+            (data.totalWinAmount > 0 && (data.totalWinAmount / Math.max(1, betAmountRef.current || 10000)) >= 5)
+          );
+          const nextDelay = hasCelebration ? 3800 : Math.max(650, 1000 / (speedRef.current || 1));
+          autoTimerRef.current = setTimeout(() => {
+            if (!isStoppingRef.current) {
+              doSpinRef.current?.();
+            }
+          }, nextDelay);
+        } else {
+          setAutoCount(0);
+          autoCountRef.current = 0;
+          isInfiniteAutoRef.current = false;
+        }
+
       } catch (err) {
         console.error('Error in finishSpin:', err);
       } finally {
         setIsSpinning(false);
       }
     };
- 
+
     const onError = (data: any) => {
-      if (spinTimer.current) clearTimeout(spinTimer.current);
-      setIsSpinning(false);
+      forceStopReels(undefined, data.message || 'Terjadi kesalahan');
       setAutoCount(0);
-      setErrMsg(data.message || 'Terjadi kesalahan');
-      setTimeout(() => setErrMsg(''), 3000);
+      autoCountRef.current = 0;
+      isInfiniteAutoRef.current = false;
+      isStoppingRef.current = true;
     };
- 
+
     socket.on('zeus_result', onResult);
     socket.on('zeus_error',  onError);
     return () => {
@@ -440,35 +609,51 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
       socket.off('zeus_error',  onError);
     };
   }, [socket]);
- 
-  useEffect(() => {
-    if (autoCount > 0 && !isSpinning && !showWin && !showFSModal && !celebration) {
-      const t = setTimeout(() => {
-        setAutoCount(prev => Math.max(0, prev - 1));
-        doSpin();
-      }, Math.max(500, 800 / speed));
-      return () => clearTimeout(t);
-    }
-  }, [autoCount, isSpinning, showWin, showFSModal, speed, celebration]);
- 
-  useEffect(() => {
-    if (inFreeMode && freeSpins > 0 && !isSpinning && !showWin && !showFSModal && !celebration) {
-      const t = setTimeout(() => doSpin(), Math.max(600, 1000 / speed));
-      return () => clearTimeout(t);
-    }
-    if (inFreeMode && freeSpins === 0 && !isSpinning) {
-      setInFreeMode(false);
-      setFreeMult(1);
-    }
-  }, [inFreeMode, freeSpins, isSpinning, showWin, showFSModal, speed, celebration]);
- 
+
   const doSpin = () => {
     if (isSpinning) return;
-    if (!socket) { setErrMsg('Tidak terhubung ke server!'); return; }
-    const actualBet = anteBet ? betAmount * 1.25 : betAmount;
-    if (!inFreeMode && myCoins < actualBet) { setErrMsg('Koin tidak cukup!'); setTimeout(() => setErrMsg(''), 2500); return; }
-    if (!inFreeMode) setMyCoins(prev => prev - actualBet);
-    if (inFreeMode)  setFreeSpins(prev => Math.max(0, prev - 1));
+    if (!socket) {
+      setErrMsg('Tidak terhubung ke server!');
+      setAutoCount(0);
+      autoCountRef.current = 0;
+      isInfiniteAutoRef.current = false;
+      setTimeout(() => setErrMsg(''), 2500);
+      return;
+    }
+
+    const actualBet = anteBet ? Math.floor(betAmount * 1.25) : betAmount;
+    const isFree = inFreeModeRef.current && freeSpinsRef.current > 0;
+
+    if (!isFree && myCoins < actualBet) {
+      setErrMsg(`Koin tidak cukup! Taruhan: ${actualBet.toLocaleString('id-ID')} koin.`);
+      setAutoCount(0);
+      autoCountRef.current = 0;
+      isInfiniteAutoRef.current = false;
+      setTimeout(() => setErrMsg(''), 2500);
+      return;
+    }
+
+    if (!isFree) {
+      setMyCoins(prev => {
+        const next = Math.max(0, prev - actualBet);
+        localStorage.setItem('domino_coins', next.toString());
+        return next;
+      });
+    }
+
+    // Decrement counters AT SPIN LAUNCH so that UI updates immediately!
+    if (isFree) {
+      const nextFree = Math.max(0, freeSpinsRef.current - 1);
+      freeSpinsRef.current = nextFree;
+      setFreeSpins(nextFree);
+    } else if (autoCountRef.current > 0 && !isInfiniteAutoRef.current) {
+      const nextAuto = Math.max(0, autoCountRef.current - 1);
+      autoCountRef.current = nextAuto;
+      setAutoCount(nextAuto);
+    }
+
+    isStoppingRef.current = false;
+    isQuickStopRequested.current = false;
     setWinPos(new Set());
     setShowWin(false);
     setTotalWin(0);
@@ -477,21 +662,40 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
     setMultGrid(Array.from({ length: ROWS }, () => Array.from({ length: COLS }, () => 0)));
     setPrevGrid(grid);
     setIsSpinning(true);
-    // All 6 columns start spinning (Duo Fu Duo Cai style)
+
+    // All 6 columns start spinning
     spinningColsRef.current = new Set([0, 1, 2, 3, 4, 5]);
     setSpinningCols(new Set([0, 1, 2, 3, 4, 5]));
     setBouncingCols(new Set());
     setExplodingPos(new Set());
-    setIsDropping(false);
-    setDroppingCols(new Set());
+    setDroppingCells({});
     spinStartTime.current = Date.now();
-    socket.emit('spin_zeus', { username: myUsername, betAmount, actualBet, anteBet, isFreeSpins: inFreeMode, freeSpinMult: freeMult, clientBalance: myCoins });
+
+    // Default skip while waiting for server response: mark quick-stop requested
+    skipSpinRef.current = () => {
+      isQuickStopRequested.current = true;
+      isStoppingRef.current = true;
+    };
+
+    socket.emit('spin_zeus', {
+      username: myUsername,
+      betAmount,
+      actualBet,
+      anteBet,
+      isFreeSpins: isFree,
+      freeSpinMult: freeMult,
+      clientBalance: myCoins
+    });
+
+    if (spinTimer.current) clearTimeout(spinTimer.current);
     spinTimer.current = setTimeout(() => {
-      setIsSpinning(false);
-      setErrMsg('Server timeout, coba lagi.');
-      setTimeout(() => setErrMsg(''), 3000);
+      forceStopReels(undefined, 'Server timeout, koneksi terputus.');
+      setAutoCount(0);
+      autoCountRef.current = 0;
+      isInfiniteAutoRef.current = false;
     }, 8000);
   };
+  doSpinRef.current = doSpin;
  
   const fmt = (n: number) => {
     if (n >= 1e9) {
@@ -553,10 +757,17 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
         <button className="zeus-tb-back-corner g-btn-press" onClick={onBack}>‹</button>
  
         <div className="zeus-tb-left">
-          <div className="zeus-tb-avatar">
-            <span className="zeus-tb-level-badge">1</span>
-            <span>👑</span>
-            <span className="zeus-tb-vip-badge">VIP</span>
+          <div
+            className="zeus-tb-avatar g-btn-press"
+            onClick={() => setShowProfileModal(true)}
+            title="Lihat Profil VIP"
+            style={{ cursor: 'pointer' }}
+          >
+            <span className="zeus-tb-level-badge">{userProfile.level}</span>
+            <div style={{ width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {renderSlotAvatar(userProfile.avatar, 'zeus-avatar-img', '🐸')}
+            </div>
+            <span className="zeus-tb-vip-badge">VIP {userProfile.vipLevel}</span>
           </div>
           <div className="zeus-tb-coin-pill">
             <span className="zeus-tb-coin-icon">🪙</span>
@@ -584,9 +795,6 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
  
         <div className="zeus-tb-right" style={{ position: 'relative' }}>
           <button className="zeus-tb-icon-btn g-btn-press" onClick={() => { setErrMsg('Peringkat segera hadir!'); setTimeout(() => setErrMsg(''), 2000); }}>🏆</button>
-          <button className="zeus-tb-icon-btn g-btn-press" onClick={() => { setErrMsg('Riwayat segera hadir!'); setTimeout(() => setErrMsg(''), 2000); }}>
-            🔄<span className="zeus-tb-icon-sub">G497</span>
-          </button>
           <button className="zeus-tb-icon-btn g-btn-press" onClick={() => setShowMenu(v => !v)}>☰</button>
 
           <GameMenuDropdown
@@ -623,14 +831,19 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
                 setTimeout(() => setErrMsg(''), 3000);
                 return;
               }
-              if (myCoins >= betAmount * 100) {
-                 setMyCoins(prev => prev - (betAmount * 100));
+              const cost = betAmount * 100;
+              if (myCoins >= cost) {
+                 const nextBal = myCoins - cost;
+                 setMyCoins(nextBal);
+                 localStorage.setItem('domino_coins', nextBal.toString());
                  setInFreeMode(true);
+                 inFreeModeRef.current = true;
                  setFreeSpins(15);
+                 freeSpinsRef.current = 15;
                  setShowFSModal(true);
               } else {
-                 setErrMsg('Koin tidak cukup untuk membeli Spin Gratis!');
-                 setTimeout(() => setErrMsg(''), 2000);
+                 setErrMsg(`Koin tidak cukup! Butuh ${cost.toLocaleString('id-ID')} koin.`);
+                 setTimeout(() => setErrMsg(''), 2500);
               }
             }}
             title={anteBet ? 'Nonaktif saat Taruhan Ganda aktif' : 'Beli Spin Gratis'}
@@ -744,7 +957,8 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
                           const sym = grid[r]?.[c];
                           const winning = winPos.has(`${r},${c}`);
                           const exploding = explodingPos.has(`${r},${c}`);
-                          const dropping = isDropping && droppingCols.has(c);
+                          const dropDist = droppingCells[`${r},${c}`] || 0;
+                          const dropping = dropDist > 0;
                           const isEmpty = sym === null || sym === undefined;
 
                           return (
@@ -752,6 +966,7 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
                               key={`${r}-${c}`}
                               data-col={c}
                               data-row={r}
+                              style={{ ['--drop-dist' as any]: dropDist }}
                               className={[
                                 'zeus-reel-cell',
                                 isColSpinning ? 'spinning' : '',
@@ -943,14 +1158,14 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
           <button className="zhb-icon-btn zhb-btn-info g-btn-press" onClick={() => { setShowRules(true); setRulesPage(0); }}>
             i
           </button>
-          <button className="zhb-bet-btn zhb-btn-minus g-btn-press" onClick={() => setBetAmount(b => Math.max(5000, b / 2))}>
+          <button className="zhb-bet-btn zhb-btn-minus g-btn-press" onClick={() => setBetAmount(b => Math.max(10000, b - 10000))}>
             −
           </button>
           <div className="zhb-bet-display">
             <div className="zhb-bet-label">BET</div>
             <div className="zhb-bet-val">{betAmount.toLocaleString('en-US')}</div>
           </div>
-          <button className="zhb-bet-btn zhb-btn-plus g-btn-press" onClick={() => setBetAmount(b => Math.min(1000000, b * 2))}>
+          <button className="zhb-bet-btn zhb-btn-plus g-btn-press" onClick={() => setBetAmount(b => Math.min(200000, b + 10000))}>
             +
           </button>
         </div>
@@ -969,7 +1184,7 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
             <button className="zhb-rules-tutup-btn g-btn-press" onClick={() => setShowRules(false)}>TUTUP</button>
           ) : (
             <>
-              <button className="zhb-maxbet-btn g-btn-press" onClick={() => setBetAmount(1000000)}>
+              <button className="zhb-maxbet-btn g-btn-press" onClick={() => setBetAmount(200000)}>
                 <span>MAX</span>
                 <span>BET</span>
               </button>
@@ -979,26 +1194,61 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
               <div className="zhb-spin-wrapper">
                 <button
                   className={`zhb-spin-btn ${isSpinning ? 'spinning' : ''}`}
-                  onMouseDown={() => { if (!isSpinning) pressTimer.current = setTimeout(() => setShowAutoMenu(true), 450); }}
-                  onMouseUp={() => { clearTimeout(pressTimer.current); }}
-                  onMouseLeave={() => { clearTimeout(pressTimer.current); }}
-                  onTouchStart={() => { if (!isSpinning) pressTimer.current = setTimeout(() => setShowAutoMenu(true), 450); }}
-                  onTouchEnd={() => { clearTimeout(pressTimer.current); }}
+                  onPointerDown={(e) => {
+                    if (e.button !== 0 && e.pointerType === 'mouse') return;
+                    isLongPressRef.current = false;
+                    if (pressTimer.current) clearTimeout(pressTimer.current);
+                    if (isSpinning || autoCountRef.current > 0 || inFreeModeRef.current) {
+                      return;
+                    }
+                    pressTimer.current = setTimeout(() => {
+                      isLongPressRef.current = true;
+                      setShowAutoMenu(true);
+                    }, 450);
+                  }}
+                  onPointerUp={() => {
+                    if (pressTimer.current) clearTimeout(pressTimer.current);
+                  }}
+                  onPointerCancel={() => {
+                    if (pressTimer.current) clearTimeout(pressTimer.current);
+                  }}
                   onClick={() => {
-                    if (autoCount > 0) {
+                    if (isLongPressRef.current) {
+                      isLongPressRef.current = false;
+                      return;
+                    }
+
+                    // STOP BUTTON PRESSED
+                    if (isSpinning || autoCountRef.current > 0 || inFreeModeRef.current) {
                       setAutoCount(0);
+                      autoCountRef.current = 0;
+                      isInfiniteAutoRef.current = false;
+                      isStoppingRef.current = true;
+                      if (autoTimerRef.current) clearTimeout(autoTimerRef.current);
+
+                      if (isSpinning) {
+                        if (skipSpinRef.current) {
+                          skipSpinRef.current();
+                        } else {
+                          forceStopReels();
+                        }
+                      }
+                      return;
                     }
-                    if (isSpinning) {
-                      skipSpinRef.current?.();
-                    } else if (autoCount === 0) {
-                      doSpin();
-                    }
+
+                    // NORMAL SPIN BUTTON PRESSED
+                    isStoppingRef.current = false;
+                    doSpin();
                   }}
                 >
                   <div className="zhb-spin-title">{isSpinning ? 'STOP' : 'SPIN'}</div>
                   <div className="zhb-spin-sub">
                     {autoCount > 0 ? (
-                      <span className="zhb-auto-sub-badge">{autoCount === 999 ? 'AUTO ∞' : `AUTO: ${autoCount}`}</span>
+                      <span className="zhb-auto-sub-badge">
+                        {isInfiniteAutoRef.current || autoCount >= 999 ? 'AUTO ∞' : `AUTO: ${autoCount}`}
+                      </span>
+                    ) : inFreeMode ? (
+                      <span className="zhb-auto-sub-badge">FREE: {freeSpins}</span>
                     ) : (
                       isSpinning ? 'BERHENTI' : 'HOLD FOR AUTO'
                     )}
@@ -1006,21 +1256,40 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
                 </button>
     
                 {showAutoMenu && (
-                  <div className="zeus-auto-menu">
-                    <div className="zam-header">AUTO SPIN</div>
-                    <div className="zam-grid">
-                      {[10,20,50,100,999].map(n => (
-                        <button key={n} className="zeus-auto-opt g-btn-press" onClick={() => {
-                          setAutoCount(n);
-                          setShowAutoMenu(false);
-                          if (!isSpinning) doSpin();
-                        }}>
-                          {n === 999 ? '∞' : n} SPIN
-                        </button>
-                      ))}
+                  <>
+                    <div
+                      className="zeus-menu-backdrop"
+                      onClick={() => setShowAutoMenu(false)}
+                      onTouchStart={() => setShowAutoMenu(false)}
+                      style={{ position: 'fixed', inset: 0, zIndex: 199 }}
+                    />
+                    <div className="zeus-auto-menu" style={{ zIndex: 200 }}>
+                      <div className="zam-header">AUTO SPIN</div>
+                      <div className="zam-grid">
+                        {[10,20,50,100,999].map(n => (
+                          <button key={n} className="zeus-auto-opt g-btn-press" onClick={() => {
+                            setShowAutoMenu(false);
+                            if (n === 999) {
+                              isInfiniteAutoRef.current = true;
+                              setAutoCount(999);
+                              autoCountRef.current = 999;
+                            } else {
+                              isInfiniteAutoRef.current = false;
+                              setAutoCount(n);
+                              autoCountRef.current = n;
+                            }
+                            isStoppingRef.current = false;
+                            if (!isSpinning) {
+                              doSpin();
+                            }
+                          }}>
+                            {n === 999 ? '∞' : n} SPIN
+                          </button>
+                        ))}
+                      </div>
+                      <button className="zeus-auto-close g-btn-press" onClick={() => setShowAutoMenu(false)}>TUTUP</button>
                     </div>
-                    <button className="zeus-auto-close g-btn-press" onClick={() => setShowAutoMenu(false)}>TUTUP</button>
-                  </div>
+                  </>
                 )}
               </div>
             </>
@@ -1041,7 +1310,10 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
             <div className="zeus-fs-title">FREE SPINS!</div>
             <div className="zeus-fs-count">{freeSpins}</div>
             <div className="zeus-fs-sub">Putaran Gratis Dimulai!</div>
-            <button className="zeus-fs-btn g-btn-press" onClick={() => setShowFSModal(false)}>
+            <button className="zeus-fs-btn g-btn-press" onClick={() => {
+              setShowFSModal(false);
+              if (!isSpinning) doSpin();
+            }}>
               MULAI ⚡
             </button>
           </div>
@@ -1050,6 +1322,15 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
 
       {/* Universal Slot Celebration Modal */}
       <SlotCelebrationModal data={celebration} onClose={() => setCelebration(null)} />
+
+      {/* Synchronized Profile Modal */}
+      {showProfileModal && (
+        <SlotProfileModal
+          profile={userProfile}
+          coins={myCoins}
+          onClose={() => setShowProfileModal(false)}
+        />
+      )}
     </div>
   );
 }

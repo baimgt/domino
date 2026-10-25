@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import './gatokaca-cinematic.css';
+import { preloadSlotGame } from './slotAssetPreloader';
 
 export interface SlotCinematicConfig {
   id: string;
@@ -138,10 +139,13 @@ interface Props {
   durationMs?: number;
 }
 
-export default function SlotLoadingScreen({ gameId, onFinish, durationMs = 2800 }: Props) {
+export default function SlotLoadingScreen({ gameId, onFinish, durationMs = 2600 }: Props) {
   const [progress, setProgress] = useState(0);
+  const [statusText, setStatusText] = useState('MENGHUBUNGKAN KE SERVER PERMAINAN...');
   const [particles, setParticles] = useState<{ id: number; x: number; size: number; dur: number; delay: number; drift: number }[]>([]);
   const hasFinishedRef = useRef(false);
+  const realPreloadDoneRef = useRef(false);
+  const targetPercentRef = useRef(15);
 
   const cfg: SlotCinematicConfig = SLOT_CONFIGS[gameId] || {
     id: gameId,
@@ -177,35 +181,59 @@ export default function SlotLoadingScreen({ gameId, onFinish, durationMs = 2800 
     setCurrentArt(cfg.art);
   }, [cfg.art]);
 
-  // Animated progress bar
+  // Real-time Asset Preloader & Texture Decoder
+  useEffect(() => {
+    let isMounted = true;
+    preloadSlotGame(gameId, (info) => {
+      if (!isMounted) return;
+      targetPercentRef.current = Math.max(targetPercentRef.current, info.percent);
+      setStatusText(info.statusText);
+    }).then(() => {
+      if (!isMounted) return;
+      realPreloadDoneRef.current = true;
+      targetPercentRef.current = 100;
+      setStatusText('SEMUA ASET TERMUAT LENGKAP!');
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [gameId]);
+
+  // Synchronized Progress Animation
   useEffect(() => {
     const startTime = Date.now();
     const interval = setInterval(() => {
       const elapsed = Date.now() - startTime;
-      const ratio = Math.min(1, elapsed / durationMs);
+      const timeRatio = Math.min(1, elapsed / durationMs);
 
-      // Realistic ease-out progress curve
-      let p = Math.floor(ratio * 100);
-      if (ratio < 0.4) {
-        p = Math.floor((ratio / 0.4) * 45);
-      } else if (ratio < 0.8) {
-        p = Math.floor(45 + ((ratio - 0.4) / 0.4) * 40);
-      } else {
-        p = Math.floor(85 + ((ratio - 0.8) / 0.2) * 15);
+      // Smooth time-based curve up to 92%
+      const timeP = Math.floor(timeRatio * 92);
+      const assetP = targetPercentRef.current;
+
+      let nextP = Math.max(timeP, Math.min(assetP, 92));
+
+      // Once all assets are 100% preloaded & decoded and minimum cinematic time has elapsed:
+      if (realPreloadDoneRef.current && elapsed >= Math.min(1800, durationMs * 0.7)) {
+        nextP = Math.min(100, Math.max(nextP + 4, 96));
+        if (elapsed >= durationMs || nextP >= 100) {
+          nextP = 100;
+        }
       }
-      p = Math.min(100, Math.max(0, p));
-      setProgress(p);
 
-      if (p >= 100 && !hasFinishedRef.current) {
+      setProgress(prev => {
+        const val = Math.min(100, Math.max(prev, nextP));
+        return val;
+      });
+
+      if (nextP >= 100 && realPreloadDoneRef.current && !hasFinishedRef.current) {
         hasFinishedRef.current = true;
         clearInterval(interval);
-
-        // Smooth transition exit matching Gatotkaca
         setTimeout(() => {
           onFinish();
-        }, 450);
+        }, 400);
       }
-    }, 40);
+    }, 35);
 
     return () => clearInterval(interval);
   }, [durationMs, onFinish]);
@@ -293,7 +321,11 @@ export default function SlotLoadingScreen({ gameId, onFinish, durationMs = 2800 
             )}
           </div>
           <div className="gato-cine-loading-text">
-            MEMUAT<span className="gato-cine-dots" /> {progress}%
+            {progress >= 100 ? (
+              <span style={{ color: '#00e676' }}>SEMUA ASET SIAP 100% ✓</span>
+            ) : (
+              <span>{statusText} ({progress}%)</span>
+            )}
           </div>
         </div>
       </div>

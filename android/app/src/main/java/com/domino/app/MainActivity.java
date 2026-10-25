@@ -1,13 +1,18 @@
 package com.domino.app;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.view.WindowManager;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
+import android.webkit.WebView;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
+import com.getcapacitor.BridgeWebViewClient;
 
 public class MainActivity extends BridgeActivity {
     @Override
@@ -23,6 +28,25 @@ public class MainActivity extends BridgeActivity {
             settings.setSupportZoom(false);
             settings.setBuiltInZoomControls(false);
             settings.setDisplayZoomControls(false);
+
+            bridge.getWebView().setWebViewClient(new BridgeWebViewClient(bridge) {
+                @Override
+                public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                    if (request != null && request.getUrl() != null) {
+                        String url = request.getUrl().toString();
+                        if (url.startsWith("market://") || url.startsWith("https://play.google.com/")) {
+                            try {
+                                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                view.getContext().startActivity(intent);
+                                return true;
+                            } catch (Exception ignored) {
+                            }
+                        }
+                    }
+                    return super.shouldOverrideUrlLoading(view, request);
+                }
+            });
         }
     }
 
@@ -35,7 +59,7 @@ public class MainActivity extends BridgeActivity {
     }
 
     @Override
-    public void onResume() {
+    public void     onResume() {
         super.onResume();
         hideSystemUI();
     }

@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.domino.app',
-  appName: 'DominoApp',
+  appName: 'Kings Billiards',
   webDir: 'dist',
   server: {
     androidScheme: 'http',
@@ -11,7 +11,8 @@ const config: CapacitorConfig = {
   plugins: {
     GoogleAuth: {
       scopes: ['profile', 'email'],
-      serverClientId: '933896189377-s9gkhtjnjkpn0dvsio8orl7cdc9k13mc.apps.googleusercontent.com',
+      serverClientId: '933896189377-hphu2lam3pj4okj9ravdvd3od1oqr6s1.apps.googleusercontent.com',
+      clientId: '933896189377-hphu2lam3pj4okj9ravdvd3od1oqr6s1.apps.googleusercontent.com',
       forceCodeForRefreshToken: false
     }
   }

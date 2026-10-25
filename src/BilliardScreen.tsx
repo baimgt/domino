@@ -1551,10 +1551,28 @@ export const QUICK_CHATS = [
 // ═══════════════════════════════════════════════════════════════
 //  MAIN BILLIARD COMPONENT
 // ═══════════════════════════════════════════════════════════════
-export default function BilliardScreen({ onBack }: { onBack: () => void }) {
+export default function BilliardScreen({
+  onBack,
+  socket,
+  roomCode,
+  players,
+  opponent: propOpponent,
+  betAmount,
+}: {
+  onBack: () => void;
+  socket?: any;
+  roomCode?: string | null;
+  players?: any[] | null;
+  opponent?: string | null;
+  betAmount?: number | null;
+}) {
   const username = localStorage.getItem('domino_username') || 'Pemain';
   const userAvatar = localStorage.getItem('domino_avatar') || '👑';
   const userLevel = localStorage.getItem('domino_level') || '45';
+
+  const isMultiplayer = Boolean(roomCode || propOpponent || (players && players.length >= 2));
+  const realOpponentData = (players || []).find(p => p.username !== username);
+  const realOpponentName = realOpponentData?.username || propOpponent || 'Teman';
 
   const canvasRef        = useRef<HTMLCanvasElement>(null);
   const ballsRef         = useRef<Ball[]>(createBalls());
@@ -1577,6 +1595,7 @@ export default function BilliardScreen({ onBack }: { onBack: () => void }) {
   const [winner, setWinner]           = useState<'player' | 'ai' | null>(null);
   const [message, setMessage]         = useState('🎱 Klik meja untuk mengarahkan tembakan');
   const [coins, setCoins]             = useState(10000000);
+  const [bonusCoins, setBonusCoins]   = useState(0);
   const [showHelp, setShowHelp]       = useState(false);
   const [showMenu, setShowMenu]       = useState(false);
   const [soundOn, setSoundOn]         = useState(true);
@@ -1724,14 +1743,72 @@ export default function BilliardScreen({ onBack }: { onBack: () => void }) {
     if (stored) setCoins(parseInt(stored));
     fetch(`${API_URL}/profile/${u}`)
       .then(r => r.json())
-      .then(d => { if (d.coins != null) setCoins(d.coins); })
+      .then(d => {
+        if (d.coins != null) setCoins(d.coins);
+        if (d.bonusCoins != null) setBonusCoins(d.bonusCoins);
+      })
       .catch(() => {});
   }, []);
 
+  // Handle direct By One multiplayer duel initialization
+  useEffect(() => {
+    if (isMultiplayer) {
+      setOpponent({
+        name: realOpponentName,
+        avatar: realOpponentData?.avatar || '👑',
+        level: `${realOpponentData?.vipLevel ? `VIP ${realOpponentData.vipLevel}` : '45'}`,
+        winRate: '88%',
+        stick: 'Sultan Gold',
+      });
+      if (betAmount) {
+        setSelectedRoom({
+          id: 'byone',
+          name: 'Duel By One 1v1',
+          entry: betAmount,
+          prize: betAmount * 2,
+          icon: '⚔️',
+          badge: '1V1 DUEL',
+          tierCategory: 'pro',
+          description: 'Adu Taruhan 1v1 dengan Teman',
+          bgGradient: 'linear-gradient(135deg,#c0392b,#e74c3c)',
+        });
+      }
+      setGameStep('playing');
+      setTurn('player');
+      setMessage(`⚔️ Duel 1v1 melawan ${realOpponentName}! Giliran Anda sodok.`);
+
+      if (socket && roomCode) {
+        socket.emit('billiard_join_room', { roomCode });
+
+        const handleOpponentShot = ({ angle, power: oppPower, spin: oppSpin }: any) => {
+          const cue = ballsRef.current.find(b => b.id === 0 && !b.pocketed);
+          if (!cue) return;
+          cueBallJustShot.current = true;
+          cue.vx = Math.cos(angle) * oppPower * 23;
+          cue.vy = Math.sin(angle) * oppPower * 23;
+          if (oppSpin) spinRef.current = oppSpin;
+          isMovingRef.current = true;
+          poolSound.playCueHit(oppPower);
+          setMessage(`💥 ${realOpponentName} melepaskan tembakan!`);
+        };
+
+        socket.on('billiard_opponent_shot', handleOpponentShot);
+        return () => {
+          socket.off('billiard_opponent_shot', handleOpponentShot);
+        };
+      }
+    }
+  }, [isMultiplayer, realOpponentName, realOpponentData, betAmount, roomCode, socket]);
+
   // Room Select & Matchmaking
   const handleSelectRoom = (room: typeof POOL_ROOMS[0]) => {
-    if (coins < room.entry) {
-      alert('Koin Anda tidak cukup untuk masuk ke room ini!');
+    const usableCoins = Math.max(0, coins - bonusCoins);
+    if (usableCoins < room.entry) {
+      if (bonusCoins > 0 && coins >= room.entry) {
+        alert(`⚠️ Koin bonus harian (${bonusCoins.toLocaleString('id-ID')} koin) hanya dapat digunakan untuk game SLOT!\n\nKoin biliar Anda: ${usableCoins.toLocaleString('id-ID')} koin (Butuh: ${room.entry.toLocaleString('id-ID')} koin).`);
+      } else {
+        alert('Koin Anda tidak cukup untuk masuk ke room ini!');
+      }
       return;
     }
     setSelectedRoom(room);
@@ -1758,6 +1835,11 @@ export default function BilliardScreen({ onBack }: { onBack: () => void }) {
           if (count <= 0) {
             clearInterval(countInterval);
             setCoins(c => Math.max(0, c - room.entry));
+            fetch(`${API_URL}/users/update-coins`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ username, amount: -room.entry, gameType: 'billiard' })
+            }).catch(() => {});
             ballsRef.current = createBalls();
             setPocketedBalls([]);
             setWinner(null);
@@ -1866,14 +1948,14 @@ export default function BilliardScreen({ onBack }: { onBack: () => void }) {
 
     if (own.length === 0) {
       const next = curTurn === 'player' ? 'ai' : 'player';
-      setMessage(next === 'player' ? '🎯 Giliran Anda!' : '🤖 Giliran AI...');
+      setMessage(next === 'player' ? '🎯 Giliran Anda!' : (isMultiplayer ? `🎯 Giliran ${realOpponentName}!` : '🤖 Giliran AI...'));
       setTurn(next);
-      if (next === 'ai') scheduleAI();
+      if (next === 'ai' && !isMultiplayer) scheduleAI();
     } else {
-      setMessage(curTurn === 'player' ? '✨ Tembakan Bagus! Lanjut tembak lagi!' : '🤖 AI Memasukkan bola...');
-      if (curTurn === 'ai') scheduleAI();
+      setMessage(curTurn === 'player' ? '✨ Tembakan Bagus! Lanjut tembak lagi!' : (isMultiplayer ? `✨ ${realOpponentName} memasukkan bola!` : '🤖 AI Memasukkan bola...'));
+      if (curTurn === 'ai' && !isMultiplayer) scheduleAI();
     }
-  }, [scheduleAI]);
+  }, [scheduleAI, isMultiplayer, realOpponentName]);
 
   // Unified Single Animation & Render Loop
   useEffect(() => {
@@ -2002,6 +2084,11 @@ export default function BilliardScreen({ onBack }: { onBack: () => void }) {
     setAimTarget(null);
     poolSound.playCueHit(power);
     setMessage('💥 Tembakan dilepaskan!');
+
+    if (socket && roomCode) {
+      const angle = Math.atan2(cue.vy, cue.vx);
+      socket.emit('billiard_shot', { roomCode, angle, power, spin });
+    }
   };
 
   const restart = () => {

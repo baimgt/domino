@@ -141,12 +141,15 @@
   transform: translateX(-50%);
   background: linear-gradient(90deg, #d97706, #fbbf24);
   color: #1a0a2e;
-  font-size: 0.9vh;
+  font-size: 0.82vh;
   font-weight: 900;
-  padding: 0.1vh 0.6vw;
-  border-radius: 1vh;
+  line-height: 1;
+  padding: 0.15vh 0.5vh;
+  border-radius: 0.6vh;
   white-space: nowrap;
   font-family: 'Cinzel', serif;
+  box-shadow: 0 0.2vh 0.4vh rgba(0,0,0,0.5);
+  letter-spacing: 0.02em;
 }
 
 .oly-topleft { display: flex; align-items: center; gap: 1vw; }

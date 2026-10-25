@@ -197,14 +197,19 @@ export default function ByOneScreen({
   socket,
   initialOpponent,
   initialBet,
+  customPlayers,
+  customCode,
 }: {
   onBack: () => void;
   socket: Socket | null;
   initialOpponent?: string | null;
   initialBet?: number | null;
+  customPlayers?: any[] | null;
+  customCode?: string | null;
 }) {
   const myUsername = localStorage.getItem('domino_username') || 'Player';
   const [myCoins, setMyCoins] = useState<number>(0);
+  const [myBonusCoins, setMyBonusCoins] = useState<number>(0);
   const [myVip, setMyVip] = useState<number>(0);
   const [myAvatar, setMyAvatar] = useState<string>('/bg.png');
 
@@ -256,6 +261,7 @@ export default function ByOneScreen({
       if (res.ok) {
         const data = await res.json();
         setMyCoins(data.coins || 0);
+        setMyBonusCoins(data.bonusCoins || 0);
         setMyVip(data.vipLevel || 0);
         setMyAvatar(data.avatar || '/bg.png');
       }
@@ -269,22 +275,44 @@ export default function ByOneScreen({
     fetchMyProfile();
   }, [fetchMyProfile]);
 
-  // Handle direct challenge launch
+  // Handle direct challenge launch (Friend duel)
   useEffect(() => {
-    if (initialOpponent && initialBet) {
-      const matchedTier = BYONE_TIERS.find(t => t.bet === initialBet) || {
+    if (initialOpponent || (customPlayers && customPlayers.length >= 2)) {
+      const bet = initialBet || 1000000;
+      const matchedTier = BYONE_TIERS.find(t => t.bet === bet) || {
         id: 'custom',
-        name: 'Meja Tantangan',
-        bet: initialBet,
-        pot: initialBet * 2,
+        name: 'Meja Tantangan 1v1',
+        bet,
+        pot: bet * 2,
         icon: '⚔️',
         tierClass: 'tier-pro',
         desc: 'Tantangan Langsung'
       };
       setSelectedTier(matchedTier);
-      startMatchmaking(matchedTier);
+
+      // If playing with a friend / custom players: NEVER SPAWN A BOT!
+      if (customPlayers && customPlayers.length >= 2) {
+        const realOpp = customPlayers.find(p => p.username !== myUsername) || {
+          username: initialOpponent || 'Lawan',
+          avatar: '👑',
+          vipLevel: 1,
+          coins: bet * 5,
+        };
+
+        if (matchTimerRef.current) clearTimeout(matchTimerRef.current);
+        setMatchId(customCode ? `byone_${customCode}` : `byone_${Date.now()}`);
+        setCurrentPot(bet * customPlayers.length);
+        setOpponent(realOpp);
+        setIsOpponentBot(false); // NO BOT!
+        startVersusIntro(realOpp, bet * customPlayers.length);
+        return;
+      }
+
+      if (initialOpponent && initialBet) {
+        startMatchmaking(matchedTier);
+      }
     }
-  }, [initialOpponent, initialBet]);
+  }, [initialOpponent, initialBet, customPlayers, customCode, myUsername]);
 
   // Socket.IO event listeners
   useEffect(() => {
@@ -368,8 +396,13 @@ export default function ByOneScreen({
   // MATCHMAKING LOGIC
   // =====================================================
   const startMatchmaking = (tier = selectedTier, code = '') => {
-    if (myCoins < tier.bet) {
-      alert(`⚠️ Koin tidak cukup! Anda memerlukan minimal ${formatCoins(tier.bet)} koin.`);
+    const usableCoins = Math.max(0, myCoins - myBonusCoins);
+    if (usableCoins < tier.bet) {
+      if (myBonusCoins > 0 && myCoins >= tier.bet) {
+        alert(`⚠️ Koin bonus harian (${formatCoins(myBonusCoins)}) hanya untuk game SLOT!\n\nKoin duel By One Anda: ${formatCoins(usableCoins)} (Butuh: ${formatCoins(tier.bet)} koin).`);
+      } else {
+        alert(`⚠️ Koin tidak cukup! Anda memerlukan minimal ${formatCoins(tier.bet)} koin.`);
+      }
       return;
     }
 

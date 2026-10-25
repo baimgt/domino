@@ -1,8 +1,8 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">DominoApp</string>
-    <string name="title_activity_main">DominoApp</string>
+    <string name="app_name">Kings Billiards</string>
+    <string name="title_activity_main">Kings Billiards</string>
     <string name="package_name">com.domino.app</string>
     <string name="custom_url_scheme">com.domino.app</string>
-    <string name="server_client_id">933896189377-s9gkhtjnjkpn0dvsio8orl7cdc9k13mc.apps.googleusercontent.com</string>
+    <string name="server_client_id">933896189377-hphu2lam3pj4okj9ravdvd3od1oqr6s1.apps.googleusercontent.com</string>
 </resources>

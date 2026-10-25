@@ -4,6 +4,8 @@ import './jinjibaoxi.css';
 import GameMenuDropdown from './GameMenuDropdown';
 import SlotMultiplierBar from './SlotMultiplierBar';
 import SlotCelebrationModal, { SlotCelebrationData } from './SlotCelebrationModal';
+import SlotProfileModal, { renderSlotAvatar } from './SlotProfileModal';
+import { useSlotProfile } from './useSlotProfile';
 
 interface Props {
   onBack: () => void;
@@ -22,12 +24,17 @@ export const JINJI_SYMBOLS: Record<number, { name: string; label: string; goldIm
 };
 
 export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
+  const userProfile = useSlotProfile();
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [grid, setGrid] = useState<number[][]>([]);
   const [isSpinning, setIsSpinning] = useState(false);
   const [spinningCols, setSpinningCols] = useState<boolean[]>([false, false, false, false, false]);
-  const [betAmount, setBetAmount] = useState(26400);
+  const [betAmount, setBetAmount] = useState(10000);
   const [goldTier, setGoldTier] = useState<number>(5);
-  const [myCoins, setMyCoins] = useState(0);
+  const [myCoins, setMyCoins] = useState<number>(() => {
+    const saved = localStorage.getItem('domino_coins');
+    return saved ? parseInt(saved, 10) : 100000;
+  });
   const [winAmount, setWinAmount] = useState(0);
   const [, setWinType] = useState<string>('normal');
   const [winningSymbols, setWinningSymbols] = useState<number[]>([]);
@@ -69,6 +76,7 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
   const spinSpeedRef = useRef(spinSpeed);
   const doSpinRef = useRef<any>(null);
   const spinningColsRef = useRef<boolean[]>([false, false, false, false, false]);
+  const spinTimer = useRef<any>(null);
 
   useEffect(() => { autoSpinsRef.current = autoSpins; }, [autoSpins]);
   useEffect(() => { freeSpinsLeftRef.current = freeSpinsLeft; }, [freeSpinsLeft]);
@@ -122,6 +130,7 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
     if (!socket) return;
 
     const handleResult = (data: any) => {
+      if (spinTimer.current) clearTimeout(spinTimer.current);
       setMultInfo(data.multiplier || null);
       if (data.multGrid) setMultGrid(data.multGrid);
       const spd = spinSpeedRef.current;
@@ -226,7 +235,8 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
     };
 
     const handleError = (data: any) => {
-      alert(data.message);
+      if (spinTimer.current) clearTimeout(spinTimer.current);
+      alert(data.message || 'Terjadi kesalahan');
       setIsSpinning(false);
       spinningColsRef.current = [false, false, false, false, false];
       setSpinningCols([false, false, false, false, false]);
@@ -288,11 +298,26 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
 
   const doSpin = () => {
     if (isSpinning || !socket) return;
+    if (freeSpinsLeftRef.current === 0 && myCoins < betAmount) {
+      alert(`Koin tidak cukup! Taruhan: ${betAmount.toLocaleString('id-ID')} koin.`);
+      setAutoSpins(0);
+      return;
+    }
+
     setIsSpinning(true);
     spinningColsRef.current = [true, true, true, true, true];
     setSpinningCols([true, true, true, true, true]);
     setWinAmount(0);
     setWinningSymbols([]);
+
+    if (spinTimer.current) clearTimeout(spinTimer.current);
+    spinTimer.current = setTimeout(() => {
+      setIsSpinning(false);
+      spinningColsRef.current = [false, false, false, false, false];
+      setSpinningCols([false, false, false, false, false]);
+      setAutoSpins(0);
+      alert('Koneksi timeout, coba lagi.');
+    }, 8000);
 
     socket.emit('spin_jinji', {
       username,
@@ -603,9 +628,11 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
 
       {/* TOP LEFT (Profile & Coins) */}
       <div className="jinji-top-left">
-        <div className="jinji-avatar" onClick={() => alert('Profil VIP')}>
-          <img src="https://i.pravatar.cc/100?img=11" alt="Avatar" />
-          <span className="jinji-vip-badge">VIP 9</span>
+        <div className="jinji-avatar g-btn-press" onClick={() => setShowProfileModal(true)} title="Lihat Profil VIP" style={{ cursor: 'pointer', position: 'relative' }}>
+          <div style={{ width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {renderSlotAvatar(userProfile.avatar, 'jinji-avatar-img', '🐸')}
+          </div>
+          <span className="jinji-vip-badge">VIP {userProfile.vipLevel}</span>
         </div>
         <div className="jinji-signal-icon">
           <div className="jinji-sig-bar b1"></div>
@@ -621,10 +648,7 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
       {/* TOP RIGHT (Header Icons) */}
       <div className="jinji-top-right">
         <button className="jinji-tr-btn trophy-btn" onClick={() => alert('Papan Peringkat')}>🏆</button>
-        <button className="jinji-tr-btn room-btn" onClick={onBack}>
-          <span>🔄</span>
-          <small>Ganti<br/>room</small>
-        </button>
+        
         <button className="jinji-tr-btn menu-btn" onClick={() => setShowMenu(v => !v)}>≡</button>
 
         <GameMenuDropdown
@@ -821,7 +845,7 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
             <button className="jbot-btn jbot-info-btn" onClick={() => setShowRules(true)} title="Info">
               <span className="jbot-serif-i">i</span>
             </button>
-            <button className="jbot-btn jbot-minus-btn" onClick={() => setBetAmount(b => Math.max(lineBetMultiplier * 50, b - lineBetMultiplier * 50))} title="Kurang Taruhan">
+            <button className="jbot-btn jbot-minus-btn" onClick={() => setBetAmount(b => Math.max(10000, b - 10000))} title="Kurang Taruhan">
               <span className="jbot-sym-minus">−</span>
             </button>
             <div className="jbot-bet-wrap">
@@ -831,7 +855,7 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
               </div>
               <div className="jbot-line-bet">LINE BET: {lineBetUnit.toLocaleString('en-US')}X{lineBetMultiplier}</div>
             </div>
-            <button className="jbot-btn jbot-plus-btn" onClick={() => setBetAmount(b => Math.min(lineBetMultiplier * 10000, b + lineBetMultiplier * 50))} title="Tambah Taruhan">
+            <button className="jbot-btn jbot-plus-btn" onClick={() => setBetAmount(b => Math.min(200000, b + 10000))} title="Tambah Taruhan">
               <span className="jbot-sym-plus">+</span>
             </button>
           </div>
@@ -849,7 +873,7 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
           </div>
 
           <div className="jbot-right">
-            <button className="jbot-btn jbot-maxbet-btn" onClick={() => setBetAmount(lineBetMultiplier * 3000)}>
+            <button className="jbot-btn jbot-maxbet-btn" onClick={() => setBetAmount(200000)}>
               <span className="jbot-btn-line">MAX</span>
               <span className="jbot-btn-line">BET</span>
             </button>
@@ -1698,6 +1722,15 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
 
       {/* Universal Slot Celebration Modal */}
       <SlotCelebrationModal data={celebration} onClose={() => setCelebration(null)} />
+
+      {/* Synchronized Profile Modal */}
+      {showProfileModal && (
+        <SlotProfileModal
+          profile={userProfile}
+          coins={myCoins}
+          onClose={() => setShowProfileModal(false)}
+        />
+      )}
     </div>
   );
 }

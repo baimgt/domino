@@ -1,0 +1,60 @@
+name: Build iOS IPA
+
+on:
+  workflow_dispatch: # Tombol manual "Run workflow" di GitHub
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - 'README.md'
+      - '.gitignore'
+
+jobs:
+  build:
+    name: Build iOS IPA (Cloud Mac)
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Build Frontend Web Assets
+        run: npm run build
+
+      - name: Sync Capacitor iOS Project
+        run: npx cap sync ios
+
+      - name: Build iOS App (.app) via Xcode
+        run: |
+          cd ios/App
+          xcodebuild clean build \
+            -project App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            BUILD_DIR="./build"
+
+      - name: Package into IPA File
+        run: |
+          cd ios/App/build/Release-iphoneos
+          mkdir -p Payload
+          cp -r App.app Payload/
+          zip -r RoyalX.ipa Payload
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RoyalX-iOS-IPA
+          path: ios/App/build/Release-iphoneos/RoyalX.ipa
+          retention-days: 14

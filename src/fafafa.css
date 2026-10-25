@@ -59,10 +59,10 @@
 
 .fafafa-avatar {
   position: relative;
-  width: 6.8vh; height: 6.8vh;
-  border: 0.28vh solid #ffd700;
+  width: 8.5vh; height: 8.5vh;
+  border: 0.35vh solid #ffd700;
   border-radius: 50%;
-  box-shadow: 0 0.4vh 1vh rgba(0,0,0,0.7), inset 0 0.15vh 0.4vh rgba(255,255,255,0.6);
+  box-shadow: 0 0.4vh 1.2vh rgba(0,0,0,0.7), inset 0 0.15vh 0.4vh rgba(255,255,255,0.6);
   background: radial-gradient(circle, #ffe082, #b8860b);
   cursor: pointer;
   flex-shrink: 0;
@@ -202,16 +202,16 @@
 }
 .fafafa-tr-btn {
   background: radial-gradient(circle at 30% 30%, #ffd54f 0%, #ffb300 50%, #ff8f00 100%);
-  border: 0.22vh solid #ffe082;
+  border: 0.25vh solid #ffe082;
   border-radius: 50%;
-  width: 6.4vh;
-  height: 6.4vh;
+  width: 7.8vh;
+  height: 7.8vh;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #3e2723;
   cursor: pointer;
-  box-shadow: 0 0.4vh 0.8vh rgba(0,0,0,0.6), inset 0 0.2vh 0.4vh rgba(255,255,255,0.7);
+  box-shadow: 0 0.4vh 1vh rgba(0,0,0,0.6), inset 0 0.2vh 0.4vh rgba(255,255,255,0.7);
   transition: transform 0.15s, filter 0.15s;
   padding: 0;
 }
@@ -220,7 +220,7 @@
   filter: brightness(1.15);
 }
 .fafafa-tr-btn.trophy-btn {
-  font-size: 3vh;
+  font-size: 3.5vh;
 }
 .fafafa-tr-btn.room-btn {
   width: auto;
@@ -245,18 +245,20 @@
 .fafafa-tr-btn.menu-btn {
   background: radial-gradient(circle at 30% 30%, #5d4037 0%, #3e2723 60%, #27140f 100%);
   border-color: #ffd54f;
+  width: 7.8vh;
+  height: 7.8vh;
 }
 .menu-burger-bars {
   display: flex;
   flex-direction: column;
-  gap: 0.45vh;
-  width: 2.4vh;
+  gap: 0.55vh;
+  width: 3.6vh;
 }
 .menu-burger-bars span {
   display: block;
-  height: 0.35vh;
+  height: 0.45vh;
   background: #ffd54f;
-  border-radius: 0.2vh;
+  border-radius: 0.25vh;
   box-shadow: 0 0.1vh 0.2vh rgba(0,0,0,0.6);
 }
 

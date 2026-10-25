@@ -5,6 +5,8 @@ import GameMenuDropdown from './GameMenuDropdown';
 import GatokacaCinematicBackground from './GatokacaCinematicBackground';
 import LeaderboardModal from './LeaderboardModal';
 import SlotCelebrationModal, { SlotCelebrationData } from './SlotCelebrationModal';
+import SlotProfileModal, { renderSlotAvatar } from './SlotProfileModal';
+import { useSlotProfile } from './useSlotProfile';
 
 interface Props {
   onBack: () => void;
@@ -58,7 +60,7 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
   const [isSpinning, setIsSpinning] = useState(false);
   const [spinningCols, setSpinningCols] = useState<boolean[]>(Array(COLS).fill(false));
   const [bouncingCols, setBouncingCols] = useState<boolean[]>(Array(COLS).fill(false));
-  const [betAmount, setBetAmount] = useState(10000000);
+  const [betAmount, setBetAmount] = useState(10000);
   const [myCoins, setMyCoins] = useState(8994600);
   const [totalWin, setTotalWin] = useState(0);
   const [currentMultiplier, setCurrentMultiplier] = useState(1);
@@ -75,7 +77,7 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
   const [musicOn, setMusicOn] = useState(true);
   const [showAutoMenu, setShowAutoMenu] = useState(false);
   const [explodingCells, setExplodingCells] = useState<string[]>([]);
-  const [droppingCols, setDroppingCols] = useState<number[]>([]);
+  const [droppingCells, setDroppingCells] = useState<Record<string, number>>({});
   const [statusText, setStatusText] = useState('GOOD LUCK');
   const [winningCells, setWinningCells] = useState<string[]>([]);
   const [scatterCount, setScatterCount] = useState(0);
@@ -83,6 +85,8 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
   const [loadProgress, setLoadProgress] = useState(100);
   const [droppedMultNotif, setDroppedMultNotif] = useState<string | null>(null);
   const [celebration, setCelebration] = useState<SlotCelebrationData | null>(null);
+  const userProfile = useSlotProfile();
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   useEffect(() => {
     let current = 0;
@@ -109,6 +113,7 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
   const doSpinRef = useRef<any>(null);
   const isStoppingRef = useRef(false);
   const spinningColsRef = useRef<boolean[]>(Array(COLS).fill(false));
+  const spinTimer = useRef<any>(null);
 
   useEffect(() => { autoSpinsRef.current = autoSpins; }, [autoSpins]);
   useEffect(() => { freeSpinsLeftRef.current = freeSpinsLeft; }, [freeSpinsLeft]);
@@ -149,6 +154,7 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
     if (!socket) return;
 
     const handleResult = async (data: any) => {
+      if (spinTimer.current) clearTimeout(spinTimer.current);
       const spd = spinSpeedRef.current;
       // Sinkronisasi durasi putar & stagger reel berdasarkan kecepatan (x1, x2, x3)
       const minSpinBase = spd === 3 ? 240 : spd === 2 ? 400 : 750;
@@ -191,30 +197,52 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
         // Process tumble steps
         if (data.tumbleSteps && data.tumbleSteps.length > 0) {
           for (const step of data.tumbleSteps) {
-            // Highlight winning cells
-            if (step.winPositions?.length > 0) {
-              setWinningCells(step.winPositions);
+            const wins = step.winPositions || [];
+            if (wins.length > 0) {
+              // 1. Highlight winning cells with glowing effect
+              setWinningCells(wins);
               await new Promise(r => setTimeout(r, winDelay));
-              // Explode
-              setExplodingCells(step.winPositions);
+
+              // 2. Explode winning symbols (vanish/shatter)
+              setExplodingCells(wins);
               await new Promise(r => setTimeout(r, explodeDelay));
+
+              // 3. Briefly reveal empty spaces where exploded symbols disappeared
+              setGrid(prev => prev.map((row, r) =>
+                row.map((cell, c) => wins.includes(`${r}-${c}`) ? null as any : cell)
+              ));
+              setWinningCells([]);
+              setExplodingCells([]);
+              await new Promise(r => setTimeout(r, Math.max(70, 110 / spd)));
             }
 
-            // Identify affected columns for cascade drop
-            const affectedCols = new Set<number>();
-            (step.winPositions || []).forEach((pos: string) => {
-              const parts = pos.split('-');
-              if (parts[1] !== undefined) affectedCols.add(Number(parts[1]));
-            });
+            // 4. Calculate drop distance ONLY for cells that are above the exploded slots
+            // Symbols strictly below the exploded slots remain completely motionless!
+            const dropsMap: Record<string, number> = {};
+            for (let c = 0; c < COLS; c++) {
+              const expRowsInCol: number[] = [];
+              for (let r = 0; r < ROWS; r++) {
+                if (wins.includes(`${r}-${c}`)) {
+                  expRowsInCol.push(r);
+                }
+              }
+              if (expRowsInCol.length === 0) continue; // No cells exploded in this column
 
-            // Clear exploding/winning and trigger smooth cascade drop
-            setWinningCells([]);
-            setExplodingCells([]);
-            setDroppingCols(Array.from(affectedCols));
+              const maxExpRow = Math.max(...expRowsInCol);
+              const expCount = expRowsInCol.length;
+
+              // Only rows 0 through maxExpRow tumble down
+              for (let r = 0; r <= maxExpRow; r++) {
+                dropsMap[`${r}-${c}`] = expCount;
+              }
+            }
+
+            // 5. Cascade drop: top symbols slide down and new symbols land from above
+            setDroppingCells(dropsMap);
             setGrid(step.newGrid);
             setMultGrid(step.newMultGrid || Array(ROWS).fill(null).map(() => Array(COLS).fill(0)));
             await new Promise(r => setTimeout(r, dropDelay));
-            setDroppingCols([]);
+            setDroppingCells({});
             await new Promise(r => setTimeout(r, settleDelay));
           }
         }
@@ -293,10 +321,15 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
     };
 
     const handleError = (data: any) => {
+      if (spinTimer.current) clearTimeout(spinTimer.current);
       setIsSpinning(false);
+      spinningColsRef.current = Array(COLS).fill(false);
       setSpinningCols(Array(COLS).fill(false));
       setAutoSpins(0);
-      setStatusText('GOOD LUCK');
+      setStatusText(data?.message || 'GOOD LUCK');
+      if (data?.message) {
+        alert(data.message);
+      }
     };
 
     socket.on('gatokaca_result', handleResult);
@@ -332,7 +365,18 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
   };
 
   const doSpin = () => {
-    if (isSpinning || !socket) return;
+    if (isSpinning) return;
+    if (!socket) {
+      setStatusText('Tidak terhubung ke server!');
+      return;
+    }
+    const actualBet = anteMode ? Math.floor(betAmount * 1.25) : betAmount;
+    if (freeSpinsLeftRef.current === 0 && myCoins < actualBet) {
+      alert(`Koin tidak cukup! Taruhan: ${actualBet.toLocaleString('id-ID')} koin.`);
+      setAutoSpins(0);
+      return;
+    }
+
     setIsSpinning(true);
     spinningColsRef.current = Array(COLS).fill(true);
     setSpinningCols(Array(COLS).fill(true));
@@ -345,10 +389,19 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
     setWinningCells([]);
     setStatusText('...');
 
+    if (spinTimer.current) clearTimeout(spinTimer.current);
+    spinTimer.current = setTimeout(() => {
+      setIsSpinning(false);
+      spinningColsRef.current = Array(COLS).fill(false);
+      setSpinningCols(Array(COLS).fill(false));
+      setAutoSpins(0);
+      setStatusText('Koneksi timeout, coba lagi.');
+    }, 8000);
+
     socket.emit('spin_gatokaca', {
       username,
       betAmount, // base bet for payouts
-      actualBet: anteMode ? Math.floor(betAmount * 1.25) : betAmount, // deduction
+      actualBet, // deduction
       isFreeSpins: freeSpinsLeftRef.current > 0,
       anteMode,
       clientBalance: myCoins
@@ -356,7 +409,11 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
   };
   doSpinRef.current = doSpin;
 
-  const renderSymbol = (symId: number, multVal: number, isWin: boolean, isExplode: boolean, isDrop: boolean = false) => {
+  const renderSymbol = (symId: number | null | undefined, multVal: number, isWin: boolean, isExplode: boolean, isDrop: boolean = false, dropDist: number = 1) => {
+    if (symId === null || symId === undefined) {
+      return <div className="gato-tile gato-tile-empty" style={{ opacity: 0, pointerEvents: 'none' }} />;
+    }
+
     const winCls = isWin    ? 'gato-tile-win'    : '';
     const expCls = isExplode? 'gato-tile-explode' : '';
     const dropCls = isDrop  ? 'gato-tile-dropping' : '';
@@ -377,7 +434,7 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
       const is500 = v >= 500;
 
       return (
-        <div className={`gato-tile ${winCls} ${expCls} ${dropCls}`} style={{ background: 'none', border: 'none', boxShadow: 'none' }}>
+        <div className={`gato-tile ${winCls} ${expCls} ${dropCls}`} style={{ background: 'none', border: 'none', boxShadow: 'none', ['--drop-dist' as any]: dropDist }}>
           <div className="gato-orb-real-wrap">
             <img
               src={orbImg}
@@ -393,7 +450,7 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
     /* ── SCATTER (Gatokaca Face Image) ──────────────────── */
     if (symId === 9) {
       return (
-        <div className={`gato-tile gato-sym-img-wrap ${winCls} ${expCls} ${dropCls}`}>
+        <div className={`gato-tile gato-sym-img-wrap ${winCls} ${expCls} ${dropCls}`} style={{ ['--drop-dist' as any]: dropDist }}>
           <img
             src="/assets/gatokaca/sym_scatter.png"
             alt="SCATTER"
@@ -410,7 +467,7 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
     /* ── REGULAR SYMBOLS (0-8) ───────────────────────────── */
     if (sym.img) {
       return (
-        <div className={`gato-tile gato-sym-img-wrap ${winCls} ${expCls} ${dropCls}`}>
+        <div className={`gato-tile gato-sym-img-wrap ${winCls} ${expCls} ${dropCls}`} style={{ ['--drop-dist' as any]: dropDist }}>
           <img
             src={sym.img}
             alt={sym.label}
@@ -449,17 +506,12 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
 
       {/* TOP LEFT: Avatar + coins */}
       <div className="gato-topleft">
-        <div className="gato-avatar-wrap" onClick={() => alert('Profil VIP')}>
-          <img
-            className="gato-avatar-img"
-            src="https://i.pravatar.cc/100?img=33"
-            alt="avatar"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src =
-                'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%23ffd700"/><circle cx="50" cy="38" r="18" fill="%234a148c"/><path d="M22 84 C22 64 36 58 50 58 C64 58 78 64 78 84 Z" fill="%234a148c"/></svg>';
-            }}
-          />
-          <div className="gato-vip-badge">VIP 1</div>
+        <div className="gato-avatar-wrap g-btn-press" onClick={() => setShowProfileModal(true)} title="Lihat Profil VIP" style={{ cursor: 'pointer' }}>
+          <div style={{ width: '8.5vh', height: '8.5vh', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '0.35vh solid #ffd700', boxShadow: '0 0 1.2vh rgba(0,0,0,0.7)', background: 'radial-gradient(circle, #4e2f96, #120924)' }}>
+            {renderSlotAvatar(userProfile.avatar, 'gato-avatar-img', '🐸')}
+          </div>
+          <div className="gato-level-badge">Lv.{userProfile.level}</div>
+          <div className="gato-vip-badge">VIP {userProfile.vipLevel}</div>
         </div>
         <div className="gato-coins-row">
           <span className="gato-coin-ico">🪙</span>
@@ -476,11 +528,8 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
       {/* TOP RIGHT */}
       <div className="gato-topright">
         <button className="gato-tr-btn" onClick={() => setShowLeaderboard(true)}>🏆</button>
-        <button className="gato-tr-btn gato-tr-room" onClick={onBack}>
-          <span className="gato-tr-icon">🔄</span>
-          <span className="gato-tr-label">Ganti<br/>room</span>
-        </button>
-        <button className="gato-tr-btn" style={{position:'relative'}} onClick={() => setShowMenu(v => !v)}>≡</button>
+        
+        <button className="gato-tr-btn gato-tr-menu-btn" style={{ position: 'relative' }} onClick={() => setShowMenu(v => !v)} title="Menu">≡</button>
 
         <GameMenuDropdown
           isOpen={showMenu}
@@ -587,14 +636,16 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
             <div className="gato-grid-inner">
               {Array.from({length: ROWS}, (_, r) =>
                 Array.from({length: COLS}, (_, c) => {
-                  const symId = grid[r]?.[c] ?? 4;
+                  const symId = grid[r]?.[c];
                   const multVal = multGrid[r]?.[c] ?? 0;
                   const cellKey = `${r}-${c}`;
                   const isWin = winningCells.includes(cellKey);
                   const isExp = explodingCells.includes(cellKey);
+                  const dropDist = droppingCells[cellKey] || 0;
+                  const isDropping = dropDist > 0;
                   return (
                     <div key={cellKey} style={{ ['--r' as any]: r }} className={`gato-cell ${spinningCols[c] ? 'gato-cell-spin' : ''} ${bouncingCols[c] ? 'gato-cell-bounce' : ''}`}>
-                      {renderSymbol(symId === 10 && multVal === 0 ? 10 : symId, multVal, isWin, isExp, droppingCols.includes(c))}
+                      {renderSymbol(symId === 10 && multVal === 0 ? 10 : symId, multVal, isWin, isExp, isDropping, dropDist)}
                     </div>
                   );
                 })
@@ -621,14 +672,14 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
           <button className="gato-bot-btn gato-btn-info" onClick={() => { setShowRules(true); setRulesPage(0); }}>
             i
           </button>
-          <button className="gato-bot-btn gato-minus" onClick={() => setBetAmount(b => Math.max(200000, b - 200000))}>
+          <button className="gato-bot-btn gato-minus" onClick={() => setBetAmount(b => Math.max(10000, b - 10000))}>
             −
           </button>
           <div className="gato-bet-box">
             <div className="gato-bet-label">BET</div>
             <div className="gato-bet-val">{betAmount.toLocaleString('en-US')}</div>
           </div>
-          <button className="gato-bot-btn gato-plus-bet" onClick={() => setBetAmount(b => Math.min(10000000, b + 200000))}>
+          <button className="gato-bot-btn gato-plus-bet" onClick={() => setBetAmount(b => Math.min(200000, b + 10000))}>
             +
           </button>
         </div>
@@ -643,7 +694,7 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
         </div>
 
         <div className="gato-bot-right">
-          <button className="gato-maxbet-btn" onClick={() => setBetAmount(10000000)}>
+          <button className="gato-maxbet-btn" onClick={() => setBetAmount(200000)}>
             <span>MAX</span>
             <span>BET</span>
           </button>
@@ -890,6 +941,15 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
 
       {/* Win & Scatter Celebration Modal */}
       <SlotCelebrationModal data={celebration} onClose={() => setCelebration(null)} />
+
+      {/* Synchronized Profile Modal */}
+      {showProfileModal && (
+        <SlotProfileModal
+          profile={userProfile}
+          coins={myCoins}
+          onClose={() => setShowProfileModal(false)}
+        />
+      )}
     </div>
   );
 }

@@ -1,37 +1,41 @@
 import { useState, useEffect } from 'react';
 import { Socket } from 'socket.io-client';
 import { API_URL } from './config';
+import { renderSlotAvatar } from './SlotProfileModal';
 import './byone.css';
 
 interface ByOneRoomModalProps {
   onClose: () => void;
-  onLaunchGame: (mode: 'billiard' | 'domino' | 'qiuqiu', bet: number, opponent?: string) => void;
+  onLaunchGame: (mode: 'billiard' | 'domino' | 'qiuqiu', bet: number, players: any[], code: string) => void;
   socket: Socket | null;
 }
 
 const AVAILABLE_MODES = [
   {
+    id: 'billiard' as const,
+    name: 'KINGS BILLIARDS 8-BALL',
+    icon: '🎱',
+    tag: '2 PEMAIN (1v1)',
+    desc: 'Adu Sodok Bola 1v1, Masukkan Bola 8 & Ambil Pot!',
+    maxPlayers: 2,
+    badgeColor: '#2ecc71',
+  },
+  {
     id: 'domino' as const,
     name: 'DOMINO GAPLE',
     icon: '🀄',
-    tag: '🔥 POPULER',
-    desc: 'Duel 7 Balak 1v1, Banting Balak & Dobel Taruhan 2X!',
+    tag: 'MAKS 4 PEMAIN',
+    desc: 'Duel Balak, Banting Kartu & Dobel Taruhan 2X!',
+    maxPlayers: 4,
     badgeColor: '#e74c3c',
-  },
-  {
-    id: 'billiard' as const,
-    name: 'BILLIARD 8-BALL',
-    icon: '🎱',
-    tag: '⭐ SKILL',
-    desc: 'Adu Sodok Bola 1v1, Masukkan Bola 8 & Ambil Pot!',
-    badgeColor: '#2ecc71',
   },
   {
     id: 'qiuqiu' as const,
     name: 'QIUQIU (QQ)',
     icon: '🃏',
-    tag: '💰 CEPAT',
-    desc: 'Adu Kombinasi Kartu Qiu 9-9 & Balak Kembar 1v1!',
+    tag: 'MAKS 6 PEMAIN',
+    desc: 'Adu Kombinasi Kartu Qiu 9-9 & Balak Kembar!',
+    maxPlayers: 6,
     badgeColor: '#f39c12',
   },
 ];
@@ -45,23 +49,21 @@ const QUICK_BETS = [
   { val: 25000000, label: '25M' },
 ];
 
-const BOT_RIVALS = [
-  'Sultan_Fajar', 'RatuGaple_Ayu', 'Budi_Master', 'DewaBanting_99', 'Sniper_Kartu'
-];
-
 export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneRoomModalProps) {
   const myUsername = localStorage.getItem('domino_username') || 'Player';
   const [myCoins, setMyCoins] = useState<number>(0);
-  const [tab, setTab] = useState<'create' | 'join' | 'quick'>('create');
+  const [myBonusCoins, setMyBonusCoins] = useState<number>(0);
+  const [tab, setTab] = useState<'create' | 'join'>('create');
 
   // Creation State
-  const [selectedMode, setSelectedMode] = useState<'billiard' | 'domino' | 'qiuqiu'>('domino');
+  const [selectedMode, setSelectedMode] = useState<'billiard' | 'domino' | 'qiuqiu'>('billiard');
   const [selectedBet, setSelectedBet] = useState<number>(1000000);
   const [customBetInput, setCustomBetInput] = useState<string>('');
 
   // Waiting Room State
   const [activeRoomCode, setActiveRoomCode] = useState<string | null>(null);
   const [roomData, setRoomData] = useState<any>(null);
+  const [joinToast, setJoinToast] = useState<string | null>(null);
 
   // Join State
   const [inputCode, setInputCode] = useState<string>('');
@@ -75,6 +77,7 @@ export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneR
         if (res.ok) {
           const data = await res.json();
           setMyCoins(data.coins || 0);
+          setMyBonusCoins(data.bonusCoins || 0);
         }
       } catch {
         const c = localStorage.getItem('domino_coins');
@@ -93,11 +96,26 @@ export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneR
       setRoomData(room);
     });
 
+    socket.on('byone_room_player_joined', ({ room, newPlayer }: any) => {
+      setRoomData(room);
+      setJoinToast(`🎉 ${newPlayer.username} telah bergabung ke kamar!`);
+      setTimeout(() => setJoinToast(null), 3500);
+    });
+
+    socket.on('byone_room_updated', ({ room }: any) => {
+      setRoomData(room);
+    });
+
     socket.on('byone_room_duel_start', (data: any) => {
-      // Both players start duel!
-      const opp = data.player1.username === myUsername ? data.player2.username : data.player1.username;
       onClose();
-      onLaunchGame(data.mode, data.betAmount, opp);
+      onLaunchGame(data.mode, data.betAmount, data.players || [data.player1, data.player2], data.code);
+    });
+
+    socket.on('byone_room_closed', ({ message }: any) => {
+      setErrorMsg(message || 'Kamar telah ditutup.');
+      setActiveRoomCode(null);
+      setRoomData(null);
+      setTimeout(() => setErrorMsg(null), 4000);
     });
 
     socket.on('byone_room_error', ({ message }: any) => {
@@ -107,7 +125,10 @@ export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneR
 
     return () => {
       socket.off('byone_custom_room_created');
+      socket.off('byone_room_player_joined');
+      socket.off('byone_room_updated');
       socket.off('byone_room_duel_start');
+      socket.off('byone_room_closed');
       socket.off('byone_room_error');
     };
   }, [socket, myUsername, onClose, onLaunchGame]);
@@ -129,8 +150,13 @@ export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneR
   // Create Room
   const handleCreateRoom = () => {
     const bet = getEffectiveBet();
-    if (myCoins < bet) {
-      setErrorMsg(`⚠️ Koin tidak cukup! Saldo Anda ${formatCoins(myCoins)}, butuh ${formatCoins(bet)} 🪙`);
+    const usableCoins = Math.max(0, myCoins - myBonusCoins);
+    if (usableCoins < bet) {
+      if (myBonusCoins > 0 && myCoins >= bet) {
+        setErrorMsg(`⚠️ Koin bonus harian (${formatCoins(myBonusCoins)}) hanya untuk game SLOT! Koin By One Anda: ${formatCoins(usableCoins)} 🪙`);
+      } else {
+        setErrorMsg(`⚠️ Koin tidak cukup! Saldo Anda ${formatCoins(myCoins)}, butuh ${formatCoins(bet)} 🪙`);
+      }
       return;
     }
 
@@ -141,19 +167,24 @@ export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneR
         betAmount: bet,
       });
     } else {
-      // Fallback local code
-      const localCode = Math.floor(100000 + Math.random() * 900000).toString();
-      setActiveRoomCode(localCode);
-      setRoomData({
-        code: localCode,
-        mode: selectedMode,
-        betAmount: bet,
-        pot: bet * 2,
-      });
+      setErrorMsg('Koneksi server belum terhubung. Coba sesaat lagi.');
     }
   };
 
-  // Cancel Room
+  // Host starts the game
+  const handleStartGame = () => {
+    if (!activeRoomCode || !socket || !socket.connected) return;
+    if (!roomData || (roomData.players && roomData.players.length < 2)) {
+      setErrorMsg('Minimal butuh 2 pemain untuk memulai permainan!');
+      return;
+    }
+    socket.emit('byone_start_custom_room', {
+      code: activeRoomCode,
+      username: myUsername,
+    });
+  };
+
+  // Cancel Room (Host)
   const handleCancelRoom = () => {
     if (activeRoomCode && socket && socket.connected) {
       socket.emit('byone_cancel_custom_room', { code: activeRoomCode });
@@ -162,7 +193,16 @@ export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneR
     setRoomData(null);
   };
 
-  // Join Room
+  // Leave Room (Guest)
+  const handleLeaveRoom = () => {
+    if (activeRoomCode && socket && socket.connected) {
+      socket.emit('byone_leave_custom_room', { code: activeRoomCode, username: myUsername });
+    }
+    setActiveRoomCode(null);
+    setRoomData(null);
+  };
+
+  // Join Room via Code
   const handleJoinRoom = () => {
     if (!inputCode.trim() || inputCode.trim().length !== 6) {
       setErrorMsg('Masukkan 6-digit kode kamar!');
@@ -179,17 +219,10 @@ export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneR
     }
   };
 
-  // Quick Play against AI Rival
-  const handlePlayWithBot = () => {
-    const bet = getEffectiveBet();
-    if (myCoins < bet) {
-      setErrorMsg(`⚠️ Koin tidak cukup! Butuh ${formatCoins(bet)} 🪙`);
-      return;
-    }
-    const randomBot = BOT_RIVALS[Math.floor(Math.random() * BOT_RIVALS.length)];
-    onClose();
-    onLaunchGame(selectedMode, bet, randomBot);
-  };
+  const currentModeConfig = AVAILABLE_MODES.find(m => m.id === (roomData?.mode || selectedMode)) || AVAILABLE_MODES[0];
+  const isHost = roomData?.hostUsername === myUsername;
+  const playersList: any[] = roomData?.players || [];
+  const maxCapacity = roomData?.maxPlayers || currentModeConfig.maxPlayers;
 
   return (
     <div className="modal-overlay tm-overlay-fade" style={{ zIndex: 1700 }} onClick={onClose}>
@@ -197,13 +230,13 @@ export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneR
         className="byone-modal-card tm-box-bounce"
         onClick={e => e.stopPropagation()}
         style={{
-          width: '92vw',
-          maxWidth: '680px',
-          maxHeight: '90vh',
+          width: '94vw',
+          maxWidth: '720px',
+          maxHeight: '92vh',
           background: 'linear-gradient(165deg, #1b0a2a 0%, #0c0415 100%)',
           border: '2px solid rgba(255, 215, 0, 0.4)',
           borderRadius: '24px',
-          boxShadow: '0 10px 40px rgba(0,0,0,0.9), 0 0 30px rgba(231,76,60,0.3)',
+          boxShadow: '0 10px 40px rgba(0,0,0,0.95), 0 0 35px rgba(231,76,60,0.3)',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
@@ -218,18 +251,18 @@ export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneR
             alignItems: 'center',
             justifyContent: 'space-between',
             padding: '1.8vh 2.5vw',
-            background: 'linear-gradient(90deg, rgba(231,76,60,0.2) 0%, rgba(241,196,15,0.15) 100%)',
+            background: 'linear-gradient(90deg, rgba(231,76,60,0.25) 0%, rgba(241,196,15,0.2) 100%)',
             borderBottom: '1px solid rgba(255,215,0,0.25)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '1vw' }}>
-            <span style={{ fontSize: '3vh' }}>⚔️</span>
+            <span style={{ fontSize: '3.2vh' }}>⚔️</span>
             <div>
               <div style={{ fontSize: '2.4vh', fontWeight: 900, color: '#f1c40f', letterSpacing: '1px' }}>
-                ROOM BY ONE (1 VS 1)
+                LOBBY BY ONE PRIVAT
               </div>
               <div style={{ fontSize: '1.3vh', color: 'rgba(255,255,255,0.7)' }}>
-                Adu Taruhan • Pilih Game • Pemenang Ambil Semua!
+                Billiard (2P) • Domino (Max 4P) • QiuQiu (Max 6P)
               </div>
             </div>
           </div>
@@ -282,123 +315,365 @@ export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneR
           </div>
         )}
 
+        {/* Join Toast Alert */}
+        {joinToast && (
+          <div
+            style={{
+              background: 'linear-gradient(90deg, #27ae60, #2ecc71)',
+              color: '#fff',
+              padding: '0.8vh 2vw',
+              textAlign: 'center',
+              fontSize: '1.4vh',
+              fontWeight: 'bold',
+              boxShadow: '0 4px 15px rgba(46,204,113,0.4)',
+            }}
+          >
+            {joinToast}
+          </div>
+        )}
+
         {/* Content Body */}
         <div style={{ padding: '2vh 2.5vw', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '2vh' }}>
-          
-          {/* WAITING ROOM SCREEN IF ROOM IS ACTIVE */}
-          {activeRoomCode ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2vh', textAlign: 'center', padding: '2vh 0' }}>
-              <div style={{ fontSize: '1.8vh', color: 'rgba(255,255,255,0.8)' }}>
-                Kamar By One Berhasil Dibuat!
-              </div>
 
-              {/* Big Room Code Box */}
+          {/* =====================================================
+              WAITING ROOM SCREEN (REAL-TIME LIVE PLAYER SLOTS)
+          ===================================================== */}
+          {activeRoomCode ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2vh' }}>
+
+              {/* Top Banner: Room Code & Summary */}
               <div
                 style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
                   background: 'rgba(0,0,0,0.5)',
                   border: '2px dashed #f1c40f',
-                  borderRadius: '18px',
-                  padding: '2vh 4vw',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '0.8vh',
-                  boxShadow: '0 0 25px rgba(241,196,15,0.2)',
+                  borderRadius: '16px',
+                  padding: '1.5vh 2vw',
+                  boxShadow: '0 0 20px rgba(241,196,15,0.2)',
+                  flexWrap: 'wrap',
+                  gap: '1.5vh',
                 }}
               >
-                <div style={{ fontSize: '1.4vh', color: 'rgba(255,255,255,0.6)', letterSpacing: '1px' }}>
-                  KODE KAMAR 1V1 (BAGIKAN KE TEMAN)
+                <div>
+                  <div style={{ fontSize: '1.3vh', color: 'rgba(255,255,255,0.6)', letterSpacing: '1px' }}>
+                    KODE KAMAR PRIVAT (BAGIKAN KE TEMAN):
+                  </div>
+                  <div style={{ fontSize: '4vh', fontWeight: 1000, letterSpacing: '4px', color: '#f1c40f' }}>
+                    #{activeRoomCode}
+                  </div>
                 </div>
-                <div style={{ fontSize: '5vh', fontWeight: 1000, letterSpacing: '6px', color: '#f1c40f' }}>
-                  {activeRoomCode}
+
+                <div style={{ display: 'flex', gap: '1vw', alignItems: 'center' }}>
+                  <button
+                    style={{
+                      background: 'linear-gradient(90deg, #f39c12, #e67e22)',
+                      border: 'none',
+                      color: '#fff',
+                      padding: '0.8vh 1.6vw',
+                      borderRadius: '12px',
+                      fontSize: '1.4vh',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 10px rgba(243,156,18,0.3)',
+                    }}
+                    onClick={() => {
+                      navigator.clipboard?.writeText(activeRoomCode);
+                      alert(`Kode Kamar #${activeRoomCode} berhasil disalin! Bagikan ke teman.`);
+                    }}
+                  >
+                    📋 Salin Kode
+                  </button>
                 </div>
-                <button
-                  style={{
-                    background: 'rgba(241,196,15,0.2)',
-                    border: '1px solid #f1c40f',
-                    color: '#f1c40f',
-                    padding: '0.6vh 1.8vw',
-                    borderRadius: '12px',
-                    fontSize: '1.4vh',
-                    fontWeight: 'bold',
-                    cursor: 'pointer',
-                  }}
-                  onClick={() => {
-                    navigator.clipboard?.writeText(activeRoomCode);
-                    alert(`Kode Kamar #${activeRoomCode} berhasil disalin!`);
-                  }}
-                >
-                  📋 Salin Kode Kamar
-                </button>
               </div>
 
-              {/* Room Info Details */}
+              {/* Game Mode & Pot Info Bar */}
               <div
                 style={{
                   display: 'flex',
-                  gap: '2vw',
+                  justifyContent: 'space-around',
                   background: 'rgba(255,255,255,0.06)',
-                  padding: '1.2vh 2vw',
+                  border: '1px solid rgba(255,255,255,0.12)',
                   borderRadius: '14px',
-                  fontSize: '1.5vh',
+                  padding: '1.2vh 1.5vw',
+                  fontSize: '1.4vh',
+                  textAlign: 'center',
                 }}
               >
-                <div>🎮 Game: <b>{AVAILABLE_MODES.find(m => m.id === (roomData?.mode || selectedMode))?.name}</b></div>
-                <div>💰 Taruhan: <b style={{ color: '#f1c40f' }}>{formatCoins(roomData?.betAmount || getEffectiveBet())} 🪙</b></div>
-                <div>🏆 Pot Hadiah: <b style={{ color: '#2ecc71' }}>{formatCoins((roomData?.betAmount || getEffectiveBet()) * 2)} 🪙</b></div>
+                <div>
+                  <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1.2vh' }}>GAME MODE</div>
+                  <div style={{ fontWeight: 900, color: '#fff', marginTop: '0.3vh' }}>
+                    {currentModeConfig.icon} {currentModeConfig.name}
+                  </div>
+                </div>
+                <div style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '1.5vw' }}>
+                  <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1.2vh' }}>TARUHAN / ORANG</div>
+                  <div style={{ fontWeight: 900, color: '#f1c40f', marginTop: '0.3vh' }}>
+                    {formatCoins(roomData?.betAmount || getEffectiveBet())} 🪙
+                  </div>
+                </div>
+                <div style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '1.5vw' }}>
+                  <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1.2vh' }}>TOTAL POT HADIAH</div>
+                  <div style={{ fontWeight: 1000, color: '#2ecc71', marginTop: '0.3vh' }}>
+                    {formatCoins((roomData?.betAmount || getEffectiveBet()) * Math.max(1, playersList.length))} 🪙
+                  </div>
+                </div>
+                <div style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '1.5vw' }}>
+                  <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1.2vh' }}>KAPASITAS KAMAR</div>
+                  <div style={{ fontWeight: 900, color: '#3498db', marginTop: '0.3vh' }}>
+                    {playersList.length} / {maxCapacity} Pemain
+                  </div>
+                </div>
               </div>
 
-              {/* Radar pulse */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.8vw', color: '#3498db', fontSize: '1.5vh', fontWeight: 'bold' }}>
-                <span className="byone-pot-coin-icon">🔍</span>
-                <span>Menunggu lawan bergabung menggunakan kode kamar...</span>
+              {/* Section Title */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.5vh' }}>
+                <div style={{ fontSize: '1.5vh', fontWeight: 900, color: 'rgba(255,255,255,0.9)' }}>
+                  👥 DAFTAR PEMAIN DI KAMAR:
+                </div>
+                <div style={{ fontSize: '1.3vh', color: '#f39c12', fontWeight: 800 }}>
+                  {playersList.length < 2 ? '⏳ Menunggu teman masuk...' : '✨ Siap dimulai!'}
+                </div>
               </div>
 
-              {/* Action Buttons */}
-              <div style={{ display: 'flex', gap: '1.5vw', width: '100%', marginTop: '1vh' }}>
-                <button
-                  style={{
-                    flex: 1.2,
-                    padding: '1.4vh 0',
-                    borderRadius: '12px',
-                    background: 'linear-gradient(90deg, #e67e22, #f39c12)',
-                    border: 'none',
-                    color: '#fff',
-                    fontSize: '1.6vh',
-                    fontWeight: 'bold',
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 15px rgba(243,156,18,0.4)',
-                  }}
-                  onClick={handlePlayWithBot}
-                >
-                  ⚡ Duel Lawan AI Rival Sekarang
-                </button>
-                <button
-                  style={{
-                    flex: 1,
-                    padding: '1.4vh 0',
-                    borderRadius: '12px',
-                    background: 'rgba(231,76,60,0.2)',
-                    border: '1px solid #e74c3c',
-                    color: '#ff7675',
-                    fontSize: '1.6vh',
-                    fontWeight: 'bold',
-                    cursor: 'pointer',
-                  }}
-                  onClick={handleCancelRoom}
-                >
-                  Batal Room
-                </button>
+              {/* LIVE PLAYER SLOTS GRID */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: maxCapacity <= 2 ? 'repeat(2, 1fr)' : maxCapacity <= 4 ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)',
+                  gap: '1.2vw',
+                }}
+              >
+                {Array.from({ length: maxCapacity }).map((_, idx) => {
+                  const player = playersList[idx];
+                  const isMe = player?.username === myUsername;
+
+                  if (player) {
+                    return (
+                      <div
+                        key={idx}
+                        style={{
+                          background: isMe
+                            ? 'linear-gradient(145deg, rgba(241,196,15,0.2), rgba(231,76,60,0.25))'
+                            : 'rgba(255,255,255,0.07)',
+                          border: isMe ? '2px solid #f1c40f' : '1px solid rgba(255,255,255,0.2)',
+                          borderRadius: '16px',
+                          padding: '1.8vh 1vw',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          textAlign: 'center',
+                          gap: '0.8vh',
+                          boxShadow: isMe ? '0 0 15px rgba(241,196,15,0.3)' : 'none',
+                          position: 'relative',
+                        }}
+                      >
+                        {/* Status Pin */}
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: '8px',
+                            right: '8px',
+                            fontSize: '1vh',
+                            fontWeight: 900,
+                            padding: '0.2vh 0.6vw',
+                            borderRadius: '10px',
+                            background: player.isHost ? '#f1c40f' : '#2ecc71',
+                            color: player.isHost ? '#000' : '#fff',
+                          }}
+                        >
+                          {player.isHost ? '👑 HOST' : '✅ SIAP'}
+                        </div>
+
+                        {/* Avatar */}
+                        <div
+                          style={{
+                            width: '6.5vh',
+                            height: '6.5vh',
+                            borderRadius: '50%',
+                            overflow: 'hidden',
+                            border: '2px solid #ffd700',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            background: '#1a102a',
+                          }}
+                        >
+                          {renderSlotAvatar(player.avatar, 'byone-slot-avatar', '🐸')}
+                        </div>
+
+                        {/* Username & VIP */}
+                        <div>
+                          <div style={{ fontSize: '1.6vh', fontWeight: 900, color: isMe ? '#f1c40f' : '#fff' }}>
+                            {player.username} {isMe && '(Anda)'}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: '1.1vh',
+                              color: '#ffd700',
+                              fontWeight: 800,
+                              background: 'rgba(0,0,0,0.4)',
+                              padding: '0.2vh 0.6vw',
+                              borderRadius: '8px',
+                              marginTop: '0.3vh',
+                              display: 'inline-block',
+                            }}
+                          >
+                            VIP {player.vipLevel || 0}
+                          </div>
+                        </div>
+
+                        {/* Balance */}
+                        <div style={{ fontSize: '1.2vh', color: 'rgba(255,255,255,0.7)' }}>
+                          🪙 {formatCoins(player.coins || 0)}
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // Empty Slot
+                  return (
+                    <div
+                      key={idx}
+                      style={{
+                        background: 'rgba(0,0,0,0.25)',
+                        border: '2px dashed rgba(255,255,255,0.18)',
+                        borderRadius: '16px',
+                        padding: '2vh 1vw',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        textAlign: 'center',
+                        gap: '0.8vh',
+                        minHeight: '13vh',
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: '5.5vh',
+                          height: '5.5vh',
+                          borderRadius: '50%',
+                          border: '1px dashed rgba(255,255,255,0.25)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '2.5vh',
+                          color: 'rgba(255,255,255,0.3)',
+                        }}
+                      >
+                        👤
+                      </div>
+                      <div style={{ fontSize: '1.3vh', color: 'rgba(255,255,255,0.4)', fontWeight: 'bold' }}>
+                        Slot {idx + 1}
+                      </div>
+                      <div style={{ fontSize: '1.1vh', color: '#3498db' }}>
+                        Menunggu pemain...
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
+
+              {/* Action Buttons for Waiting Room */}
+              <div style={{ marginTop: '1vh', display: 'flex', gap: '1.5vw', width: '100%' }}>
+                {isHost ? (
+                  <>
+                    <button
+                      style={{
+                        flex: 1.5,
+                        padding: '1.5vh 0',
+                        borderRadius: '14px',
+                        background: playersList.length >= 2
+                          ? 'linear-gradient(90deg, #27ae60, #2ecc71)'
+                          : 'rgba(255,255,255,0.1)',
+                        border: playersList.length >= 2 ? 'none' : '1px solid rgba(255,255,255,0.2)',
+                        color: playersList.length >= 2 ? '#fff' : 'rgba(255,255,255,0.4)',
+                        fontSize: '1.7vh',
+                        fontWeight: 900,
+                        cursor: playersList.length >= 2 ? 'pointer' : 'not-allowed',
+                        boxShadow: playersList.length >= 2 ? '0 4px 20px rgba(46,204,113,0.5)' : 'none',
+                        letterSpacing: '1px',
+                        transition: 'all 0.2s ease',
+                      }}
+                      disabled={playersList.length < 2}
+                      onClick={handleStartGame}
+                    >
+                      {playersList.length >= 2
+                        ? `🚀 MULAI PERMAINAN (${playersList.length}/${maxCapacity} PEMAIN)`
+                        : `⏳ MENUNGGU TEMAN MASUK (${playersList.length}/${maxCapacity})`}
+                    </button>
+                    <button
+                      style={{
+                        flex: 1,
+                        padding: '1.5vh 0',
+                        borderRadius: '14px',
+                        background: 'rgba(231,76,60,0.2)',
+                        border: '1px solid #e74c3c',
+                        color: '#ff7675',
+                        fontSize: '1.6vh',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                      }}
+                      onClick={handleCancelRoom}
+                    >
+                      Batal Room
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div
+                      style={{
+                        flex: 1.5,
+                        padding: '1.5vh 0',
+                        borderRadius: '14px',
+                        background: 'rgba(52,152,219,0.2)',
+                        border: '1px solid #3498db',
+                        color: '#5dade2',
+                        fontSize: '1.5vh',
+                        fontWeight: 800,
+                        textAlign: 'center',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.8vw',
+                      }}
+                    >
+                      <span>⏳</span>
+                      <span>Menunggu Host ({roomData?.hostUsername}) Memulai Permainan...</span>
+                    </div>
+                    <button
+                      style={{
+                        flex: 1,
+                        padding: '1.5vh 0',
+                        borderRadius: '14px',
+                        background: 'rgba(231,76,60,0.2)',
+                        border: '1px solid #e74c3c',
+                        color: '#ff7675',
+                        fontSize: '1.6vh',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                      }}
+                      onClick={handleLeaveRoom}
+                    >
+                      Keluar Kamar
+                    </button>
+                  </>
+                )}
+              </div>
+
             </div>
           ) : (
             <>
-              {/* Tabs */}
+              {/* =====================================================
+                  TABS: CREATE ROOM vs JOIN ROOM
+              ===================================================== */}
               <div style={{ display: 'flex', gap: '1vw' }}>
                 <button
                   style={{
                     flex: 1,
-                    padding: '1vh 0',
+                    padding: '1.2vh 0',
                     borderRadius: '12px',
                     background: tab === 'create' ? 'linear-gradient(90deg, #e74c3c, #c0392b)' : 'rgba(255,255,255,0.06)',
                     border: tab === 'create' ? '1px solid #ff7675' : '1px solid rgba(255,255,255,0.15)',
@@ -414,7 +689,7 @@ export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneR
                 <button
                   style={{
                     flex: 1,
-                    padding: '1vh 0',
+                    padding: '1.2vh 0',
                     borderRadius: '12px',
                     background: tab === 'join' ? 'linear-gradient(90deg, #2980b9, #3498db)' : 'rgba(255,255,255,0.06)',
                     border: tab === 'join' ? '1px solid #5dade2' : '1px solid rgba(255,255,255,0.15)',
@@ -432,11 +707,11 @@ export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneR
               {/* TAB 1: CREATE ROOM */}
               {tab === 'create' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2vh' }}>
-                  
-                  {/* Step 1: Mode Selection */}
+
+                  {/* Step 1: Mode Selection with capacity tags */}
                   <div>
                     <div style={{ fontSize: '1.5vh', fontWeight: 800, color: 'rgba(255,255,255,0.8)', marginBottom: '1vh' }}>
-                      1. PILIH GAME YANG MAU DIMAINKAN:
+                      1. PILIH GAME & JUMLAH PEMAIN:
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1vw' }}>
                       {AVAILABLE_MODES.map(m => {
@@ -449,7 +724,7 @@ export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneR
                               background: isSelected ? 'linear-gradient(145deg, rgba(241,196,15,0.2), rgba(231,76,60,0.25))' : 'rgba(255,255,255,0.05)',
                               border: isSelected ? '2px solid #f1c40f' : '1px solid rgba(255,255,255,0.15)',
                               borderRadius: '16px',
-                              padding: '1.5vh 1vw',
+                              padding: '1.6vh 1vw',
                               display: 'flex',
                               flexDirection: 'column',
                               alignItems: 'center',
@@ -459,24 +734,24 @@ export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneR
                               transition: 'all 0.2s ease',
                             }}
                           >
-                            <span style={{ fontSize: '3.5vh', marginBottom: '0.5vh' }}>{m.icon}</span>
+                            <span style={{ fontSize: '3.6vh', marginBottom: '0.5vh' }}>{m.icon}</span>
                             <span style={{ fontSize: '1.6vh', fontWeight: 900, color: isSelected ? '#f1c40f' : '#fff' }}>
                               {m.name}
                             </span>
                             <span
                               style={{
-                                fontSize: '1.1vh',
+                                fontSize: '1.2vh',
                                 background: m.badgeColor,
                                 color: '#fff',
-                                padding: '0.1vh 0.6vw',
+                                padding: '0.2vh 0.8vw',
                                 borderRadius: '8px',
                                 fontWeight: 800,
-                                marginTop: '0.5vh',
+                                marginTop: '0.6vh',
                               }}
                             >
                               {m.tag}
                             </span>
-                            <span style={{ fontSize: '1.2vh', color: 'rgba(255,255,255,0.6)', marginTop: '0.5vh' }}>
+                            <span style={{ fontSize: '1.2vh', color: 'rgba(255,255,255,0.6)', marginTop: '0.6vh', lineHeight: '1.3' }}>
                               {m.desc}
                             </span>
                           </div>
@@ -488,7 +763,7 @@ export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneR
                   {/* Step 2: Bet Selection */}
                   <div>
                     <div style={{ fontSize: '1.5vh', fontWeight: 800, color: 'rgba(255,255,255,0.8)', marginBottom: '1vh' }}>
-                      2. PILIH NOMINAL TARUHAN (ADU TARUHAN):
+                      2. PILIH NOMINAL TARUHAN PER PEMAIN:
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '0.8vw', marginBottom: '1vh' }}>
                       {QUICK_BETS.map(b => (
@@ -515,7 +790,7 @@ export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneR
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1vw' }}>
-                      <span style={{ fontSize: '1.4vh', color: 'rgba(255,255,255,0.7)' }}>Atau Nominal Kustom:</span>
+                      <span style={{ fontSize: '1.4vh', color: 'rgba(255,255,255,0.7)' }}>Atau Kustom Koin:</span>
                       <input
                         type="number"
                         placeholder="Contoh: 2000000"
@@ -525,7 +800,7 @@ export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneR
                           background: 'rgba(0,0,0,0.4)',
                           border: '1px solid rgba(255,215,0,0.3)',
                           borderRadius: '8px',
-                          padding: '0.6vh 1vw',
+                          padding: '0.8vh 1vw',
                           color: '#fff',
                           fontSize: '1.5vh',
                           flex: 1,
@@ -540,7 +815,7 @@ export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneR
                       background: 'rgba(0,0,0,0.4)',
                       border: '1px solid rgba(255,215,0,0.2)',
                       borderRadius: '14px',
-                      padding: '1.2vh 2vw',
+                      padding: '1.4vh 2vw',
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
@@ -548,13 +823,13 @@ export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneR
                   >
                     <div>
                       <div style={{ fontSize: '1.3vh', color: 'rgba(255,255,255,0.6)' }}>TARUHAN ANDA:</div>
-                      <div style={{ fontSize: '1.8vh', fontWeight: 900, color: '#fff' }}>
+                      <div style={{ fontSize: '1.9vh', fontWeight: 900, color: '#fff' }}>
                         {formatCoins(getEffectiveBet())} 🪙
                       </div>
                     </div>
                     <div style={{ fontSize: '2.5vh', color: '#e74c3c' }}>⚔️</div>
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: '1.3vh', color: 'rgba(255,255,255,0.6)' }}>TOTAL POT HADIAH PEMENANG:</div>
+                      <div style={{ fontSize: '1.3vh', color: 'rgba(255,255,255,0.6)' }}>POT MINIMAL (2 PEMAIN):</div>
                       <div style={{ fontSize: '2.2vh', fontWeight: 1000, color: '#f1c40f' }}>
                         {formatCoins(getEffectiveBet() * 2)} 🪙
                       </div>
@@ -587,7 +862,7 @@ export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneR
               {tab === 'join' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5vh', padding: '2vh 1vw' }}>
                   <div style={{ textAlign: 'center', fontSize: '1.6vh', color: 'rgba(255,255,255,0.8)' }}>
-                    Punya Kode Kamar dari Teman? Masukkan 6 Digit Kode di bawah untuk langsung beradu taruhan!
+                    Punya Kode Kamar dari Teman? Masukkan 6 Digit Kode di bawah untuk melihat siapa yang ada di kamar dan langsung bergabung!
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'center' }}>
@@ -628,7 +903,7 @@ export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneR
                     }}
                     onClick={handleJoinRoom}
                   >
-                    ⚔️ GABUNG & MULAI DUEL
+                    🚪 GABUNG KE KAMAR
                   </button>
                 </div>
               )}

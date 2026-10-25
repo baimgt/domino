@@ -83,20 +83,23 @@
   cursor: pointer;
 }
 .mj-avatar-img {
-  width: 7vh; height: 7vh;
+  width: 8.5vh; height: 8.5vh;
   border-radius: 50%;
   border: 0.35vh solid #ffd700;
-  box-shadow: 0 0 1vh rgba(0,0,0,0.6);
+  box-shadow: 0 0 1.2vh rgba(0,0,0,0.6);
   object-fit: cover;
 }
 .mj-vip-badge {
   position: absolute;
-  top: -1vh; left: 50%; transform: translateX(-50%);
+  bottom: -0.6vh; left: 50%; transform: translateX(-50%);
   background: linear-gradient(135deg, #b71c1c, #ff1744);
-  color: #fff; font-size: 1.1vh; font-weight: 900;
-  padding: 0.1vh 0.8vh; border-radius: 1vh;
+  color: #fff; font-size: 1.05vh; font-weight: 900;
+  line-height: 1;
+  padding: 0.2vh 0.6vh; border-radius: 0.6vh;
   border: 0.15vh solid #ffd700;
   white-space: nowrap;
+  box-shadow: 0 0.2vh 0.4vh rgba(0,0,0,0.5);
+  letter-spacing: 0.02em;
 }
 .mj-bar-icon {
   position: absolute;
@@ -158,8 +161,13 @@
 .mj-tr-btn:hover { filter: brightness(1.2); }
 .mj-tr-btn:active { transform: scale(0.92); }
 .mj-tr-icon { font-size: 2vh; }
-.mj-tr-label { font-size: 1.1vh; font-weight: 700; line-height: 1.2; text-align: center; color: #fffde7; }
-.mj-tr-menu { font-size: 2.8vh; min-width: 5.5vh; }
+.mj-tr-menu {
+  font-size: 4.2vh;
+  min-width: 7.8vh;
+  min-height: 7.8vh;
+  font-weight: 900;
+  line-height: 1;
+}
 
 /* ====================================================
    TOP MULTIPLIER BAR (Teal Header Ribbon x1 x2 x3 x5)
@@ -331,13 +339,14 @@
    ==================================================== */
 .mj-main-container {
   position: absolute;
-  top: 8.5vh; bottom: 12.5vh;
-  left: 10vw; right: 10vw;
+  top: 1.2vh; bottom: 12vh;
+  left: 4vw; right: 4vw;
   z-index: 20;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 0.6vh;
 }
 
 .mj-freespin-banner {
@@ -352,14 +361,15 @@
   margin-bottom: 0.8vh;
 }
 
-/* Machine Outer Frame */
+/* Machine Outer Frame (Enlarged to fill landscape view) */
 .mj-machine-frame {
   display: flex;
   align-items: stretch;
-  aspect-ratio: 5 / 4.2;
-  height: min(72vh, 420px);
+  aspect-ratio: 5 / 3.4;
+  height: 76vh;
+  max-height: calc(100vh - 16vh);
   width: auto;
-  max-width: 82vw;
+  max-width: min(92vw, 920px);
   margin: 0 auto;
 }
 
@@ -368,7 +378,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 4vw; min-width: 45px;
+  width: 2.2vw; min-width: 20px;
   background: radial-gradient(ellipse at 50% 50%, rgba(0,100,80,0.8) 0%, rgba(0,50,40,0.9) 100%);
   border: 0.25vh solid #ffd700;
   position: relative;
@@ -386,9 +396,9 @@
   text-orientation: mixed;
   transform: rotate(180deg);
   color: rgba(255,215,0,0.9);
-  font-size: 1.5vh;
+  font-size: 1.1vh;
   font-weight: 900;
-  letter-spacing: 0.3vh;
+  letter-spacing: 0.15vh;
   text-shadow: 0 0 0.6vh rgba(0,0,0,0.8);
 }
 
@@ -461,7 +471,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.3vh 0.3vw;
+  padding: 0.2vh 0.2vw !important;
   box-sizing: border-box;
   position: relative;
   flex-shrink: 0 !important;
@@ -519,7 +529,7 @@
 }
 
 .mj-tile-img {
-  width: 85%; height: 85%;
+  width: 92%; height: 92%;
   object-fit: contain;
   filter: drop-shadow(0 0.2vh 0.3vh rgba(0,0,0,0.3));
 }
@@ -548,10 +558,52 @@
 /* Winning cell flash */
 .mj-cell.is-winning .mj-tile-container {
   animation: winFlash 0.4s ease-in-out infinite alternate;
+  z-index: 10;
 }
 @keyframes winFlash {
   0% { filter: brightness(1); transform: scale(1); }
   100% { filter: brightness(1.5) drop-shadow(0 0 1vh #ffd700); transform: scale(1.04); }
+}
+
+/* Exploding tile: shatters and scales to 0 with gold burst */
+.mj-cell.is-exploding .mj-tile-container {
+  animation: mjTileExplode 0.35s ease-out forwards !important;
+  pointer-events: none;
+  z-index: 12;
+}
+@keyframes mjTileExplode {
+  0% { transform: scale(1); opacity: 1; filter: brightness(1.5); }
+  40% { transform: scale(1.22); opacity: 1; filter: brightness(2.5) drop-shadow(0 0 1.5vh #ffd700); }
+  100% { transform: scale(0); opacity: 0; filter: brightness(3); }
+}
+
+/* Empty tile transition hole */
+.mj-cell.is-empty .mj-tile-container {
+  opacity: 0 !important;
+  pointer-events: none;
+}
+
+/* Cascade gravity drop: top tiles tumble down into empty slots smoothly */
+.mj-cell.is-dropping .mj-tile-container {
+  animation: mjTileCascadeDrop 0.38s cubic-bezier(0.22, 1, 0.36, 1) both !important;
+  will-change: transform;
+}
+@keyframes mjTileCascadeDrop {
+  0% {
+    transform: translateY(calc(-100% * var(--drop-dist, 1) - 6px));
+    opacity: 0.85;
+  }
+  65% {
+    transform: translateY(6px);
+    opacity: 1;
+  }
+  85% {
+    transform: translateY(-2px);
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 /* ====================================================
@@ -1309,26 +1361,28 @@
   }
 
   .mj-main-container {
-    top: 40px !important;
+    top: 36px !important;
     bottom: 44px !important;
-    left: 4vw !important;
-    right: 4vw !important;
+    left: 2vw !important;
+    right: 2vw !important;
+    gap: 3px !important;
   }
 
   .mj-machine-frame {
-    aspect-ratio: 5 / 4.2 !important;
-    height: min(72vh, 360px) !important;
-    max-width: 84vw !important;
+    aspect-ratio: 5 / 3.3 !important;
+    height: calc(100vh - 84px) !important;
+    max-height: calc(100vh - 84px) !important;
+    max-width: 94vw !important;
     width: auto !important;
   }
 
   .mj-pillar {
-    width: 3.5vw !important;
-    min-width: 32px !important;
+    width: 2.2vw !important;
+    min-width: 20px !important;
   }
   .mj-pillar-text {
-    font-size: 11px !important;
-    letter-spacing: 2px !important;
+    font-size: 9px !important;
+    letter-spacing: 1px !important;
   }
 
   /* Multiplier Bar Header (Top of Machine) */

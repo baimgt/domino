@@ -99,19 +99,21 @@
   position: relative; cursor: pointer;
 }
 .gato-avatar-img {
-  width: 6.5vh; height: 6.5vh;
+  width: 8.5vh; height: 8.5vh;
   border-radius: 50%;
-  border: 0.3vh solid #ffd700;
+  border: 0.35vh solid #ffd700;
   object-fit: cover;
-  box-shadow: 0 0 1vh rgba(0,0,0,0.7);
+  box-shadow: 0 0 1.2vh rgba(0,0,0,0.7);
 }
 .gato-vip-badge {
-  position: absolute; top: -0.8vh; left: 50%; transform: translateX(-50%);
+  position: absolute; bottom: -0.6vh; left: 50%; transform: translateX(-50%);
   background: linear-gradient(135deg, #b71c1c, #ff1744);
-  color: #fff; font-size: 1vh; font-weight: 900;
-  padding: 0.1vh 0.7vh; border-radius: 1vh;
+  color: #fff; font-size: 1.05vh; font-weight: 900;
+  line-height: 1; padding: 0.2vh 0.6vh; border-radius: 0.6vh;
   border: 0.15vh solid #ffd700;
   white-space: nowrap;
+  box-shadow: 0 0.2vh 0.4vh rgba(0,0,0,0.5);
+  letter-spacing: 0.02em;
 }
 .gato-coins-row {
   display: flex; align-items: center; gap: 0.5vw;
@@ -152,14 +154,19 @@
 }
 .gato-tr-btn {
   background: linear-gradient(180deg, rgba(255,200,100,0.3), rgba(100,50,10,0.5));
-  border: 0.2vh solid rgba(255,200,100,0.6);
-  border-radius: 1.2vh;
+  border: 0.22vh solid rgba(255,200,100,0.7);
+  border-radius: 1.4vh;
   color: #fff; cursor: pointer;
-  padding: 0.5vh 0.8vw; font-size: 2.2vh;
+  padding: 0.6vh 1vw; font-size: 2.6vh;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  min-width: 6.5vh;
-  box-shadow: 0 0.3vh 0.8vh rgba(0,0,0,0.5);
+  min-width: 7.8vh; min-height: 7.8vh;
+  box-shadow: 0 0.4vh 1vh rgba(0,0,0,0.55);
   transition: transform 0.1s, filter 0.1s;
+}
+.gato-tr-menu-btn {
+  font-size: 4.2vh !important;
+  font-weight: 900;
+  line-height: 1;
 }
 .gato-tr-btn:hover { filter: brightness(1.2); }
 .gato-tr-btn:active { transform: scale(0.92); }
@@ -645,8 +652,8 @@
 }
 @keyframes gatoTileCascadeDrop {
   0% {
-    transform: translateY(-38px);
-    opacity: 0.3;
+    transform: translateY(calc(-100% * var(--drop-dist, 1) - 8px));
+    opacity: 0.85;
     filter: none;
   }
   65% {
@@ -658,11 +665,12 @@
     transform: translateY(-2px);
   }
   100% {
-    transform: translateY(0px);
+    transform: translateY(0);
     opacity: 1;
     filter: none;
   }
 }
+
 
 .gato-sym-img-wrap {
   width: 100%;
