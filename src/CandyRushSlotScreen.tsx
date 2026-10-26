@@ -7,7 +7,8 @@ import SlotMultiplierBar from './SlotMultiplierBar';
 import SlotCelebrationModal, { SlotCelebrationData } from './SlotCelebrationModal';
 import SlotProfileModal, { renderSlotAvatar } from './SlotProfileModal';
 import { useSlotProfile } from './useSlotProfile';
-import { MIN_SLOT_BET, MAX_SLOT_BET, stepSlotBet } from './slotConfig';
+import { MIN_SLOT_BET, MAX_SLOT_BET, stepSlotBet, getSlotCoins, spendSlotCoinsLocal, applySlotResultBalance, syncSlotBetToBackend } from './slotConfig';
+import { API_URL } from './config';
 
 interface Props {
   onBack: () => void;
@@ -29,11 +30,8 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [betAmount, setBetAmount] = useState(MIN_SLOT_BET);
   const [myCoins, setMyCoins] = useState<number>(() => {
-    const saved = localStorage.getItem('domino_coins');
-    const savedBonus = localStorage.getItem('domino_bonus_coins');
-    const c = saved ? parseInt(saved, 10) : 0;
-    const b = savedBonus ? parseInt(savedBonus, 10) : 0;
-    return (c + b) > 0 ? (c + b) : 100000;
+    const slotCoins = getSlotCoins();
+    return slotCoins.total > 0 ? slotCoins.total : 100000;
   });
   const [totalWin, setTotalWin] = useState(0);
   const [freeSpinsLeft, setFreeSpinsLeft] = useState(0);
@@ -70,8 +68,22 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
   useEffect(() => { spinSpeedRef.current = spinSpeed; }, [spinSpeed]);
 
   useEffect(() => {
-    const coinsStr = localStorage.getItem('domino_coins');
-    if (coinsStr) setMyCoins(parseInt(coinsStr));
+    const slotCoins = getSlotCoins();
+    setMyCoins(slotCoins.total > 0 ? slotCoins.total : 100000);
+    const u = localStorage.getItem('domino_username');
+    if (u) {
+      fetch(`${API_URL}/profile/${u}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          if (d?.coins !== undefined) {
+            const tot = (d.coins || 0) + (d.bonusCoins || 0);
+            setMyCoins(tot);
+            localStorage.setItem('domino_coins', (d.coins || 0).toString());
+            localStorage.setItem('domino_bonus_coins', (d.bonusCoins || 0).toString());
+          }
+        })
+        .catch(() => {});
+    }
   }, []);
 
   // Rapid reel shuffle - displays regular symbols during spin blur, checking synchronous spinningColsRef to prevent symbol flicker
@@ -195,16 +207,9 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
         setIsSpinning(false);
         spinningColsRef.current = Array(COLS).fill(false);
         setSpinningCols(Array(COLS).fill(false));
-        setMyCoins(data.newBalance);
+        const applied = applySlotResultBalance(data);
+        setMyCoins(data.newBalance != null ? data.newBalance : applied.total);
         setFreeMultVal(data.freeMult || 0);
-        if (data.coins !== undefined) {
-          localStorage.setItem('domino_coins', data.coins.toString());
-        } else {
-          localStorage.setItem('domino_coins', data.newBalance.toString());
-        }
-        if (data.bonusCoins !== undefined) {
-          localStorage.setItem('domino_bonus_coins', data.bonusCoins.toString());
-        }
         setTotalWin(data.totalWinAmount || 0);
         let totalFree = freeSpinsLeftRef.current;
         if (data.triggerFreeSpins) {
@@ -264,9 +269,9 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
       alert(`Koin tidak cukup! Butuh ${cost.toLocaleString('id-ID')} koin.`);
       return;
     }
-    const newBal = myCoins - cost;
-    setMyCoins(newBal);
-    localStorage.setItem('domino_coins', newBal.toString());
+    const res = spendSlotCoinsLocal(cost);
+    setMyCoins(res.total);
+    syncSlotBetToBackend(API_URL, username, cost);
     setFreeSpinsLeft(10);
     freeSpinsLeftRef.current = 10;
     setFreeMultVal(1);
@@ -293,6 +298,8 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
     spinningColsRef.current = Array(COLS).fill(true);
     setSpinningCols(Array(COLS).fill(true));
     if (freeSpinsLeftRef.current === 0) {
+      const res = spendSlotCoinsLocal(actualBet);
+      setMyCoins(res.total);
       setMultIdx(0);
       setFreeMultVal(1);
     }

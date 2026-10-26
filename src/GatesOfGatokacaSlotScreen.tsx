@@ -7,7 +7,8 @@ import LeaderboardModal from './LeaderboardModal';
 import SlotCelebrationModal, { SlotCelebrationData } from './SlotCelebrationModal';
 import SlotProfileModal, { renderSlotAvatar } from './SlotProfileModal';
 import { useSlotProfile } from './useSlotProfile';
-import { stepSlotBet, MIN_SLOT_BET, MAX_SLOT_BET } from './slotConfig';
+import { stepSlotBet, MIN_SLOT_BET, MAX_SLOT_BET, getSlotCoins, spendSlotCoinsLocal, applySlotResultBalance, syncSlotBetToBackend } from './slotConfig';
+import { API_URL } from './config';
 
 interface Props {
   onBack: () => void;
@@ -61,8 +62,10 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
   const [isSpinning, setIsSpinning] = useState(false);
   const [spinningCols, setSpinningCols] = useState<boolean[]>(Array(COLS).fill(false));
   const [bouncingCols, setBouncingCols] = useState<boolean[]>(Array(COLS).fill(false));
-  const [betAmount, setBetAmount] = useState(500);
-  const [myCoins, setMyCoins] = useState(8994600);
+  const [myCoins, setMyCoins] = useState<number>(() => {
+    const slotCoins = getSlotCoins();
+    return slotCoins.total > 0 ? slotCoins.total : 100000;
+  });
   const [totalWin, setTotalWin] = useState(0);
   const [currentMultiplier, setCurrentMultiplier] = useState(1);
   const [freeMultVal, setFreeMultVal] = useState(0); // pengali menumpuk saat free spin
@@ -121,11 +124,22 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
   useEffect(() => { spinSpeedRef.current = spinSpeed; }, [spinSpeed]);
 
   useEffect(() => {
-    const coinsStr = localStorage.getItem('domino_coins');
-    const bonusStr = localStorage.getItem('domino_bonus_coins');
-    const c = coinsStr ? parseInt(coinsStr, 10) : 0;
-    const b = bonusStr ? parseInt(bonusStr, 10) : 0;
-    setMyCoins(c + b);
+    const slotCoins = getSlotCoins();
+    setMyCoins(slotCoins.total > 0 ? slotCoins.total : 100000);
+    const u = localStorage.getItem('domino_username');
+    if (u) {
+      fetch(`${API_URL}/profile/${u}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          if (d?.coins !== undefined) {
+            const tot = (d.coins || 0) + (d.bonusCoins || 0);
+            setMyCoins(tot);
+            localStorage.setItem('domino_coins', (d.coins || 0).toString());
+            localStorage.setItem('domino_bonus_coins', (d.bonusCoins || 0).toString());
+          }
+        })
+        .catch(() => {});
+    }
     // Initial grid matching screenshot layout
     const initGrid = [
       [4, 6, 7, 3, 3, 5],
@@ -255,8 +269,8 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
         setIsSpinning(false);
         spinningColsRef.current = Array(COLS).fill(false);
         setSpinningCols(Array(COLS).fill(false));
-        setMyCoins(data.newBalance);
-        localStorage.setItem('domino_coins', data.newBalance.toString());
+        const applied = applySlotResultBalance(data);
+        setMyCoins(data.newBalance != null ? data.newBalance : applied.total);
         setTotalWin(data.totalWinAmount || 0);
         setScatterCount(data.scatterCount || 0);
 
@@ -355,9 +369,9 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
       alert(`Koin tidak cukup untuk beli Spin Gratis! Butuh ${cost.toLocaleString('id-ID')} koin.`);
       return;
     }
-    const newBal = myCoins - cost;
-    setMyCoins(newBal);
-    localStorage.setItem('domino_coins', newBal.toString());
+    const res = spendSlotCoinsLocal(cost);
+    setMyCoins(res.total);
+    syncSlotBetToBackend(API_URL, username, cost);
     setFreeSpinsLeft(15);
     freeSpinsLeftRef.current = 15;
     setFreeMultVal(1);
@@ -379,6 +393,11 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
       alert(`Koin tidak cukup! Taruhan: ${actualBet.toLocaleString('id-ID')} koin.`);
       setAutoSpins(0);
       return;
+    }
+
+    if (freeSpinsLeftRef.current === 0) {
+      const res = spendSlotCoinsLocal(actualBet);
+      setMyCoins(res.total);
     }
 
     setIsSpinning(true);

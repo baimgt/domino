@@ -6,7 +6,7 @@ import GameMenuDropdown from './GameMenuDropdown';
 import SlotCelebrationModal, { SlotCelebrationData } from './SlotCelebrationModal';
 import SlotProfileModal, { renderSlotAvatar } from './SlotProfileModal';
 import { useSlotProfile } from './useSlotProfile';
-import { MIN_SLOT_BET, MAX_SLOT_BET, stepSlotBet } from './slotConfig';
+import { MIN_SLOT_BET, MAX_SLOT_BET, stepSlotBet, getSlotCoins, spendSlotCoinsLocal, addSlotWinLocal, syncSlotBetToBackend, syncSlotWinToBackend } from './slotConfig';
 
 interface Props {
   onBack: () => void;
@@ -101,12 +101,9 @@ export default function FiveLionsSlotScreen({ onBack, socket }: Props) {
   const [isSpinning, setIsSpinning] = useState(false);
   const [spinningCols, setSpinningCols] = useState<boolean[]>([false, false, false, false, false, false]);
   const [betAmount, setBetAmount] = useState(MIN_SLOT_BET);
-  const [myCoins, setMyCoins] = useState(() => {
-    const saved = localStorage.getItem('domino_coins');
-    const savedBonus = localStorage.getItem('domino_bonus_coins');
-    const c = saved ? parseInt(saved, 10) : 0;
-    const b = savedBonus ? parseInt(savedBonus, 10) : 0;
-    return (c + b) > 0 ? (c + b) : 100000;
+  const [myCoins, setMyCoins] = useState<number>(() => {
+    const slotCoins = getSlotCoins();
+    return slotCoins.total > 0 ? slotCoins.total : 100000;
   });
   const [totalWin, setTotalWin] = useState(0);
   const [freeSpinsLeft, setFreeSpinsLeft] = useState(0);
@@ -125,11 +122,8 @@ export default function FiveLionsSlotScreen({ onBack, socket }: Props) {
   useEffect(() => { spinSpeedRef.current = spinSpeed; }, [spinSpeed]);
 
   useEffect(() => {
-    const coinsStr = localStorage.getItem('domino_coins');
-    const bonusStr = localStorage.getItem('domino_bonus_coins');
-    const cVal = coinsStr ? parseInt(coinsStr, 10) : 0;
-    const bVal = bonusStr ? parseInt(bonusStr, 10) : 0;
-    if (cVal + bVal > 0) setMyCoins(cVal + bVal);
+    const slotCoins = getSlotCoins();
+    setMyCoins(slotCoins.total > 0 ? slotCoins.total : 100000);
     const savedUser = localStorage.getItem('domino_username');
     if (savedUser) {
       fetch(`${API_URL}/profile/${savedUser}`)
@@ -398,17 +392,10 @@ export default function FiveLionsSlotScreen({ onBack, socket }: Props) {
 
     // Deduct coins if normal round, or decrement & save free spins if free round
     if (!isFreeRound) {
-      setMyCoins(c => {
-        const next = Math.max(0, c - cost);
-        localStorage.setItem('domino_coins', next.toString());
-        return next;
-      });
+      const res = spendSlotCoinsLocal(cost);
+      setMyCoins(res.total);
       if (username) {
-        fetch(`${API_URL}/users/update-coins`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, amount: -cost })
-        }).then(() => window.dispatchEvent(new Event('domino_coins_updated'))).catch(() => {});
+        syncSlotBetToBackend(API_URL, username, cost);
       }
     } else {
       const nextSpins = Math.max(0, freeSpinsLeftRef.current - 1);
@@ -533,17 +520,10 @@ export default function FiveLionsSlotScreen({ onBack, socket }: Props) {
 
         winAmt = Math.floor(cost * (1.5 + Math.random() * 6)) * spinMult;
         setTotalWin(winAmt);
-        setMyCoins(c => {
-          const next = c + winAmt;
-          localStorage.setItem('domino_coins', next.toString());
-          return next;
-        });
+        const winRes = addSlotWinLocal(winAmt);
+        setMyCoins(winRes.total);
         if (username) {
-          fetch(`${API_URL}/users/update-coins`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, amount: winAmt })
-          }).then(() => window.dispatchEvent(new Event('domino_coins_updated'))).catch(() => {});
+          syncSlotWinToBackend(API_URL, username, winAmt);
         }
         if (!isScatterTrigger && winAmt > 0) {
           const ratio = winAmt / Math.max(1, cost);
@@ -683,9 +663,11 @@ export default function FiveLionsSlotScreen({ onBack, socket }: Props) {
               return;
             }
             if (window.confirm(`Beli Spin Gratis seharga ${cost.toLocaleString('id-ID')} koin?`)) {
-              const newBal = myCoins - cost;
-              setMyCoins(newBal);
-              localStorage.setItem('domino_coins', newBal.toString());
+              const res = spendSlotCoinsLocal(cost);
+              setMyCoins(res.total);
+              if (username) {
+                syncSlotBetToBackend(API_URL, username, cost);
+              }
               setShowPickerModal(true);
             }
           }}

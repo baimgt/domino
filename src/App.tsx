@@ -7211,6 +7211,9 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
         remBonus = 0;
         remCoins = Math.max(0, remCoins - diff);
       }
+      localStorage.setItem('domino_bonus_coins', remBonus.toString());
+      localStorage.setItem('domino_coins', remCoins.toString());
+      window.dispatchEvent(new Event('domino_coins_updated'));
       return { ...prev, coins: remCoins, bonusCoins: remBonus };
     });
     socket.emit('spin_slot', { username: myUsername, betAmount });

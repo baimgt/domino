@@ -6,7 +6,8 @@ import SlotMultiplierBar from './SlotMultiplierBar';
 import SlotCelebrationModal, { SlotCelebrationData } from './SlotCelebrationModal';
 import SlotProfileModal, { renderSlotAvatar } from './SlotProfileModal';
 import { useSlotProfile } from './useSlotProfile';
-import { MIN_SLOT_BET, MAX_SLOT_BET, stepSlotBet } from './slotConfig';
+import { MIN_SLOT_BET, MAX_SLOT_BET, stepSlotBet, getSlotCoins, spendSlotCoinsLocal, applySlotResultBalance } from './slotConfig';
+import { API_URL } from './config';
 
 interface Props {
   onBack: () => void;
@@ -33,11 +34,8 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
   const [betAmount, setBetAmount] = useState(MIN_SLOT_BET);
   const [goldTier, setGoldTier] = useState<number>(5);
   const [myCoins, setMyCoins] = useState<number>(() => {
-    const saved = localStorage.getItem('domino_coins');
-    const savedBonus = localStorage.getItem('domino_bonus_coins');
-    const c = saved ? parseInt(saved, 10) : 0;
-    const b = savedBonus ? parseInt(savedBonus, 10) : 0;
-    return (c + b) > 0 ? (c + b) : 100000;
+    const slotCoins = getSlotCoins();
+    return slotCoins.total > 0 ? slotCoins.total : 100000;
   });
   const [winAmount, setWinAmount] = useState(0);
   const [, setWinType] = useState<string>('normal');
@@ -103,8 +101,22 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
       Array(5).fill(null).map(() => Math.floor(Math.random() * 8))
     );
     setGrid(initGrid);
-    const coinsStr = localStorage.getItem('domino_coins');
-    if (coinsStr) setMyCoins(parseInt(coinsStr));
+    const slotCoins = getSlotCoins();
+    setMyCoins(slotCoins.total > 0 ? slotCoins.total : 100000);
+    const u = localStorage.getItem('domino_username');
+    if (u) {
+      fetch(`${API_URL}/profile/${u}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          if (d?.coins !== undefined) {
+            const tot = (d.coins || 0) + (d.bonusCoins || 0);
+            setMyCoins(tot);
+            localStorage.setItem('domino_coins', (d.coins || 0).toString());
+            localStorage.setItem('domino_bonus_coins', (d.bonusCoins || 0).toString());
+          }
+        })
+        .catch(() => {});
+    }
   }, []);
 
   // Rapid Reel Symbol Shuffle (DFDC Style), checking synchronous spinningColsRef to prevent symbol flicker
@@ -171,15 +183,8 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
         setIsSpinning(false);
         spinningColsRef.current = [false, false, false, false, false];
         setSpinningCols([false, false, false, false, false]);
-        setMyCoins(data.newBalance);
-        if (data.coins !== undefined) {
-          localStorage.setItem('domino_coins', data.coins.toString());
-        } else {
-          localStorage.setItem('domino_coins', data.newBalance.toString());
-        }
-        if (data.bonusCoins !== undefined) {
-          localStorage.setItem('domino_bonus_coins', data.bonusCoins.toString());
-        }
+        const applied = applySlotResultBalance(data);
+        setMyCoins(data.newBalance != null ? data.newBalance : applied.total);
         setWinAmount(data.winAmount);
         setWinType(data.winType);
         setWinningSymbols(data.winningSymbols || []);
@@ -313,6 +318,11 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
       alert(`Koin tidak cukup! Taruhan: ${betAmount.toLocaleString('id-ID')} koin.`);
       setAutoSpins(0);
       return;
+    }
+
+    if (freeSpinsLeftRef.current === 0) {
+      const res = spendSlotCoinsLocal(betAmount);
+      setMyCoins(res.total);
     }
 
     setIsSpinning(true);

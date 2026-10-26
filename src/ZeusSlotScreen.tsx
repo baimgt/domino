@@ -5,7 +5,7 @@ import GameMenuDropdown from './GameMenuDropdown';
 import SlotCelebrationModal, { SlotCelebrationData } from './SlotCelebrationModal';
 import SlotProfileModal, { renderSlotAvatar } from './SlotProfileModal';
 import { useSlotProfile } from './useSlotProfile';
-import { MIN_SLOT_BET, MAX_SLOT_BET, stepSlotBet } from './slotConfig';
+import { MIN_SLOT_BET, MAX_SLOT_BET, stepSlotBet, getSlotCoins, spendSlotCoinsLocal, applySlotResultBalance, syncSlotBetToBackend } from './slotConfig';
 import './gatokaca.css';
 import './App.css'; // Make sure we use the old CSS
 
@@ -52,11 +52,8 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const myUsername = localStorage.getItem('domino_username') || '';
   const [myCoins,  setMyCoins]  = useState<number>(() => {
-    const saved = localStorage.getItem('domino_coins');
-    const savedBonus = localStorage.getItem('domino_bonus_coins');
-    const c = saved ? parseInt(saved, 10) : 0;
-    const b = savedBonus ? parseInt(savedBonus, 10) : 0;
-    return (c + b) > 0 ? (c + b) : 100000;
+    const slotCoins = getSlotCoins();
+    return slotCoins.total > 0 ? slotCoins.total : 100000;
   });
   const [betAmount, setBetAmount] = useState(MIN_SLOT_BET);
   const [anteBet, setAnteBet] = useState(false);
@@ -518,16 +515,9 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
           setGrid(data.gridHistory[data.gridHistory.length - 1]);
         }
 
-        if (data.newBalance != null) {
-          setMyCoins(data.newBalance);
-          if (data.coins !== undefined) {
-            localStorage.setItem('domino_coins', data.coins.toString());
-          } else {
-            localStorage.setItem('domino_coins', data.newBalance.toString());
-          }
-          if (data.bonusCoins !== undefined) {
-            localStorage.setItem('domino_bonus_coins', data.bonusCoins.toString());
-          }
+        if (data.newBalance != null || data.coins !== undefined) {
+          const applied = applySlotResultBalance(data);
+          setMyCoins(data.newBalance != null ? data.newBalance : applied.total);
         }
 
         setClusterWins(data.clusterWins || []);
@@ -647,11 +637,8 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
     }
 
     if (!isFree) {
-      setMyCoins(prev => {
-        const next = Math.max(0, prev - actualBet);
-        localStorage.setItem('domino_coins', next.toString());
-        return next;
-      });
+      const res = spendSlotCoinsLocal(actualBet);
+      setMyCoins(res.total);
     }
 
     // Decrement counters AT SPIN LAUNCH so that UI updates immediately!
@@ -845,9 +832,9 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
               }
               const cost = betAmount * 100;
               if (myCoins >= cost) {
-                 const nextBal = myCoins - cost;
-                 setMyCoins(nextBal);
-                 localStorage.setItem('domino_coins', nextBal.toString());
+                 const res = spendSlotCoinsLocal(cost);
+                 setMyCoins(res.total);
+                 syncSlotBetToBackend(API_URL, myUsername, cost);
                  setInFreeMode(true);
                  inFreeModeRef.current = true;
                  setFreeSpins(15);

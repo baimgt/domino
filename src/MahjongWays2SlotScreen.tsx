@@ -6,7 +6,7 @@ import GameMenuDropdown from './GameMenuDropdown';
 import SlotCelebrationModal, { SlotCelebrationData } from './SlotCelebrationModal';
 import SlotProfileModal, { renderSlotAvatar } from './SlotProfileModal';
 import { useSlotProfile } from './useSlotProfile';
-import { stepSlotBet, MIN_SLOT_BET, MAX_SLOT_BET } from './slotConfig';
+import { stepSlotBet, MIN_SLOT_BET, MAX_SLOT_BET, getSlotCoins, spendSlotCoinsLocal, addSlotWinLocal, syncSlotBetToBackend, syncSlotWinToBackend } from './slotConfig';
 
 interface Props {
   onBack: () => void;
@@ -61,7 +61,10 @@ export default function MahjongWays2SlotScreen({ onBack, socket }: Props) {
   const [isSpinning, setIsSpinning] = useState(false);
   const [spinningCols, setSpinningCols] = useState<boolean[]>([false, false, false, false, false]);
   const [betAmount, setBetAmount] = useState(500);
-  const [myCoins, setMyCoins] = useState(8994600);
+  const [myCoins, setMyCoins] = useState<number>(() => {
+    const slotCoins = getSlotCoins();
+    return slotCoins.total > 0 ? slotCoins.total : 100000;
+  });
   const [totalWin, setTotalWin] = useState(0);
   const [multiplierIdx, setMultiplierIdx] = useState(0);
   const mjIdxRef = useRef(0);
@@ -130,11 +133,8 @@ export default function MahjongWays2SlotScreen({ onBack, socket }: Props) {
   useEffect(() => { spinSpeedRef.current = spinSpeed; }, [spinSpeed]);
 
   useEffect(() => {
-    const coinsStr = localStorage.getItem('domino_coins');
-    const bonusStr = localStorage.getItem('domino_bonus_coins');
-    const c = coinsStr ? parseInt(coinsStr, 10) : 0;
-    const b = bonusStr ? parseInt(bonusStr, 10) : 0;
-    setMyCoins(c + b);
+    const slotCoins = getSlotCoins();
+    setMyCoins(slotCoins.total > 0 ? slotCoins.total : 100000);
     const savedUser = localStorage.getItem('domino_username');
     if (savedUser) {
       fetch(`${API_URL}/profile/${savedUser}`)
@@ -246,17 +246,10 @@ export default function MahjongWays2SlotScreen({ onBack, socket }: Props) {
     mjIdxRef.current = 0;
 
     if (freeSpinsLeft === 0) {
-      setMyCoins(c => {
-        const next = Math.max(0, c - cost);
-        localStorage.setItem('domino_coins', next.toString());
-        return next;
-      });
+      const res = spendSlotCoinsLocal(cost);
+      setMyCoins(res.total);
       if (username) {
-        fetch(`${API_URL}/users/update-coins`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, amount: -cost })
-        }).then(() => window.dispatchEvent(new Event('domino_coins_updated'))).catch(() => {});
+        syncSlotBetToBackend(API_URL, username, cost);
       }
     }
 
@@ -358,17 +351,10 @@ export default function MahjongWays2SlotScreen({ onBack, socket }: Props) {
           }
 
           setTotalWin(winAmt);
-          setMyCoins(c => {
-            const next = c + winAmt;
-            localStorage.setItem('domino_coins', next.toString());
-            return next;
-          });
+          const winRes = addSlotWinLocal(winAmt);
+          setMyCoins(winRes.total);
           if (username) {
-            fetch(`${API_URL}/users/update-coins`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ username, amount: winAmt })
-            }).then(() => window.dispatchEvent(new Event('domino_coins_updated'))).catch(() => {});
+            syncSlotWinToBackend(API_URL, username, winAmt);
           }
           setMultiplierIdx(lastIdx);
           setActiveWinBanner(`⚡ KEMENANGAN ${ladder[lastIdx]}x! (+Rp ${winAmt.toLocaleString('id-ID')}) ⚡`);
@@ -427,11 +413,11 @@ export default function MahjongWays2SlotScreen({ onBack, socket }: Props) {
       alert('Koin Anda tidak mencukupi untuk membeli Spin Gratis!');
       return;
     }
-    setMyCoins(c => {
-      const next = c - cost;
-      localStorage.setItem('domino_coins', next.toString());
-      return next;
-    });
+    const res = spendSlotCoinsLocal(cost);
+    setMyCoins(res.total);
+    if (username) {
+      syncSlotBetToBackend(API_URL, username, cost);
+    }
     setFreeSpinsLeft(10);
     setMultiplierIdx(0);
     mjIdxRef.current = 0;
