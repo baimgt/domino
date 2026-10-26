@@ -670,17 +670,7 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
 
         {/* RIGHT: Gatotkaca Hero Character */}
         <div className="gato-right-panel">
-          <div className="gato-hero-container">
-            <img
-              src="/assets/gatokaca/hero_character.png"
-              alt="Gatotkaca Hero"
-              className="gato-hero-video"
-              draggable={false}
-              onError={(e) => {
-                (e.target as HTMLElement).style.display = 'none';
-              }}
-            />
-          </div>
+         
         </div>
       </div>
 

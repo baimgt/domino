@@ -22,7 +22,6 @@ export const GAME_ASSET_MANIFESTS: Record<string, string[]> = {
     '/assets/gatokaca/sym_green_gem.png',
     '/assets/gatokaca/sym_blue_gem.png',
     '/assets/gatokaca/sym_scatter.png',
-    '/assets/gatokaca/hero_character.png',
     '/assets/orbs/orb_red.png',
     '/assets/orbs/orb_purple.png',
     '/assets/orbs/orb_blue.png',

@@ -4132,28 +4132,16 @@ export interface QiuQiuRoomConfig {
 
 export const QIUQIU_ROOMS: QiuQiuRoomConfig[] = [
   {
-    id: 'qq_2k',
-    name: 'Kamar QiuQiu 2K',
-    blind: 2000,
-    ante: 2000,
-    buyIn: 40000,
-    entryLabel: '2K',
-    coinsRange: '40K - 1M',
-    playersCount: 14210,
-    img: '/assets/loby/room_2k.jpg',
-    badge: '🔥 PEMULA'
-  },
-  {
     id: 'qq_5k',
     name: 'Kamar QiuQiu 5K',
     blind: 5000,
     ante: 5000,
     buyIn: 100000,
     entryLabel: '5K',
-    coinsRange: '100K - 5M',
-    playersCount: 9840,
+    coinsRange: '100K - 1M',
+    playersCount: 14210,
     img: '/assets/loby/room_5k.jpg',
-    badge: '⭐ POPULER'
+    badge: '🔥 PEMULA'
   },
   {
     id: 'qq_10k',
@@ -4162,7 +4150,19 @@ export const QIUQIU_ROOMS: QiuQiuRoomConfig[] = [
     ante: 10000,
     buyIn: 200000,
     entryLabel: '10K',
-    coinsRange: '200K - 20M',
+    coinsRange: '200K - 5M',
+    playersCount: 9840,
+    img: '/assets/loby/room_10k.jpg',
+    badge: '⭐ POPULER'
+  },
+  {
+    id: 'qq_20k',
+    name: 'Kamar QiuQiu 20K',
+    blind: 20000,
+    ante: 20000,
+    buyIn: 400000,
+    entryLabel: '20K',
+    coinsRange: '400K - 10M',
     playersCount: 18230,
     img: '/assets/loby/room_10k.jpg',
     badge: '👑 HOT'
@@ -4174,19 +4174,19 @@ export const QIUQIU_ROOMS: QiuQiuRoomConfig[] = [
     ante: 50000,
     buyIn: 1000000,
     entryLabel: '50K',
-    coinsRange: '1M - 100M',
+    coinsRange: '1M - 50M',
     playersCount: 5120,
     img: '/assets/loby/room_50k.jpg',
     badge: '💎 VIP'
   },
   {
-    id: 'qq_100k',
-    name: 'Kamar QiuQiu 100K',
-    blind: 100000,
-    ante: 100000,
-    buyIn: 2000000,
-    entryLabel: '100K',
-    coinsRange: '2M+',
+    id: 'qq_200k',
+    name: 'Kamar QiuQiu 200K',
+    blind: 200000,
+    ante: 200000,
+    buyIn: 4000000,
+    entryLabel: '200K',
+    coinsRange: '4M+',
     playersCount: 3840,
     img: '/assets/loby/room_50k.jpg',
     badge: '🏆 SULTAN'
@@ -5168,16 +5168,16 @@ export interface Room {
 
 export const LOBBY_ROOMS: Record<string, Room[]> = {
   Biasa: [
-    { id: 'biasa_1', name: 'Kamar Biasa 2K', entryFee: 2000, entryLabel: '2K', coinsRange: '100K-1M', playersCount: 12852, img: '/assets/loby/room_pemula_decor.jpg', tierName: 'PEMULA', badge: '🔥 POPULER' },
-    { id: 'biasa_2', name: 'Kamar Biasa 5K', entryFee: 5000, entryLabel: '5K', coinsRange: '500K-5M', playersCount: 8103, img: '/assets/loby/room_menengah_decor.jpg', tierName: 'MENENGAH', badge: '⭐ SERU' },
-    { id: 'biasa_3', name: 'Kamar Biasa 10K', entryFee: 10000, entryLabel: '10K', coinsRange: '1M-10M', playersCount: 15482, img: '/assets/loby/room_master_decor.jpg', tierName: 'MASTER', badge: '👑 HOT' },
-    { id: 'biasa_4', name: 'Kamar Biasa 50K', entryFee: 50000, entryLabel: '50K', coinsRange: '5M-50M', playersCount: 4923, img: '/assets/loby/room_sultan_decor.jpg', tierName: 'SULTAN', badge: '💎 VIP' },
+    { id: 'biasa_1', name: 'Kamar Biasa 5K', entryFee: 5000, entryLabel: '5K', coinsRange: '100K-1M', playersCount: 12852, img: '/assets/loby/room_pemula_decor.jpg', tierName: 'PEMULA', badge: '🔥 POPULER' },
+    { id: 'biasa_2', name: 'Kamar Biasa 20K', entryFee: 20000, entryLabel: '20K', coinsRange: '500K-5M', playersCount: 8103, img: '/assets/loby/room_menengah_decor.jpg', tierName: 'MENENGAH', badge: '⭐ SERU' },
+    { id: 'biasa_3', name: 'Kamar Biasa 50K', entryFee: 50000, entryLabel: '50K', coinsRange: '1M-10M', playersCount: 15482, img: '/assets/loby/room_master_decor.jpg', tierName: 'MASTER', badge: '👑 HOT' },
+    { id: 'biasa_4', name: 'Kamar Biasa 200K', entryFee: 200000, entryLabel: '200K', coinsRange: '4M-50M', playersCount: 4923, img: '/assets/loby/room_sultan_decor.jpg', tierName: 'SULTAN', badge: '💎 VIP' },
   ],
   Bet: [
-    { id: 'bet_1', name: 'Kamar Bet 20K', entryFee: 20000, entryLabel: '20K', coinsRange: '1M-8M', playersCount: 27886, img: '/assets/loby/room_pemula_decor.jpg', tierName: 'BRONZE', badge: 'RAMAI' },
-    { id: 'bet_2', name: 'Kamar Bet 100K', entryFee: 100000, entryLabel: '100K', coinsRange: '5M-30M', playersCount: 8560, img: '/assets/loby/room_menengah_decor.jpg', tierName: 'SILVER', badge: 'POPULER' },
-    { id: 'bet_3', name: 'Kamar Bet 500K', entryFee: 500000, entryLabel: '500K', coinsRange: '20M-200M', playersCount: 6647, img: '/assets/loby/room_master_decor.jpg', tierName: 'GOLD', badge: 'HOT' },
-    { id: 'bet_4', name: 'Kamar Bet 2M', entryFee: 2000000, entryLabel: '2M', coinsRange: '100M+', playersCount: 8176, img: '/assets/loby/room_sultan_decor.jpg', tierName: 'PLATINUM', badge: 'VIP' },
+    { id: 'bet_1', name: 'Kamar Bet 20K', entryFee: 20000, entryLabel: '20K', coinsRange: '500K-5M', playersCount: 27886, img: '/assets/loby/room_pemula_decor.jpg', tierName: 'BRONZE', badge: 'RAMAI' },
+    { id: 'bet_2', name: 'Kamar Bet 50K', entryFee: 50000, entryLabel: '50K', coinsRange: '1M-10M', playersCount: 8560, img: '/assets/loby/room_menengah_decor.jpg', tierName: 'SILVER', badge: 'POPULER' },
+    { id: 'bet_3', name: 'Kamar Bet 100K', entryFee: 100000, entryLabel: '100K', coinsRange: '5M-20M', playersCount: 6647, img: '/assets/loby/room_master_decor.jpg', tierName: 'GOLD', badge: 'HOT' },
+    { id: 'bet_4', name: 'Kamar Bet 200K', entryFee: 200000, entryLabel: '200K', coinsRange: '10M+', playersCount: 8176, img: '/assets/loby/room_sultan_decor.jpg', tierName: 'PLATINUM', badge: 'VIP' },
   ],
   Wild: [
     { id: 'wild_1', name: 'Kamar Wild 150K', entryFee: 150000, entryLabel: '150K', coinsRange: '1M-8M', playersCount: 65883, img: '/assets/loby/room_pemula_decor.jpg', tierName: 'WILD 1', badge: 'HOT' },

@@ -41,12 +41,12 @@ const AVAILABLE_MODES = [
 ];
 
 const QUICK_BETS = [
+  { val: 5000, label: '5K' },
+  { val: 10000, label: '10K' },
+  { val: 20000, label: '20K' },
   { val: 50000, label: '50K' },
-  { val: 250000, label: '250K' },
-  { val: 1000000, label: '1M' },
-  { val: 5000000, label: '5M' },
-  { val: 10000000, label: '10M' },
-  { val: 25000000, label: '25M' },
+  { val: 100000, label: '100K' },
+  { val: 200000, label: '200K' },
 ];
 
 export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneRoomModalProps) {
@@ -57,7 +57,7 @@ export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneR
 
   // Creation State
   const [selectedMode, setSelectedMode] = useState<'billiard' | 'domino' | 'qiuqiu'>('billiard');
-  const [selectedBet, setSelectedBet] = useState<number>(1000000);
+  const [selectedBet, setSelectedBet] = useState<number>(20000);
   const [customBetInput, setCustomBetInput] = useState<string>('');
 
   // Waiting Room State
@@ -150,6 +150,10 @@ export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneR
   // Create Room
   const handleCreateRoom = () => {
     const bet = getEffectiveBet();
+    if (bet < 5000 || bet > 200000) {
+      setErrorMsg('Taruhan harus antara 5.000 (5K) sampai 200.000 (200K) koin!');
+      return;
+    }
     const usableCoins = Math.max(0, myCoins - myBonusCoins);
     if (usableCoins < bet) {
       if (myBonusCoins > 0 && myCoins >= bet) {
@@ -793,7 +797,7 @@ export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneR
                       <span style={{ fontSize: '1.4vh', color: 'rgba(255,255,255,0.7)' }}>Atau Kustom Koin:</span>
                       <input
                         type="number"
-                        placeholder="Contoh: 2000000"
+                        placeholder="Min 5.000 - Max 200.000"
                         value={customBetInput}
                         onChange={e => setCustomBetInput(e.target.value)}
                         style={{

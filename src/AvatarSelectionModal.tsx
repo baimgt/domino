@@ -40,15 +40,7 @@ export const PRESET_AVATARS: AvatarItem[] = [
     badge: '⚡ DEWA',
     desc: 'Penguasa Petir Gates of Olympus',
   },
-  {
-    id: 'gatotkaca_hero',
-    name: 'Gatotkaca Sakti',
-    type: 'image',
-    value: '/assets/gatokaca/hero_character.png',
-    category: 'game',
-    badge: '🛡️ SATRIA',
-    desc: 'Ksatria Sakti Berotot Kawat Balung Wesi',
-  },
+
   {
     id: 'garuda_gold',
     name: 'Garuda Emas',

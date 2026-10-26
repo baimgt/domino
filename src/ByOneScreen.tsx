@@ -23,11 +23,11 @@ export interface PlayerInfo {
 }
 
 export const BYONE_TIERS = [
-  { id: 'pemula',   name: 'Meja Warkop',      bet: 50000,    pot: 100000,   icon: '☕', tierClass: 'tier-pemula',   desc: 'Taruhan Santai Pemula' },
-  { id: 'menengah', name: 'Meja Club Malam',  bet: 250000,   pot: 500000,   icon: '🍸', tierClass: 'tier-menengah', desc: 'Adu Gengsi Menengah' },
-  { id: 'pro',      name: 'VIP Macau Arena',  bet: 1000000,  pot: 2000000,  icon: '🎰', tierClass: 'tier-pro',      desc: 'Pertarungan High Roller' },
-  { id: 'sultan',   name: 'Sultan Colosseum', bet: 5000000,  pot: 10000000, icon: '👑', tierClass: 'tier-sultan',   desc: 'Adu Koin Para Sultan' },
-  { id: 'dewa',     name: 'Dewa Taruhan',     bet: 25000000, pot: 50000000, icon: '⚡', tierClass: 'tier-dewa',     desc: 'Duel Legendaris All-In' },
+  { id: 'pemula',   name: 'Meja Warkop',      bet: 5000,   pot: 10000,  icon: '☕', tierClass: 'tier-pemula',   desc: 'Taruhan Santai 5K' },
+  { id: 'menengah', name: 'Meja Club Malam',  bet: 20000,  pot: 40000,  icon: '🍸', tierClass: 'tier-menengah', desc: 'Adu Gengsi 20K' },
+  { id: 'pro',      name: 'VIP Macau Arena',  bet: 50000,  pot: 100000, icon: '🎰', tierClass: 'tier-pro',      desc: 'Pertarungan Pro 50K' },
+  { id: 'master',   name: 'Master Arena',     bet: 100000, pot: 200000, icon: '⚡', tierClass: 'tier-master',   desc: 'Duel Master 100K' },
+  { id: 'sultan',   name: 'Sultan Colosseum', bet: 200000, pot: 400000, icon: '👑', tierClass: 'tier-sultan',   desc: 'Adu Koin Max 200K' },
 ];
 
 const BOT_RIVALS: PlayerInfo[] = [
@@ -219,8 +219,8 @@ export default function ByOneScreen({
   const [gameMode, setGameMode] = useState<'gaple' | 'qiuqiu'>('gaple');
 
   // Selected Betting Tier
-  const [selectedTier, setSelectedTier] = useState(BYONE_TIERS[1]); // default: 250k
-  const [customBetInput, setCustomBetInput] = useState<number>(1000000);
+  const [selectedTier, setSelectedTier] = useState(BYONE_TIERS[1]); // default: 20k
+  const [customBetInput, setCustomBetInput] = useState<number>(50000);
   const [customRoomCode, setCustomRoomCode] = useState<string>('');
   const [joinCodeInput, setJoinCodeInput] = useState<string>('');
 
@@ -883,7 +883,7 @@ export default function ByOneScreen({
           <div className="byone-custom-row">
             <label>Pilih Nominal Taruhan Adu Koin:</label>
             <div className="byone-chip-selector">
-              {[100000, 500000, 1000000, 5000000, 10000000, 25000000].map(val => (
+              {[5000, 10000, 20000, 50000, 100000, 200000].map(val => (
                 <button
                   key={val}
                   className={`byone-chip-btn ${customBetInput === val ? 'active' : ''}`}

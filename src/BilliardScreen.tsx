@@ -116,8 +116,8 @@ export const POOL_ROOMS: PoolRoom[] = [
   {
     id: 'london',
     name: 'London Pub',
-    entry: 50000,
-    prize: 100000,
+    entry: 5000,
+    prize: 10000,
     city: 'London',
     flag: '🇬🇧',
     tier: 'Pemula',
@@ -134,13 +134,13 @@ export const POOL_ROOMS: PoolRoom[] = [
   {
     id: 'sydney',
     name: 'Sydney Marina',
-    entry: 250000,
-    prize: 500000,
+    entry: 20000,
+    prize: 40000,
     city: 'Sydney',
     flag: '🇦🇺',
     tier: 'Menengah',
     tierCategory: 'menengah',
-    minLevel: 3,
+    minLevel: 2,
     ringName: 'Sydney Harbour Ring',
     feltColor: '#059669',
     feltName: 'Emerald Marina Cloth',
@@ -152,13 +152,13 @@ export const POOL_ROOMS: PoolRoom[] = [
   {
     id: 'jakarta',
     name: 'Jakarta Club',
-    entry: 1000000,
-    prize: 2000000,
+    entry: 50000,
+    prize: 100000,
     city: 'Jakarta',
     flag: '🇮🇩',
     tier: 'Pro',
     tierCategory: 'pro',
-    minLevel: 5,
+    minLevel: 3,
     ringName: 'Monas Gold Ring',
     feltColor: '#b45309',
     feltName: 'Amber Velvet Cloth',
@@ -170,13 +170,13 @@ export const POOL_ROOMS: PoolRoom[] = [
   {
     id: 'tokyo',
     name: 'Tokyo Arena',
-    entry: 5000000,
-    prize: 10000000,
+    entry: 100000,
+    prize: 200000,
     city: 'Tokyo',
     flag: '🇯🇵',
     tier: 'Master',
     tierCategory: 'pro',
-    minLevel: 10,
+    minLevel: 5,
     ringName: 'Tokyo Shogun Ring',
     feltColor: '#7e22ce',
     feltName: 'Shogun Cyber Cloth',
@@ -188,13 +188,13 @@ export const POOL_ROOMS: PoolRoom[] = [
   {
     id: 'vegas',
     name: 'Las Vegas VIP',
-    entry: 25000000,
-    prize: 50000000,
+    entry: 200000,
+    prize: 400000,
     city: 'Las Vegas',
     flag: '🇺🇸',
     tier: 'Raja',
     tierCategory: 'sultan',
-    minLevel: 20,
+    minLevel: 8,
     ringName: 'Vegas Royale Ring',
     feltColor: '#be185d',
     feltName: 'Royale Ruby Cloth',
@@ -2165,9 +2165,9 @@ export default function BilliardScreen({
         <div className="pool8-room-tabs">
           {[
             { id: 'all', label: '🌐 Semua Arena' },
-            { id: 'pemula', label: '⭐ Pemula (50K - 250K)' },
-            { id: 'pro', label: '🔥 Pro Club (1M - 5M)' },
-            { id: 'sultan', label: '👑 Sultan VIP (25M+)' }
+            { id: 'pemula', label: '⭐ Pemula (5K - 20K)' },
+            { id: 'pro', label: '🔥 Pro Club (50K - 100K)' },
+            { id: 'sultan', label: '👑 Sultan VIP (200K)' }
           ].map(tab => (
             <button
               key={tab.id}
