@@ -8,6 +8,7 @@ import SlotProfileModal, { renderSlotAvatar } from './SlotProfileModal';
 import { useSlotProfile } from './useSlotProfile';
 import { MIN_SLOT_BET, MAX_SLOT_BET, stepSlotBet, getSlotCoins, spendSlotCoinsLocal, applySlotResultBalance } from './slotConfig';
 import { API_URL } from './config';
+import SlotSpeedButton from './SlotSpeedButton';
 
 interface Props {
   onBack: () => void;
@@ -136,7 +137,7 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
           }
           return next;
         });
-      }, Math.max(30, Math.floor(65 / spinSpeedRef.current)));
+      }, Math.max(20, Math.floor(65 / spinSpeedRef.current)));
     }
     return () => { if (interval) clearInterval(interval); };
   }, [isSpinning]);
@@ -150,9 +151,9 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
       setMultInfo(data.multiplier || null);
       if (data.multGrid) setMultGrid(data.multGrid);
       const spd = spinSpeedRef.current;
-      const minSpinBase = spd === 3 ? 240 : spd === 2 ? 400 : 750;
-      const delayPerCol = spd === 3 ? 65 : spd === 2 ? 100 : 180;
-      const bounceDuration = spd === 3 ? 160 : spd === 2 ? 240 : 380;
+      const minSpinBase = spd >= 10 ? 80 : spd >= 5 ? 140 : spd === 3 ? 240 : spd === 2 ? 400 : 750;
+      const delayPerCol = spd >= 10 ? 20 : spd >= 5 ? 35 : spd === 3 ? 65 : spd === 2 ? 100 : 180;
+      const bounceDuration = spd >= 10 ? 45 : spd >= 5 ? 80 : spd === 3 ? 160 : spd === 2 ? 240 : 380;
       let stopTime = minSpinBase;
 
       // Staggered Reel Stopping (Reel 1 -> 5)
@@ -236,7 +237,7 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
 
         // Handle auto spin / free spin continuation
         const hasCelebration = data.triggerFreeSpins || (data.winAmount > 0 && (data.winAmount / Math.max(1, betAmount)) >= 3);
-        const nextDelay = hasCelebration ? 3900 : Math.max(700, 1000 / spd);
+        const nextDelay = hasCelebration ? 3900 : Math.max(250, 1000 / spd);
 
         if (autoSpinsRef.current > 1 || totalFree > 0) {
           if (autoSpinsRef.current > 1) setAutoSpins(a => a - 1);
@@ -898,9 +899,12 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
               <span className="jbot-btn-line">MAX</span>
               <span className="jbot-btn-line">BET</span>
             </button>
-            <button className="jbot-btn jbot-speed-btn" onClick={() => setSpinSpeed(s => s === 1 ? 2 : s === 2 ? 3 : 1)}>
-              X{spinSpeed}
-            </button>
+            <SlotSpeedButton
+              speed={spinSpeed}
+              onSpeedChange={setSpinSpeed}
+              className="jbot-btn jbot-speed-btn"
+              theme="gold"
+            />
             
             <div style={{ position: 'relative' }}>
               {showAutoMenu && (

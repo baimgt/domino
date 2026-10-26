@@ -6,6 +6,7 @@ import SlotCelebrationModal, { SlotCelebrationData } from './SlotCelebrationModa
 import SlotProfileModal, { renderSlotAvatar } from './SlotProfileModal';
 import { useSlotProfile } from './useSlotProfile';
 import { MIN_SLOT_BET, MAX_SLOT_BET, stepSlotBet, getSlotCoins, spendSlotCoinsLocal, applySlotResultBalance, syncSlotBetToBackend } from './slotConfig';
+import SlotSpeedButton from './SlotSpeedButton';
 import './gatokaca.css';
 import './App.css'; // Make sure we use the old CSS
 
@@ -304,11 +305,11 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
 
         const spd = speedRef.current;
         const elapsed = Date.now() - spinStartTime.current;
-        const minSpinMs = spd === 3 ? 200 : spd === 2 ? 350 : 650;
+        const minSpinMs = spd >= 10 ? 80 : spd >= 5 ? 130 : spd === 3 ? 200 : spd === 2 ? 350 : 650;
         const delay = Math.max(0, minSpinMs - elapsed);
 
-        const stopDelay = spd === 3 ? 55 : spd === 2 ? 90 : 160;
-        const bounceDuration = spd === 3 ? 140 : spd === 2 ? 220 : 340;
+        const stopDelay = spd >= 10 ? 20 : spd >= 5 ? 35 : spd === 3 ? 55 : spd === 2 ? 90 : 160;
+        const bounceDuration = spd >= 10 ? 45 : spd >= 5 ? 80 : spd === 3 ? 140 : spd === 2 ? 220 : 340;
 
         let isSkipped = false;
 
@@ -578,7 +579,7 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
             data.triggerFreeSpins ||
             (data.totalWinAmount > 0 && (data.totalWinAmount / Math.max(1, betAmountRef.current || 10000)) >= 5)
           );
-          const nextDelay = hasCelebration ? 3800 : Math.max(650, 1000 / (speedRef.current || 1));
+          const nextDelay = hasCelebration ? 3800 : Math.max(250, 1000 / (speedRef.current || 1));
           autoTimerRef.current = setTimeout(() => {
             if (!isStoppingRef.current) {
               doSpinRef.current?.();
@@ -1187,9 +1188,12 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
                 <span>MAX</span>
                 <span>BET</span>
               </button>
-              <button className="zhb-speed-btn g-btn-press" onClick={() => setSpeed(s => s === 1 ? 2 : s === 2 ? 3 : 1)}>
-                X{speed}
-              </button>
+              <SlotSpeedButton
+                speed={speed}
+                onSpeedChange={setSpeed}
+                className="zhb-speed-btn g-btn-press"
+                theme="gold"
+              />
               <div className="zhb-spin-wrapper">
                 <button
                   className={`zhb-spin-btn ${isSpinning ? 'spinning' : ''}`}

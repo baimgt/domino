@@ -8,6 +8,7 @@ import SlotProfileModal, { renderSlotAvatar } from './SlotProfileModal';
 import { useSlotProfile } from './useSlotProfile';
 import { stepSlotBet, MIN_SLOT_BET, MAX_SLOT_BET, getSlotCoins, spendSlotCoinsLocal, applySlotResultBalance, syncSlotBetToBackend } from './slotConfig';
 import { API_URL } from './config';
+import SlotSpeedButton from './SlotSpeedButton';
 
 interface Props {
   onBack: () => void;
@@ -149,7 +150,7 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
         setMultGrid(prev => prev.map((row, _r) =>
           row.map((val, c) => spinningColsRef.current[c] ? 0 : val)
         ));
-      }, Math.max(30, Math.floor(65 / spinSpeedRef.current)));
+      }, Math.max(20, Math.floor(65 / spinSpeedRef.current)));
     }
     return () => { if (interval) clearInterval(interval); };
   }, [isSpinning]);
@@ -160,10 +161,10 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
     const handleResult = async (data: any) => {
       if (spinTimer.current) clearTimeout(spinTimer.current);
       const spd = spinSpeedRef.current;
-      // Sinkronisasi durasi putar & stagger reel berdasarkan kecepatan (x1, x2, x3)
-      const minSpinBase = spd === 3 ? 240 : spd === 2 ? 400 : 750;
-      const delayPerCol = spd === 3 ? 65 : spd === 2 ? 100 : 180;
-      const bounceDuration = spd === 3 ? 160 : spd === 2 ? 240 : 380;
+      // Sinkronisasi durasi putar & stagger reel berdasarkan kecepatan (x1, x2, x3, x5, x10)
+      const minSpinBase = spd >= 10 ? 80 : spd >= 5 ? 140 : spd === 3 ? 240 : spd === 2 ? 400 : 750;
+      const delayPerCol = spd >= 10 ? 20 : spd >= 5 ? 35 : spd === 3 ? 65 : spd === 2 ? 100 : 180;
+      const bounceDuration = spd >= 10 ? 45 : spd >= 5 ? 80 : spd === 3 ? 160 : spd === 2 ? 240 : 380;
       let stopTime = minSpinBase;
 
       // Staggered reel stop dengan proteksi sinkronisasi ref
@@ -192,11 +193,11 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
       // Seluruh rol selesai berhenti & mendarat rapi -> jalankan tumble
       const allReelsSettledTime = stopTime + bounceDuration + 60;
       setTimeout(async () => {
-        // Tumble animation timing yang pas dan proporsional terhadap speed
-        const winDelay = spd === 3 ? 280 : spd === 2 ? 360 : 480;
-        const explodeDelay = spd === 3 ? 200 : spd === 2 ? 260 : 360;
-        const dropDelay = spd === 3 ? 220 : spd === 2 ? 300 : 420;
-        const settleDelay = spd === 3 ? 70 : spd === 2 ? 100 : 130;
+        // Tumble animation timing yang pas dan proporsional terhadap speed (sampai 10x)
+        const winDelay = spd >= 10 ? 120 : spd >= 5 ? 180 : spd === 3 ? 280 : spd === 2 ? 360 : 480;
+        const explodeDelay = spd >= 10 ? 90 : spd >= 5 ? 130 : spd === 3 ? 200 : spd === 2 ? 260 : 360;
+        const dropDelay = spd >= 10 ? 100 : spd >= 5 ? 140 : spd === 3 ? 220 : spd === 2 ? 300 : 420;
+        const settleDelay = spd >= 10 ? 30 : spd >= 5 ? 45 : spd === 3 ? 70 : spd === 2 ? 100 : 130;
 
         // Process tumble steps
         if (data.tumbleSteps && data.tumbleSteps.length > 0) {
@@ -313,7 +314,7 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
         }
 
         const hasCelebration = data.triggerFreeSpins || (data.totalWinAmount > 0 && (data.totalWinAmount / Math.max(1, currentBet)) >= 5);
-        const nextDelay = hasCelebration ? 3900 : Math.max(800, 1200 / spd);
+        const nextDelay = hasCelebration ? 3900 : Math.max(250, 1000 / spd);
 
         if (autoSpinsRef.current > 1 || totalFree > 0) {
           if (autoSpinsRef.current > 1) setAutoSpins(a => a - 1);
@@ -714,9 +715,12 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
             <span>MAX</span>
             <span>BET</span>
           </button>
-          <button className="gato-speed-btn" onClick={() => setSpinSpeed(s => s === 1 ? 2 : s === 2 ? 3 : 1)}>
-            X{spinSpeed}
-          </button>
+          <SlotSpeedButton
+            speed={spinSpeed}
+            onSpeedChange={setSpinSpeed}
+            className="gato-speed-btn"
+            theme="gold"
+          />
           <div style={{ position: 'relative' }}>
             {showAutoMenu && (
               <div className="gato-auto-menu">

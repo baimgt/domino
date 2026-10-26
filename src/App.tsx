@@ -13,6 +13,7 @@ import ZeusSlotScreen from './ZeusSlotScreen';
 import CandyRushSlotScreen from './CandyRushSlotScreen';
 import WildWestSlotScreen from './WildWestSlotScreen';
 import FiveLionsSlotScreen from './FiveLionsSlotScreen';
+import SlotSpeedButton from './SlotSpeedButton';
 import BilliardScreen from './BilliardScreen';
 import GameMenuDropdown from './GameMenuDropdown';
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
@@ -7081,7 +7082,7 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
           }
           return next;
         });
-      }, Math.max(30, Math.floor(70 / spinSpeedRef.current)));
+      }, Math.max(20, Math.floor(70 / spinSpeedRef.current)));
     }
     return () => { if (interval) clearInterval(interval); };
   }, [isSpinning]);
@@ -7092,9 +7093,9 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
 
     const handleSpinResult = (data: any) => {
       const spd = spinSpeedRef.current;
-      const minSpinBase = spd >= 4 ? 180 : spd === 3 ? 240 : spd === 2 ? 400 : 750;
-      const delayPerCol = spd >= 4 ? 45 : spd === 3 ? 65 : spd === 2 ? 100 : 180;
-      const bounceDuration = spd >= 4 ? 120 : spd === 3 ? 160 : spd === 2 ? 240 : 380;
+      const minSpinBase = spd >= 10 ? 80 : spd >= 5 ? 140 : spd === 3 ? 240 : spd === 2 ? 400 : 750;
+      const delayPerCol = spd >= 10 ? 20 : spd >= 5 ? 35 : spd === 3 ? 65 : spd === 2 ? 100 : 180;
+      const bounceDuration = spd >= 10 ? 45 : spd >= 5 ? 80 : spd === 3 ? 160 : spd === 2 ? 240 : 380;
       let stopTime = minSpinBase;
 
       for (let c = 0; c < numCols; c++) {
@@ -7182,7 +7183,7 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
       timer = setTimeout(() => {
         setAutoSpinCount(prev => prev > 0 ? prev - 1 : 0);
         handleSpin();
-      }, Math.max(500, 1000 / spinSpeedRef.current));
+      }, Math.max(250, 1000 / spinSpeedRef.current));
     }
     return () => clearTimeout(timer);
   }, [autoSpinCount, isSpinning, showWinAlert, spinSpeed, celebration]);
@@ -7366,7 +7367,7 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
         </button>
         {showSpeedMenu && (
           <div className="dfdc-speeder-menu">
-            {[1, 2, 3, 4, 5].map(spd => (
+            {[1, 2, 3, 5, 10].map(spd => (
               <button
                 key={spd}
                 className={spinSpeed === spd ? 'active' : ''}
@@ -7405,6 +7406,14 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
           MAX
           <span className="dfdc-max-sub">BET</span>
         </button>
+
+        <SlotSpeedButton
+          speed={spinSpeed}
+          onSpeedChange={setSpinSpeed}
+          className="dfdc-speed-btn g-btn-press"
+          buttonText={`X${spinSpeed}`}
+          theme="gold"
+        />
 
 
         <div style={{ position: 'relative', display: 'flex' }}>

@@ -7,6 +7,7 @@ import SlotCelebrationModal, { SlotCelebrationData } from './SlotCelebrationModa
 import SlotProfileModal, { renderSlotAvatar } from './SlotProfileModal';
 import { useSlotProfile } from './useSlotProfile';
 import { stepSlotBet, MIN_SLOT_BET, MAX_SLOT_BET, getSlotCoins, spendSlotCoinsLocal, addSlotWinLocal, syncSlotBetToBackend, syncSlotWinToBackend } from './slotConfig';
+import SlotSpeedButton from './SlotSpeedButton';
 
 interface Props {
   onBack: () => void;
@@ -254,9 +255,9 @@ export default function MahjongWays2SlotScreen({ onBack, socket }: Props) {
     }
 
     const spd = spinSpeedRef.current;
-    const minSpinBase = spd === 3 ? 240 : spd === 2 ? 400 : 750;
-    const delayPerCol = spd === 3 ? 65 : spd === 2 ? 100 : 180;
-    const bounceDuration = spd === 3 ? 160 : spd === 2 ? 220 : 320;
+    const minSpinBase = spd >= 10 ? 80 : spd >= 5 ? 140 : spd === 3 ? 240 : spd === 2 ? 400 : 750;
+    const delayPerCol = spd >= 10 ? 20 : spd >= 5 ? 35 : spd === 3 ? 65 : spd === 2 ? 100 : 180;
+    const bounceDuration = spd >= 10 ? 45 : spd >= 5 ? 80 : spd === 3 ? 160 : spd === 2 ? 220 : 320;
     let stopTime = minSpinBase;
 
     // Staggered reel stop (Reels 1..5)
@@ -652,65 +653,12 @@ export default function MahjongWays2SlotScreen({ onBack, socket }: Props) {
             </button>
 
             {/* SPEED BUTTON */}
-            <div style={{ position: 'relative' }}>
-              {showSpeedMenu && (
-                <>
-                  <div
-                    className="mj-backdrop-dismiss"
-                    onClick={() => setShowSpeedMenu(false)}
-                    onTouchStart={() => setShowSpeedMenu(false)}
-                    style={{ position: 'fixed', inset: 0, zIndex: 199 }}
-                  />
-                  <div className="mj-speed-menu" style={{ zIndex: 200 }}>
-                    <div className="mj-menu-header">KECEPATAN PUTAR</div>
-                    <div className="mj-speed-grid">
-                      <button className={spinSpeed === 1 ? 'active' : ''} onClick={() => { setSpinSpeed(1); setShowSpeedMenu(false); }}>
-                        X1 <small>Normal</small>
-                      </button>
-                      <button className={spinSpeed === 2 ? 'active' : ''} onClick={() => { setSpinSpeed(2); setShowSpeedMenu(false); }}>
-                        X2 <small>Cepat</small>
-                      </button>
-                      <button className={spinSpeed === 3 ? 'active' : ''} onClick={() => { setSpinSpeed(3); setShowSpeedMenu(false); }}>
-                        X3 <small>Kilat</small>
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
-              <button
-                className="mjbot-gold-btn mjbot-speed-btn"
-                onPointerDown={(e) => {
-                  if (e.button !== 0 && e.pointerType === 'mouse') return;
-                  isSpeedLongPress.current = false;
-                  if (speedPressTimer.current) clearTimeout(speedPressTimer.current);
-                  speedPressTimer.current = setTimeout(() => {
-                    isSpeedLongPress.current = true;
-                    setShowSpeedMenu(true);
-                  }, 450);
-                }}
-                onPointerUp={() => {
-                  if (speedPressTimer.current) clearTimeout(speedPressTimer.current);
-                }}
-                onPointerCancel={() => {
-                  if (speedPressTimer.current) clearTimeout(speedPressTimer.current);
-                }}
-                onClick={() => {
-                  if (speedPressTimer.current) clearTimeout(speedPressTimer.current);
-                  if (isSpeedLongPress.current) {
-                    isSpeedLongPress.current = false;
-                    return;
-                  }
-                  if (showSpeedMenu) {
-                    setShowSpeedMenu(false);
-                    return;
-                  }
-                  setSpinSpeed(s => s === 1 ? 2 : s === 2 ? 3 : 1);
-                }}
-                onContextMenu={e => { e.preventDefault(); setShowSpeedMenu(true); }}
-              >
-                x{spinSpeed}
-              </button>
-            </div>
+            <SlotSpeedButton
+              speed={spinSpeed}
+              onSpeedChange={setSpinSpeed}
+              className="mjbot-gold-btn mjbot-speed-btn"
+              theme="gold"
+            />
 
             {/* SPIN / TUTUP BUTTON WITH LONG-PRESS AUTO MENU */}
             <div style={{ position: 'relative' }}>

@@ -8,6 +8,7 @@ import SlotProfileModal, { renderSlotAvatar } from './SlotProfileModal';
 import { useSlotProfile } from './useSlotProfile';
 import { MIN_SLOT_BET, MAX_SLOT_BET, stepSlotBet, getSlotCoins, spendSlotCoinsLocal, applySlotResultBalance } from './slotConfig';
 import { API_URL } from './config';
+import SlotSpeedButton from './SlotSpeedButton';
 
 interface Props {
   onBack: () => void;
@@ -138,7 +139,7 @@ export default function WildWestSlotScreen({ onBack, socket }: Props) {
             return spinningColsRef.current[c] ? Math.floor(Math.random() * 11) : cell;
           })
         ));
-      }, Math.max(30, Math.floor(65 / spinSpeedRef.current)));
+      }, Math.max(20, Math.floor(65 / spinSpeedRef.current)));
     }
     return () => { if (interval) clearInterval(interval); };
   }, [isSpinning, stickyWilds]);
@@ -149,9 +150,9 @@ export default function WildWestSlotScreen({ onBack, socket }: Props) {
       if (spinTimer.current) clearTimeout(spinTimer.current);
       setMultInfo(data.multiplier || null);
       const spd = spinSpeedRef.current;
-      const minSpinBase = spd === 3 ? 240 : spd === 2 ? 400 : 750;
-      const delayPerCol = spd === 3 ? 65 : spd === 2 ? 100 : 180;
-      const bounceDuration = spd === 3 ? 160 : spd === 2 ? 240 : 380;
+      const minSpinBase = spd >= 10 ? 80 : spd >= 5 ? 140 : spd === 3 ? 240 : spd === 2 ? 400 : 750;
+      const delayPerCol = spd >= 10 ? 20 : spd >= 5 ? 35 : spd === 3 ? 65 : spd === 2 ? 100 : 180;
+      const bounceDuration = spd >= 10 ? 45 : spd >= 5 ? 80 : spd === 3 ? 160 : spd === 2 ? 240 : 380;
       let stopTime = minSpinBase;
 
       for (let c = 0; c < COLS; c++) {
@@ -231,7 +232,7 @@ export default function WildWestSlotScreen({ onBack, socket }: Props) {
         }
 
         const hasCelebration = data.triggerFreeSpins || (winAmt > 0 && (winAmt / Math.max(1, betAmount)) >= 3);
-        const nextDelay = hasCelebration ? 3900 : Math.max(700, 1000 / spd);
+        const nextDelay = hasCelebration ? 3900 : Math.max(250, 1000 / spd);
 
         if (autoSpinsRef.current > 1 || totalFree > 0) {
           if (autoSpinsRef.current > 1) setAutoSpins(a => a - 1);
@@ -969,52 +970,14 @@ export default function WildWestSlotScreen({ onBack, socket }: Props) {
             <span className="ww-max-txt">MAX<br />BET</span>
           </button>
 
-          {/* SPEED BUTTON WITH UPWARDS POPUP */}
-          <div className="ww-speed-btn-container" style={{ position: 'relative' }}>
-            {showSpeedMenu && (
-              <div className="ww-popup-upwards ww-speed-popup" onClick={e => e.stopPropagation()}>
-                <div className="ww-popup-header">
-                  <span className="ww-popup-title">KECEPATAN</span>
-                  <button className="ww-popup-close-x" onClick={() => setShowSpeedMenu(false)}>✕</button>
-                </div>
-                <div className="ww-speed-choices-list">
-                  <button
-                    className={`ww-speed-choice-btn ${spinSpeed === 1 ? 'active' : ''} g-btn-press`}
-                    onClick={() => { setSpinSpeed(1); setShowSpeedMenu(false); }}
-                  >
-                    <span className="ww-speed-val">×1</span>
-                    <span className="ww-speed-lbl">Normal</span>
-                  </button>
-                  <button
-                    className={`ww-speed-choice-btn ${spinSpeed === 2 ? 'active' : ''} g-btn-press`}
-                    onClick={() => { setSpinSpeed(2); setShowSpeedMenu(false); }}
-                  >
-                    <span className="ww-speed-val">×2</span>
-                    <span className="ww-speed-lbl">Cepat (Fast)</span>
-                  </button>
-                  <button
-                    className={`ww-speed-choice-btn ${spinSpeed === 3 ? 'active' : ''} g-btn-press`}
-                    onClick={() => { setSpinSpeed(3); setShowSpeedMenu(false); }}
-                  >
-                    <span className="ww-speed-val">×3</span>
-                    <span className="ww-speed-lbl">Turbo ⚡</span>
-                  </button>
-                </div>
-                <div className="ww-popup-arrow-down" />
-              </div>
-            )}
-            <button
-              className="ww-hud-btn ww-speed-toggle"
-              onClick={e => {
-                e.stopPropagation();
-                setShowSpeedMenu(v => !v);
-                setShowAutoMenu(false);
-              }}
-              title="Pilih Kecepatan Putaran"
-            >
-              <span className="ww-speed-txt">×{spinSpeed}</span>
-            </button>
-          </div>
+          {/* SPEED BUTTON WITH UPWARDS POPUP & LONG PRESS */}
+          <SlotSpeedButton
+            speed={spinSpeed}
+            onSpeedChange={setSpinSpeed}
+            className="ww-hud-btn ww-speed-toggle"
+            buttonText={`×${spinSpeed}`}
+            theme="western"
+          />
 
           {/* SPIN OR TUTUP BUTTON */}
           {showRules ? (

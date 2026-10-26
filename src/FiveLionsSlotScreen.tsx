@@ -7,6 +7,7 @@ import SlotCelebrationModal, { SlotCelebrationData } from './SlotCelebrationModa
 import SlotProfileModal, { renderSlotAvatar } from './SlotProfileModal';
 import { useSlotProfile } from './useSlotProfile';
 import { MIN_SLOT_BET, MAX_SLOT_BET, stepSlotBet, getSlotCoins, spendSlotCoinsLocal, addSlotWinLocal, syncSlotBetToBackend, syncSlotWinToBackend } from './slotConfig';
+import SlotSpeedButton from './SlotSpeedButton';
 
 interface Props {
   onBack: () => void;
@@ -465,9 +466,9 @@ export default function FiveLionsSlotScreen({ onBack, socket }: Props) {
     if (rollIntervalRef.current) clearInterval(rollIntervalRef.current);
 
     const spd = spinSpeedRef.current;
-    const minSpinBase = spd === 3 ? 240 : spd === 2 ? 400 : 750;
-    const delayPerCol = spd === 3 ? 65 : spd === 2 ? 100 : 180;
-    const bounceDuration = spd === 3 ? 160 : spd === 2 ? 220 : 320;
+    const minSpinBase = spd >= 10 ? 80 : spd >= 5 ? 140 : spd === 3 ? 240 : spd === 2 ? 400 : 750;
+    const delayPerCol = spd >= 10 ? 20 : spd >= 5 ? 35 : spd === 3 ? 65 : spd === 2 ? 100 : 180;
+    const bounceDuration = spd >= 10 ? 45 : spd >= 5 ? 80 : spd === 3 ? 160 : spd === 2 ? 220 : 320;
     let stopTime = minSpinBase;
 
     // Staggered Reel Stops 1..6
@@ -867,52 +868,12 @@ export default function FiveLionsSlotScreen({ onBack, socket }: Props) {
             </button>
 
             {/* SPEED BUTTON WITH POPUP & LONG PRESS */}
-            <div style={{ position: 'relative' }}>
-              {showSpeedMenu && (
-                <div className="fivelions-speed-menu">
-                  <div className="fivelions-menu-header">KECEPATAN PUTAR</div>
-                  <div className="fivelions-speed-grid">
-                    <button 
-                      className={spinSpeed === 1 ? 'active' : ''} 
-                      onClick={() => { setSpinSpeed(1); setShowSpeedMenu(false); }}
-                    >
-                      X1 <small>Normal</small>
-                    </button>
-                    <button 
-                      className={spinSpeed === 2 ? 'active' : ''} 
-                      onClick={() => { setSpinSpeed(2); setShowSpeedMenu(false); }}
-                    >
-                      X2 <small>Cepat</small>
-                    </button>
-                    <button 
-                      className={spinSpeed === 3 ? 'active' : ''} 
-                      onClick={() => { setSpinSpeed(3); setShowSpeedMenu(false); }}
-                    >
-                      X3 <small>Turbo</small>
-                    </button>
-                    <button 
-                      className={spinSpeed === 5 ? 'active' : ''} 
-                      onClick={() => { setSpinSpeed(5); setShowSpeedMenu(false); }}
-                    >
-                      X5 <small>Kilat</small>
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <button 
-                className="fbot-gold-btn fbot-speed-btn"
-                onClick={handleSpeedClick}
-                onPointerDown={handleSpeedPointerDown}
-                onPointerUp={handleSpeedPointerUp}
-                onPointerLeave={handleSpeedPointerUp}
-                onPointerCancel={handleSpeedPointerUp}
-                onContextMenu={(e) => { e.preventDefault(); setShowSpeedMenu(v => !v); }}
-                title="Klik untuk memilih kecepatan putar"
-              >
-                X{spinSpeed}
-              </button>
-            </div>
+            <SlotSpeedButton
+              speed={spinSpeed}
+              onSpeedChange={setSpinSpeed}
+              className="fbot-gold-btn fbot-speed-btn"
+              theme="gold"
+            />
 
             {/* SPIN BUTTON WITH AUTO SPIN POPUP & LONG PRESS */}
             <div style={{ position: 'relative' }}>

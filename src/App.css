@@ -8634,6 +8634,27 @@ input:checked+.setting-slider:before {
   font-weight: 700;
 }
 
+.dfdc-speed-btn {
+  background: linear-gradient(180deg, #fef4cd, #c98835);
+  border: .2vh solid #fff;
+  border-radius: 1vh;
+  padding: 1vh 2vh;
+  color: #4a2d10;
+  font-size: 2vh;
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 .3vh 1vh rgba(0, 0, 0, .4);
+  flex-shrink: 0;
+  line-height: 1.2;
+}
+
+.dfdc-speed-btn:active {
+  transform: scale(.95);
+}
+
 /* SPIN / STOP button */
 .dfdc-spin-btn {
   background: linear-gradient(180deg, #fef4cd, #e2b363, #eed182);

@@ -1,0 +1,258 @@
+/* Universal Slot Speed Button & Popup Menu Styling */
+
+.slot-speed-btn-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+/* Upwards Popup Menu */
+.slot-speed-popup {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 99999;
+  min-width: 240px;
+  max-width: 310px;
+  padding: 10px 12px 12px;
+  background: linear-gradient(180deg, rgba(28, 18, 48, 0.98) 0%, rgba(12, 8, 24, 0.98) 100%);
+  border: 2px solid #ffd700;
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.85), 
+              0 0 18px rgba(255, 215, 0, 0.35),
+              inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  animation: slotSpeedPopupIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  pointer-events: auto;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Align variations */
+.slot-speed-btn-container.align-right .slot-speed-popup {
+  left: auto;
+  right: -8px;
+  transform: none;
+}
+.slot-speed-btn-container.align-left .slot-speed-popup {
+  left: -8px;
+  transform: none;
+}
+
+@keyframes slotSpeedPopupIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+.slot-speed-btn-container.align-right .slot-speed-popup {
+  animation-name: slotSpeedPopupInRight;
+}
+@keyframes slotSpeedPopupInRight {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Header */
+.slot-speed-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.25);
+}
+
+.slot-speed-popup-title {
+  font-size: 11px;
+  font-weight: 900;
+  color: #ffd700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.slot-speed-popup-close {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  color: #ffd700;
+  font-size: 11px;
+  font-weight: bold;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: all 0.12s ease;
+}
+
+.slot-speed-popup-close:hover,
+.slot-speed-popup-close:active {
+  background: rgba(255, 59, 48, 0.8);
+  color: #ffffff;
+  border-color: #ff3b30;
+  transform: scale(1.1);
+}
+
+/* Speed Choices Grid (5 options) */
+.slot-speed-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px;
+}
+
+.slot-speed-choice-btn {
+  background: linear-gradient(180deg, #2a2040 0%, #171026 100%);
+  border: 1.5px solid rgba(255, 215, 0, 0.3);
+  border-radius: 9px;
+  padding: 6px 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  min-width: 0;
+  outline: none;
+}
+
+.slot-speed-choice-btn:hover {
+  border-color: #ffd700;
+  transform: translateY(-2px);
+  filter: brightness(1.2);
+}
+
+.slot-speed-choice-btn:active {
+  transform: scale(0.95);
+}
+
+.slot-speed-choice-btn.active {
+  background: linear-gradient(180deg, #ffc107 0%, #ff8f00 50%, #e65100 100%);
+  border-color: #ffffff;
+  box-shadow: 0 0 12px rgba(255, 179, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  transform: scale(1.04);
+}
+
+.slot-speed-val {
+  font-size: 13px;
+  font-weight: 900;
+  color: #ffd700;
+  line-height: 1.1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+}
+
+.slot-speed-choice-btn.active .slot-speed-val {
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+.slot-speed-lbl {
+  font-size: 8.5px;
+  font-weight: 700;
+  color: #b0bec5;
+  margin-top: 2px;
+  text-align: center;
+  white-space: nowrap;
+  letter-spacing: -0.2px;
+}
+
+.slot-speed-choice-btn.active .slot-speed-lbl {
+  color: #fff9c4;
+  font-weight: 800;
+}
+
+/* Arrow pointer at bottom of popup */
+.slot-speed-arrow-down {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 7px solid #ffd700;
+}
+
+.slot-speed-btn-container.align-right .slot-speed-arrow-down {
+  left: auto;
+  right: 22px;
+  transform: none;
+}
+.slot-speed-btn-container.align-left .slot-speed-arrow-down {
+  left: 22px;
+  transform: none;
+}
+
+/* Western Theme */
+.slot-speed-btn-container.theme-western .slot-speed-popup {
+  background: linear-gradient(180deg, #3d2314 0%, #1f1107 100%);
+  border-color: #d4a359;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9), 0 0 18px rgba(212, 163, 89, 0.35);
+}
+.slot-speed-btn-container.theme-western .slot-speed-popup-title {
+  color: #f7d28b;
+  font-family: serif;
+}
+.slot-speed-btn-container.theme-western .slot-speed-choice-btn {
+  background: linear-gradient(180deg, #4d2d18 0%, #2b180d 100%);
+  border-color: rgba(212, 163, 89, 0.4);
+}
+.slot-speed-btn-container.theme-western .slot-speed-choice-btn.active {
+  background: linear-gradient(180deg, #e67e22 0%, #d35400 100%);
+  border-color: #f5b041;
+}
+
+/* Candy Theme */
+.slot-speed-btn-container.theme-candy .slot-speed-popup {
+  background: linear-gradient(180deg, #4a154b 0%, #220824 100%);
+  border-color: #ff4081;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9), 0 0 18px rgba(255, 64, 129, 0.45);
+}
+.slot-speed-btn-container.theme-candy .slot-speed-popup-title {
+  color: #ff80ab;
+}
+.slot-speed-btn-container.theme-candy .slot-speed-choice-btn {
+  background: linear-gradient(180deg, #5c1d5d 0%, #2f0c30 100%);
+  border-color: rgba(255, 64, 129, 0.4);
+}
+.slot-speed-btn-container.theme-candy .slot-speed-choice-btn.active {
+  background: linear-gradient(180deg, #ff4081 0%, #c2185b 100%);
+  border-color: #ffffff;
+}
+
+/* Red / Oriental Theme (FaFaFa, JinJi) */
+.slot-speed-btn-container.theme-red .slot-speed-popup {
+  background: linear-gradient(180deg, #4a0d0d 0%, #200404 100%);
+  border-color: #ffd700;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9), 0 0 18px rgba(255, 215, 0, 0.35);
+}
+.slot-speed-btn-container.theme-red .slot-speed-choice-btn {
+  background: linear-gradient(180deg, #611212 0%, #300808 100%);
+  border-color: rgba(255, 215, 0, 0.35);
+}
+.slot-speed-btn-container.theme-red .slot-speed-choice-btn.active {
+  background: linear-gradient(180deg, #e53935 0%, #b71c1c 100%);
+  border-color: #ffd700;
+}

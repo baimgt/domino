@@ -8,6 +8,7 @@ import SlotProfileModal, { renderSlotAvatar } from './SlotProfileModal';
 import { useSlotProfile } from './useSlotProfile';
 import { MIN_SLOT_BET, MAX_SLOT_BET, stepSlotBet, getSlotCoins, spendSlotCoinsLocal, applySlotResultBalance } from './slotConfig';
 import { API_URL } from './config';
+import SlotSpeedButton from './SlotSpeedButton';
 
 interface Props {
   onBack: () => void;
@@ -132,7 +133,7 @@ export default function FafafaSlotScreen({ onBack, socket }: Props) {
           }
           return next;
         });
-      }, Math.max(30, Math.floor(65 / spinSpeedRef.current)));
+      }, Math.max(20, Math.floor(65 / spinSpeedRef.current)));
     }
     return () => { if (interval) clearInterval(interval); };
   }, [isSpinning]);
@@ -144,9 +145,9 @@ export default function FafafaSlotScreen({ onBack, socket }: Props) {
       if (spinTimer.current) clearTimeout(spinTimer.current);
       setMultInfo(data.multiplier || null);
       const spd = spinSpeedRef.current;
-      const minSpinBase = spd === 3 ? 240 : spd === 2 ? 400 : 750;
-      const delayPerCol = spd === 3 ? 65 : spd === 2 ? 100 : 180;
-      const bounceDuration = spd === 3 ? 160 : spd === 2 ? 240 : 380;
+      const minSpinBase = spd >= 10 ? 80 : spd >= 5 ? 140 : spd === 3 ? 240 : spd === 2 ? 400 : 750;
+      const delayPerCol = spd >= 10 ? 20 : spd >= 5 ? 35 : spd === 3 ? 65 : spd === 2 ? 100 : 180;
+      const bounceDuration = spd >= 10 ? 45 : spd >= 5 ? 80 : spd === 3 ? 160 : spd === 2 ? 240 : 380;
       let stopTime = minSpinBase;
 
       // Staggered stop: Reel 1 -> Reel 2 -> Reel 3 -> Reel 4 -> Reel 5
@@ -224,7 +225,7 @@ export default function FafafaSlotScreen({ onBack, socket }: Props) {
         // Handle auto spin & free spin continuations
         const fafaRatio = (data.totalWinAmount || 0) / Math.max(1, betAmount);
         const hasCelebration = data.triggerFreeSpins || (data.winningLines && data.winningLines.length > 0 && (data.isFullBoard || fafaRatio >= 3));
-        const nextDelay = hasCelebration ? 3900 : Math.max(700, 850 / spd);
+        const nextDelay = hasCelebration ? 3900 : Math.max(250, 850 / spd);
 
         if (autoSpinsRef.current > 1 || totalFree > 0) {
            if (autoSpinsRef.current > 1) setAutoSpins(a => a - 1);
@@ -575,13 +576,12 @@ export default function FafafaSlotScreen({ onBack, socket }: Props) {
             >
               MAX<br/>BET
             </button>
-            <button 
-              className="fbot-pill-btn fbot-speed-btn" 
-              onClick={() => setSpinSpeed(s => s === 1 ? 2 : s === 2 ? 3 : 1)}
-              title="Kecepatan Putaran"
-            >
-              X{spinSpeed}
-            </button>
+            <SlotSpeedButton
+              speed={spinSpeed}
+              onSpeedChange={setSpinSpeed}
+              className="fbot-pill-btn fbot-speed-btn"
+              theme="red"
+            />
             
             <div style={{ position: 'relative' }}>
               {showAutoMenu && (
