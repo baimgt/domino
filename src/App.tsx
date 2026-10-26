@@ -8,6 +8,7 @@ import FafafaSlotScreen from './FafafaSlotScreen';
 import JinJiBaoXiSlotScreen from './JinJiBaoXiSlotScreen';
 import MahjongWays2SlotScreen from './MahjongWays2SlotScreen';
 import GatesOfGatokacaSlotScreen from './GatesOfGatokacaSlotScreen';
+import SlotErrorBoundary from './SlotErrorBoundary';
 import ZeusSlotScreen from './ZeusSlotScreen';
 import CandyRushSlotScreen from './CandyRushSlotScreen';
 import WildWestSlotScreen from './WildWestSlotScreen';
@@ -9252,13 +9253,15 @@ function App() {
       )}
 
       {screen === 'gatokaca-game' && (
-        <GatesOfGatokacaSlotScreen
-          onBack={() => {
-            setReturnToSlotPopup(true);
-            setScreen('home');
-          }}
-          socket={socketRef.current}
-        />
+        <SlotErrorBoundary gameName="Gates of Gatotkaca" onBack={() => { setReturnToSlotPopup(true); setScreen('home'); }}>
+          <GatesOfGatokacaSlotScreen
+            onBack={() => {
+              setReturnToSlotPopup(true);
+              setScreen('home');
+            }}
+            socket={socketRef.current}
+          />
+        </SlotErrorBoundary>
       )}
 
       {screen === 'candy-game' && (

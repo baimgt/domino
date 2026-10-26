@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Socket } from 'socket.io-client';
 import './gatokaca.css';
 import GameMenuDropdown from './GameMenuDropdown';
-import GatokacaCinematicBackground from './GatokacaCinematicBackground';
 import LeaderboardModal from './LeaderboardModal';
 import SlotCelebrationModal, { SlotCelebrationData } from './SlotCelebrationModal';
 import SlotProfileModal, { renderSlotAvatar } from './SlotProfileModal';
@@ -66,6 +65,8 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
     const slotCoins = getSlotCoins();
     return slotCoins.total > 0 ? slotCoins.total : 100000;
   });
+  const [betAmount, setBetAmount] = useState<number>(MIN_SLOT_BET);
+  const betAmountRef = useRef(betAmount);
   const [totalWin, setTotalWin] = useState(0);
   const [currentMultiplier, setCurrentMultiplier] = useState(1);
   const [freeMultVal, setFreeMultVal] = useState(0); // pengali menumpuk saat free spin
@@ -85,29 +86,14 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
   const [statusText, setStatusText] = useState('GOOD LUCK');
   const [winningCells, setWinningCells] = useState<string[]>([]);
   const [scatterCount, setScatterCount] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [loadProgress, setLoadProgress] = useState(100);
   const [droppedMultNotif, setDroppedMultNotif] = useState<string | null>(null);
   const [celebration, setCelebration] = useState<SlotCelebrationData | null>(null);
   const userProfile = useSlotProfile();
   const [showProfileModal, setShowProfileModal] = useState(false);
 
   useEffect(() => {
-    let current = 0;
-    const interval = setInterval(() => {
-      // rata-rata +1 per 60ms => sekitar 6 detik sampai 100%
-      current += Math.random() * 1.4 + 0.3;
-      if (current >= 100) {
-        current = 100;
-        setLoadProgress(100);
-        clearInterval(interval);
-        setTimeout(() => setLoading(false), 600);
-      } else {
-        setLoadProgress(Math.floor(current));
-      }
-    }, 60);
-    return () => clearInterval(interval);
-  }, []);
+    betAmountRef.current = betAmount;
+  }, [betAmount]);
 
   const spinPressTimer = useRef<any>(null);
   const username = localStorage.getItem('domino_username') || '';
@@ -157,10 +143,10 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
     if (isSpinning) {
       interval = setInterval(() => {
         if (!spinningColsRef.current.some(Boolean)) return;
-        setGrid(prev => prev.map((row, r) =>
+        setGrid(prev => prev.map((row, _r) =>
           row.map((cell, c) => spinningColsRef.current[c] ? Math.floor(Math.random() * 10) : cell)
         ));
-        setMultGrid(prev => prev.map((row, r) =>
+        setMultGrid(prev => prev.map((row, _r) =>
           row.map((val, c) => spinningColsRef.current[c] ? 0 : val)
         ));
       }, Math.max(30, Math.floor(65 / spinSpeedRef.current)));
@@ -303,6 +289,7 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
         }
 
         let totalFree = freeSpinsLeftRef.current;
+        const currentBet = betAmountRef.current || MIN_SLOT_BET;
         if (data.triggerFreeSpins) {
           totalFree += data.freeSpinsAwarded;
           setFreeSpinsLeft(totalFree);
@@ -315,7 +302,7 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
               : `SELAMAT! KAMU MEMICU ${data.freeSpinsAwarded || 15} PUTARAN GRATIS!`
           });
         } else if (data.totalWinAmount > 0) {
-          const ratio = data.totalWinAmount / Math.max(1, betAmount);
+          const ratio = data.totalWinAmount / Math.max(1, currentBet);
           if (ratio >= 30) {
             setCelebration({ type: 'super_win', amount: data.totalWinAmount });
           } else if (ratio >= 12) {
@@ -325,7 +312,7 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
           }
         }
 
-        const hasCelebration = data.triggerFreeSpins || (data.totalWinAmount > 0 && (data.totalWinAmount / Math.max(1, betAmount)) >= 5);
+        const hasCelebration = data.triggerFreeSpins || (data.totalWinAmount > 0 && (data.totalWinAmount / Math.max(1, currentBet)) >= 5);
         const nextDelay = hasCelebration ? 3900 : Math.max(800, 1200 / spd);
 
         if (autoSpinsRef.current > 1 || totalFree > 0) {
@@ -504,12 +491,12 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
       );
     }
 
-    return null;
+    return (
+      <div className={`gato-tile ${winCls} ${expCls} ${dropCls}`} style={{ ['--drop-dist' as any]: dropDist }}>
+        <span>💎</span>
+      </div>
+    );
   };
-
-  if (loading) {
-    return <GatokacaCinematicBackground progress={loadProgress} />;
-  }
 
   return (
     <div className="gato-screen">
@@ -538,14 +525,14 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
         </div>
         <div className="gato-coins-row">
           <span className="gato-coin-ico">🪙</span>
-          <span className="gato-coins-num">{myCoins.toLocaleString('id-ID')}</span>
+          <span className="gato-coins-num">{(myCoins || 0).toLocaleString('id-ID')}</span>
           <button className="gato-plus-btn" onClick={() => alert('Top Up Koin')}>+</button>
         </div>
       </div>
 
       {/* TOP CENTER: Sleek Pragmatic info badge - unblocks middle of the screen */}
       <div className="gato-top-info">
-        <div className="gato-top-info-text">SIMBOL MEMBAYAR DI MANA SAJA</div>
+        <div className="gato-top-info-text">{statusText || 'SIMBOL MEMBAYAR DI MANA SAJA'}</div>
       </div>
 
       {/* TOP RIGHT */}
@@ -582,9 +569,13 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
             <div className="gato-bs-circle">
               <div className="gato-bs-title">BELI<br/>SPIN<br/>GRATIS</div>
               <div className="gato-bs-amount">
-                {(betAmount * 100 / 1000000000) >= 1 
-                  ? `${(betAmount * 100 / 1000000000).toFixed(1)}B` 
-                  : `${Math.floor(betAmount * 100 / 1000000)}M`}
+                {(() => {
+                  const cost = (betAmount || MIN_SLOT_BET) * 100;
+                  if (cost >= 1e9) return (cost / 1e9).toFixed(1).replace(/\.0$/, '') + 'B';
+                  if (cost >= 1e6) return (cost / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
+                  if (cost >= 1e3) return (cost / 1e3).toFixed(0) + 'K';
+                  return cost.toLocaleString('id-ID');
+                })()}
               </div>
             </div>
           </div>
@@ -623,7 +614,7 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
             <div className="gato-tp-title">TARUHAN</div>
             <div className="gato-tp-amount">
               {(() => {
-                const anteAmt = Math.floor(betAmount * 1.25);
+                const anteAmt = Math.floor((betAmount || MIN_SLOT_BET) * 1.25);
                 if (anteAmt >= 1e9) return (anteAmt / 1e9).toFixed(1).replace(/\.0$/, '') + 'B';
                 if (anteAmt >= 1e6) return (anteAmt / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
                 if (anteAmt >= 1e3) return (anteAmt / 1e3).toFixed(1).replace(/\.0$/, '') + 'K';
@@ -677,9 +668,19 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
           </div>
         </div>
 
-        {/* RIGHT: Gatotkaca Hero Character - Video with static fallback */}
+        {/* RIGHT: Gatotkaca Hero Character */}
         <div className="gato-right-panel">
-          
+          <div className="gato-hero-container">
+            <img
+              src="/assets/gatokaca/hero_character.png"
+              alt="Gatotkaca Hero"
+              className="gato-hero-video"
+              draggable={false}
+              onError={(e) => {
+                (e.target as HTMLElement).style.display = 'none';
+              }}
+            />
+          </div>
         </div>
       </div>
 
@@ -700,7 +701,7 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
           </button>
           <div className="gato-bet-box">
             <div className="gato-bet-label">BET</div>
-            <div className="gato-bet-val">{betAmount.toLocaleString('en-US')}</div>
+            <div className="gato-bet-val">{(betAmount || MIN_SLOT_BET).toLocaleString('en-US')}</div>
           </div>
           <button className="gato-bot-btn gato-plus-bet" onClick={() => setBetAmount(b => stepSlotBet(b, 1))}>
             +
@@ -711,7 +712,9 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
           <div className="gato-win-banner">
             <div className="gato-win-label">WIN</div>
             <div className="gato-win-val">
-              {totalWin > 0 ? Math.floor(totalWin).toLocaleString('en-US') : (isSpinning ? '...' : (betAmount * 1.05).toLocaleString('en-US'))}
+              {totalWin > 0 
+                ? Math.floor(totalWin).toLocaleString('en-US') 
+                : (isSpinning ? '...' : (betAmount || MIN_SLOT_BET).toLocaleString('en-US'))}
             </div>
           </div>
         </div>
