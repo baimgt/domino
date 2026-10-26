@@ -6,6 +6,7 @@ import GameMenuDropdown from './GameMenuDropdown';
 import SlotCelebrationModal, { SlotCelebrationData } from './SlotCelebrationModal';
 import SlotProfileModal, { renderSlotAvatar } from './SlotProfileModal';
 import { useSlotProfile } from './useSlotProfile';
+import { stepSlotBet, MIN_SLOT_BET, MAX_SLOT_BET } from './slotConfig';
 
 interface Props {
   onBack: () => void;
@@ -59,7 +60,7 @@ export default function MahjongWays2SlotScreen({ onBack, socket }: Props) {
   const [gridCols, setGridCols] = useState<TileItem[][]>(INITIAL_MAHJONG_GRID);
   const [isSpinning, setIsSpinning] = useState(false);
   const [spinningCols, setSpinningCols] = useState<boolean[]>([false, false, false, false, false]);
-  const [betAmount, setBetAmount] = useState(10000);
+  const [betAmount, setBetAmount] = useState(500);
   const [myCoins, setMyCoins] = useState(8994600);
   const [totalWin, setTotalWin] = useState(0);
   const [multiplierIdx, setMultiplierIdx] = useState(0);
@@ -130,15 +131,20 @@ export default function MahjongWays2SlotScreen({ onBack, socket }: Props) {
 
   useEffect(() => {
     const coinsStr = localStorage.getItem('domino_coins');
-    if (coinsStr) setMyCoins(parseInt(coinsStr));
+    const bonusStr = localStorage.getItem('domino_bonus_coins');
+    const c = coinsStr ? parseInt(coinsStr, 10) : 0;
+    const b = bonusStr ? parseInt(bonusStr, 10) : 0;
+    setMyCoins(c + b);
     const savedUser = localStorage.getItem('domino_username');
     if (savedUser) {
       fetch(`${API_URL}/profile/${savedUser}`)
         .then(r => r.ok ? r.json() : null)
         .then(d => {
           if (d?.coins != null) {
-            setMyCoins(d.coins);
+            const tot = (d.coins || 0) + (d.bonusCoins || 0);
+            setMyCoins(tot);
             localStorage.setItem('domino_coins', d.coins.toString());
+            if (d.bonusCoins !== undefined) localStorage.setItem('domino_bonus_coins', d.bonusCoins.toString());
           }
         })
         .catch(() => {});
@@ -447,7 +453,7 @@ export default function MahjongWays2SlotScreen({ onBack, socket }: Props) {
       {/* TOP LEFT (Profile Avatar, VIP Badge, Coins) */}
       <div className="mj-topleft">
         <div className="mj-avatar-wrap g-btn-press" onClick={() => setShowProfileModal(true)} title="Lihat Profil VIP" style={{ cursor: 'pointer' }}>
-          <div style={{ width: '8.5vh', height: '8.5vh', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '0.35vh solid #ffd700', boxShadow: '0 0 1.2vh rgba(0,0,0,0.7)', background: 'radial-gradient(circle, #b8860b, #4a2800)' }}>
+          <div style={{ width: 'max(54px, 12.5vh)', height: 'max(54px, 12.5vh)', minWidth: '54px', minHeight: '54px', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '0.38vh solid #ffd700', boxShadow: '0 0 1.4vh rgba(0,0,0,0.7)', background: 'radial-gradient(circle, #b8860b, #4a2800)', flexShrink: 0 }}>
             {renderSlotAvatar(userProfile.avatar, 'mj-avatar-img', '🐸')}
           </div>
           <div className="mj-vip-badge">VIP {userProfile.vipLevel}</div>
@@ -628,12 +634,12 @@ export default function MahjongWays2SlotScreen({ onBack, socket }: Props) {
             <button className="mjbot-gold-btn mjbot-info-btn" onClick={() => setShowRules(true)} title="Aturan & Tabel Bayaran">
               i
             </button>
-            <button className="mjbot-gold-btn mjbot-step-btn" onClick={() => setBetAmount(b => Math.max(10000, b - 10000))}>-</button>
+            <button className="mjbot-gold-btn mjbot-step-btn" onClick={() => setBetAmount(b => stepSlotBet(b, -1))}>-</button>
             <div className="mjbot-bet-display">
               <div className="mjbot-bet-label">BET 🔒</div>
               <div className="mjbot-bet-val">{betAmount.toLocaleString('id-ID')}</div>
             </div>
-            <button className="mjbot-gold-btn mjbot-step-btn" onClick={() => setBetAmount(b => Math.min(200000, b + 10000))}>+</button>
+            <button className="mjbot-gold-btn mjbot-step-btn" onClick={() => setBetAmount(b => stepSlotBet(b, 1))}>+</button>
           </div>
 
           {/* Center: Purple Pill Message */}
@@ -654,7 +660,7 @@ export default function MahjongWays2SlotScreen({ onBack, socket }: Props) {
 
           {/* Right: MAX BET, Speed, SPIN / TUTUP */}
           <div className="mjbot-right">
-            <button className="mjbot-gold-btn mjbot-maxbet-btn" onClick={() => setBetAmount(200000)}>
+            <button className="mjbot-gold-btn mjbot-maxbet-btn" onClick={() => setBetAmount(MAX_SLOT_BET)}>
               <span>MAX</span>
               <span>BET</span>
             </button>

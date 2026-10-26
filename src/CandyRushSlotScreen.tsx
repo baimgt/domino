@@ -7,6 +7,7 @@ import SlotMultiplierBar from './SlotMultiplierBar';
 import SlotCelebrationModal, { SlotCelebrationData } from './SlotCelebrationModal';
 import SlotProfileModal, { renderSlotAvatar } from './SlotProfileModal';
 import { useSlotProfile } from './useSlotProfile';
+import { MIN_SLOT_BET, MAX_SLOT_BET, stepSlotBet } from './slotConfig';
 
 interface Props {
   onBack: () => void;
@@ -26,10 +27,13 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
   const [spinningCols, setSpinningCols] = useState<boolean[]>(Array(COLS).fill(false));
   const userProfile = useSlotProfile();
   const [showProfileModal, setShowProfileModal] = useState(false);
-  const [betAmount, setBetAmount] = useState(10000);
+  const [betAmount, setBetAmount] = useState(MIN_SLOT_BET);
   const [myCoins, setMyCoins] = useState<number>(() => {
     const saved = localStorage.getItem('domino_coins');
-    return saved ? parseInt(saved, 10) : 100000;
+    const savedBonus = localStorage.getItem('domino_bonus_coins');
+    const c = saved ? parseInt(saved, 10) : 0;
+    const b = savedBonus ? parseInt(savedBonus, 10) : 0;
+    return (c + b) > 0 ? (c + b) : 100000;
   });
   const [totalWin, setTotalWin] = useState(0);
   const [freeSpinsLeft, setFreeSpinsLeft] = useState(0);
@@ -193,7 +197,14 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
         setSpinningCols(Array(COLS).fill(false));
         setMyCoins(data.newBalance);
         setFreeMultVal(data.freeMult || 0);
-        localStorage.setItem('domino_coins', data.newBalance.toString());
+        if (data.coins !== undefined) {
+          localStorage.setItem('domino_coins', data.coins.toString());
+        } else {
+          localStorage.setItem('domino_coins', data.newBalance.toString());
+        }
+        if (data.bonusCoins !== undefined) {
+          localStorage.setItem('domino_bonus_coins', data.bonusCoins.toString());
+        }
         setTotalWin(data.totalWinAmount || 0);
         let totalFree = freeSpinsLeftRef.current;
         if (data.triggerFreeSpins) {
@@ -454,7 +465,7 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
       {/* TOP LEFT */}
       <div className="cr-topleft">
         <div className="cr-avatar-wrap g-btn-press" onClick={() => setShowProfileModal(true)} title="Lihat Profil VIP" style={{ cursor: 'pointer' }}>
-          <div style={{ width: '6.5vh', height: '6.5vh', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '0.3vh solid #ff69b4', boxShadow: '0 0 1vh rgba(255,105,180,0.6)', background: 'radial-gradient(circle, #ff69b4, #800080)' }}>
+          <div style={{ width: 'max(54px, 12.5vh)', height: 'max(54px, 12.5vh)', minWidth: '54px', minHeight: '54px', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '0.38vh solid #ff69b4', boxShadow: '0 0 1.5vh rgba(255,105,180,0.7)', background: 'radial-gradient(circle, #ff69b4, #800080)', flexShrink: 0 }}>
             {renderSlotAvatar(userProfile.avatar, 'cr-avatar-img', '🐸')}
           </div>
           <div className="cr-vip-badge">VIP {userProfile.vipLevel}</div>
@@ -610,12 +621,12 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
         <div className="cr-bot-left">
           <button className="cr-bot-btn" onClick={() => alert('Chat')}>💬</button>
           <button className="cr-bot-btn" onClick={() => { setShowRules(true); setRulesPage(0); }}>i</button>
-          <button className="cr-bot-btn cr-minus" onClick={() => setBetAmount(b => Math.max(10000, b - 10000))}>−</button>
+          <button className="cr-bot-btn cr-minus" onClick={() => setBetAmount(b => stepSlotBet(b, -1))}>−</button>
           <div className="cr-bet-box">
             <div className="cr-bet-label">BET</div>
             <div className="cr-bet-val">{betAmount.toLocaleString('id-ID')}</div>
           </div>
-          <button className="cr-bot-btn cr-plus-bet" onClick={() => setBetAmount(b => Math.min(200000, b + 10000))}>+</button>
+          <button className="cr-bot-btn cr-plus-bet" onClick={() => setBetAmount(b => stepSlotBet(b, 1))}>+</button>
         </div>
 
         <div className="cr-bot-center">
@@ -625,7 +636,7 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
         </div>
 
         <div className="cr-bot-right">
-          <button className="cr-maxbet-btn" onClick={() => setBetAmount(200000)}>MAX<br/>BET</button>
+          <button className="cr-maxbet-btn" onClick={() => setBetAmount(MAX_SLOT_BET)}>MAX<br/>BET</button>
           <button className="cr-speed-btn" onClick={() => setSpinSpeed(s => s === 1 ? 2 : s === 2 ? 3 : 1)}>
             X{spinSpeed}
           </button>

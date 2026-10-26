@@ -7370,16 +7370,16 @@ input:checked+.setting-slider:before {
 }
 
 .sl-topbar-avatar {
-  width: 6vh;
-  height: 6vh;
+  width: 7.5vh;
+  height: 7.5vh;
   border-radius: 50%;
   background: radial-gradient(circle, #1a3a2c, #0d2018);
-  border: .3vh solid #2ecc71;
+  border: .35vh solid #2ecc71;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 3.2vh;
-  box-shadow: 0 .3vh 1vh rgba(0, 0, 0, .5);
+  font-size: 4vh;
+  box-shadow: 0 .4vh 1.2vh rgba(0, 0, 0, .6);
   flex-shrink: 0;
 }
 
@@ -9142,13 +9142,13 @@ input:checked+.setting-slider:before {
   top: 50%;
   left: 1.4vh;
   transform: translateY(-50%);
-  width: 4.6vh;
-  height: 4.6vh;
+  width: max(46px, 10.5vh);
+  height: max(46px, 10.5vh);
   border-radius: 50%;
   background: linear-gradient(180deg, #fffae3 0%, #f7cb59 40%, #c48714 85%, #8d5301 100%);
-  border: 0.22vh solid #522e01;
+  border: 0.28vh solid #522e01;
   color: #421e01;
-  font-size: 2.8vh;
+  font-size: max(26px, 5.5vh);
   font-weight: 900;
   display: flex;
   align-items: center;
@@ -9175,52 +9175,53 @@ input:checked+.setting-slider:before {
 
 .zeus-tb-avatar {
   position: relative;
-  width: 5.4vh;
-  height: 5.4vh;
+  width: max(54px, 12.5vh);
+  height: max(54px, 12.5vh);
   border-radius: 50%;
   background: radial-gradient(circle at 35% 35%, #4e2f96, #21124e 70%, #0c0524 100%);
-  border: 0.28vh solid #ffd700;
-  box-shadow: 0 0.4vh 0.8vh rgba(0, 0, 0, 0.6), inset 0 0 0.8vh rgba(255, 215, 0, 0.4);
+  border: 0.38vh solid #ffd700;
+  box-shadow: 0 0.4vh 1.4vh rgba(0, 0, 0, 0.75), inset 0 0 0.8vh rgba(255, 215, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2.5vh;
+  font-size: max(26px, 5.5vh);
+  flex-shrink: 0;
 }
 
 .zeus-tb-level-badge {
   position: absolute;
-  top: -0.5vh;
-  left: -0.5vh;
-  width: 2.2vh;
-  height: 2.2vh;
+  top: -0.6vh;
+  left: -0.6vh;
+  width: max(22px, 3.5vh);
+  height: max(22px, 3.5vh);
   border-radius: 50%;
   background: linear-gradient(180deg, #ffe77a 0%, #e6a71e 60%, #9e6405 100%);
-  border: 0.18vh solid #ffffff;
+  border: 0.22vh solid #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.2vh;
+  font-size: max(11px, 1.6vh);
   font-weight: 900;
   color: #4a2500;
-  box-shadow: 0 0.2vh 0.4vh rgba(0, 0, 0, 0.4);
+  box-shadow: 0 0.2vh 0.5vh rgba(0, 0, 0, 0.5);
 }
 
 .zeus-tb-vip-badge {
   position: absolute;
-  bottom: -0.6vh;
+  bottom: -0.8vh;
   left: 50%;
   transform: translateX(-50%);
   background: linear-gradient(180deg, #4ade80 0%, #16a34a 60%, #14532d 100%);
-  border: 0.12vh solid #ffffff;
-  border-radius: 0.6vh;
-  font-size: 0.82vh;
+  border: 0.15vh solid #ffffff;
+  border-radius: 0.8vh;
+  font-size: max(10px, 1.4vh);
   font-weight: 900;
   line-height: 1;
   color: #ffffff;
-  padding: 0.15vh 0.5vh;
+  padding: 0.3vh 1vh;
   white-space: nowrap;
   letter-spacing: 0.03em;
-  box-shadow: 0 0.2vh 0.4vh rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0.3vh 0.6vh rgba(0, 0, 0, 0.6);
 }
 
 .zeus-tb-coin-pill {
@@ -9408,21 +9409,22 @@ input:checked+.setting-slider:before {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
-  min-width: 38px;
-  min-height: 38px;
-  border-radius: 10px;
+  width: max(50px, 12vh);
+  height: max(50px, 12vh);
+  min-width: max(50px, 12vh);
+  min-height: max(50px, 12vh);
+  border-radius: 1.8vh;
   background: linear-gradient(180deg, #fffae3 0%, #f7cb59 40%, #c48714 85%, #8d5301 100%);
-  border: 1.5px solid #522e01;
+  border: 0.25vh solid #522e01;
   color: #421e01;
-  font-size: 19px;
+  font-size: max(28px, 6vh);
+  font-weight: 900;
   cursor: pointer;
   line-height: 1;
   box-shadow: 
-    0 3px 6px rgba(0, 0, 0, 0.4), 
-    inset 0 1px 2px #ffffff, 
-    inset 0 -1px 2px rgba(0, 0, 0, 0.25);
+    0 0.4vh 0.8vh rgba(0, 0, 0, 0.45), 
+    inset 0 0.2vh 0.3vh #ffffff, 
+    inset 0 -0.2vh 0.3vh rgba(0, 0, 0, 0.25);
   transition: transform 0.1s ease, filter 0.1s ease;
   box-sizing: border-box;
 }

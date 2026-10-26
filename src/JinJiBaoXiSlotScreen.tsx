@@ -6,6 +6,7 @@ import SlotMultiplierBar from './SlotMultiplierBar';
 import SlotCelebrationModal, { SlotCelebrationData } from './SlotCelebrationModal';
 import SlotProfileModal, { renderSlotAvatar } from './SlotProfileModal';
 import { useSlotProfile } from './useSlotProfile';
+import { MIN_SLOT_BET, MAX_SLOT_BET, stepSlotBet } from './slotConfig';
 
 interface Props {
   onBack: () => void;
@@ -29,11 +30,14 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
   const [grid, setGrid] = useState<number[][]>([]);
   const [isSpinning, setIsSpinning] = useState(false);
   const [spinningCols, setSpinningCols] = useState<boolean[]>([false, false, false, false, false]);
-  const [betAmount, setBetAmount] = useState(10000);
+  const [betAmount, setBetAmount] = useState(MIN_SLOT_BET);
   const [goldTier, setGoldTier] = useState<number>(5);
   const [myCoins, setMyCoins] = useState<number>(() => {
     const saved = localStorage.getItem('domino_coins');
-    return saved ? parseInt(saved, 10) : 100000;
+    const savedBonus = localStorage.getItem('domino_bonus_coins');
+    const c = saved ? parseInt(saved, 10) : 0;
+    const b = savedBonus ? parseInt(savedBonus, 10) : 0;
+    return (c + b) > 0 ? (c + b) : 100000;
   });
   const [winAmount, setWinAmount] = useState(0);
   const [, setWinType] = useState<string>('normal');
@@ -168,7 +172,14 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
         spinningColsRef.current = [false, false, false, false, false];
         setSpinningCols([false, false, false, false, false]);
         setMyCoins(data.newBalance);
-        localStorage.setItem('domino_coins', data.newBalance.toString());
+        if (data.coins !== undefined) {
+          localStorage.setItem('domino_coins', data.coins.toString());
+        } else {
+          localStorage.setItem('domino_coins', data.newBalance.toString());
+        }
+        if (data.bonusCoins !== undefined) {
+          localStorage.setItem('domino_bonus_coins', data.bonusCoins.toString());
+        }
         setWinAmount(data.winAmount);
         setWinType(data.winType);
         setWinningSymbols(data.winningSymbols || []);
@@ -845,7 +856,7 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
             <button className="jbot-btn jbot-info-btn" onClick={() => setShowRules(true)} title="Info">
               <span className="jbot-serif-i">i</span>
             </button>
-            <button className="jbot-btn jbot-minus-btn" onClick={() => setBetAmount(b => Math.max(10000, b - 10000))} title="Kurang Taruhan">
+            <button className="jbot-btn jbot-minus-btn" onClick={() => setBetAmount(b => stepSlotBet(b, -1))} title="Kurang Taruhan">
               <span className="jbot-sym-minus">−</span>
             </button>
             <div className="jbot-bet-wrap">
@@ -855,7 +866,7 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
               </div>
               <div className="jbot-line-bet">LINE BET: {lineBetUnit.toLocaleString('en-US')}X{lineBetMultiplier}</div>
             </div>
-            <button className="jbot-btn jbot-plus-btn" onClick={() => setBetAmount(b => Math.min(200000, b + 10000))} title="Tambah Taruhan">
+            <button className="jbot-btn jbot-plus-btn" onClick={() => setBetAmount(b => stepSlotBet(b, 1))} title="Tambah Taruhan">
               <span className="jbot-sym-plus">+</span>
             </button>
           </div>
@@ -873,7 +884,7 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
           </div>
 
           <div className="jbot-right">
-            <button className="jbot-btn jbot-maxbet-btn" onClick={() => setBetAmount(200000)}>
+            <button className="jbot-btn jbot-maxbet-btn" onClick={() => setBetAmount(MAX_SLOT_BET)}>
               <span className="jbot-btn-line">MAX</span>
               <span className="jbot-btn-line">BET</span>
             </button>

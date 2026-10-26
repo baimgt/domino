@@ -67,10 +67,10 @@
 }
 
 .fivelions-avatar {
-  width: 8.5vh; height: 8.5vh;
-  border: 0.35vh solid #ffd700;
+  width: max(54px, 12.5vh); height: max(54px, 12.5vh);
+  border: 0.38vh solid #ffd700;
   border-radius: 50%;
-  box-shadow: 0 0.4vh 1.2vh rgba(0,0,0,0.7);
+  box-shadow: 0 0.4vh 1.4vh rgba(0,0,0,0.75);
   background: radial-gradient(circle, #ffe082, #b8860b);
   cursor: pointer;
   flex-shrink: 0;
@@ -234,13 +234,14 @@
   background: radial-gradient(circle at 30% 30%, #ffd54f 0%, #ffb300 50%, #ff8f00 100%);
   border: 0.25vh solid #ffe082;
   border-radius: 50%;
-  width: 7.8vh; height: 7.8vh;
+  width: max(52px, 12vh); height: max(52px, 12vh);
+  min-width: max(52px, 12vh); min-height: max(52px, 12vh);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #3e2723;
   cursor: pointer;
-  box-shadow: 0 0.4vh 1vh rgba(0,0,0,0.6);
+  box-shadow: 0 0.5vh 1.4vh rgba(0,0,0,0.65);
   padding: 0;
   transition: transform 0.1s, filter 0.1s;
 }
@@ -249,14 +250,14 @@
 .fivelions-tr-btn .menu-burger-bars {
   display: flex;
   flex-direction: column;
-  gap: 0.55vh;
-  width: 3.6vh;
+  gap: max(4.5px, 0.9vh);
+  width: max(28px, 6vh);
 }
 .fivelions-tr-btn .menu-burger-bars span {
   display: block;
-  height: 0.45vh;
+  height: max(4px, 0.75vh);
   background: #3e2723;
-  border-radius: 0.25vh;
+  border-radius: 0.35vh;
   box-shadow: 0 0.1vh 0.2vh rgba(255,255,255,0.4);
 }
 .fivelions-tr-btn.room-btn {

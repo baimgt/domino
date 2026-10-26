@@ -5,6 +5,7 @@ import GameMenuDropdown from './GameMenuDropdown';
 import SlotCelebrationModal, { SlotCelebrationData } from './SlotCelebrationModal';
 import SlotProfileModal, { renderSlotAvatar } from './SlotProfileModal';
 import { useSlotProfile } from './useSlotProfile';
+import { MIN_SLOT_BET, MAX_SLOT_BET, stepSlotBet } from './slotConfig';
 import './gatokaca.css';
 import './App.css'; // Make sure we use the old CSS
 
@@ -52,9 +53,12 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
   const myUsername = localStorage.getItem('domino_username') || '';
   const [myCoins,  setMyCoins]  = useState<number>(() => {
     const saved = localStorage.getItem('domino_coins');
-    return saved ? parseInt(saved, 10) : 100000;
+    const savedBonus = localStorage.getItem('domino_bonus_coins');
+    const c = saved ? parseInt(saved, 10) : 0;
+    const b = savedBonus ? parseInt(savedBonus, 10) : 0;
+    return (c + b) > 0 ? (c + b) : 100000;
   });
-  const [betAmount, setBetAmount] = useState(10000);
+  const [betAmount, setBetAmount] = useState(MIN_SLOT_BET);
   const [anteBet, setAnteBet] = useState(false);
   const [grid, setGrid] = useState<number[][]>(initGrid());
   const [prevGrid, setPrevGrid] = useState<number[][]>(initGrid());
@@ -164,8 +168,10 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
       .then(r => r.ok ? r.json() : null)
       .then(d => {
         if (d?.coins !== undefined) {
-          setMyCoins(d.coins);
-          localStorage.setItem('domino_coins', d.coins.toString());
+          const total = (d.coins || 0) + (d.bonusCoins || 0);
+          setMyCoins(total);
+          localStorage.setItem('domino_coins', (d.coins || 0).toString());
+          localStorage.setItem('domino_bonus_coins', (d.bonusCoins || 0).toString());
         }
       })
       .catch(() => {});
@@ -514,7 +520,14 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
 
         if (data.newBalance != null) {
           setMyCoins(data.newBalance);
-          localStorage.setItem('domino_coins', data.newBalance.toString());
+          if (data.coins !== undefined) {
+            localStorage.setItem('domino_coins', data.coins.toString());
+          } else {
+            localStorage.setItem('domino_coins', data.newBalance.toString());
+          }
+          if (data.bonusCoins !== undefined) {
+            localStorage.setItem('domino_bonus_coins', data.bonusCoins.toString());
+          }
         }
 
         setClusterWins(data.clusterWins || []);
@@ -1158,14 +1171,14 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
           <button className="zhb-icon-btn zhb-btn-info g-btn-press" onClick={() => { setShowRules(true); setRulesPage(0); }}>
             i
           </button>
-          <button className="zhb-bet-btn zhb-btn-minus g-btn-press" onClick={() => setBetAmount(b => Math.max(10000, b - 10000))}>
+          <button className="zhb-bet-btn zhb-btn-minus g-btn-press" onClick={() => setBetAmount(b => stepSlotBet(b, -1))}>
             −
           </button>
           <div className="zhb-bet-display">
             <div className="zhb-bet-label">BET</div>
             <div className="zhb-bet-val">{betAmount.toLocaleString('en-US')}</div>
           </div>
-          <button className="zhb-bet-btn zhb-btn-plus g-btn-press" onClick={() => setBetAmount(b => Math.min(200000, b + 10000))}>
+          <button className="zhb-bet-btn zhb-btn-plus g-btn-press" onClick={() => setBetAmount(b => stepSlotBet(b, 1))}>
             +
           </button>
         </div>
@@ -1184,7 +1197,7 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
             <button className="zhb-rules-tutup-btn g-btn-press" onClick={() => setShowRules(false)}>TUTUP</button>
           ) : (
             <>
-              <button className="zhb-maxbet-btn g-btn-press" onClick={() => setBetAmount(200000)}>
+              <button className="zhb-maxbet-btn g-btn-press" onClick={() => setBetAmount(MAX_SLOT_BET)}>
                 <span>MAX</span>
                 <span>BET</span>
               </button>

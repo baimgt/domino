@@ -6,6 +6,7 @@ import GameMenuDropdown from './GameMenuDropdown';
 import SlotCelebrationModal, { SlotCelebrationData } from './SlotCelebrationModal';
 import SlotProfileModal, { renderSlotAvatar } from './SlotProfileModal';
 import { useSlotProfile } from './useSlotProfile';
+import { MIN_SLOT_BET, MAX_SLOT_BET, stepSlotBet } from './slotConfig';
 
 interface Props {
   onBack: () => void;
@@ -99,8 +100,14 @@ export default function FiveLionsSlotScreen({ onBack, socket }: Props) {
   const [gridCols, setGridCols] = useState<CellItem[][]>(INITIAL_GRID_COLS);
   const [isSpinning, setIsSpinning] = useState(false);
   const [spinningCols, setSpinningCols] = useState<boolean[]>([false, false, false, false, false, false]);
-  const [betAmount, setBetAmount] = useState(10000);
-  const [myCoins, setMyCoins] = useState(8994600);
+  const [betAmount, setBetAmount] = useState(MIN_SLOT_BET);
+  const [myCoins, setMyCoins] = useState(() => {
+    const saved = localStorage.getItem('domino_coins');
+    const savedBonus = localStorage.getItem('domino_bonus_coins');
+    const c = saved ? parseInt(saved, 10) : 0;
+    const b = savedBonus ? parseInt(savedBonus, 10) : 0;
+    return (c + b) > 0 ? (c + b) : 100000;
+  });
   const [totalWin, setTotalWin] = useState(0);
   const [freeSpinsLeft, setFreeSpinsLeft] = useState(0);
 
@@ -119,15 +126,20 @@ export default function FiveLionsSlotScreen({ onBack, socket }: Props) {
 
   useEffect(() => {
     const coinsStr = localStorage.getItem('domino_coins');
-    if (coinsStr) setMyCoins(parseInt(coinsStr));
+    const bonusStr = localStorage.getItem('domino_bonus_coins');
+    const cVal = coinsStr ? parseInt(coinsStr, 10) : 0;
+    const bVal = bonusStr ? parseInt(bonusStr, 10) : 0;
+    if (cVal + bVal > 0) setMyCoins(cVal + bVal);
     const savedUser = localStorage.getItem('domino_username');
     if (savedUser) {
       fetch(`${API_URL}/profile/${savedUser}`)
         .then(r => r.ok ? r.json() : null)
         .then(d => {
           if (d?.coins != null) {
-            setMyCoins(d.coins);
-            localStorage.setItem('domino_coins', d.coins.toString());
+            const total = (d.coins || 0) + (d.bonusCoins || 0);
+            setMyCoins(total);
+            localStorage.setItem('domino_coins', (d.coins || 0).toString());
+            localStorage.setItem('domino_bonus_coins', (d.bonusCoins || 0).toString());
           }
         })
         .catch(() => {});
@@ -592,7 +604,7 @@ export default function FiveLionsSlotScreen({ onBack, socket }: Props) {
           <div style={{ width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {renderSlotAvatar(userProfile.avatar, 'fivelions-avatar-img', '🐸')}
           </div>
-          <div style={{ position: 'absolute', bottom: '-0.6vh', left: '50%', transform: 'translateX(-50%)', background: 'linear-gradient(135deg, #ffd700, #ff8c00)', color: '#3e2723', fontSize: '1.05vh', fontWeight: 900, lineHeight: 1, borderRadius: '0.6vh', padding: '0.2vh 0.6vh', border: '0.15vh solid #fff', whiteSpace: 'nowrap', boxShadow: '0 0.2vh 0.4vh rgba(0,0,0,0.6)', letterSpacing: '0.02em' }}>
+          <div style={{ position: 'absolute', bottom: '-0.7vh', left: '50%', transform: 'translateX(-50%)', background: 'linear-gradient(135deg, #ffd700, #ff8c00)', color: '#3e2723', fontSize: '1.2vh', fontWeight: 900, lineHeight: 1, borderRadius: '0.8vh', padding: '0.25vh 0.8vh', border: '0.15vh solid #fff', whiteSpace: 'nowrap', boxShadow: '0 0.3vh 0.5vh rgba(0,0,0,0.6)', letterSpacing: '0.02em' }}>
             VIP {userProfile.vipLevel}
           </div>
         </div>
@@ -842,12 +854,12 @@ export default function FiveLionsSlotScreen({ onBack, socket }: Props) {
             <button className="fbot-gold-btn fbot-info-btn" onClick={() => setShowRules(true)} title="Aturan & Tabel Bayaran">
               i
             </button>
-            <button className="fbot-gold-btn fbot-step-btn" onClick={() => setBetAmount(b => Math.max(10000, b - 10000))}>-</button>
+            <button className="fbot-gold-btn fbot-step-btn" onClick={() => setBetAmount(b => stepSlotBet(b, -1))}>-</button>
             <div className="fbot-bet-display">
               <div className="fbot-bet-label">BET 🔒</div>
               <div className="fbot-bet-val">{betAmount.toLocaleString('id-ID')}</div>
             </div>
-            <button className="fbot-gold-btn fbot-step-btn" onClick={() => setBetAmount(b => Math.min(200000, b + 10000))}>+</button>
+            <button className="fbot-gold-btn fbot-step-btn" onClick={() => setBetAmount(b => stepSlotBet(b, 1))}>+</button>
           </div>
 
           {/* Center: Purple Pill Message */}
@@ -867,7 +879,7 @@ export default function FiveLionsSlotScreen({ onBack, socket }: Props) {
 
           {/* Right: MAX BET, Speed, SPIN / TUTUP */}
           <div className="fbot-right">
-            <button className="fbot-gold-btn fbot-maxbet-btn" onClick={() => setBetAmount(200000)}>
+            <button className="fbot-gold-btn fbot-maxbet-btn" onClick={() => setBetAmount(MAX_SLOT_BET)}>
               <span>MAX</span>
               <span>BET</span>
             </button>

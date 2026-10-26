@@ -59,10 +59,10 @@
 
 .fafafa-avatar {
   position: relative;
-  width: 8.5vh; height: 8.5vh;
-  border: 0.35vh solid #ffd700;
+  width: max(54px, 12.5vh); height: max(54px, 12.5vh);
+  border: 0.38vh solid #ffd700;
   border-radius: 50%;
-  box-shadow: 0 0.4vh 1.2vh rgba(0,0,0,0.7), inset 0 0.15vh 0.4vh rgba(255,255,255,0.6);
+  box-shadow: 0 0.4vh 1.4vh rgba(0,0,0,0.75), inset 0 0.15vh 0.4vh rgba(255,255,255,0.6);
   background: radial-gradient(circle, #ffe082, #b8860b);
   cursor: pointer;
   flex-shrink: 0;
@@ -204,14 +204,16 @@
   background: radial-gradient(circle at 30% 30%, #ffd54f 0%, #ffb300 50%, #ff8f00 100%);
   border: 0.25vh solid #ffe082;
   border-radius: 50%;
-  width: 7.8vh;
-  height: 7.8vh;
+  width: max(52px, 12vh);
+  height: max(52px, 12vh);
+  min-width: max(52px, 12vh);
+  min-height: max(52px, 12vh);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #3e2723;
   cursor: pointer;
-  box-shadow: 0 0.4vh 1vh rgba(0,0,0,0.6), inset 0 0.2vh 0.4vh rgba(255,255,255,0.7);
+  box-shadow: 0 0.5vh 1.4vh rgba(0,0,0,0.65), inset 0 0.2vh 0.4vh rgba(255,255,255,0.7);
   transition: transform 0.15s, filter 0.15s;
   padding: 0;
 }
@@ -220,7 +222,20 @@
   filter: brightness(1.15);
 }
 .fafafa-tr-btn.trophy-btn {
-  font-size: 3.5vh;
+  font-size: max(26px, 5vh);
+}
+.fafafa-tr-btn .menu-burger-bars {
+  display: flex;
+  flex-direction: column;
+  gap: max(4.5px, 0.9vh);
+  width: max(28px, 6vh);
+}
+.fafafa-tr-btn .menu-burger-bars span {
+  display: block;
+  height: max(4px, 0.75vh);
+  background: #3e2723;
+  border-radius: 0.35vh;
+  box-shadow: 0 0.1vh 0.2vh rgba(255,255,255,0.4);
 }
 .fafafa-tr-btn.room-btn {
   width: auto;

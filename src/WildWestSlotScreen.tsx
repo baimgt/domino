@@ -6,6 +6,7 @@ import SlotMultiplierBar from './SlotMultiplierBar';
 import SlotCelebrationModal, { SlotCelebrationData } from './SlotCelebrationModal';
 import SlotProfileModal, { renderSlotAvatar } from './SlotProfileModal';
 import { useSlotProfile } from './useSlotProfile';
+import { MIN_SLOT_BET, MAX_SLOT_BET, stepSlotBet } from './slotConfig';
 
 interface Props {
   onBack: () => void;
@@ -54,10 +55,13 @@ export default function WildWestSlotScreen({ onBack, socket }: Props) {
   const [spinningCols, setSpinningCols] = useState<boolean[]>(Array(COLS).fill(false));
   const userProfile = useSlotProfile();
   const [showProfileModal, setShowProfileModal] = useState(false);
-  const [betAmount, setBetAmount] = useState(10000);
+  const [betAmount, setBetAmount] = useState(MIN_SLOT_BET);
   const [myCoins, setMyCoins] = useState(() => {
     const saved = localStorage.getItem('domino_coins');
-    return saved ? parseInt(saved) : 100000;
+    const savedBonus = localStorage.getItem('domino_bonus_coins');
+    const c = saved ? parseInt(saved, 10) : 0;
+    const b = savedBonus ? parseInt(savedBonus, 10) : 0;
+    return (c + b) > 0 ? (c + b) : 100000;
   });
   const [totalWin, setTotalWin] = useState(0);
   const [freeSpinsLeft, setFreeSpinsLeft] = useState(0);
@@ -106,7 +110,10 @@ export default function WildWestSlotScreen({ onBack, socket }: Props) {
 
   useEffect(() => {
     const coinsStr = localStorage.getItem('domino_coins');
-    if (coinsStr) setMyCoins(parseInt(coinsStr));
+    const bonusStr = localStorage.getItem('domino_bonus_coins');
+    const cVal = coinsStr ? parseInt(coinsStr, 10) : 0;
+    const bVal = bonusStr ? parseInt(bonusStr, 10) : 0;
+    if (cVal + bVal > 0) setMyCoins(cVal + bVal);
   }, []);
 
   // Rapid reel shuffle - displays regular symbols during spin blur, checking synchronous spinningColsRef to prevent symbol flicker
@@ -160,7 +167,14 @@ export default function WildWestSlotScreen({ onBack, socket }: Props) {
         spinningColsRef.current = Array(COLS).fill(false);
         setSpinningCols(Array(COLS).fill(false));
         setMyCoins(data.newBalance);
-        localStorage.setItem('domino_coins', data.newBalance.toString());
+        if (data.coins !== undefined) {
+          localStorage.setItem('domino_coins', data.coins.toString());
+        } else {
+          localStorage.setItem('domino_coins', data.newBalance.toString());
+        }
+        if (data.bonusCoins !== undefined) {
+          localStorage.setItem('domino_bonus_coins', data.bonusCoins.toString());
+        }
         setTotalWin(data.totalWinAmount || 0);
         setWinningCells(data.winningCells || []);
         setStatusText(data.totalWinAmount > 0 ? `MENANG: ${Math.floor(data.totalWinAmount).toLocaleString('id-ID')}` : 'GOOD LUCK');
@@ -460,7 +474,7 @@ export default function WildWestSlotScreen({ onBack, socket }: Props) {
               title="Lihat Profil VIP"
               style={{ cursor: 'pointer', position: 'relative' }}
             >
-              <div style={{ width: '6.5vh', height: '6.5vh', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: 'max(54px, 12.5vh)', height: 'max(54px, 12.5vh)', minWidth: '54px', minHeight: '54px', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 {renderSlotAvatar(userProfile.avatar, 'ww-avatar-img', '🤠')}
               </div>
               <div className="ww-vip-badge">VIP {userProfile.vipLevel}</div>
@@ -921,14 +935,14 @@ export default function WildWestSlotScreen({ onBack, socket }: Props) {
           >
             <span className="ww-hud-txt-i">i</span>
           </button>
-          <button className="ww-hud-btn ww-minus" onClick={() => setBetAmount(b => Math.max(10000, b - 10000))} title="Kurangi Bet">
+          <button className="ww-hud-btn ww-minus" onClick={() => setBetAmount(b => stepSlotBet(b, -1))} title="Kurangi Bet">
             <span className="ww-hud-minus-sym">−</span>
           </button>
           <div className="ww-hud-bet-display">
             <span className="ww-hud-bet-title">BET</span>
             <span className="ww-hud-bet-amount">{betAmount.toLocaleString('id-ID')}</span>
           </div>
-          <button className="ww-hud-btn ww-plus" onClick={() => setBetAmount(b => Math.min(200000, b + 10000))} title="Tambah Bet">
+          <button className="ww-hud-btn ww-plus" onClick={() => setBetAmount(b => stepSlotBet(b, 1))} title="Tambah Bet">
             <span className="ww-hud-plus-sym">+</span>
           </button>
         </div>
@@ -944,7 +958,7 @@ export default function WildWestSlotScreen({ onBack, socket }: Props) {
         </div>
 
         <div className="ww-bot-right">
-          <button className="ww-hud-btn ww-maxbet-btn" onClick={() => setBetAmount(200000)} title="Max Bet">
+          <button className="ww-hud-btn ww-maxbet-btn" onClick={() => setBetAmount(MAX_SLOT_BET)} title="Max Bet">
             <span className="ww-max-txt">MAX<br />BET</span>
           </button>
 

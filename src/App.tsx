@@ -33,6 +33,7 @@ import lobbyAudio, { type BgmTrackType } from './LobbyAudio';
 import { preloadHomeAssets } from './slotAssetPreloader';
 import AvatarSelectionModal from './AvatarSelectionModal';
 import ChangeNameModal from './ChangeNameModal';
+import { MIN_SLOT_BET, MAX_SLOT_BET, stepSlotBet } from './slotConfig';
 
 import { API_URL, getBackendBase, DEFAULT_LAN_SERVER } from './config';
 
@@ -2336,7 +2337,14 @@ function DailyBonusModal({ onClose, onBonusClaimed }: { onClose: () => void; onB
         const data = await res.json();
         setCanClaim(false);
         setClaimed(true);
-        setAlert('🎉 Berhasil! +5.000 koin diklaim!');
+        setAlert('🎉 Berhasil! +5.000 Bonus Koin Slot diklaim!');
+        if (data.bonusCoins !== undefined) {
+          localStorage.setItem('domino_bonus_coins', data.bonusCoins.toString());
+        }
+        if (data.coins !== undefined) {
+          localStorage.setItem('domino_coins', data.coins.toString());
+        }
+        window.dispatchEvent(new Event('domino_coins_updated'));
         if (onBonusClaimed && data.coins !== undefined) onBonusClaimed(data.coins);
       } else {
         const err = await res.json();
@@ -2413,8 +2421,9 @@ function DailyBonusModal({ onClose, onBonusClaimed }: { onClose: () => void; onB
               {claiming ? 'Mengklaim...' : canClaim ? '🎰 KLAIM 5.000 KOIN SLOT' : '✓ SUDAH DIKLAIM — KEMBALI BESOK'}
             </button>
 
-            <div className="db-note" style={{ color: '#ffd700', fontWeight: 600 }}>
-              🎰 <b>KHUSUS GAME SLOT</b>: Koin bonus harian hanya dapat dimainkan di game Slot (tidak bisa dipakai di Domino, QQ, Billiard, atau By One). Berlaku 24 jam!
+            <div className="db-note" style={{ color: '#ffd700', fontWeight: 600, fontSize: '1.4vh', lineHeight: 1.4 }}>
+              🎰 <b>KHUSUS GAME SLOT</b>: Bonus koin harian hanya dapat digunakan untuk memutar di semua game Slot (tidak bisa dikirim/transfer ke pemain lain dan tidak bisa dipakai di Domino, QQ, atau Billiard).<br/>
+              ✨ <b>Kemenangan dari Slot</b> otomatis menjadi Koin Emas Universal yang bisa dipakai di SEMUA game dan bisa dikirim ke pemain lain!
             </div>
           </div>
         )}
@@ -6979,7 +6988,7 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
   );
   const [isSpinning, setIsSpinning] = useState(false);
   const [spinningCols, setSpinningCols] = useState([false, false, false, false, false]);
-  const [betAmount, setBetAmount] = useState(10000);
+  const [betAmount, setBetAmount] = useState(MIN_SLOT_BET);
   const [winAmount, setWinAmount] = useState(0);
   const [winType, setWinType] = useState('normal');
   const [winningSymbols, setWinningSymbols] = useState<number[]>([]);
@@ -7044,7 +7053,13 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
     if (!myUsername) return;
     fetch(`${API_URL}/profile/${myUsername}`)
       .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d) setProfile(d); })
+      .then(d => {
+        if (d) {
+          setProfile(d);
+          if (d.bonusCoins !== undefined) localStorage.setItem('domino_bonus_coins', d.bonusCoins.toString());
+          if (d.coins !== undefined) localStorage.setItem('domino_coins', d.coins.toString());
+        }
+      })
       .catch(() => { });
   }, [myUsername]);
 
@@ -7111,7 +7126,15 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
         setWinType(data.winType);
         setMultInfo(data.multiplier || null);
         setWinningSymbols(data.winningSymbols || []);
-        setProfile((prev: any) => prev ? { ...prev, coins: data.newBalance } : prev);
+        setProfile((prev: any) => prev ? {
+          ...prev,
+          coins: data.coins !== undefined ? data.coins : data.newBalance,
+          bonusCoins: data.bonusCoins !== undefined ? data.bonusCoins : (prev.bonusCoins || 0)
+        } : prev);
+        if (data.bonusCoins !== undefined) localStorage.setItem('domino_bonus_coins', data.bonusCoins.toString());
+        if (data.coins !== undefined) localStorage.setItem('domino_coins', data.coins.toString());
+        else if (data.newBalance !== undefined) localStorage.setItem('domino_coins', data.newBalance.toString());
+        window.dispatchEvent(new Event('domino_coins_updated'));
 
         if (data.triggerFreeSpins) {
           setCelebration({
@@ -7165,8 +7188,9 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
 
   const handleSpin = () => {
     if (isSpinning || !socket) return;
-    if (profile && profile.coins < betAmount) {
-      alert('Koin tidak cukup!');
+    const available = (profile?.coins || 0) + (profile?.bonusCoins || 0);
+    if (available < betAmount) {
+      alert('Koin tidak cukup! Saldo Koin & Bonus tidak mencukupi taruhan.');
       setAutoSpinCount(0);
       return;
     }
@@ -7176,19 +7200,24 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
     setIsSpinning(true);
     spinningColsRef.current = [true, true, true, true, true];
     setSpinningCols([true, true, true, true, true]);
-    setProfile((prev: any) => prev ? { ...prev, coins: prev.coins - betAmount } : prev);
+    setProfile((prev: any) => {
+      if (!prev) return prev;
+      let remBonus = prev.bonusCoins || 0;
+      let remCoins = prev.coins || 0;
+      if (remBonus >= betAmount) {
+        remBonus -= betAmount;
+      } else {
+        const diff = betAmount - remBonus;
+        remBonus = 0;
+        remCoins = Math.max(0, remCoins - diff);
+      }
+      return { ...prev, coins: remCoins, bonusCoins: remBonus };
+    });
     socket.emit('spin_slot', { username: myUsername, betAmount });
   };
 
-  const betSteps = [10000, 20000, 50000, 100000, 150000, 200000];
   const changeBet = (dir: number) => {
-    const idx = betSteps.indexOf(betAmount);
-    if (idx === -1) {
-      setBetAmount(dir > 0 ? betSteps[1] : betSteps[0]);
-    } else {
-      const next = idx + dir;
-      if (next >= 0 && next < betSteps.length) setBetAmount(betSteps[next]);
-    }
+    setBetAmount(prev => stepSlotBet(prev, dir));
   };
 
   return (
@@ -7200,29 +7229,29 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
       {/* ===== COIN BALANCE BAR (top) ===== */}
       <div className="dfdc-coin-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 2vw', position: 'relative' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.2vw' }}>
-          <button className="g-btn-press" style={{ width: '4.5vh', height: '4.5vh', borderRadius: '50%', background: 'rgba(0,0,0,0.5)', border: '1.5px solid #f1c40f', color: '#fff', fontSize: '2vh', cursor: 'pointer' }} onClick={onBack}>‹</button>
+          <button className="g-btn-press" style={{ width: 'max(48px, 11vh)', height: 'max(48px, 11vh)', minWidth: '48px', minHeight: '48px', borderRadius: '50%', background: 'linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(0,0,0,0.65) 100%)', border: '2.5px solid #f1c40f', color: '#fff', fontSize: 'max(26px, 5vh)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0.4vh 1vh rgba(0,0,0,0.5)', flexShrink: 0 }} onClick={onBack}>‹</button>
           <div
             className="g-btn-press"
             onClick={() => setShowProfileModal(true)}
             title="Lihat Profil VIP"
-            style={{ display: 'flex', alignItems: 'center', gap: '0.8vw', background: 'rgba(0,0,0,0.6)', border: '1.5px solid #f1c40f', borderRadius: '25px', padding: '0.3vh 1.2vw 0.3vh 0.4vh', cursor: 'pointer' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '1.2vw', background: 'linear-gradient(135deg, rgba(0,0,0,0.8), rgba(40,20,0,0.9))', border: '2.5px solid #f1c40f', borderRadius: '40px', padding: '0.6vh 1.8vw 0.6vh 0.6vh', cursor: 'pointer', boxShadow: '0 0.5vh 1.4vh rgba(0,0,0,0.65)' }}
           >
-            <div style={{ width: '4.5vh', height: '4.5vh', borderRadius: '50%', overflow: 'hidden', border: '1.5px solid #ffd700', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#111' }}>
+            <div style={{ width: 'max(54px, 12.5vh)', height: 'max(54px, 12.5vh)', minWidth: '54px', minHeight: '54px', borderRadius: '50%', overflow: 'hidden', border: '3px solid #ffd700', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#111', boxShadow: '0 0 1.2vh rgba(255,215,0,0.6)', flexShrink: 0 }}>
               {renderSlotAvatar(userProfile.avatar, '', '🐸')}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ color: '#fff', fontSize: '1.3vh', fontWeight: 900, lineHeight: 1.1 }}>{userProfile.username || 'Pemain'}</span>
-              <span style={{ color: '#ffd54f', fontSize: '1.1vh', fontWeight: 'bold' }}>VIP {userProfile.vipLevel}</span>
+              <span style={{ color: '#fff', fontSize: 'max(14px, 2.2vh)', fontWeight: 900, lineHeight: 1.15 }}>{userProfile.username || 'Pemain'}</span>
+              <span style={{ color: '#3e2723', background: 'linear-gradient(135deg, #ffd700, #ff8c00)', fontSize: 'max(11px, 1.5vh)', fontWeight: 900, padding: '0.3vh 1vh', borderRadius: '0.6vh', border: '0.15vh solid #fff', marginTop: '0.3vh', alignSelf: 'flex-start' }}>VIP {userProfile.vipLevel}</span>
             </div>
           </div>
         </div>
         <div className="dfdc-coin-display">
           <span className="dfdc-coin-icon">🪙</span>
-          <span className="dfdc-coin-amount">{profile ? profile.coins.toLocaleString() : '0'}</span>
+          <span className="dfdc-coin-amount">{profile ? ((profile.coins || 0) + (profile.bonusCoins || 0)).toLocaleString() : '0'}</span>
           <button className="dfdc-coin-plus g-btn-press">+</button>
         </div>
         <div style={{ position: 'relative' }}>
-          <button className="g-btn-press" style={{ width: '4.5vh', height: '4.5vh', borderRadius: '50%', background: 'rgba(0,0,0,0.5)', border: '1.5px solid #f1c40f', color: '#fff', fontSize: '2vh', cursor: 'pointer' }} onClick={() => setShowMenu(v => !v)}>≡</button>
+          <button className="g-btn-press" style={{ width: 'max(54px, 12.5vh)', height: 'max(54px, 12.5vh)', minWidth: '54px', minHeight: '54px', borderRadius: '50%', background: 'linear-gradient(180deg, rgba(255,215,0,0.3) 0%, rgba(0,0,0,0.7) 100%)', border: '3px solid #f1c40f', color: '#ffd700', fontSize: 'max(30px, 6.5vh)', fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0.5vh 1.4vh rgba(0,0,0,0.65)', flexShrink: 0 }} onClick={() => setShowMenu(v => !v)}>≡</button>
           <GameMenuDropdown
             isOpen={showMenu}
             onClose={() => setShowMenu(false)}
@@ -7368,7 +7397,7 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
         </div>
 
 
-        <button className="dfdc-max-btn g-btn-press" onClick={() => setBetAmount(200000)}>
+        <button className="dfdc-max-btn g-btn-press" onClick={() => setBetAmount(MAX_SLOT_BET)}>
           MAX
           <span className="dfdc-max-sub">BET</span>
         </button>

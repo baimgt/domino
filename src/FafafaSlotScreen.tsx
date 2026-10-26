@@ -6,6 +6,7 @@ import SlotMultiplierBar from './SlotMultiplierBar';
 import SlotCelebrationModal, { SlotCelebrationData } from './SlotCelebrationModal';
 import SlotProfileModal, { renderSlotAvatar } from './SlotProfileModal';
 import { useSlotProfile } from './useSlotProfile';
+import { MIN_SLOT_BET, MAX_SLOT_BET, stepSlotBet } from './slotConfig';
 
 interface Props {
   onBack: () => void;
@@ -46,10 +47,13 @@ export default function FafafaSlotScreen({ onBack, socket }: Props) {
   const [grid, setGrid] = useState<number[][]>([]);
   const [isSpinning, setIsSpinning] = useState(false);
   const [spinningCols, setSpinningCols] = useState<boolean[]>([false, false, false, false, false]);
-  const [betAmount, setBetAmount] = useState(10000);
+  const [betAmount, setBetAmount] = useState(MIN_SLOT_BET);
   const [myCoins, setMyCoins] = useState<number>(() => {
     const saved = localStorage.getItem('domino_coins');
-    return saved ? parseInt(saved, 10) : 100000;
+    const savedBonus = localStorage.getItem('domino_bonus_coins');
+    const c = saved ? parseInt(saved, 10) : 0;
+    const b = savedBonus ? parseInt(savedBonus, 10) : 0;
+    return (c + b) > 0 ? (c + b) : 100000;
   });
   const [winLines, setWinLines] = useState<any[]>([]);
   const [freeSpinsLeft, setFreeSpinsLeft] = useState(0);
@@ -96,7 +100,10 @@ export default function FafafaSlotScreen({ onBack, socket }: Props) {
     ];
     setGrid(initGrid);
     const coinsStr = localStorage.getItem('domino_coins');
-    if (coinsStr) setMyCoins(parseInt(coinsStr));
+    const bonusStr = localStorage.getItem('domino_bonus_coins');
+    const cVal = coinsStr ? parseInt(coinsStr, 10) : 0;
+    const bVal = bonusStr ? parseInt(bonusStr, 10) : 0;
+    if (cVal + bVal > 0) setMyCoins(cVal + bVal);
   }, []);
 
   // Rapid symbol shuffle on active spinning reels (DFDC / FaFaFa style)
@@ -162,7 +169,14 @@ export default function FafafaSlotScreen({ onBack, socket }: Props) {
         spinningColsRef.current = [false, false, false, false, false];
         setSpinningCols([false, false, false, false, false]);
         setMyCoins(data.newBalance);
-        localStorage.setItem('domino_coins', data.newBalance.toString());
+        if (data.coins !== undefined) {
+          localStorage.setItem('domino_coins', data.coins.toString());
+        } else {
+          localStorage.setItem('domino_coins', data.newBalance.toString());
+        }
+        if (data.bonusCoins !== undefined) {
+          localStorage.setItem('domino_bonus_coins', data.bonusCoins.toString());
+        }
         
         if (data.winningLines && data.winningLines.length > 0) {
           const winTotal = data.totalWinAmount;
@@ -303,7 +317,7 @@ export default function FafafaSlotScreen({ onBack, socket }: Props) {
           <div style={{ width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {renderSlotAvatar(userProfile.avatar, 'fafafa-avatar-img', '🐸')}
           </div>
-          <div style={{ position: 'absolute', bottom: '-0.6vh', left: '50%', transform: 'translateX(-50%)', background: 'linear-gradient(135deg, #ffd700, #ff8c00)', color: '#3e2723', fontSize: '1.05vh', fontWeight: 900, lineHeight: 1, borderRadius: '0.6vh', padding: '0.2vh 0.6vh', border: '0.15vh solid #fff', whiteSpace: 'nowrap', boxShadow: '0 0.2vh 0.4vh rgba(0,0,0,0.6)', letterSpacing: '0.02em' }}>
+          <div style={{ position: 'absolute', bottom: '-0.7vh', left: '50%', transform: 'translateX(-50%)', background: 'linear-gradient(135deg, #ffd700, #ff8c00)', color: '#3e2723', fontSize: '1.2vh', fontWeight: 900, lineHeight: 1, borderRadius: '0.8vh', padding: '0.25vh 0.8vh', border: '0.15vh solid #fff', whiteSpace: 'nowrap', boxShadow: '0 0.3vh 0.5vh rgba(0,0,0,0.6)', letterSpacing: '0.02em' }}>
             VIP {userProfile.vipLevel}
           </div>
         </div>
@@ -514,7 +528,7 @@ export default function FafafaSlotScreen({ onBack, socket }: Props) {
             </button>
             <button 
               className="fbot-bet-step-btn" 
-              onClick={() => setBetAmount(b => Math.max(10000, b - 10000))}
+              onClick={() => setBetAmount(b => stepSlotBet(b, -1))}
               title="Kurangi Taruhan"
             >
               -
@@ -525,7 +539,7 @@ export default function FafafaSlotScreen({ onBack, socket }: Props) {
             </div>
             <button 
               className="fbot-bet-step-btn" 
-              onClick={() => setBetAmount(b => Math.min(200000, b + 10000))}
+              onClick={() => setBetAmount(b => stepSlotBet(b, 1))}
               title="Tambah Taruhan"
             >
               +
@@ -549,7 +563,7 @@ export default function FafafaSlotScreen({ onBack, socket }: Props) {
           <div className="fbot-right">
             <button 
               className="fbot-pill-btn fbot-maxbet-btn" 
-              onClick={() => setBetAmount(200000)}
+              onClick={() => setBetAmount(MAX_SLOT_BET)}
               title="Taruhan Maksimal"
             >
               MAX<br/>BET

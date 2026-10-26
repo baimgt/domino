@@ -60,18 +60,18 @@
   position: relative; cursor: pointer;
 }
 .ww-avatar-img {
-  width: 6.5vh; height: 6.5vh; border-radius: 50%;
-  border: 0.35vh solid #ffd700;
-  box-shadow: 0 0 1.5vh rgba(255,215,0,0.6);
+  width: max(54px, 12.5vh); height: max(54px, 12.5vh); border-radius: 50%;
+  border: 0.38vh solid #ffd700;
+  box-shadow: 0 0 1.5vh rgba(255,215,0,0.75);
   object-fit: cover; background: #3e2723;
 }
 .ww-vip-badge {
-  position: absolute; bottom: -0.5vh; left: 50%; transform: translateX(-50%);
+  position: absolute; bottom: -0.7vh; left: 50%; transform: translateX(-50%);
   background: linear-gradient(180deg, #ffd700, #ff8f00);
-  color: #3e2723; font-size: 0.82vh; font-weight: 900;
-  line-height: 1; padding: 0.15vh 0.5vh; border-radius: 0.6vh;
-  border: 0.12vh solid #fff; white-space: nowrap;
-  box-shadow: 0 0.2vh 0.4vh rgba(0,0,0,0.6);
+  color: #3e2723; font-size: 1.2vh; font-weight: 900;
+  line-height: 1; padding: 0.25vh 0.8vh; border-radius: 0.8vh;
+  border: 0.15vh solid #fff; white-space: nowrap;
+  box-shadow: 0 0.3vh 0.5vh rgba(0,0,0,0.6);
   letter-spacing: 0.02em;
 }
 
@@ -115,23 +115,26 @@
   display: flex; align-items: center; gap: 0.8vw; pointer-events: auto;
 }
 .ww-tr-circle-btn {
-  width: 6.5vh; height: 6.5vh; border-radius: 50%;
+  width: max(52px, 12vh); height: max(52px, 12vh);
+  min-width: max(52px, 12vh); min-height: max(52px, 12vh);
+  border-radius: 50%;
   background: radial-gradient(circle at 40% 35%, #004d40 0%, #00251a 100%);
-  border: 0.25vh solid #ffd700; color: #ffe082;
+  border: 0.28vh solid #ffd700; color: #ffe082;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  cursor: pointer; box-shadow: 0 0.4vh 1vh rgba(0,0,0,0.7);
+  cursor: pointer; box-shadow: 0 0.5vh 1.4vh rgba(0,0,0,0.7);
   transition: transform 0.1s, filter 0.1s;
 }
 .ww-tr-circle-btn:hover { filter: brightness(1.2); }
 .ww-tr-circle-btn:active { transform: scale(0.92); }
-.ww-tr-icon { font-size: 2.2vh; }
-.ww-tr-text { font-size: 0.9vh; font-weight: 800; line-height: 1; text-align: center; color: #ffe082; }
+.ww-tr-icon { font-size: max(24px, 4.5vh); }
+.ww-tr-text { font-size: 1.15vh; font-weight: 800; line-height: 1; text-align: center; color: #ffe082; }
 
 .ww-tr-hamburger {
-  display: flex; flex-direction: column; gap: 0.4vh; align-items: center; justify-content: center;
+  display: flex; flex-direction: column; gap: max(4.5px, 0.9vh); align-items: center; justify-content: center;
 }
 .ww-tr-hamburger span {
-  width: 2.2vh; height: 0.35vh; background: #ffd700; border-radius: 0.2vh;
+  width: max(28px, 6vh); height: max(4px, 0.75vh); background: #ffd700; border-radius: 0.35vh;
+  box-shadow: 0 0.1vh 0.2vh rgba(0,0,0,0.5);
 }
 
 /* ===========================

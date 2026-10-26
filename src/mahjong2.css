@@ -83,22 +83,22 @@
   cursor: pointer;
 }
 .mj-avatar-img {
-  width: 8.5vh; height: 8.5vh;
+  width: max(54px, 12.5vh); height: max(54px, 12.5vh);
   border-radius: 50%;
-  border: 0.35vh solid #ffd700;
-  box-shadow: 0 0 1.2vh rgba(0,0,0,0.6);
+  border: 0.38vh solid #ffd700;
+  box-shadow: 0 0 1.4vh rgba(0,0,0,0.75);
   object-fit: cover;
 }
 .mj-vip-badge {
   position: absolute;
-  bottom: -0.6vh; left: 50%; transform: translateX(-50%);
+  bottom: -0.8vh; left: 50%; transform: translateX(-50%);
   background: linear-gradient(135deg, #b71c1c, #ff1744);
-  color: #fff; font-size: 1.05vh; font-weight: 900;
+  color: #fff; font-size: max(10px, 1.4vh); font-weight: 900;
   line-height: 1;
-  padding: 0.2vh 0.6vh; border-radius: 0.6vh;
+  padding: 0.3vh 0.9vh; border-radius: 0.8vh;
   border: 0.15vh solid #ffd700;
   white-space: nowrap;
-  box-shadow: 0 0.2vh 0.4vh rgba(0,0,0,0.5);
+  box-shadow: 0 0.3vh 0.5vh rgba(0,0,0,0.5);
   letter-spacing: 0.02em;
 }
 .mj-bar-icon {
@@ -162,11 +162,14 @@
 .mj-tr-btn:active { transform: scale(0.92); }
 .mj-tr-icon { font-size: 2vh; }
 .mj-tr-menu {
-  font-size: 4.2vh;
-  min-width: 7.8vh;
-  min-height: 7.8vh;
+  font-size: max(32px, 6.8vh);
+  width: max(52px, 12vh);
+  height: max(52px, 12vh);
+  min-width: max(52px, 12vh);
+  min-height: max(52px, 12vh);
   font-weight: 900;
   line-height: 1;
+  box-shadow: 0 0.5vh 1.4vh rgba(0,0,0,0.65);
 }
 
 /* ====================================================
