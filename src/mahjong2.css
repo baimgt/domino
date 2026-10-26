@@ -83,7 +83,7 @@
   cursor: pointer;
 }
 .mj-avatar-img {
-  width: max(54px, 12.5vh); height: max(54px, 12.5vh);
+  width: max(42px, 9.5vh); height: max(42px, 9.5vh);
   border-radius: 50%;
   border: 0.38vh solid #ffd700;
   box-shadow: 0 0 1.4vh rgba(0,0,0,0.75);
@@ -162,11 +162,11 @@
 .mj-tr-btn:active { transform: scale(0.92); }
 .mj-tr-icon { font-size: 2vh; }
 .mj-tr-menu {
-  font-size: max(32px, 6.8vh);
-  width: max(52px, 12vh);
-  height: max(52px, 12vh);
-  min-width: max(52px, 12vh);
-  min-height: max(52px, 12vh);
+  font-size: max(22px, 4.8vh);
+  width: max(40px, 9vh);
+  height: max(40px, 9vh);
+  min-width: max(40px, 9vh);
+  min-height: max(40px, 9vh);
   font-weight: 900;
   line-height: 1;
   box-shadow: 0 0.5vh 1.4vh rgba(0,0,0,0.65);

@@ -767,9 +767,8 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
       <div className="zeus-bg-lightning zeus-bg-l3" />
  
       <div className="zeus-topbar-v2">
-        <button className="zeus-tb-back-corner g-btn-press" onClick={onBack}>‹</button>
- 
         <div className="zeus-tb-left">
+          <button className="zeus-tb-back-corner g-btn-press" onClick={onBack} title="Kembali ke Lobi">‹</button>
           <div
             className="zeus-tb-avatar g-btn-press"
             onClick={() => setShowProfileModal(true)}

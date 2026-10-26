@@ -67,7 +67,7 @@
 }
 
 .fivelions-avatar {
-  width: max(54px, 12.5vh); height: max(54px, 12.5vh);
+  width: max(42px, 9.5vh); height: max(42px, 9.5vh);
   border: 0.38vh solid #ffd700;
   border-radius: 50%;
   box-shadow: 0 0.4vh 1.4vh rgba(0,0,0,0.75);
@@ -234,8 +234,8 @@
   background: radial-gradient(circle at 30% 30%, #ffd54f 0%, #ffb300 50%, #ff8f00 100%);
   border: 0.25vh solid #ffe082;
   border-radius: 50%;
-  width: max(52px, 12vh); height: max(52px, 12vh);
-  min-width: max(52px, 12vh); min-height: max(52px, 12vh);
+  width: max(40px, 9vh); height: max(40px, 9vh);
+  min-width: max(40px, 9vh); min-height: max(40px, 9vh);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -250,12 +250,12 @@
 .fivelions-tr-btn .menu-burger-bars {
   display: flex;
   flex-direction: column;
-  gap: max(4.5px, 0.9vh);
-  width: max(28px, 6vh);
+  gap: max(3.5px, 0.7vh);
+  width: max(20px, 4.5vh);
 }
 .fivelions-tr-btn .menu-burger-bars span {
   display: block;
-  height: max(4px, 0.75vh);
+  height: max(3px, 0.6vh);
   background: #3e2723;
   border-radius: 0.35vh;
   box-shadow: 0 0.1vh 0.2vh rgba(255,255,255,0.4);

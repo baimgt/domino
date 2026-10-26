@@ -88,7 +88,7 @@
 }
 .cr-avatar-wrap { position: relative; cursor: pointer; }
 .cr-avatar-img {
-  width: max(54px, 12.5vh); height: max(54px, 12.5vh); border-radius: 50%;
+  width: max(42px, 9.5vh); height: max(42px, 9.5vh); border-radius: 50%;
   border: 0.38vh solid #ff69b4;
   box-shadow: 0 0 1.5vh rgba(255,105,180,0.75);
   object-fit: cover;
@@ -135,10 +135,10 @@
   background: rgba(255,105,180,0.25);
   border: 0.25vh solid rgba(255,105,180,0.7);
   border-radius: 50%; color: #fff; cursor: pointer;
-  padding: 0; font-size: max(32px, 6.8vh); font-weight: 900;
+  padding: 0; font-size: max(22px, 4.8vh); font-weight: 900;
   display: flex; align-items: center; justify-content: center;
-  width: max(52px, 12vh); height: max(52px, 12vh);
-  min-width: max(52px, 12vh); min-height: max(52px, 12vh);
+  width: max(40px, 9vh); height: max(40px, 9vh);
+  min-width: max(40px, 9vh); min-height: max(40px, 9vh);
   box-shadow: 0 0.5vh 1.4vh rgba(0,0,0,0.6);
   transition: transform 0.1s, filter 0.1s;
 }

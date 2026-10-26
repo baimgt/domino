@@ -98,7 +98,7 @@ button:hover, .jinji-side-card:hover, .jinji-avatar:hover, .jinji-plus-btn:hover
 }
 .jinji-avatar {
   position: relative;
-  width: max(54px, 12.5vh); height: max(54px, 12.5vh);
+  width: max(42px, 9.5vh); height: max(42px, 9.5vh);
   border: 0.38vh solid #ffd700;
   border-radius: 50%;
   box-shadow: 0 0.4vh 1.4vh rgba(0,0,0,0.75);
@@ -165,8 +165,8 @@ button:hover, .jinji-side-card:hover, .jinji-avatar:hover, .jinji-plus-btn:hover
   display: flex; gap: 0.8vw;
 }
 .jinji-tr-btn {
-  width: max(52px, 12vh); height: max(52px, 12vh);
-  min-width: max(52px, 12vh); min-height: max(52px, 12vh);
+  width: max(40px, 9vh); height: max(40px, 9vh);
+  min-width: max(40px, 9vh); min-height: max(40px, 9vh);
   border-radius: 50%;
   border: 0.25vh solid #ffe082;
   background: radial-gradient(circle, #b8860b 0%, #5c3200 100%);
@@ -175,10 +175,10 @@ button:hover, .jinji-side-card:hover, .jinji-avatar:hover, .jinji-plus-btn:hover
   box-shadow: 0 0.5vh 1.4vh rgba(0,0,0,0.65);
   cursor: pointer;
 }
-.jinji-tr-btn.trophy-btn { font-size: max(26px, 5vh); }
+.jinji-tr-btn.trophy-btn { font-size: max(20px, 4.2vh); }
 .jinji-tr-btn.room-btn span { font-size: 1.4vh; margin-bottom: -0.4vh; }
 .jinji-tr-btn.room-btn small { font-size: 0.9vh; line-height: 1; text-align: center; color: #ffe082; font-weight: 800; }
-.jinji-tr-btn.menu-btn { font-size: max(32px, 6.8vh); font-weight: 900; }
+.jinji-tr-btn.menu-btn { font-size: max(22px, 4.8vh); font-weight: 900; }
 
 /* TOP JACKPOT BANNER & FU POT */
 .jinji-jackpot-header {

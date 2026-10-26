@@ -9122,7 +9122,7 @@ input:checked+.setting-slider:before {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.8vh 1.8vw 0.8vh 7.2vh;
+  padding: 0.8vh 1.8vw;
   background: 
     linear-gradient(180deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.05) 30%, transparent 60%),
     linear-gradient(180deg, #fff7c7 0%, #ffd85e 12%, #e5a417 40%, #b87b05 76%, #774700 95%, #523101 100%);
@@ -9138,23 +9138,26 @@ input:checked+.setting-slider:before {
 }
 
 .zeus-tb-back-corner {
-  position: absolute;
-  top: 50%;
-  left: 1.4vh;
-  transform: translateY(-50%);
-  width: max(46px, 10.5vh);
-  height: max(46px, 10.5vh);
+  position: relative;
+  top: auto;
+  left: auto;
+  transform: none;
+  width: max(38px, 8.5vh);
+  height: max(38px, 8.5vh);
+  min-width: max(38px, 8.5vh);
+  min-height: max(38px, 8.5vh);
   border-radius: 50%;
   background: linear-gradient(180deg, #fffae3 0%, #f7cb59 40%, #c48714 85%, #8d5301 100%);
   border: 0.28vh solid #522e01;
   color: #421e01;
-  font-size: max(26px, 5.5vh);
+  font-size: max(22px, 5vh);
   font-weight: 900;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   z-index: 20;
+  flex-shrink: 0;
   box-shadow: 
     0 0.4vh 0.8vh rgba(0, 0, 0, 0.45), 
     inset 0 0.2vh 0.3vh #ffffff, 
@@ -9163,7 +9166,7 @@ input:checked+.setting-slider:before {
 }
 
 .zeus-tb-back-corner:active {
-  transform: translateY(-50%) scale(0.94);
+  transform: scale(0.94);
   filter: brightness(0.92);
 }
 
@@ -9175,8 +9178,8 @@ input:checked+.setting-slider:before {
 
 .zeus-tb-avatar {
   position: relative;
-  width: max(54px, 12.5vh);
-  height: max(54px, 12.5vh);
+  width: max(42px, 9.5vh);
+  height: max(42px, 9.5vh);
   border-radius: 50%;
   background: radial-gradient(circle at 35% 35%, #4e2f96, #21124e 70%, #0c0524 100%);
   border: 0.38vh solid #ffd700;
@@ -9184,7 +9187,7 @@ input:checked+.setting-slider:before {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: max(26px, 5.5vh);
+  font-size: max(20px, 4.5vh);
   flex-shrink: 0;
 }
 
@@ -9409,15 +9412,15 @@ input:checked+.setting-slider:before {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: max(50px, 12vh);
-  height: max(50px, 12vh);
-  min-width: max(50px, 12vh);
-  min-height: max(50px, 12vh);
+  width: max(40px, 9vh);
+  height: max(40px, 9vh);
+  min-width: max(40px, 9vh);
+  min-height: max(40px, 9vh);
   border-radius: 1.8vh;
   background: linear-gradient(180deg, #fffae3 0%, #f7cb59 40%, #c48714 85%, #8d5301 100%);
   border: 0.25vh solid #522e01;
   color: #421e01;
-  font-size: max(28px, 6vh);
+  font-size: max(22px, 4.8vh);
   font-weight: 900;
   cursor: pointer;
   line-height: 1;

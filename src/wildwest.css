@@ -60,7 +60,7 @@
   position: relative; cursor: pointer;
 }
 .ww-avatar-img {
-  width: max(54px, 12.5vh); height: max(54px, 12.5vh); border-radius: 50%;
+  width: max(42px, 9.5vh); height: max(42px, 9.5vh); border-radius: 50%;
   border: 0.38vh solid #ffd700;
   box-shadow: 0 0 1.5vh rgba(255,215,0,0.75);
   object-fit: cover; background: #3e2723;
@@ -115,8 +115,8 @@
   display: flex; align-items: center; gap: 0.8vw; pointer-events: auto;
 }
 .ww-tr-circle-btn {
-  width: max(52px, 12vh); height: max(52px, 12vh);
-  min-width: max(52px, 12vh); min-height: max(52px, 12vh);
+  width: max(40px, 9vh); height: max(40px, 9vh);
+  min-width: max(40px, 9vh); min-height: max(40px, 9vh);
   border-radius: 50%;
   background: radial-gradient(circle at 40% 35%, #004d40 0%, #00251a 100%);
   border: 0.28vh solid #ffd700; color: #ffe082;
@@ -126,14 +126,14 @@
 }
 .ww-tr-circle-btn:hover { filter: brightness(1.2); }
 .ww-tr-circle-btn:active { transform: scale(0.92); }
-.ww-tr-icon { font-size: max(24px, 4.5vh); }
+.ww-tr-icon { font-size: max(20px, 4vh); }
 .ww-tr-text { font-size: 1.15vh; font-weight: 800; line-height: 1; text-align: center; color: #ffe082; }
 
 .ww-tr-hamburger {
-  display: flex; flex-direction: column; gap: max(4.5px, 0.9vh); align-items: center; justify-content: center;
+  display: flex; flex-direction: column; gap: max(3.5px, 0.7vh); align-items: center; justify-content: center;
 }
 .ww-tr-hamburger span {
-  width: max(28px, 6vh); height: max(4px, 0.75vh); background: #ffd700; border-radius: 0.35vh;
+  width: max(20px, 4.5vh); height: max(3px, 0.6vh); background: #ffd700; border-radius: 0.35vh;
   box-shadow: 0 0.1vh 0.2vh rgba(0,0,0,0.5);
 }
 

@@ -474,7 +474,7 @@ export default function WildWestSlotScreen({ onBack, socket }: Props) {
               title="Lihat Profil VIP"
               style={{ cursor: 'pointer', position: 'relative' }}
             >
-              <div style={{ width: 'max(54px, 12.5vh)', height: 'max(54px, 12.5vh)', minWidth: '54px', minHeight: '54px', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <div style={{ width: 'max(42px, 9.5vh)', height: 'max(42px, 9.5vh)', minWidth: '42px', minHeight: '42px', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 {renderSlotAvatar(userProfile.avatar, 'ww-avatar-img', '🤠')}
               </div>
               <div className="ww-vip-badge">VIP {userProfile.vipLevel}</div>

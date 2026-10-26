@@ -465,7 +465,7 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
       {/* TOP LEFT */}
       <div className="cr-topleft">
         <div className="cr-avatar-wrap g-btn-press" onClick={() => setShowProfileModal(true)} title="Lihat Profil VIP" style={{ cursor: 'pointer' }}>
-          <div style={{ width: 'max(54px, 12.5vh)', height: 'max(54px, 12.5vh)', minWidth: '54px', minHeight: '54px', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '0.38vh solid #ff69b4', boxShadow: '0 0 1.5vh rgba(255,105,180,0.7)', background: 'radial-gradient(circle, #ff69b4, #800080)', flexShrink: 0 }}>
+          <div style={{ width: 'max(42px, 9.5vh)', height: 'max(42px, 9.5vh)', minWidth: '42px', minHeight: '42px', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '0.38vh solid #ff69b4', boxShadow: '0 0 1.5vh rgba(255,105,180,0.7)', background: 'radial-gradient(circle, #ff69b4, #800080)', flexShrink: 0 }}>
             {renderSlotAvatar(userProfile.avatar, 'cr-avatar-img', '🐸')}
           </div>
           <div className="cr-vip-badge">VIP {userProfile.vipLevel}</div>

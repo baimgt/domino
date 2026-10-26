@@ -7229,14 +7229,14 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
       {/* ===== COIN BALANCE BAR (top) ===== */}
       <div className="dfdc-coin-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 2vw', position: 'relative' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.2vw' }}>
-          <button className="g-btn-press" style={{ width: 'max(48px, 11vh)', height: 'max(48px, 11vh)', minWidth: '48px', minHeight: '48px', borderRadius: '50%', background: 'linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(0,0,0,0.65) 100%)', border: '2.5px solid #f1c40f', color: '#fff', fontSize: 'max(26px, 5vh)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0.4vh 1vh rgba(0,0,0,0.5)', flexShrink: 0 }} onClick={onBack}>‹</button>
+          <button className="g-btn-press" style={{ width: 'max(38px, 8.5vh)', height: 'max(38px, 8.5vh)', minWidth: '38px', minHeight: '38px', borderRadius: '50%', background: 'linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(0,0,0,0.65) 100%)', border: '2.5px solid #f1c40f', color: '#fff', fontSize: 'max(22px, 4.5vh)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0.4vh 1vh rgba(0,0,0,0.5)', flexShrink: 0 }} onClick={onBack}>‹</button>
           <div
             className="g-btn-press"
             onClick={() => setShowProfileModal(true)}
             title="Lihat Profil VIP"
             style={{ display: 'flex', alignItems: 'center', gap: '1.2vw', background: 'linear-gradient(135deg, rgba(0,0,0,0.8), rgba(40,20,0,0.9))', border: '2.5px solid #f1c40f', borderRadius: '40px', padding: '0.6vh 1.8vw 0.6vh 0.6vh', cursor: 'pointer', boxShadow: '0 0.5vh 1.4vh rgba(0,0,0,0.65)' }}
           >
-            <div style={{ width: 'max(54px, 12.5vh)', height: 'max(54px, 12.5vh)', minWidth: '54px', minHeight: '54px', borderRadius: '50%', overflow: 'hidden', border: '3px solid #ffd700', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#111', boxShadow: '0 0 1.2vh rgba(255,215,0,0.6)', flexShrink: 0 }}>
+            <div style={{ width: 'max(42px, 9.5vh)', height: 'max(42px, 9.5vh)', minWidth: '42px', minHeight: '42px', borderRadius: '50%', overflow: 'hidden', border: '3px solid #ffd700', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#111', boxShadow: '0 0 1.2vh rgba(255,215,0,0.6)', flexShrink: 0 }}>
               {renderSlotAvatar(userProfile.avatar, '', '🐸')}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -7251,7 +7251,7 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
           <button className="dfdc-coin-plus g-btn-press">+</button>
         </div>
         <div style={{ position: 'relative' }}>
-          <button className="g-btn-press" style={{ width: 'max(54px, 12.5vh)', height: 'max(54px, 12.5vh)', minWidth: '54px', minHeight: '54px', borderRadius: '50%', background: 'linear-gradient(180deg, rgba(255,215,0,0.3) 0%, rgba(0,0,0,0.7) 100%)', border: '3px solid #f1c40f', color: '#ffd700', fontSize: 'max(30px, 6.5vh)', fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0.5vh 1.4vh rgba(0,0,0,0.65)', flexShrink: 0 }} onClick={() => setShowMenu(v => !v)}>≡</button>
+          <button className="g-btn-press" style={{ width: 'max(40px, 9vh)', height: 'max(40px, 9vh)', minWidth: '40px', minHeight: '40px', borderRadius: '50%', background: 'linear-gradient(180deg, rgba(255,215,0,0.3) 0%, rgba(0,0,0,0.7) 100%)', border: '3px solid #f1c40f', color: '#ffd700', fontSize: 'max(22px, 4.8vh)', fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0.5vh 1.4vh rgba(0,0,0,0.65)', flexShrink: 0 }} onClick={() => setShowMenu(v => !v)}>≡</button>
           <GameMenuDropdown
             isOpen={showMenu}
             onClose={() => setShowMenu(false)}

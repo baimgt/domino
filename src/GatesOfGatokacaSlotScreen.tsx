@@ -511,7 +511,7 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
       {/* TOP LEFT: Avatar + coins */}
       <div className="gato-topleft">
         <div className="gato-avatar-wrap g-btn-press" onClick={() => setShowProfileModal(true)} title="Lihat Profil VIP" style={{ cursor: 'pointer' }}>
-          <div style={{ width: 'max(54px, 12.5vh)', height: 'max(54px, 12.5vh)', minWidth: '54px', minHeight: '54px', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '0.38vh solid #ffd700', boxShadow: '0 0 1.4vh rgba(0,0,0,0.7)', background: 'radial-gradient(circle, #4e2f96, #120924)', flexShrink: 0 }}>
+          <div style={{ width: 'max(42px, 9.5vh)', height: 'max(42px, 9.5vh)', minWidth: '42px', minHeight: '42px', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '0.38vh solid #ffd700', boxShadow: '0 0 1.4vh rgba(0,0,0,0.7)', background: 'radial-gradient(circle, #4e2f96, #120924)', flexShrink: 0 }}>
             {renderSlotAvatar(userProfile.avatar, 'gato-avatar-img', '🐸')}
           </div>
           <div className="gato-level-badge">Lv.{userProfile.level}</div>
