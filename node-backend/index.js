@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const http = require('http');
+const fs = require('fs');
 const path = require('path');
 const { Server } = require('socket.io');
 const userController = require('./controllers/userController');
@@ -65,7 +66,7 @@ mongoose.connect(MONGO_URI)
   });
 
 // Health Check & Root Info
-app.get('/', (req, res) => {
+app.get('/api/health', (req, res) => {
   res.json({
     status: 'online',
     message: 'Backend Kings Billiard & Domino Server is Running!',
@@ -119,7 +120,33 @@ app.post('/api/admin/adjust-coins',                adminController.adjustCoins);
 // Initialize Socket.IO game events
 initSocketIO(io);
 
+// Serve Frontend Web Game (dist) if built
+const distDir = path.join(__dirname, '../dist');
+if (fs.existsSync(path.join(distDir, 'index.html'))) {
+  app.use(express.static(distDir));
+  app.use((req, res, next) => {
+    if (
+      req.method === 'GET' &&
+      !req.path.startsWith('/api') &&
+      !req.path.startsWith('/admin') &&
+      !req.path.startsWith('/download') &&
+      !req.path.startsWith('/socket.io')
+    ) {
+      return res.sendFile(path.join(distDir, 'index.html'));
+    }
+    next();
+  });
+} else {
+  app.get('/', (req, res) => {
+    res.json({
+      status: 'online',
+      message: 'Backend Kings Billiard & Domino Server is Running!',
+      time: new Date().toISOString()
+    });
+  });
+}
+
 // Start Server
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`Server Node.js + Socket.IO berjalan di http://localhost:${PORT}`);
 });

@@ -1,0 +1,12 @@
+node_modules
+dist
+android
+ios
+landing-page
+node-backend
+backend
+scratch
+.git
+*.apk
+*.log
+

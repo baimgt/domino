@@ -24,7 +24,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://gamerstoreplus.com'),
+  metadataBase: new URL('https://download.kingsbilliards.tech'),
   title: 'Download Kings Billiards & Domino APK v2.79 Resmi 2026 (Anti-Banned)',
   description: 'Download Kings Billiards & Domino APK Versi Terbaru v2.79 (160 MB) 2026. Game Domino Gaple, Qiu Qiu 99, 8-Ball Billiards & Slot Kasino No. 1 Indonesia dengan grafis HD dan bonus koin melimpah.',
   keywords: [
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Download Kings Billiards & Domino APK v2.79 Resmi (Anti-Banned)',
     description: 'Nikmati Domino Gaple, Qiu Qiu, 8-Ball Billiards dan Slot Kasino terbaik dalam satu aplikasi ringan, aman, dan bebas malware!',
-    url: 'https://gamerstoreplus.com/',
+    url: 'https://download.kingsbilliards.tech/',
     siteName: 'Kings Billiards & Domino',
     images: [
       {

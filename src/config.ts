@@ -1,8 +1,7 @@
 import { Capacitor } from '@capacitor/core';
 
 // URL Server Publik / VPS / Cloud untuk diakses oleh siapa pun di HP / Internet
-// Ganti nilai ini saat backend sudah di-deploy ke server online (contoh: 'https://backend-anda.up.railway.app' atau 'http://IP_VPS:8080')
-export const DEFAULT_LAN_SERVER = 'http://187.53.134.22:8080';
+export const DEFAULT_LAN_SERVER = 'https://api.kingsbilliards.tech';
 
 export const getBackendBase = (): string => {
   if (typeof window !== 'undefined') {
@@ -43,6 +42,24 @@ export const getBackendBase = (): string => {
   // When running natively as an Android APK, connect to the configured public/LAN server
   if (typeof window !== 'undefined' && Capacitor.isNativePlatform()) {
     return DEFAULT_LAN_SERVER;
+  }
+
+  // When opened via Web Browser on a Server IP or Domain (not localhost),
+  // automatically use the server's hostname/origin so players on web connect to the server!
+  if (typeof window !== 'undefined' && window.location) {
+    const { protocol, hostname, port, origin } = window.location;
+    if (hostname && hostname !== 'localhost' && hostname !== '127.0.0.1') {
+      // Jika dibuka melalui domain resmi kingsbilliards.tech, hubungkan langsung ke api.kingsbilliards.tech
+      if (hostname.endsWith('kingsbilliards.tech')) {
+        return 'https://api.kingsbilliards.tech';
+      }
+      // If opened via Vite dev/preview port (5173 / 4173 / 3000), point to backend port 8080 on the same host
+      if (port === '5173' || port === '4173' || port === '3000') {
+        return `${protocol}//${hostname}:8080`;
+      }
+      // Otherwise (served by node-backend on :8080 or Nginx on :80/:443), use the same origin
+      return origin;
+    }
   }
 
   return 'http://localhost:8080';
