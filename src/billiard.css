@@ -3190,4 +3190,57 @@
   }
 }
 
+/* ════════════════════════════════════════════════════════════════════════
+   MOBILE WEB BROWSER LANDSCAPE ANTI-OVERLAP FIX (POOL 8 BALL)
+   Memastikan meja biliar tidak menutupi tombol Spin, Cue, maupun tombol bawah
+   di browser HP (Chrome Android / Safari iOS)
+   ════════════════════════════════════════════════════════════════════════ */
+.billiard-fullscreen,
+.pool8-room-screen {
+  height: var(--app-height, 100dvh) !important;
+  max-height: var(--app-height, 100dvh) !important;
+}
+
+@media screen and (max-height: 540px) and (orientation: landscape) {
+  .pool8-room-header {
+    padding: 4px 12px !important;
+    min-height: 36px !important;
+  }
+  .pool8-room-body {
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
+    padding: 4px 10px 6px 10px !important;
+    overflow-y: auto !important;
+  }
+  .pool8-arena-wrap {
+    height: calc(var(--app-height, 100dvh) - 38px) !important;
+    padding: 2px 54px 32px 6px !important;
+    box-sizing: border-box !important;
+  }
+  .pool8-table-holder {
+    max-width: calc(100vw - 115px) !important;
+    max-height: calc(var(--app-height, 100dvh) - 74px) !important;
+  }
+  .bl-canvas-fs {
+    max-width: calc(100vw - 115px) !important;
+    max-height: calc(var(--app-height, 100dvh) - 74px) !important;
+  }
+  .pool8-floating-spin-widget {
+    right: 6px !important;
+    top: 44px !important;
+    z-index: 60 !important;
+  }
+  .pool8-bottom-bar {
+    bottom: max(3px, env(safe-area-inset-bottom, 3px)) !important;
+    padding: 0 10px !important;
+    z-index: 55 !important;
+  }
+  .pool8-gameover-card {
+    max-height: calc(var(--app-height, 100dvh) - 16px) !important;
+    overflow-y: auto !important;
+    padding: 12px 18px !important;
+  }
+}
+
+
 

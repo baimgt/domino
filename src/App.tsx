@@ -9095,6 +9095,11 @@ function MobileLandscapeLockOverlay() {
     const checkOrientation = () => {
       const w = window.innerWidth;
       const h = window.innerHeight;
+      const visibleH = window.visualViewport?.height || h;
+      const visibleW = window.visualViewport?.width || w;
+      document.documentElement.style.setProperty('--app-height', `${visibleH}px`);
+      document.documentElement.style.setProperty('--app-width', `${visibleW}px`);
+
       const isTouchOrMobile =
         w <= 900 ||
         window.matchMedia?.('(pointer: coarse)').matches ||
@@ -9105,6 +9110,8 @@ function MobileLandscapeLockOverlay() {
     checkOrientation();
     window.addEventListener('resize', checkOrientation);
     window.addEventListener('orientationchange', checkOrientation);
+    window.visualViewport?.addEventListener('resize', checkOrientation);
+    window.visualViewport?.addEventListener('scroll', checkOrientation);
     const scrOrient = (window.screen as any)?.orientation;
     if (scrOrient && typeof scrOrient.addEventListener === 'function') {
       scrOrient.addEventListener('change', checkOrientation);
@@ -9113,6 +9120,8 @@ function MobileLandscapeLockOverlay() {
     return () => {
       window.removeEventListener('resize', checkOrientation);
       window.removeEventListener('orientationchange', checkOrientation);
+      window.visualViewport?.removeEventListener('resize', checkOrientation);
+      window.visualViewport?.removeEventListener('scroll', checkOrientation);
       if (scrOrient && typeof scrOrient.removeEventListener === 'function') {
         scrOrient.removeEventListener('change', checkOrientation);
       }
