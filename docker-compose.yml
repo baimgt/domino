@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # 1. WEB GAME UTAMA -> kingsbilliards.tech (Host Port 5173)
   web_game:
@@ -36,4 +34,3 @@ services:
     environment:
       PORT: 8080
       MONGO_URI: "mongodb+srv://gamerstore:P1CwEUjy84OiTfAM@gamerstore.yy5ekdc.mongodb.net/domino_db?retryWrites=true&w=majority"
-
