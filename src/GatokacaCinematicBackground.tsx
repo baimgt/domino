@@ -21,7 +21,7 @@ export default function GatokacaCinematicBackground({ progress }: Props) {
   const [art, setArt] = useState(LOADING_ART);
 
   useEffect(() => {
-    const newParticles = Array.from({ length: 60 }).map((_, i) => ({
+    const newParticles = Array.from({ length: 6 }).map((_, i) => ({
       id: i,
       x: Math.random() * 100,
       size: Math.random() * 0.6 + 0.2,

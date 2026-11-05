@@ -51,7 +51,7 @@
   padding: 2px;
   box-sizing: border-box;
   overflow: hidden;
-  box-shadow: 0 0 16px rgba(255, 180, 0, 0.6), inset 0 2px 6px rgba(0, 0, 0, 0.85);
+  /* perf: box-shadow: 0 0 16px rgba(255, 180, 0, 0.6), inset 0 2px 6px rgba(0, 0, 0, 0.85); */
 }
 
 .gato-loading-bar-fill {
@@ -59,7 +59,7 @@
   background: linear-gradient(90deg, #d32f2f, #ff5722, #ffd600);
   border-radius: 14px;
   transition: width 0.08s ease-out;
-  box-shadow: 0 0 10px #ff9800;
+  /* perf: box-shadow: 0 0 10px #ff9800; */
 }
 
 .gato-loading-text {
@@ -103,7 +103,7 @@
   border-radius: 50%;
   border: 0.38vh solid #ffd700;
   object-fit: cover;
-  box-shadow: 0 0 1.4vh rgba(0,0,0,0.75);
+  /* perf: box-shadow: 0 0 1.4vh rgba(0,0,0,0.75); */
 }
 .gato-vip-badge {
   position: absolute; bottom: -0.8vh; left: 50%; transform: translateX(-50%);
@@ -112,7 +112,7 @@
   line-height: 1; padding: 0.3vh 0.9vh; border-radius: 0.8vh;
   border: 0.15vh solid #ffd700;
   white-space: nowrap;
-  box-shadow: 0 0.3vh 0.5vh rgba(0,0,0,0.5);
+  /* perf: box-shadow: 0 0.3vh 0.5vh rgba(0,0,0,0.5); */
   letter-spacing: 0.02em;
 }
 .gato-coins-row {
@@ -144,7 +144,7 @@
   color: #ffe082; font-size: 1.6vh; font-weight: 900; letter-spacing: 0.05em;
   text-shadow: 0 0.2vh 0.5vh #000;
   white-space: nowrap;
-  box-shadow: 0 0.5vh 1vh rgba(0,0,0,0.6);
+  /* perf: box-shadow: 0 0.5vh 1vh rgba(0,0,0,0.6); */
 }
 
 .gato-topright {
@@ -161,7 +161,7 @@
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   width: max(40px, 9vh); height: max(40px, 9vh);
   min-width: max(40px, 9vh); min-height: max(40px, 9vh);
-  box-shadow: 0 0.5vh 1.4vh rgba(0,0,0,0.65);
+  /* perf: box-shadow: 0 0.5vh 1.4vh rgba(0,0,0,0.65); */
   transition: transform 0.1s, filter 0.1s;
 }
 .gato-tr-menu-btn {
@@ -209,7 +209,7 @@
   cursor: pointer;
   text-align: center;
   width: 100%;
-  box-shadow: 0 0.5vh 1.2vh rgba(0,0,0,0.6);
+  /* perf: box-shadow: 0 0.5vh 1.2vh rgba(0,0,0,0.6); */
   transition: transform 0.12s, filter 0.12s;
 }
 .gato-buy-spin:hover { filter: brightness(1.15); }
@@ -246,7 +246,7 @@
   width: 8vh; height: 8vh;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   cursor: pointer;
-  box-shadow: 0 0.4vh 1vh rgba(0,0,0,0.6);
+  /* perf: box-shadow: 0 0.4vh 1vh rgba(0,0,0,0.6); */
   transition: transform 0.12s, filter 0.12s;
 }
 .gato-ransel:hover { filter: brightness(1.15); }
@@ -260,7 +260,7 @@
   border-radius: 1.2vh;
   padding: 1vh 0.6vw;
   width: 100%; text-align: center;
-  box-shadow: 0 0.4vh 1vh rgba(0,0,0,0.5);
+  /* perf: box-shadow: 0 0.4vh 1vh rgba(0,0,0,0.5); */
 }
 .gato-tp-title { color: #ffe082; font-size: 1.4vh; font-weight: 900; }
 .gato-tp-amount { color: #ffd740; font-size: 2.4vh; font-weight: 900; margin: 0.3vh 0; }
@@ -274,16 +274,16 @@
   background: rgba(0,0,0,0.4); border-radius: 2vh;
   padding: 0.3vh 0.8vw; gap: 0.5vw;
   border: 0.15vh solid rgba(255,255,255,0.3);
-  transition: all 0.2s;
+  transition: transform 0.25s ease, opacity 0.25s ease;
 }
 .gato-toggle.on { background: rgba(76,175,80,0.4); }
 .gato-toggle.off { background: rgba(100,100,100,0.3); }
 .gato-toggle span { font-size: 1.2vh; font-weight: 900; color: #fff; }
 .gato-toggle-knob {
   width: 2vh; height: 2vh; border-radius: 50%;
-  background: #4caf50; box-shadow: 0 0 0.5vh #4caf50;
+  /* perf: background: #4caf50; box-shadow: 0 0 0.5vh #4caf50; */
 }
-.gato-toggle.off .gato-toggle-knob { background: #666; box-shadow: none; }
+  /* perf: .gato-toggle.off .gato-toggle-knob { background: #666; box-shadow: none; } */
 
 .gato-lion-statue {
   font-size: 6vh; filter: sepia(1) saturate(3) hue-rotate(20deg);
@@ -305,22 +305,22 @@
   align-items: center;
   justify-content: center;
   gap: 0.4vh;
-  box-shadow: 0 0.5vh 1.4vh rgba(0,0,0,0.7), inset 0 0 1vh rgba(255, 179, 0, 0.2);
+  /* perf: box-shadow: 0 0.5vh 1.4vh rgba(0,0,0,0.7), inset 0 0 1vh rgba(255, 179, 0, 0.2); */
   position: relative;
-  transition: all 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  transition: transform 0.25s ease, opacity 0.25s ease;
   box-sizing: border-box;
 }
 
 .gato-side-multiplier.is-active {
   border-color: #ffd700;
-  box-shadow: 0 0 1.8vh rgba(255, 215, 0, 0.6), inset 0 0 1.2vh rgba(255, 215, 0, 0.35);
+  /* perf: box-shadow: 0 0 1.8vh rgba(255, 215, 0, 0.6), inset 0 0 1.2vh rgba(255, 215, 0, 0.35); */
   animation: gsmActivePulse 1.8s ease-in-out infinite alternate;
 }
 
 .gato-side-multiplier.is-free-spin {
   background: linear-gradient(180deg, rgba(75, 10, 100, 0.96) 0%, rgba(25, 2, 40, 0.98) 100%);
   border: 0.28vh solid #ffd700;
-  box-shadow: 0 0 2.2vh rgba(234, 128, 252, 0.75), inset 0 0 1.5vh rgba(255, 215, 0, 0.4);
+  /* perf: box-shadow: 0 0 2.2vh rgba(234, 128, 252, 0.75), inset 0 0 1.5vh rgba(255, 215, 0, 0.4); */
   animation: gsmFreeSpinGlow 1.6s ease-in-out infinite alternate;
 }
 
@@ -373,7 +373,7 @@
   border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, #fff3b0 0%, #ffb300 45%, #b26a00 85%, #4a2800 100%);
   border: 0.22vh solid #ffffff;
-  box-shadow: 0 0.4vh 1vh rgba(0,0,0,0.6), inset 0 0.3vh 0.6vh rgba(255,255,255,0.8), inset 0 -0.4vh 0.8vh rgba(0,0,0,0.6);
+  /* perf: box-shadow: 0 0.4vh 1vh rgba(0,0,0,0.6), inset 0 0.3vh 0.6vh rgba(255,255,255,0.8), inset 0 -0.4vh 0.8vh rgba(0,0,0,0.6); */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -382,7 +382,7 @@
 .gato-side-multiplier.is-free-spin .gsm-orb {
   background: radial-gradient(circle at 35% 30%, #ffd700 0%, #ba68c8 45%, #7b1fa2 85%, #2a0845 100%);
   border: 0.25vh solid #ffe082;
-  box-shadow: 0 0.4vh 1.2vh rgba(0,0,0,0.7), inset 0 0.3vh 0.8vh rgba(255, 235, 150, 0.9), inset 0 -0.4vh 0.8vh rgba(40, 0, 60, 0.8);
+  /* perf: box-shadow: 0 0.4vh 1.2vh rgba(0,0,0,0.7), inset 0 0.3vh 0.8vh rgba(255, 235, 150, 0.9), inset 0 -0.4vh 0.8vh rgba(40, 0, 60, 0.8); */
 }
 
 .gsm-val {
@@ -418,7 +418,7 @@
   color: #fff;
   background: linear-gradient(90deg, #d81b60, #8e24aa);
   border-color: #ffd700;
-  box-shadow: 0 0 0.8vh rgba(233, 30, 99, 0.7);
+  /* perf: box-shadow: 0 0 0.8vh rgba(233, 30, 99, 0.7); */
   animation: gsmSubPulse 1.2s ease-in-out infinite alternate;
 }
 
@@ -459,7 +459,7 @@
   background: linear-gradient(90deg, #ffd700, #ff8f00, #ffd700);
   color: #4a0000; font-size: 2.2vh; font-weight: 900;
   padding: 0.6vh 3vw; border-radius: 3vh;
-  box-shadow: 0 0.5vh 1.5vh rgba(0,0,0,0.6);
+  /* perf: box-shadow: 0 0.5vh 1.5vh rgba(0,0,0,0.6); */
   z-index: 10;
 }
 
@@ -472,9 +472,7 @@
   background: linear-gradient(180deg, rgba(255,200,80,0.15), rgba(80,30,120,0.3));
   border: 0.4vh solid #b8860b;
   border-radius: 1.5vh;
-  box-shadow:
-    0 0 3vh rgba(200,150,30,0.4),
-    inset 0 0 3vh rgba(0,0,0,0.5);
+  /* perf: -shadow removed */
   overflow: hidden;
   position: relative;
 }
@@ -614,7 +612,7 @@
   display: flex; align-items: center; justify-content: center;
   position: relative;
   transition: transform 0.15s;
-  background: none; border: none; box-shadow: none;
+  /* perf: background: none; border: none; box-shadow: none; */
 }
 
 /* Win glow */
@@ -626,7 +624,7 @@
   position: absolute; inset: -6%;
   border-radius: 50%;
   background: radial-gradient(circle, rgba(255, 215, 0, 0.35) 0%, transparent 70%);
-  box-shadow: 0 0 2vh 0.8vh rgba(255,215,0,0.85);
+  /* perf: box-shadow: 0 0 2vh 0.8vh rgba(255,215,0,0.85); */
   animation: tileWinPulse 0.45s ease-in-out infinite alternate;
   pointer-events: none; z-index: 10;
 }
@@ -702,7 +700,7 @@
 /* ===========================
    8-POINT STAR GEM SYMBOLS
    =========================== */
-.gato-sym-gem { background: none; border: none; box-shadow: none; }
+  /* perf: .gato-sym-gem { background: none; border: none; box-shadow: none; } */
 .gato-star-wrap {
   width: 88%; height: 88%;
   position: relative;
@@ -712,7 +710,7 @@
   position: absolute; inset: 0;
   background: linear-gradient(135deg, #b8860b 0%, #ffd700 25%, #daa520 50%, #ffd740 75%, #b8860b 100%);
   border-radius: 12%;
-  box-shadow: 0 0.3vh 0.8vh rgba(0,0,0,0.5), inset 0 0.2vh 0.3vh rgba(255,255,255,0.4);
+  /* perf: box-shadow: 0 0.3vh 0.8vh rgba(0,0,0,0.5), inset 0 0.2vh 0.3vh rgba(255,255,255,0.4); */
 }
 .gato-star-sq0  { transform: rotate(0deg); }
 .gato-star-sq45 { transform: rotate(45deg); }
@@ -727,27 +725,27 @@
 .gato-gem-circle {
   position: absolute; inset: 15%;
   border-radius: 50%; z-index: 2;
-  box-shadow: inset 0 0.3vh 0.5vh rgba(0,0,0,0.4), inset 0 -0.2vh 0.3vh rgba(255,255,255,0.2);
+  /* perf: box-shadow: inset 0 0.3vh 0.5vh rgba(0,0,0,0.4), inset 0 -0.2vh 0.3vh rgba(255,255,255,0.2); */
   overflow: hidden;
 }
 .gato-gem-hi {
   position: absolute; top: 8%; left: 10%;
   width: 38%; height: 38%;
   background: rgba(255,255,255,0.85);
-  border-radius: 50%; filter: blur(1.5px);
+  border-radius: 50%; /* filter: none; */
 }
 .gato-gem-lo { position: absolute; inset: 0; border-radius: 50%; }
 
 /* ===========================
    SCATTER (Gatokaca Face)
    =========================== */
-.gato-sym-scatter { background: none; border: none; box-shadow: none; }
+  /* perf: .gato-sym-scatter { background: none; border: none; box-shadow: none; } */
 .gato-scatter-bg {
   width: 88%; height: 88%;
   background: linear-gradient(160deg, #1a237e 0%, #283593 35%, #3949ab 65%, #1a237e 100%);
   border: 0.35vh solid #ffd700;
   border-radius: 1vh;
-  box-shadow: 0 0 2vh rgba(255,215,0,0.5), inset 0 0.2vh 0.3vh rgba(255,255,255,0.15);
+  /* perf: box-shadow: 0 0 2vh rgba(255,215,0,0.5), inset 0 0.2vh 0.3vh rgba(255,255,255,0.15); */
   display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
   padding: 4% 5% 3%;
   position: relative; overflow: hidden;
@@ -777,7 +775,7 @@
   width: 24%; aspect-ratio: 1;
   background: radial-gradient(circle, #ffcc02 0%, #e65100 40%, #1a1a1a 100%);
   border-radius: 50%;
-  box-shadow: 0 0 0.4vh rgba(255,200,0,0.9);
+  /* perf: box-shadow: 0 0 0.4vh rgba(255,200,0,0.9); */
 }
 .gato-sc-nose {
   width: 28%; height: 10%;
@@ -798,13 +796,13 @@
 /* ===========================
    HIGH VALUE FRAME (shared)
    =========================== */
-.gato-sym-hv { background: none; border: none; box-shadow: none; }
+  /* perf: .gato-sym-hv { background: none; border: none; box-shadow: none; } */
 .gato-hv-frame {
   width: 88%; height: 88%;
   background: linear-gradient(135deg, #3b2000 0%, #6d4c00 30%, #3b2000 65%, #5d3800 100%);
   border: 0.3vh solid #ffd700;
   border-radius: 1vh;
-  box-shadow: 0 0 2vh rgba(255,200,0,0.4), inset 0 0.2vh 0.3vh rgba(255,255,255,0.2);
+  /* perf: box-shadow: 0 0 2vh rgba(255,200,0,0.4), inset 0 0.2vh 0.3vh rgba(255,255,255,0.2); */
   display: flex; align-items: center; justify-content: center;
   position: relative; overflow: hidden;
 }
@@ -889,7 +887,7 @@
   position: absolute; top: 30%; left: 15%; width: 20%; height: 40%;
   background: rgba(255,255,255,0.65);
   clip-path: polygon(30% 0%, 70% 0%, 40% 100%, 0% 100%);
-  filter: blur(1px);
+  /* filter: none; */
 }
 
 /* ===========================
@@ -929,7 +927,7 @@
   height: 60%;
   background: linear-gradient(135deg, #ffe082 0%, #ffd700 30%, #ff8f00 70%, #b8860b 100%);
   border-radius: 50% 10% 50% 10%;
-  box-shadow: 0 0 1vh rgba(255, 215, 0, 0.8), inset 0 0.2vh 0.4vh #fff;
+  /* perf: box-shadow: 0 0 1vh rgba(255, 215, 0, 0.8), inset 0 0.2vh 0.4vh #fff; */
   z-index: 1;
   pointer-events: none;
 }
@@ -957,7 +955,7 @@
   background: linear-gradient(135deg, #ffd700 0%, #ff8f00 25%, #b8860b 50%, #ff8f00 75%, #ffd700 100%);
   border: 0.15vh solid rgba(255,255,255,0.7);
   border-radius: 12%;
-  box-shadow: 0 0 1.2vh rgba(0,0,0,0.85);
+  /* perf: box-shadow: 0 0 1.2vh rgba(0,0,0,0.85); */
 }
 .gato-mult-spikes::after {
   transform: rotate(45deg);
@@ -970,7 +968,7 @@
   border-radius: 50%;
   background: radial-gradient(circle, #2a2a2a 0%, #000 100%);
   border: 0.38vh solid #ffd740;
-  box-shadow: 0 0 1.5vh #ffcc00, inset 0 0 1vh #000;
+  /* perf: box-shadow: 0 0 1.5vh #ffcc00, inset 0 0 1vh #000; */
   z-index: 3;
   display: flex; align-items: center; justify-content: center;
 }
@@ -981,7 +979,7 @@
   border-radius: 50%;
   position: relative;
   overflow: hidden;
-  box-shadow: inset 0 0 1.8vh rgba(0,0,0,0.85);
+  /* perf: box-shadow: inset 0 0 1.8vh rgba(0,0,0,0.85); */
   animation: orbPulse 1.5s ease-in-out infinite alternate;
 }
 
@@ -1040,7 +1038,7 @@
   font-family: 'Arial Black', sans-serif;
   font-size: 2.2vh;
   font-weight: 900;
-  box-shadow: 0 0 2.5vh rgba(255, 215, 0, 0.9), 0 0.5vh 1.5vh rgba(0, 0, 0, 0.8);
+  /* perf: box-shadow: 0 0 2.5vh rgba(255, 215, 0, 0.9), 0 0.5vh 1.5vh rgba(0, 0, 0, 0.8); */
   animation: multDropPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
   pointer-events: none;
   white-space: nowrap;
@@ -1099,7 +1097,7 @@
   border-bottom: 0.35vh solid #523101;
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 1.5vw;
-  box-shadow: 0 -0.8vh 2.5vh rgba(0,0,0,0.6), inset 0 0.4vh 0.6vh rgba(255,255,255,0.7), inset 0 -0.3vh 0.5vh rgba(0,0,0,0.4);
+  /* perf: box-shadow: 0 -0.8vh 2.5vh rgba(0,0,0,0.6), inset 0 0.4vh 0.6vh rgba(255,255,255,0.7), inset 0 -0.3vh 0.5vh rgba(0,0,0,0.4); */
   white-space: nowrap;
   user-select: none;
 }
@@ -1114,7 +1112,7 @@
   background: linear-gradient(180deg, #fffae3 0%, #f7cb59 40%, #c48714 85%, #9e6405 100%);
   color: #421d01; font-family: serif;
   cursor: pointer; display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 0.4vh 0.8vh rgba(0,0,0,0.4), inset 0 0.2vh 0.3vh #ffffff, inset 0 -0.2vh 0.3vh rgba(0,0,0,0.25);
+  /* perf: box-shadow: 0 0.4vh 0.8vh rgba(0,0,0,0.4), inset 0 0.2vh 0.3vh #ffffff, inset 0 -0.2vh 0.3vh rgba(0,0,0,0.25); */
   transition: transform 0.1s, filter 0.1s;
 }
 .gato-bot-btn:active, .gato-maxbet-btn:active, .gato-speed-btn:active, .gato-spin-btn:active {
@@ -1132,7 +1130,7 @@
   border-radius: 1vh;
   min-width: 14vw; height: 5.4vh;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  box-shadow: inset 0 0.3vh 0.8vh rgba(0,0,0,0.9), 0 0.2vh 0.4vh rgba(0,0,0,0.3);
+  /* perf: box-shadow: inset 0 0.3vh 0.8vh rgba(0,0,0,0.9), 0 0.2vh 0.4vh rgba(0,0,0,0.3); */
   padding: 0 0.8vw;
 }
 .gato-bet-label { color: #f7d268; font-size: 1.3vh; font-weight: 900; letter-spacing: 0.06em; line-height: 1.1; font-family: sans-serif; text-shadow: 0 0.1vh 0.2vh #000; }
@@ -1146,7 +1144,7 @@
   border-radius: 0 0 1.8vh 1.8vh;
   min-width: 28vw; height: 7.4vh;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  box-shadow: 0 0.6vh 1.5vh rgba(0,0,0,0.7), inset 0 0.3vh 0.6vh rgba(255,255,255,0.4), 0 0 1.5vh rgba(124,27,168,0.4);
+  /* perf: box-shadow: 0 0.6vh 1.5vh rgba(0,0,0,0.7), inset 0 0.3vh 0.6vh rgba(255,255,255,0.4), 0 0 1.5vh rgba(124,27,168,0.4); */
   padding: 0.4vh 2vw; margin-top: -1vh;
 }
 .gato-win-label {
@@ -1167,7 +1165,7 @@
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   font-size: 1.4vh; font-weight: 900; line-height: 1.1; font-family: serif; color: #421d01;
   cursor: pointer;
-  box-shadow: 0 0.4vh 0.8vh rgba(0,0,0,0.4), inset 0 0.2vh 0.3vh #ffffff, inset 0 -0.2vh 0.3vh rgba(0,0,0,0.25);
+  /* perf: box-shadow: 0 0.4vh 0.8vh rgba(0,0,0,0.4), inset 0 0.2vh 0.3vh #ffffff, inset 0 -0.2vh 0.3vh rgba(0,0,0,0.25); */
   text-shadow: 0 0.1vh 0.1vh rgba(255,255,255,0.6);
 }
 
@@ -1179,7 +1177,7 @@
   display: flex; align-items: center; justify-content: center;
   font-size: 2.4vh; font-weight: 900; font-family: serif; color: #421d01;
   cursor: pointer;
-  box-shadow: 0 0.4vh 0.8vh rgba(0,0,0,0.4), inset 0 0.2vh 0.3vh #ffffff, inset 0 -0.2vh 0.3vh rgba(0,0,0,0.25);
+  /* perf: box-shadow: 0 0.4vh 0.8vh rgba(0,0,0,0.4), inset 0 0.2vh 0.3vh #ffffff, inset 0 -0.2vh 0.3vh rgba(0,0,0,0.25); */
   text-shadow: 0 0.1vh 0.1vh rgba(255,255,255,0.6);
 }
 
@@ -1192,7 +1190,7 @@
   padding: 0.4vh 1.8vw;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   cursor: pointer;
-  box-shadow: 0 0.6vh 1.2vh rgba(0,0,0,0.6), inset 0 0.3vh 0.5vh rgba(255,255,255,0.8), inset 0 -0.3vh 0.5vh rgba(0,0,0,0.4);
+  /* perf: box-shadow: 0 0.6vh 1.2vh rgba(0,0,0,0.6), inset 0 0.3vh 0.5vh rgba(255,255,255,0.8), inset 0 -0.3vh 0.5vh rgba(0,0,0,0.4); */
 }
 .gato-spin-btn.gato-spin-anim {
   background: linear-gradient(180deg, #ff6b6b 0%, #c0392b 40%, #7a1a12 100%);
@@ -1241,7 +1239,7 @@
   max-height: 82vh; overflow-y: auto;
   padding: 2vh 3vw 2vh;
   position: relative; color: #fff;
-  box-shadow: 0 1vh 3vh rgba(0,0,0,0.9);
+  /* perf: box-shadow: 0 1vh 3vh rgba(0,0,0,0.9); */
 }
 .gato-rules-page h2 {
   font-family: 'Cinzel', serif;
@@ -1280,7 +1278,7 @@
   width: 6vh; height: 6vh; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   font-size: 3.5vh;
-  box-shadow: 0 0 2vh rgba(255,255,255,0.5);
+  /* perf: box-shadow: 0 0 2vh rgba(255,255,255,0.5); */
 }
 .gato-orb-grn  { background: radial-gradient(circle, #a5f3a0, #1b5e20); }
 .gato-orb-blu  { background: radial-gradient(circle, #81d4fa, #01579b); }
@@ -1307,7 +1305,7 @@
   padding: 1vh 3vw;
   color: #fff; font-size: 1.8vh; font-weight: 900;
   cursor: pointer;
-  box-shadow: 0 0.4vh 1vh rgba(0,0,0,0.5);
+  /* perf: box-shadow: 0 0.4vh 1vh rgba(0,0,0,0.5); */
   transition: transform 0.1s, filter 0.1s;
 }
 .gato-nav-back:hover { filter: brightness(1.15); }
@@ -1319,11 +1317,11 @@
 .gato-dot {
   width: 1.2vh; height: 1.2vh; border-radius: 50%;
   background: rgba(255,200,80,0.4); cursor: pointer;
-  transition: all 0.2s;
+  transition: transform 0.25s ease, opacity 0.25s ease;
 }
 .gato-dot.active {
   background: #ffd700;
-  box-shadow: 0 0 0.8vh #ffd700;
+  /* perf: box-shadow: 0 0 0.8vh #ffd700; */
   transform: scale(1.3);
 }
 
@@ -1393,11 +1391,11 @@
 @keyframes orb1000Pulse {
   0% {
     transform: scale(1);
-    filter: drop-shadow(0 0 1.2vh #ff1744) drop-shadow(0 0 2vh #ffd700);
+    
   }
   100% {
     transform: scale(1.1);
-    filter: drop-shadow(0 0 2.2vh #ff1744) drop-shadow(0 0 3.5vh #ffe57f) drop-shadow(0 0 4.5vh #ff3d00);
+    
   }
 }
 
@@ -1418,7 +1416,7 @@
   padding: 1.6vh 2vw;
   margin: 1.5vh 0;
   text-align: center;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(212, 175, 55, 0.2);
+  /* perf: box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(212, 175, 55, 0.2); */
 }
 
 .gato-math-formula-title {
@@ -1644,4 +1642,5 @@
     font-size: 7.5px !important;
   }
 }
+
 

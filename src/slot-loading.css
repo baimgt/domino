@@ -63,7 +63,7 @@
   height: 480px;
   border-radius: 50%;
   background: radial-gradient(circle, rgba(241, 196, 15, 0.28) 0%, rgba(230, 126, 34, 0.15) 45%, transparent 70%);
-  filter: blur(40px);
+  /* filter: none; */
   z-index: 2;
   animation: slotPulseOrb 3s ease-in-out infinite alternate;
   pointer-events: none;
@@ -130,7 +130,7 @@
   letter-spacing: 2px;
   text-transform: uppercase;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(241, 196, 15, 0.2);
-  backdrop-filter: blur(10px);
+  /* backdrop-filter: none; */
 }
 
 .slot-loading-skip-btn {
@@ -141,8 +141,8 @@
   border-radius: 16px;
   font-size: 12px;
   cursor: pointer;
-  transition: all 0.2s;
-  backdrop-filter: blur(8px);
+  transition: transform 0.25s ease, opacity 0.25s ease;
+  /* backdrop-filter: none; */
 }
 
 .slot-loading-skip-btn:hover {
@@ -177,7 +177,7 @@
   inset: -14px;
   border-radius: 50%;
   background: conic-gradient(from 0deg, #ffd700, #ff6b6b, #4834d4, #00d2d3, #ffd700);
-  filter: blur(8px);
+  /* filter: none; */
   animation: slotSpinHalo 5s linear infinite;
   opacity: 0.75;
 }
@@ -367,7 +367,7 @@
   background: rgba(18, 9, 36, 0.7);
   border: 1px solid rgba(255, 215, 0, 0.25);
   border-radius: 12px;
-  backdrop-filter: blur(8px);
+  /* backdrop-filter: none; */
   display: flex;
   align-items: center;
   gap: 10px;
@@ -434,3 +434,4 @@
     font-size: 12px;
   }
 }
+

@@ -8,89 +8,42 @@
   --accent-bg: rgba(170, 59, 255, 0.1);
   --accent-border: rgba(170, 59, 255, 0.5);
   --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
-
+  --shadow: rgba(0,0,0,0.1) 0 4px 8px -2px;
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
   --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
-
   font: 18px/145% var(--sans);
   letter-spacing: 0.18px;
   color-scheme: light dark;
   color: var(--text);
   background: var(--bg);
   font-synthesis: none;
-  text-rendering: optimizeLegibility;
+  text-rendering: optimizeSpeed;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
 }
 
 #root {
   width: 100vw;
+  max-width: 100vw;
   height: 100vh;
+  height: 100dvh;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
+  /* GPU layer promotion for the entire app */
+  transform: translateZ(0);
+  will-change: auto;
 }
 
 body {
   margin: 0;
   padding: 0;
-}
-
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
+  overscroll-behavior: none;        /* prevents rubber-band scrolling lag */
+  -webkit-overflow-scrolling: touch; /* momentum scroll on iOS */
+  overflow: hidden;
 }
 
 code,
@@ -106,4 +59,125 @@ code {
   line-height: 135%;
   padding: 4px 8px;
   background: var(--code-bg);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ◆ ULTRA LOW-END MOBILE PERFORMANCE PACK ◆
+   Target: 60 FPS on budget Android phones (2GB RAM, Mali-G52 / Adreno 505)
+   Strategy: Zero GPU multi-pass operations, all compositor-only animations
+   ═══════════════════════════════════════════════════════════════ */
+
+/* 1. GLOBAL RESETS — prevent all expensive paint operations */
+*, *::before, *::after {
+  -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
+
+  /* ABSOLUTE kill switch for ALL blur effects */
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* 2. HARDWARE COMPOSITOR LAYERS — promote everything game-critical to its own GPU layer */
+canvas,
+#root,
+.app-container,
+.home-screen,
+.game-screen,
+.slot-screen,
+.slot-container,
+.slot-wrapper,
+.billiard-container,
+.billiard-canvas-wrap,
+.dfdc-container,
+.dfdc-reels-area,
+.olympus-screen,
+.gatokaca-screen,
+.candy-screen,
+.wildwest-screen,
+.fivelions-screen,
+.mahjong-screen,
+.jinji-screen,
+.domino-table,
+.kamar-game,
+.qiuqiu-table {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  /* Do NOT set will-change on too many elements — saves VRAM */
+}
+
+/* 3. IMAGE OPTIMIZATION — lazy-decode, crisp rendering */
+img {
+  image-rendering: -webkit-optimize-contrast;
+  /* content-visibility renders only what's on screen */
+  content-visibility: auto;
+}
+
+/* 4. SCROLL PERFORMANCE — only compositor-thread scrolling */
+.scroll-view,
+.kamar-list,
+.lobby-scroll,
+.room-list,
+.slot-history {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* 5. INPUT RESPONSIVENESS — instant touch response, zero 300ms click delay */
+button, [role="button"], a, .clickable {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+}
+
+/* 6. TEXT RENDERING — optimizeSpeed over quality on mobile */
+@media (max-width: 768px) {
+  body {
+    text-rendering: optimizeSpeed;
+    font-size: 16px;
+  }
+  /* Remove all box-shadow on interactive elements — largest repaint culprit */
+  button, .btn, .card, .modal-body {
+    box-shadow: none !important;
+  }
+}
+
+/* 7. CONTAIN LAYOUT — limit browser's layout recalculation scope */
+.home-game-card-v3,
+.slot-symbol,
+.domino-tile,
+.ball-container,
+.reel-strip {
+  contain: layout style;
+}
+
+/* 8. COMPOSITE-ONLY TRANSITIONS — transition ONLY transform and opacity (compositor-safe) */
+/* Any transition on width, height, padding, margin, border, box-shadow = CPU repaint */
+.home-game-card-v3,
+.btn, .chip,
+.hgc-bg-img {
+  transition: transform 0.25s ease, opacity 0.25s ease !important;
+  /* Remove box-shadow transitions entirely */
+}
+
+/* 9. ANIMATION THROTTLE — reduce infinite animation complexity by removing paint properties */
+/* All surviving infinite animations should ONLY use transform and opacity */
+@keyframes safeFlicker {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.75; }
+}
+@keyframes safePulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%       { transform: scale(1.03); opacity: 0.88; }
+}
+@keyframes safeSpin {
+  to { transform: rotate(360deg); }
+}
+@keyframes safeBounce {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-6px); }
+}
+@keyframes safeFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }

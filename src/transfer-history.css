@@ -7,7 +7,7 @@
   inset: 0;
   z-index: 1700;
   background: rgba(4, 2, 10, 0.85);
-  backdrop-filter: blur(8px);
+  /* backdrop-filter: none; */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -86,7 +86,7 @@
   justify-content: center;
   cursor: pointer;
   font-size: 14px;
-  transition: all 0.2s;
+  transition: transform 0.25s ease, opacity 0.25s ease;
 }
 
 .trx-hist-close-btn:hover {
@@ -174,7 +174,7 @@
   padding: 6px 14px;
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: transform 0.25s ease, opacity 0.25s ease;
 }
 
 .trx-tab-btn:hover {
@@ -271,7 +271,7 @@
   justify-content: space-between;
   gap: 12px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: transform 0.25s ease, opacity 0.25s ease;
 }
 
 .trx-item-card:hover {
@@ -477,3 +477,4 @@
     max-width: 100%;
   }
 }
+

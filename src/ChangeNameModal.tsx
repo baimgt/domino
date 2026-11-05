@@ -147,8 +147,8 @@ export default function ChangeNameModal({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.78)',
-        backdropFilter: 'blur(8px)',
+        backgroundColor: 'rgba(0, 0, 0, 0.88)',
+        backdropFilter: 'none',
         padding: '8px',
         animation: 'cnmFadeIn 0.2s ease-out',
       }}

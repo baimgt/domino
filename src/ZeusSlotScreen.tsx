@@ -82,6 +82,9 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
   const [freeSpins, setFreeSpins] = useState(0);
   const [inFreeMode, setInFreeMode] = useState(false);
   const [freeMult,  setFreeMult]  = useState(1);
+  const [freeSpinTotalWin, setFreeSpinTotalWin] = useState(0);
+  const freeSpinTotalWinRef = useRef(0);
+  useEffect(() => { freeSpinTotalWinRef.current = freeSpinTotalWin; }, [freeSpinTotalWin]);
   const [multIdx, setMultIdx] = useState(0); // tangga x1>x2>x3>x5 (per tumble)
   const [showFSModal, setShowFSModal] = useState(false);
   const [clusterWins, setClusterWins] = useState<{ sym: number; count: number; winAmount: number; tumble?: number }[]>([]);
@@ -109,6 +112,7 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
   const inFreeModeRef = useRef(inFreeMode);
   useEffect(() => { inFreeModeRef.current = inFreeMode; }, [inFreeMode]);
 
+  const isCurrentSpinFreeRef = useRef(false);
   const isStoppingRef = useRef(false);
   const isLongPressRef = useRef(false);
   const isInfiniteAutoRef = useRef(false);
@@ -197,7 +201,7 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
         }
         return next;
       });
-    }, Math.max(40, 80 / speed));
+    }, Math.max(65, Math.floor(130 / speed)));
     return () => clearInterval(interval);
   }, [isSpinning, speed]);
  
@@ -524,42 +528,76 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
         setClusterWins(data.clusterWins || []);
         setMultIdx(Math.min(3, Math.max(0, ...((data.clusterWins || []).map((w: any) => w.tumble || 0)))));
 
+        const isFreeRound = isCurrentSpinFreeRef.current;
         if (data.totalWinAmount > 0) {
           setTotalWin(data.totalWinAmount);
+          if (inFreeModeRef.current || isFreeRound) {
+            const newFsTotal = freeSpinTotalWinRef.current + data.totalWinAmount;
+            freeSpinTotalWinRef.current = newFsTotal;
+            setFreeSpinTotalWin(newFsTotal);
+          }
           setWinType(data.winType || 'win');
           setShowWin(true);
           safeTimeout(() => { setShowWin(false); }, 1800);
           const currentBet = betAmountRef.current || 10000;
           const ratio = data.totalWinAmount / Math.max(1, currentBet);
-          if (ratio >= 30) {
-            setCelebration({ type: 'super_win', amount: data.totalWinAmount });
-          } else if (ratio >= 12) {
-            setCelebration({ type: 'mega_win', amount: data.totalWinAmount });
-          } else if (ratio >= 5) {
-            setCelebration({ type: 'big_win', amount: data.totalWinAmount });
+          // Only show single spin big win celebration in base game so it doesn't interrupt free spin rhythm
+          if (!inFreeModeRef.current && !isFreeRound) {
+            if (data.winType === 'super_win' || ratio >= 30) {
+              setCelebration({
+                type: 'super_win',
+                amount: data.totalWinAmount,
+                title: 'SUPER WIN',
+                subtext: 'KEMENANGAN SULTAN FANTASTIS!'
+              });
+            } else if (data.winType === 'mega_win' || ratio >= 12) {
+              setCelebration({
+                type: 'mega_win',
+                amount: data.totalWinAmount,
+                title: 'MEGA WIN',
+                subtext: 'KEMENANGAN MEGA SPEKTAKULER!'
+              });
+            } else if (data.winType === 'big_win' || ratio >= 5) {
+              setCelebration({
+                type: 'big_win',
+                amount: data.totalWinAmount,
+                title: 'BIG WIN',
+                subtext: 'SELAMAT ATAS KEMENANGAN BESARMU!'
+              });
+            }
           }
         }
 
-        if (data.randomMult) {
+        if (data.freeMult !== undefined && inFreeModeRef.current) {
           setFreeMult(data.freeMult || 1);
+        }
+
+        if (data.randomMult) {
           setDroppedMultNotif(`⚡ PETIR ZEUS PENGALI ${data.randomMult}x TURUN! ⚡`);
           safeTimeout(() => setDroppedMultNotif(null), 2800);
         }
 
-        // Handle Free Spins Award
+        // Handle Free Spins Award & Retrigger
         if (data.triggerFreeSpins && data.freeSpinsAwarded > 0) {
           const awarded = data.freeSpinsAwarded;
-          const totalF = (inFreeModeRef.current ? freeSpinsRef.current : 0) + awarded;
+          const isRetrigger = inFreeModeRef.current || isFreeRound;
+          const totalF = (isRetrigger ? freeSpinsRef.current : 0) + awarded;
           freeSpinsRef.current = totalF;
           setFreeSpins(totalF);
           setInFreeMode(true);
           inFreeModeRef.current = true;
-          setFreeMult(1);
+          if (!isRetrigger) {
+            setFreeMult(1);
+            setFreeSpinTotalWin(0);
+            freeSpinTotalWinRef.current = 0;
+          }
           setCelebration({
             type: 'scatter',
             freeSpinsCount: awarded,
-            title: '⚡ SCATTER ZEUS! ⚡',
-            subtext: `SELAMAT! KAMU MEMICU ${awarded} PUTARAN GRATIS!`
+            title: isRetrigger ? '⚡ RETRIGGER ZEUS! ⚡' : '⚡ SCATTER ZEUS! ⚡',
+            subtext: isRetrigger
+              ? `LUAR BIASA! +${awarded} PUTARAN GRATIS DITAMBAHKAN KE SISA SPIN! (TOTAL SISA: ${totalF} SPIN)`
+              : `SELAMAT! KAMU MEMICU ${awarded} PUTARAN GRATIS!`
           });
         }
 
@@ -568,18 +606,30 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
         const remainingAuto = isInfiniteAutoRef.current ? 999 : autoCountRef.current;
         const shouldContinue = !isStoppingRef.current && (totalFree > 0 || remainingAuto > 0);
 
-        if (totalFree === 0 && inFreeModeRef.current) {
+        const isEndingFS = (totalFree === 0 && (inFreeModeRef.current || isFreeRound) && !data.triggerFreeSpins);
+        if (isEndingFS) {
+          isCurrentSpinFreeRef.current = false;
+          const finalFsWin = freeSpinTotalWinRef.current;
           setInFreeMode(false);
           inFreeModeRef.current = false;
           setFreeMult(1);
+          setCelebration({
+            type: 'free_spins_total',
+            amount: finalFsWin,
+            title: 'TOTAL KEMENANGAN',
+            subtext: finalFsWin > 0
+              ? 'SELAMAT! TOTAL KEMENANGAN PUTARAN GRATIS ZEUS!'
+              : 'PUTARAN GRATIS SELESAI!'
+          });
         }
 
         if (shouldContinue) {
           const hasCelebration = Boolean(
             data.triggerFreeSpins ||
-            (data.totalWinAmount > 0 && (data.totalWinAmount / Math.max(1, betAmountRef.current || 10000)) >= 5)
+            isEndingFS ||
+            (!inFreeModeRef.current && data.totalWinAmount > 0 && (data.totalWinAmount / Math.max(1, betAmountRef.current || 10000)) >= 5)
           );
-          const nextDelay = hasCelebration ? 3800 : Math.max(250, 1000 / (speedRef.current || 1));
+          const nextDelay = (hasCelebration || isEndingFS) ? 4600 : Math.max(250, 1000 / (speedRef.current || 1));
           autoTimerRef.current = setTimeout(() => {
             if (!isStoppingRef.current) {
               doSpinRef.current?.();
@@ -627,6 +677,7 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
 
     const actualBet = anteBet ? Math.floor(betAmount * 1.25) : betAmount;
     const isFree = inFreeModeRef.current && freeSpinsRef.current > 0;
+    isCurrentSpinFreeRef.current = isFree;
 
     if (!isFree && myCoins < actualBet) {
       setErrMsg(`Koin tidak cukup! Taruhan: ${actualBet.toLocaleString('id-ID')} koin.`);
@@ -685,7 +736,8 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
       anteBet,
       isFreeSpins: isFree,
       freeSpinMult: freeMult,
-      clientBalance: myCoins
+      clientBalance: myCoins,
+      buyFeature: false
     });
 
     if (spinTimer.current) clearTimeout(spinTimer.current);
@@ -824,27 +876,72 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
  
         <div className="zeus-left-panel">
           <div 
-            className={`zeus-buy-box ${anteBet ? 'disabled' : ''}`} 
+            className={`zeus-buy-box ${anteBet || isSpinning || inFreeMode ? 'disabled' : ''}`} 
             onClick={() => {
+              if (isSpinning) return;
+              if (inFreeMode) {
+                setErrMsg('Sedang dalam ronde Spin Gratis!');
+                setTimeout(() => setErrMsg(''), 2500);
+                return;
+              }
               if (anteBet) {
                 setErrMsg('Nonaktifkan Taruhan Ganda untuk membeli Spin Gratis!');
                 setTimeout(() => setErrMsg(''), 3000);
                 return;
               }
               const cost = betAmount * 100;
-              if (myCoins >= cost) {
-                 const res = spendSlotCoinsLocal(cost);
-                 setMyCoins(res.total);
-                 syncSlotBetToBackend(API_URL, myUsername, cost);
-                 setInFreeMode(true);
-                 inFreeModeRef.current = true;
-                 setFreeSpins(15);
-                 freeSpinsRef.current = 15;
-                 setShowFSModal(true);
-              } else {
-                 setErrMsg(`Koin tidak cukup! Butuh ${cost.toLocaleString('id-ID')} koin.`);
-                 setTimeout(() => setErrMsg(''), 2500);
+              if (myCoins < cost) {
+                setErrMsg(`Koin tidak cukup! Butuh ${cost.toLocaleString('id-ID')} koin.`);
+                setTimeout(() => setErrMsg(''), 2500);
+                return;
               }
+
+              // Deduct coins locally
+              const res = spendSlotCoinsLocal(cost);
+              setMyCoins(res.total);
+
+              // Launch real reel spin with guaranteed Scatter drop
+              isStoppingRef.current = false;
+              isQuickStopRequested.current = false;
+              setWinPos(new Set());
+              setShowWin(false);
+              setTotalWin(0);
+              setClusterWins([]);
+              setMultIdx(0);
+              setMultGrid(Array.from({ length: ROWS }, () => Array.from({ length: COLS }, () => 0)));
+              setPrevGrid(grid);
+              setIsSpinning(true);
+
+              spinningColsRef.current = new Set([0, 1, 2, 3, 4, 5]);
+              setSpinningCols(new Set([0, 1, 2, 3, 4, 5]));
+              setBouncingCols(new Set());
+              setExplodingPos(new Set());
+              setDroppingCells({});
+              spinStartTime.current = Date.now();
+
+              skipSpinRef.current = () => {
+                isQuickStopRequested.current = true;
+                isStoppingRef.current = true;
+              };
+
+              socket?.emit('spin_zeus', {
+                username: myUsername,
+                betAmount,
+                actualBet: cost,
+                anteBet: false,
+                isFreeSpins: false,
+                freeSpinMult: 1,
+                clientBalance: res.total,
+                buyFeature: true
+              });
+
+              if (spinTimer.current) clearTimeout(spinTimer.current);
+              spinTimer.current = setTimeout(() => {
+                forceStopReels(undefined, 'Server timeout, koneksi terputus.');
+                setAutoCount(0);
+                autoCountRef.current = 0;
+                isInfiniteAutoRef.current = false;
+              }, 8000);
             }}
             title={anteBet ? 'Nonaktif saat Taruhan Ganda aktif' : 'Beli Spin Gratis'}
           >
@@ -1172,9 +1269,11 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
  
         <div className="zhb-center">
           <div className="zhb-win-banner">
-            <div className="zhb-win-label">WIN</div>
+            <div className="zhb-win-label">{inFreeMode ? 'TOTAL WIN' : 'WIN'}</div>
             <div className="zhb-win-val">
-              {totalWin > 0 ? Math.floor(totalWin).toLocaleString('en-US') : (isSpinning ? '...' : '0')}
+              {inFreeMode
+                ? Math.floor(freeSpinTotalWin).toLocaleString('en-US')
+                : (totalWin > 0 ? Math.floor(totalWin).toLocaleString('en-US') : (isSpinning ? '...' : '0'))}
             </div>
           </div>
         </div>

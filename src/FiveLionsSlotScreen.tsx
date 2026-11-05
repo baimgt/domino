@@ -8,6 +8,7 @@ import SlotProfileModal, { renderSlotAvatar } from './SlotProfileModal';
 import { useSlotProfile } from './useSlotProfile';
 import { MIN_SLOT_BET, MAX_SLOT_BET, stepSlotBet, getSlotCoins, spendSlotCoinsLocal, addSlotWinLocal, syncSlotBetToBackend, syncSlotWinToBackend } from './slotConfig';
 import SlotSpeedButton from './SlotSpeedButton';
+import { determineSpinOutcome } from './slotRtpEngine';
 
 interface Props {
   onBack: () => void;
@@ -108,6 +109,9 @@ export default function FiveLionsSlotScreen({ onBack, socket }: Props) {
   });
   const [totalWin, setTotalWin] = useState(0);
   const [freeSpinsLeft, setFreeSpinsLeft] = useState(0);
+  const [freeSpinTotalWin, setFreeSpinTotalWin] = useState(0);
+  const freeSpinTotalWinRef = useRef(0);
+  useEffect(() => { freeSpinTotalWinRef.current = freeSpinTotalWin; }, [freeSpinTotalWin]);
 
   // Authentic 5 Lions Megaways Wild Multiplier state
   const [wildMultiplier, setWildMultiplier] = useState(1);
@@ -403,9 +407,9 @@ export default function FiveLionsSlotScreen({ onBack, socket }: Props) {
       saveFreeSpinsState(nextSpins, selectedLionMode, activeLionRange);
     }
 
-    // Pre-calculate whether this spin is a win and whether it includes Wild
-    // Doing this BEFORE spinning guarantees the reels land on the exact winning symbols without morphing!
-    const winOccurred = Math.random() > 0.45;
+    // RTP 96.26% & Hit Frequency 15.05% Mathematical Model
+    const rtpOutcome = determineSpinOutcome({ isFreeSpins: isFreeRound, anteMode: anteBetActive });
+    const winOccurred = rtpOutcome.isHit;
     const precomputedWinCells: { row: number; col: number }[] = [];
     const willHaveWild = winOccurred && Math.random() < (isFreeRound ? 0.80 : 0.55);
     const wildCol = 1 + Math.floor(Math.random() * 3); // reel 2, 3, or 4 (cols 1, 2, 3)
@@ -443,9 +447,7 @@ export default function FiveLionsSlotScreen({ onBack, socket }: Props) {
     }
 
     // Scatter Trigger check (3+ Yin Yang Scatters, symId 6)
-    // When Taruhan Ganda is ON, scatter chance is doubled (24% vs 12%)
-    const scatterThreshold = anteBetActive ? 0.76 : 0.88;
-    const isScatterTrigger = !isFreeRound && Math.random() > scatterThreshold;
+    const isScatterTrigger = rtpOutcome.isScatter;
     if (isScatterTrigger) {
       [0, 2, 4].forEach(c => {
         if (newCols[c] && newCols[c][0]) {
@@ -519,14 +521,20 @@ export default function FiveLionsSlotScreen({ onBack, socket }: Props) {
           setIsWildMultActive(false);
         }
 
-        winAmt = Math.floor(cost * (1.5 + Math.random() * 6)) * spinMult;
+        const basePayout = rtpOutcome.targetMult > 0 ? rtpOutcome.targetMult : (1.5 + Math.random() * 4);
+        winAmt = Math.max(1, Math.floor(cost * basePayout * spinMult));
         setTotalWin(winAmt);
+        if (winAmt > 0 && isFreeRound) {
+          const newFsTotal = freeSpinTotalWinRef.current + winAmt;
+          freeSpinTotalWinRef.current = newFsTotal;
+          setFreeSpinTotalWin(newFsTotal);
+        }
         const winRes = addSlotWinLocal(winAmt);
         setMyCoins(winRes.total);
         if (username) {
           syncSlotWinToBackend(API_URL, username, winAmt);
         }
-        if (!isScatterTrigger && winAmt > 0) {
+        if (!isScatterTrigger && winAmt > 0 && !isFreeRound) {
           const ratio = winAmt / Math.max(1, cost);
           if (ratio >= 50) {
             setCelebration({ type: 'super_win', amount: winAmt });
@@ -542,16 +550,41 @@ export default function FiveLionsSlotScreen({ onBack, socket }: Props) {
         setIsWildMultActive(false);
       }
 
-      // Scatter Trigger Free Game Picker
-      if (isScatterTrigger && freeSpinsLeftRef.current === 0) {
+      // Scatter Trigger Free Game Picker / Retrigger
+      if (isScatterTrigger) {
+        if (isFreeRound) {
+          const cfg = selectedLionMode ? LION_MODE_CONFIG[selectedLionMode] : null;
+          const awarded = cfg ? cfg.spins : 15;
+          const totalSpins = freeSpinsLeftRef.current + awarded;
+          saveFreeSpinsState(totalSpins, selectedLionMode, activeLionRange);
+          setCelebration({
+            type: 'scatter',
+            freeSpinsCount: awarded,
+            title: '🦁 RETRIGGER 5 LIONS! 🦁',
+            subtext: `LUAR BIASA! +${awarded} PUTARAN GRATIS DITAMBAHKAN KE SISA SPIN! (TOTAL SISA: ${totalSpins} SPIN)`
+          });
+        } else {
+          setCelebration({
+            type: 'scatter',
+            freeSpinsCount: 15,
+            title: '🦁 SCATTER 5 LIONS! 🦁',
+            subtext: 'SELAMAT! 3+ YIN YANG SCATTER MEMICU FREE GAMES!'
+          });
+          const scatterTimer = setTimeout(() => setShowPickerModal(true), 3800);
+          activeTimersRef.current.push(scatterTimer);
+        }
+      }
+
+      if (isFreeRound && freeSpinsLeftRef.current === 0 && !isScatterTrigger) {
+        const finalFsWin = freeSpinTotalWinRef.current;
         setCelebration({
-          type: 'scatter',
-          freeSpinsCount: 15,
-          title: '🦁 SCATTER 5 LIONS! 🦁',
-          subtext: 'SELAMAT! 3+ YIN YANG SCATTER MEMICU FREE GAMES!'
+          type: 'free_spins_total',
+          amount: finalFsWin,
+          title: 'TOTAL KEMENANGAN',
+          subtext: finalFsWin > 0
+            ? 'SELAMAT! TOTAL KEMENANGAN FREE GAMES 5 LIONS!'
+            : 'PUTARAN GRATIS SELESAI!'
         });
-        const scatterTimer = setTimeout(() => setShowPickerModal(true), 3800);
-        activeTimersRef.current.push(scatterTimer);
       }
     };
 
@@ -565,7 +598,10 @@ export default function FiveLionsSlotScreen({ onBack, socket }: Props) {
     const cfg = LION_MODE_CONFIG[mode] || { spins, range: [10, 15, 30] };
     setSelectedLionMode(mode);
     setActiveLionRange(cfg.range);
-    saveFreeSpinsState(spins, mode, cfg.range);
+    const totalSpins = (freeSpinsLeftRef.current > 0 ? freeSpinsLeftRef.current : 0) + spins;
+    saveFreeSpinsState(totalSpins, mode, cfg.range);
+    setFreeSpinTotalWin(0);
+    freeSpinTotalWinRef.current = 0;
     setShowPickerModal(false);
     isAutoFreeSpinRef.current = true;
     setTimeout(() => {
@@ -849,7 +885,9 @@ export default function FiveLionsSlotScreen({ onBack, socket }: Props) {
           <div className="fbot-center">
             <div className="fbot-purple-pill">
               <span className="fbot-purple-text">
-                {totalWin > 0 ? (
+                {freeSpinsLeft > 0 ? (
+                  <span className="fbot-win-glow">TOTAL MENANG: {freeSpinTotalWin.toLocaleString('id-ID')}</span>
+                ) : totalWin > 0 ? (
                   <span className="fbot-win-glow">MENANG: {totalWin.toLocaleString('id-ID')}</span>
                 ) : isSpinning ? (
                   <span>Memutar...</span>

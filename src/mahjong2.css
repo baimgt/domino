@@ -33,15 +33,12 @@
     linear-gradient(180deg, rgba(1, 24, 18, 0.4) 0%, rgba(1, 24, 18, 0) 25%, rgba(1, 20, 15, 0.45) 100%),
     url('/assets/mahjong2/bg_mahjong.jpg') center / cover no-repeat,
     radial-gradient(circle at 50% 45%, #00d6aa 0%, #009a7b 45%, #006652 75%, #004235 100%);
-  animation: mjBgDrift 45s ease-in-out infinite alternate;
+  /* static background for max performance */
   z-index: 0;
   overflow: hidden;
 }
 
-@keyframes mjBgDrift {
-  0%   { background-position: 0 0, 0 0, 48% 50%, 0 0; }
-  100% { background-position: 0 0, 0 0, 52% 50%, 0 0; }
-}
+
 
 /* Vignette overlay */
 .mj-bg::before {
@@ -220,7 +217,7 @@
   font-style: italic;
   padding: 0.2vh 1vw;
   border-radius: 1.5vh;
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: transform 0.25s ease, opacity 0.25s ease;
 }
 
 .mj-mult-active {
@@ -827,7 +824,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(4px);
+  /* backdrop-filter: none; */
 }
 
 .mj-rules-modal {
@@ -1282,7 +1279,7 @@
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.35);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: transform 0.25s ease, opacity 0.25s ease;
 }
 
 .mj-rules-dots .dot.active {
@@ -1475,4 +1472,5 @@
     font-size: 7.5px !important;
   }
 }
+
 

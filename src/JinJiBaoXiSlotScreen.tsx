@@ -42,6 +42,10 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
   const [, setWinType] = useState<string>('normal');
   const [winningSymbols, setWinningSymbols] = useState<number[]>([]);
   const [freeSpinsLeft, setFreeSpinsLeft] = useState(0);
+  const [freeSpinTotalWin, setFreeSpinTotalWin] = useState(0);
+  const freeSpinTotalWinRef = useRef(0);
+  useEffect(() => { freeSpinTotalWinRef.current = freeSpinTotalWin; }, [freeSpinTotalWin]);
+  const isCurrentSpinFreeRef = useRef<boolean>(false);
   const [multInfo, setMultInfo] = useState<any>(null); // dari server: tangga & pengali free spin
   const [multGrid, setMultGrid] = useState<number[][]>(() => [[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]]);
   const [droppedMultNotif, setDroppedMultNotif] = useState<string | null>(null);
@@ -137,7 +141,7 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
           }
           return next;
         });
-      }, Math.max(20, Math.floor(65 / spinSpeedRef.current)));
+      }, Math.max(65, Math.floor(130 / spinSpeedRef.current)));
     }
     return () => { if (interval) clearInterval(interval); };
   }, [isSpinning]);
@@ -214,17 +218,33 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
           initJackpotPickGame(data.jackpotType, data.jackpotWinAmount);
         }
 
-        let totalFree = freeSpinsLeftRef.current;
+        const isFreeRound = isCurrentSpinFreeRef.current;
+        const winAmt = data.winAmount || 0;
+        if (winAmt > 0 && isFreeRound) {
+          const newFsTotal = freeSpinTotalWinRef.current + winAmt;
+          freeSpinTotalWinRef.current = newFsTotal;
+          setFreeSpinTotalWin(newFsTotal);
+        }
+
+        const isRetrigger = isFreeRound;
         if (data.triggerFreeSpins) {
-          totalFree += data.freeSpinsAwarded;
+          const awarded = data.freeSpinsAwarded || 10;
+          const totalFree = freeSpinsLeftRef.current + awarded;
+          freeSpinsLeftRef.current = totalFree;
           setFreeSpinsLeft(totalFree);
+          if (!isRetrigger) {
+            setFreeSpinTotalWin(0);
+            freeSpinTotalWinRef.current = 0;
+          }
           setCelebration({
             type: 'scatter',
-            freeSpinsCount: data.freeSpinsAwarded || 10,
-            title: '🏮 SCATTER JIN JI BAO XI! 🏮',
-            subtext: `SELAMAT! KAMU MEMICU ${data.freeSpinsAwarded || 10} PUTARAN GRATIS!`
+            freeSpinsCount: awarded,
+            title: isRetrigger ? '🏮 RETRIGGER JIN JI BAO XI! 🏮' : '🏮 SCATTER JIN JI BAO XI! 🏮',
+            subtext: isRetrigger
+              ? `LUAR BIASA! +${awarded} PUTARAN GRATIS DITAMBAHKAN KE SISA SPIN! (TOTAL SISA: ${totalFree} SPIN)`
+              : `SELAMAT! KAMU MEMICU ${awarded} PUTARAN GRATIS!`
           });
-        } else if (data.winAmount > 0) {
+        } else if (data.winAmount > 0 && !isFreeRound) {
           const ratio = data.winAmount / Math.max(1, betAmount);
           if (ratio >= 30) {
             setCelebration({ type: 'super_win', amount: data.winAmount });
@@ -235,18 +255,38 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
           }
         }
 
-        // Handle auto spin / free spin continuation
-        const hasCelebration = data.triggerFreeSpins || (data.winAmount > 0 && (data.winAmount / Math.max(1, betAmount)) >= 3);
-        const nextDelay = hasCelebration ? 3900 : Math.max(250, 1000 / spd);
+        const totalRemainingFree = freeSpinsLeftRef.current;
+        const isEndingFS = (totalRemainingFree === 0 && isFreeRound && !data.triggerFreeSpins);
+        if (isEndingFS) {
+          isCurrentSpinFreeRef.current = false;
+          const finalFsWin = freeSpinTotalWinRef.current;
+          setCelebration({
+            type: 'free_spins_total',
+            amount: finalFsWin,
+            title: 'TOTAL KEMENANGAN',
+            subtext: finalFsWin > 0
+              ? 'SELAMAT! TOTAL KEMENANGAN PUTARAN GRATIS JIN JI BAO XI!'
+              : 'PUTARAN GRATIS SELESAI!'
+          });
+        }
 
-        if (autoSpinsRef.current > 1 || totalFree > 0) {
-          if (autoSpinsRef.current > 1) setAutoSpins(a => a - 1);
-          if (totalFree > 0) setFreeSpinsLeft(f => f - 1);
+        // Handle auto spin / free spin continuation
+        const hasCelebration = Boolean(data.triggerFreeSpins || (!isFreeRound && data.winAmount > 0 && (data.winAmount / Math.max(1, betAmount)) >= 3));
+        const nextDelay = (hasCelebration || isEndingFS) ? 4600 : Math.max(250, 1000 / spd);
+
+        const shouldContinue = totalRemainingFree > 0 || autoSpinsRef.current > 0;
+
+        if (shouldContinue) {
+          if (autoSpinsRef.current > 0 && totalRemainingFree === 0) {
+            setAutoSpins(a => Math.max(0, a - 1));
+            autoSpinsRef.current = Math.max(0, autoSpinsRef.current - 1);
+          }
           setTimeout(() => {
             if (doSpinRef.current) doSpinRef.current();
           }, nextDelay);
-        } else if (autoSpinsRef.current === 1) {
+        } else {
           setAutoSpins(0);
+          autoSpinsRef.current = 0;
         }
       }, allReelsSettled);
     };
@@ -315,15 +355,21 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
 
   const doSpin = () => {
     if (isSpinning || !socket) return;
+    const isFree = freeSpinsLeftRef.current > 0;
+    isCurrentSpinFreeRef.current = isFree;
     if (freeSpinsLeftRef.current === 0 && myCoins < betAmount) {
       alert(`Koin tidak cukup! Taruhan: ${betAmount.toLocaleString('id-ID')} koin.`);
       setAutoSpins(0);
       return;
     }
 
-    if (freeSpinsLeftRef.current === 0) {
+    if (!isFree) {
       const res = spendSlotCoinsLocal(betAmount);
       setMyCoins(res.total);
+    } else {
+      const nextFree = Math.max(0, freeSpinsLeftRef.current - 1);
+      freeSpinsLeftRef.current = nextFree;
+      setFreeSpinsLeft(nextFree);
     }
 
     setIsSpinning(true);
@@ -344,7 +390,7 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
     socket.emit('spin_jinji', {
       username,
       betAmount,
-      isFreeSpins: freeSpinsLeftRef.current > 0,
+      isFreeSpins: isFree,
       clientBalance: myCoins
     });
   };
@@ -887,7 +933,11 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
               <div className="jbot-info-outer">
                 <div className="jbot-info-inner-frame">
                   <div className="jbot-info-inner">
-                    {winAmount > 0 ? `MENANG: ${winAmount.toLocaleString('en-US')}` : 'Teka [SPIN] untuk memulai'}
+                    {freeSpinsLeft > 0
+                      ? `TOTAL MENANG: ${(freeSpinTotalWin > 0 ? freeSpinTotalWin : winAmount).toLocaleString('en-US')}`
+                      : winAmount > 0
+                      ? `MENANG: ${winAmount.toLocaleString('en-US')}`
+                      : 'Tekan [SPIN] untuk memulai'}
                   </div>
                 </div>
               </div>

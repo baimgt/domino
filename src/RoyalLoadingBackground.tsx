@@ -39,7 +39,7 @@ export const RoyalLoadingBackground: React.FC<RoyalLoadingBackgroundProps> = ({ 
 
     // Floating gold bokeh / embers
     const particles: Particle[] = [];
-    const maxParticles = 40;
+    const maxParticles = 12; // was 40 — reduced for low-end GPU
 
     const createParticle = (): Particle => {
       const maxLife = 120 + Math.random() * 120;
@@ -62,7 +62,14 @@ export const RoyalLoadingBackground: React.FC<RoyalLoadingBackgroundProps> = ({ 
       particles.push(p);
     }
 
+    let frame = 0;
     const render = () => {
+      frame++;
+      // Throttle to ~30 FPS effective — skip every other frame
+      if (frame % 2 === 0) {
+        animId = requestAnimationFrame(render);
+        return;
+      }
       ctx.clearRect(0, 0, width, height);
 
       for (let i = 0; i < particles.length; i++) {
@@ -84,14 +91,17 @@ export const RoyalLoadingBackground: React.FC<RoyalLoadingBackgroundProps> = ({ 
           continue;
         }
 
-        ctx.save();
+        // Soft golden halo (fast hardware acceleration, no shadowBlur)
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size * 2.2, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 215, 0, ${p.alpha * 0.28})`;
+        ctx.fill();
+
+        // Bright ember core
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255, 215, 0, ${p.alpha})`;
-        ctx.shadowColor = '#ffd700';
-        ctx.shadowBlur = 8;
+        ctx.fillStyle = `rgba(255, 240, 160, ${p.alpha})`;
         ctx.fill();
-        ctx.restore();
       }
 
       animId = requestAnimationFrame(render);

@@ -48,7 +48,7 @@ export const OlympusCinematicBackground: React.FC<OlympusCinematicBackgroundProp
 
     // Particle pool for golden embers
     const particles: Particle[] = [];
-    const maxParticles = 45;
+    const maxParticles = 10; // was 45 — reduced for low-end GPU
 
     const createParticle = (): Particle => {
       const maxLife = 120 + Math.random() * 100;
@@ -152,13 +152,18 @@ export const OlympusCinematicBackground: React.FC<OlympusCinematicBackgroundProp
     // Constant micro-spark electric arcs around Zeus's hand
     let arcTimer = 0;
 
+    let frameCount = 0;
     const render = () => {
+      frameCount++;
+      // Throttle to ~20 FPS effective (skip 2 of every 3 frames) for low-end CPU
+      if (frameCount % 3 !== 0) {
+        animationFrameId = requestAnimationFrame(render);
+        return;
+      }
       ctx.clearRect(0, 0, width, height);
 
       const now = Date.now();
-      if (now > nextLightningTime) {
-        triggerLightning();
-      }
+      if (now > nextLightningTime) { triggerLightning(); }
 
       // 1. Draw Golden Floating Embers
       for (let i = 0; i < particles.length; i++) {
@@ -182,17 +187,25 @@ export const OlympusCinematicBackground: React.FC<OlympusCinematicBackgroundProp
           continue;
         }
 
-        // Draw glowing ember
+        // Draw glowing ember without creating heap gradients
         const rad = Math.max(0.5, p.size);
-        const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, rad * 3);
-        grad.addColorStop(0, `rgba(255, 255, 240, ${p.alpha})`);
-        grad.addColorStop(0.3, `rgba(255, 215, 0, ${p.alpha * 0.8})`);
-        grad.addColorStop(0.8, `rgba(255, 120, 0, ${p.alpha * 0.3})`);
-        grad.addColorStop(1, 'rgba(255, 120, 0, 0)');
-
-        ctx.fillStyle = grad;
+        
+        // Soft outer halo
         ctx.beginPath();
-        ctx.arc(p.x, p.y, rad * 3, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, rad * 2.4, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 140, 0, ${p.alpha * 0.22})`;
+        ctx.fill();
+
+        // Warm golden mid-glow
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, rad * 1.5, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 215, 0, ${p.alpha * 0.65})`;
+        ctx.fill();
+
+        // White-hot core
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, rad * 0.7, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 240, ${p.alpha})`;
         ctx.fill();
       }
 
@@ -203,27 +216,32 @@ export const OlympusCinematicBackground: React.FC<OlympusCinematicBackgroundProp
         const handY = height * 0.19;
         const arcCount = 2 + Math.floor(Math.random() * 3);
 
-        ctx.save();
-        ctx.strokeStyle = '#ffffff';
-        ctx.shadowColor = '#00f0ff';
-        ctx.shadowBlur = 10;
-        ctx.lineWidth = 1.2;
-
         for (let a = 0; a < arcCount; a++) {
           const angle = Math.random() * Math.PI * 2;
           const dist = 10 + Math.random() * 32;
           const targetX = handX + Math.cos(angle) * dist;
           const targetY = handY + Math.sin(angle) * dist;
-
-          ctx.beginPath();
-          ctx.moveTo(handX, handY);
           const midX = (handX + targetX) / 2 + (Math.random() - 0.5) * 12;
           const midY = (handY + targetY) / 2 + (Math.random() - 0.5) * 12;
+
+          // Cyan glow pass
+          ctx.beginPath();
+          ctx.moveTo(handX, handY);
           ctx.lineTo(midX, midY);
           ctx.lineTo(targetX, targetY);
+          ctx.strokeStyle = 'rgba(0, 240, 255, 0.45)';
+          ctx.lineWidth = 2.6;
+          ctx.stroke();
+
+          // White electric core
+          ctx.beginPath();
+          ctx.moveTo(handX, handY);
+          ctx.lineTo(midX, midY);
+          ctx.lineTo(targetX, targetY);
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 1.1;
           ctx.stroke();
         }
-        ctx.restore();
       }
 
       // 3. Draw Active Lightning Bolts
@@ -242,12 +260,10 @@ export const OlympusCinematicBackground: React.FC<OlympusCinematicBackgroundProp
         ctx.lineCap = 'round';
         ctx.lineJoin = 'miter';
 
-        // Outer glow
+        // Outer glow path
         ctx.strokeStyle = bolt.color;
-        ctx.shadowColor = bolt.color;
-        ctx.shadowBlur = 18;
-        ctx.lineWidth = 3.5;
-        ctx.globalAlpha = boltAlpha * 0.7;
+        ctx.lineWidth = 4.0;
+        ctx.globalAlpha = boltAlpha * 0.6;
 
         ctx.beginPath();
         for (const seg of bolt.segments) {
@@ -258,8 +274,6 @@ export const OlympusCinematicBackground: React.FC<OlympusCinematicBackgroundProp
 
         // Inner bright white core
         ctx.strokeStyle = '#ffffff';
-        ctx.shadowColor = '#ffffff';
-        ctx.shadowBlur = 6;
         ctx.lineWidth = 1.6;
         ctx.globalAlpha = boltAlpha;
 

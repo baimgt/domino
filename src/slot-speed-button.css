@@ -104,7 +104,7 @@
   cursor: pointer;
   padding: 0;
   line-height: 1;
-  transition: all 0.12s ease;
+  transition: transform 0.25s ease, opacity 0.25s ease;
 }
 
 .slot-speed-popup-close:hover,
@@ -132,7 +132,7 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.12s ease;
+  transition: transform 0.25s ease, opacity 0.25s ease;
   min-width: 0;
   outline: none;
 }
@@ -256,3 +256,4 @@
   background: linear-gradient(180deg, #e53935 0%, #b71c1c 100%);
   border-color: #ffd700;
 }
+

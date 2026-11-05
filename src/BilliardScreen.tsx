@@ -210,7 +210,10 @@ const OPPONENT_LIST = [
   { name: 'Sarah Queen',   level: 52, avatar: 'https://i.pravatar.cc/100?img=44' },
   { name: 'Budi Pool Master', level: 39, avatar: 'https://i.pravatar.cc/100?img=12' },
   { name: 'Alex Trickshot', level: 61, avatar: 'https://i.pravatar.cc/100?img=60' },
-  { name: 'David Hustler', level: 48, avatar: 'https://i.pravatar.cc/100?img=33' }
+  { name: 'David Hustler', level: 48, avatar: 'https://i.pravatar.cc/100?img=33' },
+  { name: 'Jessica Miller', level: 55, avatar: 'https://i.pravatar.cc/100?img=47' },
+  { name: 'Rian Sultan 8', level: 42, avatar: 'https://i.pravatar.cc/100?img=11' },
+  { name: 'Farhan Snooker', level: 50, avatar: 'https://i.pravatar.cc/100?img=53' }
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -218,6 +221,10 @@ const OPPONENT_LIST = [
 // ═══════════════════════════════════════════════════════════════
 class BilliardSoundManager {
   private ctx: AudioContext | null = null;
+  private noiseBuf: AudioBuffer | null = null;
+  private unlocked = false;
+  private lastClackMs = 0;
+  private lastCushionMs = 0;
   public enabled = true;
 
   private getContext(): AudioContext | null {
@@ -234,60 +241,162 @@ class BilliardSoundManager {
     return this.ctx;
   }
 
+  public unlock() {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
+    if (!this.unlocked) {
+      try {
+        const buf = ctx.createBuffer(1, 1, 22050);
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        src.connect(ctx.destination);
+        src.start(0);
+        this.unlocked = true;
+      } catch {
+        // Ignore unlock errors on restricted contexts
+      }
+    }
+  }
+
+  private getNoiseBuffer(ctx: AudioContext): AudioBuffer {
+    if (this.noiseBuf && this.noiseBuf.sampleRate === ctx.sampleRate) {
+      return this.noiseBuf;
+    }
+    const len = Math.floor(ctx.sampleRate * 0.15);
+    const buffer = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < len; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+    this.noiseBuf = buffer;
+    return buffer;
+  }
+
   playCueHit(power: number) {
     if (!this.enabled) return;
     const ctx = this.getContext();
     if (!ctx) return;
     const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    const filter = ctx.createBiquadFilter();
+    const p = Math.min(1, Math.max(0.12, power));
 
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(220, now);
-    osc.frequency.exponentialRampToValueAtTime(45, now + 0.08);
+    // Layer 1: Maple cue shaft resonance thud
+    const bodyOsc = ctx.createOscillator();
+    const bodyGain = ctx.createGain();
+    bodyOsc.type = 'triangle';
+    bodyOsc.frequency.setValueAtTime(250 + p * 90, now);
+    bodyOsc.frequency.exponentialRampToValueAtTime(52, now + 0.095);
 
-    filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(800 + power * 900, now);
+    const bodyVol = Math.min(0.95, 0.32 + p * 0.6);
+    bodyGain.gain.setValueAtTime(bodyVol, now);
+    bodyGain.gain.exponentialRampToValueAtTime(0.001, now + 0.105);
 
-    const vol = Math.min(0.8, 0.2 + power * 0.55);
-    gain.gain.setValueAtTime(vol, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+    bodyOsc.connect(bodyGain);
+    bodyGain.connect(ctx.destination);
+    bodyOsc.start(now);
+    bodyOsc.stop(now + 0.11);
 
-    osc.connect(filter);
-    filter.connect(gain);
-    gain.connect(ctx.destination);
+    // Layer 2: Crisp phenolic cue ball click
+    const clickOsc = ctx.createOscillator();
+    const clickGain = ctx.createGain();
+    clickOsc.type = 'sine';
+    clickOsc.frequency.setValueAtTime(1150 + p * 650, now);
+    clickOsc.frequency.exponentialRampToValueAtTime(260, now + 0.036);
 
-    osc.start(now);
-    osc.stop(now + 0.1);
+    clickGain.gain.setValueAtTime(Math.min(0.85, 0.25 + p * 0.55), now);
+    clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+
+    clickOsc.connect(clickGain);
+    clickGain.connect(ctx.destination);
+    clickOsc.start(now);
+    clickOsc.stop(now + 0.045);
+
+    // Layer 3: Leather tip chalk strike transient noise
+    const noiseSrc = ctx.createBufferSource();
+    noiseSrc.buffer = this.getNoiseBuffer(ctx);
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.setValueAtTime(1850 + p * 1100, now);
+    bp.Q.setValueAtTime(2.2, now);
+
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(Math.min(0.75, 0.2 + p * 0.5), now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.028);
+
+    noiseSrc.connect(bp);
+    bp.connect(noiseGain);
+    noiseGain.connect(ctx.destination);
+    noiseSrc.start(now);
+    noiseSrc.stop(now + 0.032);
   }
 
   playBallClack(speed = 6) {
     if (!this.enabled) return;
+    const perfNow = performance.now();
+    if (perfNow - this.lastClackMs < 14) return;
+    this.lastClackMs = perfNow;
+
     const ctx = this.getContext();
     if (!ctx) return;
     const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
+    const norm = Math.min(1, Math.max(0.15, speed / 15));
+    const vol = Math.min(0.9, 0.22 + norm * 0.68);
 
-    osc.type = 'sine';
-    const pitch = 2300 + Math.random() * 450;
-    osc.frequency.setValueAtTime(pitch, now);
-    osc.frequency.exponentialRampToValueAtTime(700, now + 0.038);
+    // Layer 1: Primary phenolic resin ring mode (~2450Hz -> 920Hz)
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'sine';
+    const pitch1 = 2350 + Math.random() * 380;
+    osc1.frequency.setValueAtTime(pitch1, now);
+    osc1.frequency.exponentialRampToValueAtTime(880, now + 0.042);
 
-    const vol = Math.min(0.65, Math.max(0.12, (speed / 16) * 0.55));
-    gain.gain.setValueAtTime(vol, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
+    gain1.gain.setValueAtTime(vol, now);
+    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.048);
 
-    osc.connect(gain);
-    gain.connect(ctx.destination);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(now);
+    osc1.stop(now + 0.052);
 
-    osc.start(now);
-    osc.stop(now + 0.05);
+    // Layer 2: Upper enharmonic overtone (~3800Hz -> 1650Hz)
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = 'triangle';
+    osc2.frequency.setValueAtTime(pitch1 * 1.58, now);
+    osc2.frequency.exponentialRampToValueAtTime(1500, now + 0.024);
+
+    gain2.gain.setValueAtTime(vol * 0.55, now);
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.028);
+
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.start(now);
+    osc2.stop(now + 0.03);
+
+    // Layer 3: Solid core knock (~680Hz -> 195Hz)
+    const osc3 = ctx.createOscillator();
+    const gain3 = ctx.createGain();
+    osc3.type = 'sine';
+    osc3.frequency.setValueAtTime(680 + norm * 160, now);
+    osc3.frequency.exponentialRampToValueAtTime(185, now + 0.032);
+
+    gain3.gain.setValueAtTime(vol * 0.72, now);
+    gain3.gain.exponentialRampToValueAtTime(0.001, now + 0.036);
+
+    osc3.connect(gain3);
+    gain3.connect(ctx.destination);
+    osc3.start(now);
+    osc3.stop(now + 0.04);
   }
 
   playCushionBounce(speed = 5) {
     if (!this.enabled) return;
+    const perfNow = performance.now();
+    if (perfNow - this.lastCushionMs < 22) return;
+    this.lastCushionMs = perfNow;
+
     const ctx = this.getContext();
     if (!ctx) return;
     const now = ctx.currentTime;
@@ -295,12 +404,12 @@ class BilliardSoundManager {
     const gain = ctx.createGain();
 
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(135, now);
-    osc.frequency.exponentialRampToValueAtTime(45, now + 0.08);
+    osc.frequency.setValueAtTime(150, now);
+    osc.frequency.exponentialRampToValueAtTime(42, now + 0.088);
 
-    const vol = Math.min(0.42, Math.max(0.09, (speed / 14) * 0.38));
+    const vol = Math.min(0.55, Math.max(0.14, (speed / 13) * 0.48));
     gain.gain.setValueAtTime(vol, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.095);
 
     osc.connect(gain);
     gain.connect(ctx.destination);
@@ -314,21 +423,64 @@ class BilliardSoundManager {
     const ctx = this.getContext();
     if (!ctx) return;
     const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
 
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(280, now);
-    osc.frequency.exponentialRampToValueAtTime(75, now + 0.2);
+    // Stage 1: Deep leather pocket throat thump (t = 0)
+    const thudOsc = ctx.createOscillator();
+    const thudGain = ctx.createGain();
+    thudOsc.type = 'triangle';
+    thudOsc.frequency.setValueAtTime(295, now);
+    thudOsc.frequency.exponentialRampToValueAtTime(58, now + 0.19);
 
-    gain.gain.setValueAtTime(0.55, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+    thudGain.gain.setValueAtTime(0.78, now);
+    thudGain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
 
-    osc.connect(gain);
-    gain.connect(ctx.destination);
+    thudOsc.connect(thudGain);
+    thudGain.connect(ctx.destination);
+    thudOsc.start(now);
+    thudOsc.stop(now + 0.23);
 
-    osc.start(now);
-    osc.stop(now + 0.24);
+    // Stage 2: Pocket chute drop rattle & rail knocks (t = +70ms and +145ms)
+    const knocks = [
+      { delay: 0.07, freqStart: 1080, freqEnd: 290, dur: 0.055, vol: 0.52 },
+      { delay: 0.145, freqStart: 820, freqEnd: 215, dur: 0.065, vol: 0.42 },
+    ];
+    knocks.forEach(k => {
+      const kTime = now + k.delay;
+      const kOsc = ctx.createOscillator();
+      const kGain = ctx.createGain();
+      kOsc.type = 'sine';
+      kOsc.frequency.setValueAtTime(k.freqStart, kTime);
+      kOsc.frequency.exponentialRampToValueAtTime(k.freqEnd, kTime + k.dur);
+
+      kGain.gain.setValueAtTime(k.vol, kTime);
+      kGain.gain.exponentialRampToValueAtTime(0.001, kTime + k.dur + 0.01);
+
+      kOsc.connect(kGain);
+      kGain.connect(ctx.destination);
+      kOsc.start(kTime);
+      kOsc.stop(kTime + k.dur + 0.015);
+    });
+
+    // Stage 3: Subtle satisfying pocket chime (t = +35ms & +110ms)
+    const chimeNotes = [
+      { delay: 0.035, freq: 587.33, vol: 0.22, dur: 0.18 },
+      { delay: 0.11, freq: 880.0, vol: 0.26, dur: 0.26 },
+    ];
+    chimeNotes.forEach(c => {
+      const cTime = now + c.delay;
+      const cOsc = ctx.createOscillator();
+      const cGain = ctx.createGain();
+      cOsc.type = 'triangle';
+      cOsc.frequency.setValueAtTime(c.freq, cTime);
+
+      cGain.gain.setValueAtTime(c.vol, cTime);
+      cGain.gain.exponentialRampToValueAtTime(0.001, cTime + c.dur);
+
+      cOsc.connect(cGain);
+      cGain.connect(ctx.destination);
+      cOsc.start(cTime);
+      cOsc.stop(cTime + c.dur + 0.01);
+    });
   }
 
   playWinFanfare() {
@@ -342,7 +494,7 @@ class BilliardSoundManager {
       const gain = ctx.createGain();
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(freq, now);
-      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.setValueAtTime(0.35, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
       osc.connect(gain);
       gain.connect(ctx.destination);
@@ -380,6 +532,8 @@ function createBalls(): Ball[] {
 //  PHYSICS ENGINE
 // ═══════════════════════════════════════════════════════════════
 function spawnParticles(arr: Particle[], x: number, y: number, color: string, n: number) {
+  // Cap max active particles to avoid memory churn and GPU draw lag
+  if (arr.length > 30) arr.splice(0, arr.length - 20);
   for (let i = 0; i < n; i++) {
     const angle = Math.random() * Math.PI * 2;
     const spd   = Math.random() * 3 + 0.6;
@@ -393,125 +547,164 @@ function physicsStep(
   particles: Particle[],
   sinkingBalls: SinkingBall[],
   spin: SpinState,
-  cueBallJustShot: { current: boolean }
+  cueBallJustShot: { current: boolean },
+  firstHitBallRef?: { current: number | null }
 ): boolean {
   let moving = false;
+  const SUB_STEPS = 4;
+  const SUB_FRICTION = Math.pow(FRICTION, 1 / SUB_STEPS);
+  const restitution = 0.80;
 
-  for (const b of balls) {
-    if (b.pocketed) continue;
-    b.x += b.vx; b.y += b.vy;
-    b.vx *= FRICTION; b.vy *= FRICTION;
-    const spd = Math.hypot(b.vx, b.vy);
-    if (spd < MIN_SPEED) {
-      b.vx = 0; b.vy = 0;
-    } else {
-      moving = true;
-      b.angle += (spd / BALL_R) * Math.sign(b.vx || 1);
-    }
+  for (let step = 0; step < SUB_STEPS; step++) {
+    // 1. Move & damp balls
+    for (let bi = 0; bi < balls.length; bi++) {
+      const b = balls[bi];
+      if (b.pocketed) continue;
 
-    // Cushion collisions
-    const restitution = 0.76;
-    let bounced = false;
-    if (b.x - BALL_R < PLAY_LEFT) {
-      b.x = PLAY_LEFT + BALL_R; b.vx = Math.abs(b.vx) * restitution;
-      spawnParticles(particles, b.x, b.y, '#ffd27d', 4); bounced = true;
-    }
-    if (b.x + BALL_R > PLAY_RIGHT) {
-      b.x = PLAY_RIGHT - BALL_R; b.vx = -Math.abs(b.vx) * restitution;
-      spawnParticles(particles, b.x, b.y, '#ffd27d', 4); bounced = true;
-    }
-    if (b.y - BALL_R < PLAY_TOP) {
-      b.y = PLAY_TOP + BALL_R; b.vy = Math.abs(b.vy) * restitution;
-      spawnParticles(particles, b.x, b.y, '#ffd27d', 4); bounced = true;
-    }
-    if (b.y + BALL_R > PLAY_BOTTOM) {
-      b.y = PLAY_BOTTOM - BALL_R; b.vy = -Math.abs(b.vy) * restitution;
-      spawnParticles(particles, b.x, b.y, '#ffd27d', 4); bounced = true;
-    }
-    if (bounced && spd > 0.8) {
-      poolSound.playCushionBounce(spd);
-    }
+      b.x += b.vx / SUB_STEPS;
+      b.y += b.vy / SUB_STEPS;
+      b.vx *= SUB_FRICTION;
+      b.vy *= SUB_FRICTION;
 
-    // Pocket sink check
-    for (const p of POCKETS) {
-      if (Math.hypot(b.x - p.x, b.y - p.y) < POCKET_R) {
-        b.pocketed = true; b.vx = 0; b.vy = 0;
-        pocketedSet.add(b.id);
-        const entryAngle = Math.atan2(b.y - p.y, b.x - p.x);
-        const entryDist  = Math.hypot(b.x - p.x, b.y - p.y);
-        sinkingBalls.push({
-          id: b.id, x: b.x, y: b.y, px: p.x, py: p.y,
-          progress: 0, color: BALL_COLORS[b.id] ?? '#aaa',
-          rollAngle: b.angle,
-          orbitR: Math.min(entryDist, POCKET_R * 0.85),
-          orbitAngle: entryAngle,
-        });
-        spawnParticles(particles, b.x, b.y, BALL_COLORS[b.id] ?? '#fff', 18);
-        poolSound.playPocketDrop();
-        break;
+      const spd = Math.hypot(b.vx, b.vy);
+      // Soft gentle glide stop curve (prevents abrupt jerky halting)
+      if (spd < 0.6) {
+        b.vx *= 0.988;
+        b.vy *= 0.988;
+      }
+      if (spd < 0.02) {
+        b.vx = 0;
+        b.vy = 0;
+      } else {
+        moving = true;
+        b.angle += (spd / BALL_R) / SUB_STEPS;
+      }
+
+      // Cushion collisions with elastic response
+      let bounced = false;
+      if (b.x - BALL_R < PLAY_LEFT) {
+        b.x = PLAY_LEFT + BALL_R;
+        b.vx = Math.abs(b.vx) * restitution;
+        bounced = true;
+      } else if (b.x + BALL_R > PLAY_RIGHT) {
+        b.x = PLAY_RIGHT - BALL_R;
+        b.vx = -Math.abs(b.vx) * restitution;
+        bounced = true;
+      }
+      if (b.y - BALL_R < PLAY_TOP) {
+        b.y = PLAY_TOP + BALL_R;
+        b.vy = Math.abs(b.vy) * restitution;
+        bounced = true;
+      } else if (b.y + BALL_R > PLAY_BOTTOM) {
+        b.y = PLAY_BOTTOM - BALL_R;
+        b.vy = -Math.abs(b.vy) * restitution;
+        bounced = true;
+      }
+      if (bounced && spd > 0.85) {
+        poolSound.playCushionBounce(spd);
+        spawnParticles(particles, b.x, b.y, '#ffd27d', 3);
+      }
+
+      // Pocket sink check
+      for (let pi = 0; pi < POCKETS.length; pi++) {
+        const p = POCKETS[pi];
+        if (Math.hypot(b.x - p.x, b.y - p.y) < POCKET_R) {
+          b.pocketed = true;
+          b.vx = 0;
+          b.vy = 0;
+          pocketedSet.add(b.id);
+          const entryAngle = Math.atan2(b.y - p.y, b.x - p.x);
+          const entryDist  = Math.hypot(b.x - p.x, b.y - p.y);
+          sinkingBalls.push({
+            id: b.id,
+            x: b.x,
+            y: b.y,
+            px: p.x,
+            py: p.y,
+            progress: 0,
+            color: BALL_COLORS[b.id] ?? '#aaa',
+            rollAngle: b.angle,
+            orbitR: Math.min(entryDist, POCKET_R * 0.85),
+            orbitAngle: entryAngle,
+          });
+          spawnParticles(particles, b.x, b.y, BALL_COLORS[b.id] ?? '#fff', 12);
+          poolSound.playPocketDrop();
+          break;
+        }
       }
     }
-  }
 
-  // Ball-to-ball collisions
-  const active = balls.filter(b => !b.pocketed);
-  for (let i = 0; i < active.length; i++) {
-    for (let j = i + 1; j < active.length; j++) {
-      const a = active[i], b = active[j];
-      const dx = b.x - a.x, dy = b.y - a.y;
-      const dist = Math.hypot(dx, dy);
-      if (dist < BALL_R * 2 && dist > 0) {
-        const nx = dx / dist, ny = dy / dist;
-        const overlap = (BALL_R * 2 - dist) / 2;
-        a.x -= nx * overlap; a.y -= ny * overlap;
-        b.x += nx * overlap; b.y += ny * overlap;
+    // 2. Continuous ball-to-ball collisions (direct loop without array allocation)
+    for (let i = 0; i < balls.length; i++) {
+      const a = balls[i];
+      if (a.pocketed) continue;
+      for (let j = i + 1; j < balls.length; j++) {
+        const b = balls[j];
+        if (b.pocketed) continue;
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < BALL_R * 2 && dist > 0) {
+          const nx = dx / dist, ny = dy / dist;
+          const overlap = (BALL_R * 2 - dist) * 0.5;
+          a.x -= nx * overlap;
+          a.y -= ny * overlap;
+          b.x += nx * overlap;
+          b.y += ny * overlap;
 
-        const dvx = a.vx - b.vx, dvy = a.vy - b.vy;
-        const dot = dvx * nx + dvy * ny;
-        if (dot > 0) {
-          const e   = 0.96;
-          const imp = dot * (1 + e) * 0.5;
-          const wasA = (a.id === 0 && cueBallJustShot.current);
+          const dvx = a.vx - b.vx, dvy = a.vy - b.vy;
+          const dot = dvx * nx + dvy * ny;
+          if (dot > 0) {
+            const e = 0.96;
+            const imp = dot * (1 + e) * 0.5;
+            const wasA = (a.id === 0 && cueBallJustShot.current);
+            const wasB = (b.id === 0 && cueBallJustShot.current);
 
-          a.vx -= imp * nx; a.vy -= imp * ny;
-          b.vx += imp * nx; b.vy += imp * ny;
+            a.vx -= imp * nx;
+            a.vy -= imp * ny;
+            b.vx += imp * nx;
+            b.vy += imp * ny;
 
-          if (wasA) {
-            cueBallJustShot.current = false;
-            const spinEffect = -spin.y;
-            a.vx += nx * spinEffect * imp * 0.55;
-            a.vy += ny * spinEffect * imp * 0.55;
-            a.vx += -ny * spin.x * imp * 0.3;
-            a.vy +=  nx * spin.x * imp * 0.3;
+            if (wasA || wasB) {
+              cueBallJustShot.current = false;
+              if (firstHitBallRef && firstHitBallRef.current === null) {
+                firstHitBallRef.current = wasA ? b.id : a.id;
+              }
+              const spinEffect = -spin.y;
+              const cue = wasA ? a : b;
+              cue.vx += nx * spinEffect * imp * 0.55;
+              cue.vy += ny * spinEffect * imp * 0.55;
+              cue.vx += -ny * spin.x * imp * 0.3;
+              cue.vy +=  nx * spin.x * imp * 0.3;
+            }
+
+            const hitSpeed = Math.hypot(dvx, dvy);
+            if (hitSpeed > 0.35) {
+              poolSound.playBallClack(hitSpeed);
+              spawnParticles(particles, (a.x + b.x) / 2, (a.y + b.y) / 2, '#ffffff', 4);
+            }
           }
-
-          const hitSpeed = Math.hypot(dvx, dvy);
-          if (hitSpeed > 0.4) {
-            poolSound.playBallClack(hitSpeed);
-          }
-          spawnParticles(particles, (a.x + b.x) / 2, (a.y + b.y) / 2, '#ffffff', 6);
         }
       }
     }
   }
 
-  // Update particles
+  // Update particles (once per frame)
   for (let k = particles.length - 1; k >= 0; k--) {
     const p = particles[k];
-    p.x += p.vx; p.y += p.vy; p.vy += 0.05;
-    p.life -= 0.035;
+    p.x += p.vx; p.y += p.vy; p.vy += 0.04;
+    p.life -= 0.032;
     if (p.life <= 0) particles.splice(k, 1);
   }
 
-  // Update sinking balls
+  // Update sinking balls (smooth vortex drainage)
   for (let k = sinkingBalls.length - 1; k >= 0; k--) {
     const s = sinkingBalls[k];
-    const accel = 0.03 + s.progress * 0.035;
+    const accel = 0.026 + s.progress * 0.035;
     s.progress += accel;
-    const orbitSpeed = 0.08 + s.progress * 0.26;
+    const orbitSpeed = 0.08 + s.progress * 0.22;
     s.orbitAngle  += orbitSpeed;
-    s.orbitR      *= (1 - 0.055 - s.progress * 0.04);
-    s.rollAngle   += 0.22 + s.progress * 0.4;
+    s.orbitR      *= (1 - 0.05 - s.progress * 0.04);
+    s.rollAngle   += 0.18 + s.progress * 0.35;
     s.x = s.px + Math.cos(s.orbitAngle) * s.orbitR;
     s.y = s.py + Math.sin(s.orbitAngle) * s.orbitR;
     if (s.progress >= 1 || s.orbitR < 0.5) sinkingBalls.splice(k, 1);
@@ -629,37 +822,34 @@ function lighten(hex: string, amt = 60): string {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  CANVAS RENDERER (ULTRA-REALISTIC 3D TOURNAMENT TABLE)
+//  HARDWARE-ACCELERATED PRE-RENDERED TABLE CACHE
 // ═══════════════════════════════════════════════════════════════
-function drawScene(
-  ctx: CanvasRenderingContext2D,
-  balls: Ball[],
-  aimTarget: { x: number; y: number } | null,
-  power: number,
-  isAimMode: boolean,
-  particles: Particle[],
-  sinkingBalls: SinkingBall[],
-  tableFeltColor?: string,
-  cueSkin: 'maple' | 'carbon' | 'dragon' | 'sultan' = 'maple'
-) {
+let cachedTableBg: HTMLCanvasElement | null = null;
+let cachedFeltColor: string | null = null;
+
+function getCachedTableBackground(tableFeltColor = '#2472a4'): HTMLCanvasElement {
+  if (cachedTableBg && cachedFeltColor === tableFeltColor) {
+    return cachedTableBg;
+  }
+  const bgCanvas = document.createElement('canvas');
+  bgCanvas.width  = TABLE_W;
+  bgCanvas.height = TABLE_H;
+  const ctx = bgCanvas.getContext('2d')!;
   const W = TABLE_W, H = TABLE_H;
 
-  // 1. Deep outer table drop shadow
+  // 1. Lightweight table shadow (zero shadowBlur GPU overhead)
   ctx.save();
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.75)';
-  ctx.shadowBlur = 35;
-  ctx.shadowOffsetY = 15;
-  ctx.fillStyle = '#080808';
-  ctx.fillRect(8, 8, W - 16, H - 16);
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+  ctx.fillRect(4, 4, W - 8, H - 8);
   ctx.restore();
 
-  // 2. Rich Burgundy / Crimson Mahogany Wood Frame & Rails (Miniclip 8-Ball Pool style)
+  // 2. Rich Burgundy / Crimson Mahogany Wood Frame & Rails
   const woodGrad = ctx.createLinearGradient(0, 0, W, H);
-  woodGrad.addColorStop(0,   '#3d0c12');
-  woodGrad.addColorStop(0.25,'#661620');
-  woodGrad.addColorStop(0.5, '#85202d');
-  woodGrad.addColorStop(0.75,'#58131b');
-  woodGrad.addColorStop(1,   '#28070b');
+  woodGrad.addColorStop(0,    '#3d0c12');
+  woodGrad.addColorStop(0.25, '#661620');
+  woodGrad.addColorStop(0.5,  '#85202d');
+  woodGrad.addColorStop(0.75, '#58131b');
+  woodGrad.addColorStop(1,    '#28070b');
   ctx.fillStyle = woodGrad;
   ctx.fillRect(0, 0, W, H);
 
@@ -687,7 +877,7 @@ function drawScene(
   ctx.lineWidth = 3;
   ctx.strokeRect(RAIL_W - 2, RAIL_W - 2, W - RAIL_W * 2 + 4, H - RAIL_W * 2 + 4);
 
-  // 3. Simonis Tournament Cloth Baize (Cyan-Blue 8-Ball Pool cloth default)
+  // 3. Simonis Tournament Cloth Baize
   const baseFelt = tableFeltColor || '#2472a4';
   const feltGrad = ctx.createRadialGradient(W / 2, H / 2, 40, W / 2, H / 2, W * 0.62);
   feltGrad.addColorStop(0,    lighten(baseFelt, 28));
@@ -742,7 +932,7 @@ function drawScene(
   ctx.fillRect(W - RAIL_W - 16, RAIL_W, 16, H - RAIL_W * 2);
   ctx.restore();
 
-  // Rubber Cushion Strips (Matching deep burgundy cushions)
+  // Rubber Cushion Strips
   ctx.fillStyle = '#4c0f16';
   ctx.fillRect(RAIL_W, RAIL_W - 6, W - RAIL_W * 2, 7);
   ctx.fillRect(RAIL_W, H - RAIL_W - 1, W - RAIL_W * 2, 7);
@@ -760,10 +950,10 @@ function drawScene(
       ctx.beginPath();
       ctx.arc(cx, cy, 3.8, 0, Math.PI * 2);
       const pearl = ctx.createRadialGradient(cx - 1, cy - 1, 0.5, cx, cy, 4);
-      pearl.addColorStop(0, '#ffffff');
-      pearl.addColorStop(0.4, '#e2e8f0');
+      pearl.addColorStop(0,    '#ffffff');
+      pearl.addColorStop(0.4,  '#e2e8f0');
       pearl.addColorStop(0.85, '#cbd5e1');
-      pearl.addColorStop(1, '#94a3b8');
+      pearl.addColorStop(1,    '#94a3b8');
       ctx.fillStyle = pearl;
       ctx.fill();
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
@@ -803,18 +993,16 @@ function drawScene(
   // 4. Polished Chrome Metallic Corner & Side Pocket Plates
   for (const p of POCKETS) {
     ctx.save();
-    // Pocket shadow
     ctx.beginPath();
     ctx.arc(p.x, p.y, POCKET_R + 8, 0, Math.PI * 2);
     ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
     ctx.fill();
 
-    // Chrome metallic pocket casting plate
     const plateGrad = ctx.createRadialGradient(p.x - 3, p.y - 3, 2, p.x, p.y, POCKET_R + 9);
-    plateGrad.addColorStop(0,   '#ffffff');
-    plateGrad.addColorStop(0.35,'#cbd5e1');
-    plateGrad.addColorStop(0.7, '#64748b');
-    plateGrad.addColorStop(1,   '#334155');
+    plateGrad.addColorStop(0,    '#ffffff');
+    plateGrad.addColorStop(0.35, '#cbd5e1');
+    plateGrad.addColorStop(0.7,  '#64748b');
+    plateGrad.addColorStop(1,    '#334155');
     ctx.beginPath();
     ctx.arc(p.x, p.y, POCKET_R + 8, 0, Math.PI * 2);
     ctx.fillStyle = plateGrad;
@@ -823,17 +1011,15 @@ function drawScene(
     ctx.lineWidth = 1.2;
     ctx.stroke();
 
-    // Pocket hole void
     const voidGrad = ctx.createRadialGradient(p.x, p.y, 4, p.x, p.y, POCKET_R);
-    voidGrad.addColorStop(0, '#000000');
+    voidGrad.addColorStop(0,    '#000000');
     voidGrad.addColorStop(0.85, '#05070a');
-    voidGrad.addColorStop(1, '#0f172a');
+    voidGrad.addColorStop(1,    '#0f172a');
     ctx.beginPath();
     ctx.arc(p.x, p.y, POCKET_R, 0, Math.PI * 2);
     ctx.fillStyle = voidGrad;
     ctx.fill();
 
-    // Chrome rivets on corner casting
     const rivetAngles = [0.2, 0.5, 0.8].map(a => a * Math.PI * 2);
     rivetAngles.forEach(ang => {
       const rx = p.x + Math.cos(ang) * (POCKET_R + 5);
@@ -850,88 +1036,259 @@ function drawScene(
     ctx.restore();
   }
 
-  // 5. Aim System (Solid White Laser Guide & Ghost Ball matching 8-Ball Pool)
+  cachedTableBg = bgCanvas;
+  cachedFeltColor = tableFeltColor;
+  return bgCanvas;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  HARDWARE-ACCELERATED BALL SPRITE CACHE (ZERO FPS DROP)
+// ═══════════════════════════════════════════════════════════════
+const BALL_SPRITE_SIZE = Math.ceil((BALL_R + 3) * 2);
+const ballSpriteCache: Record<number, HTMLCanvasElement> = {};
+let ballShadowSprite: HTMLCanvasElement | null = null;
+
+function getBallShadowSprite(): HTMLCanvasElement {
+  if (ballShadowSprite) return ballShadowSprite;
+  const c = document.createElement('canvas');
+  const w = Math.ceil(BALL_R * 2.3);
+  const h = Math.ceil(BALL_R * 1.5);
+  c.width = w;
+  c.height = h;
+  const ctx = c.getContext('2d')!;
+  const cx = w / 2, cy = h / 2;
+  ctx.save();
+  ctx.scale(1, 0.60);
+  const shGrad = ctx.createRadialGradient(cx, cy / 0.6, BALL_R * 0.15, cx, cy / 0.6, BALL_R * 1.05);
+  shGrad.addColorStop(0,    'rgba(0, 0, 0, 0.45)');
+  shGrad.addColorStop(0.65, 'rgba(0, 0, 0, 0.16)');
+  shGrad.addColorStop(1,    'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = shGrad;
+  ctx.beginPath();
+  ctx.arc(cx, cy / 0.6, BALL_R * 1.05, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+  ballShadowSprite = c;
+  return c;
+}
+
+function getBallSprite(id: number): HTMLCanvasElement {
+  if (ballSpriteCache[id]) return ballSpriteCache[id];
+  const c = document.createElement('canvas');
+  const size = BALL_SPRITE_SIZE;
+  c.width = size;
+  c.height = size;
+  const ctx = c.getContext('2d')!;
+  const cx = size / 2, cy = size / 2;
+  const col = BALL_COLORS[id] ?? '#aaa';
+  const isStr = STRIPE_SET.has(id);
+
+  ctx.translate(cx, cy);
+
+  // Ball Base Sphere
+  const bg = ctx.createRadialGradient(-BALL_R * 0.35, -BALL_R * 0.4, BALL_R * 0.1, 0, 0, BALL_R);
+  bg.addColorStop(0,    lighten(col, 85));
+  bg.addColorStop(0.35, col);
+  bg.addColorStop(1,    darken(col, 75));
+  ctx.fillStyle = bg;
+  ctx.beginPath();
+  ctx.arc(0, 0, BALL_R, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Stripe pattern
+  if (isStr) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(0, 0, BALL_R, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.fillStyle = '#f1f5f9';
+    ctx.fillRect(-BALL_R, -BALL_R, BALL_R * 2, BALL_R * 2);
+    ctx.fillStyle = col;
+    ctx.fillRect(-BALL_R, -BALL_R * 0.44, BALL_R * 2, BALL_R * 0.88);
+
+    const sg2 = ctx.createRadialGradient(-BALL_R * 0.35, -BALL_R * 0.4, BALL_R * 0.1, 0, 0, BALL_R);
+    sg2.addColorStop(0,   'rgba(255,255,255,0)');
+    sg2.addColorStop(0.7, 'rgba(0,0,0,0.1)');
+    sg2.addColorStop(1,   'rgba(0,0,0,0.4)');
+    ctx.fillStyle = sg2;
+    ctx.beginPath();
+    ctx.arc(0, 0, BALL_R, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // Upright Number Patch
+  if (id > 0) {
+    const nr = id < 10 ? 5.8 : 5.2;
+    ctx.beginPath();
+    ctx.arc(0, 0, nr, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+    ctx.lineWidth = 0.6;
+    ctx.stroke();
+
+    ctx.fillStyle = id === 8 ? '#111827' : darken(col, 40);
+    ctx.font = `900 ${id < 10 ? '8.5' : '7'}px Outfit, Arial, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(id), 0, 0.4);
+  }
+
+  // Specular Gloss Highlights
+  const gs = ctx.createRadialGradient(-BALL_R * 0.4, -BALL_R * 0.45, 0.5, -BALL_R * 0.25, -BALL_R * 0.3, BALL_R * 0.65);
+  gs.addColorStop(0,   'rgba(255,255,255,0.75)');
+  gs.addColorStop(0.4, 'rgba(255,255,255,0.18)');
+  gs.addColorStop(1,   'rgba(255,255,255,0)');
+  ctx.beginPath();
+  ctx.arc(0, 0, BALL_R, 0, Math.PI * 2);
+  ctx.fillStyle = gs;
+  ctx.fill();
+
+  // Edge definition
+  ctx.beginPath();
+  ctx.arc(0, 0, BALL_R, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+  ctx.lineWidth = 0.8;
+  ctx.stroke();
+
+  ballSpriteCache[id] = c;
+  return c;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  CANVAS RENDERER (ULTRA-REALISTIC 3D TOURNAMENT TABLE)
+// ═══════════════════════════════════════════════════════════════
+function drawScene(
+  ctx: CanvasRenderingContext2D,
+  balls: Ball[],
+  aimTarget: { x: number; y: number } | null,
+  power: number,
+  isAimMode: boolean,
+  particles: Particle[],
+  sinkingBalls: SinkingBall[],
+  tableFeltColor?: string,
+  cueSkin: 'maple' | 'carbon' | 'dragon' | 'sultan' = 'maple',
+  strikeProgress = 0,
+  isBallInHand = false
+) {
+  // 1. Draw pre-rendered hardware-cached tournament table in 1 single GPU drawImage
+  ctx.drawImage(getCachedTableBackground(tableFeltColor), 0, 0);
+
   const cueBall = balls.find(b => b.id === 0 && !b.pocketed);
-  if (isAimMode && cueBall && aimTarget) {
-    const dx = cueBall.x - aimTarget.x;
-    const dy = cueBall.y - aimTarget.y;
+
+  // Ball in Hand placement halo around cue ball
+  if (isBallInHand && cueBall) {
+    ctx.save();
+    const pulse = Math.sin(Date.now() / 150) * 3;
+    ctx.beginPath();
+    ctx.arc(cueBall.x, cueBall.y, BALL_R + 8 + pulse, 0, Math.PI * 2);
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(cueBall.x, cueBall.y, BALL_R + 3, 0, Math.PI * 2);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    const arrowDist = BALL_R + 18 + pulse;
+    const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    ctx.fillStyle = '#38bdf8';
+    for (const [adx, ady] of dirs) {
+      ctx.beginPath();
+      ctx.arc(cueBall.x + adx * arrowDist, cueBall.y + ady * arrowDist, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // 5. Aim System (Solid White Laser Guide & Ghost Ball matching 8-Ball Pool)
+  if (!isBallInHand && isAimMode && cueBall && aimTarget) {
+    const dx = aimTarget.x - cueBall.x;
+    const dy = aimTarget.y - cueBall.y;
     const len = Math.hypot(dx, dy);
 
     if (len > 5) {
       const nx = dx / len, ny = dy / len;
       const trajectory = calculateAimTrajectory(cueBall, nx, ny, balls);
 
-      ctx.save();
-
-      // Highlight target pocket if aligned!
-      if (trajectory.targetPocket) {
+      // Laser trajectory line (only when not in strike animation thrust)
+      if (strikeProgress <= 0.05) {
         ctx.save();
-        ctx.beginPath();
-        ctx.arc(trajectory.targetPocket.x, trajectory.targetPocket.y, POCKET_R + 10, 0, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(250, 204, 21, 0.9)';
-        ctx.lineWidth = 3.5;
-        ctx.shadowColor = '#facc15';
-        ctx.shadowBlur = 18;
-        ctx.stroke();
-        ctx.restore();
-      }
+        // Highlight target pocket if aligned (hardware accelerated clean dual stroke)
+        if (trajectory.targetPocket) {
+          ctx.beginPath();
+          ctx.arc(trajectory.targetPocket.x, trajectory.targetPocket.y, POCKET_R + 10, 0, Math.PI * 2);
+          ctx.strokeStyle = 'rgba(250, 204, 21, 0.35)';
+          ctx.lineWidth = 6;
+          ctx.stroke();
 
-      // Solid White Laser Guide line from cue ball to ghost cue ball
-      ctx.beginPath();
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 2.4;
-      ctx.moveTo(cueBall.x + nx * (BALL_R + 2), cueBall.y + ny * (BALL_R + 2));
-      ctx.lineTo(trajectory.ghostX, trajectory.ghostY);
-      ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(trajectory.targetPocket.x, trajectory.targetPocket.y, POCKET_R + 10, 0, Math.PI * 2);
+          ctx.strokeStyle = '#facc15';
+          ctx.lineWidth = 2.4;
+          ctx.stroke();
+        }
 
-      // Ghost Cue Ball (Open white ring with inner crosshair circle)
-      ctx.beginPath();
-      ctx.arc(trajectory.ghostX, trajectory.ghostY, BALL_R, 0, Math.PI * 2);
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 2.4;
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
-      ctx.fill();
-      ctx.stroke();
-
-      // Concentric inner ring / crosshair
-      ctx.beginPath();
-      ctx.arc(trajectory.ghostX, trajectory.ghostY, 3.5, 0, Math.PI * 2);
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 1.5;
-      ctx.fillStyle = '#ffffff';
-      ctx.fill();
-      ctx.stroke();
-
-      // Target ball trajectory line (solid white)
-      if (trajectory.targetBall) {
-        const tb = trajectory.targetBall;
-        const arrowLen = 95;
-        const tx = tb.x + trajectory.targetDirX * arrowLen;
-        const ty = tb.y + trajectory.targetDirY * arrowLen;
-
+        // Solid White Laser Guide line from cue ball to ghost cue ball
         ctx.beginPath();
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 2.4;
-        ctx.moveTo(tb.x, tb.y);
-        ctx.lineTo(tx, ty);
+        ctx.moveTo(cueBall.x + nx * (BALL_R + 2), cueBall.y + ny * (BALL_R + 2));
+        ctx.lineTo(trajectory.ghostX, trajectory.ghostY);
         ctx.stroke();
 
-        // Tangent deflection line (solid white)
-        const defLen = 55;
+        // Ghost Cue Ball (Open white ring with inner crosshair circle)
         ctx.beginPath();
+        ctx.arc(trajectory.ghostX, trajectory.ghostY, BALL_R, 0, Math.PI * 2);
         ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2.0;
-        ctx.moveTo(trajectory.ghostX, trajectory.ghostY);
-        ctx.lineTo(trajectory.ghostX + trajectory.deflectDirX * defLen, trajectory.ghostY + trajectory.deflectDirY * defLen);
+        ctx.lineWidth = 2.4;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+        ctx.fill();
         ctx.stroke();
+
+        // Concentric inner ring / crosshair
+        ctx.beginPath();
+        ctx.arc(trajectory.ghostX, trajectory.ghostY, 3.5, 0, Math.PI * 2);
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        ctx.stroke();
+
+        // Target ball trajectory line (solid white)
+        if (trajectory.targetBall) {
+          const tb = trajectory.targetBall;
+          const arrowLen = 95;
+          const tx = tb.x + trajectory.targetDirX * arrowLen;
+          const ty = tb.y + trajectory.targetDirY * arrowLen;
+
+          ctx.beginPath();
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2.4;
+          ctx.moveTo(tb.x, tb.y);
+          ctx.lineTo(tx, ty);
+          ctx.stroke();
+
+          // Tangent deflection line (solid white)
+          const defLen = 55;
+          ctx.beginPath();
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2.0;
+          ctx.moveTo(trajectory.ghostX, trajectory.ghostY);
+          ctx.lineTo(trajectory.ghostX + trajectory.deflectDirX * defLen, trajectory.ghostY + trajectory.deflectDirY * defLen);
+          ctx.stroke();
+        }
+
+        ctx.restore();
       }
 
-      ctx.restore();
-
-      // ── ARTISAN POOL CUE STICK ──
-      const pullBack = 22 + power * 65;
+      // ── ARTISAN POOL CUE STICK (SNAPPY STRIKE FORWARD THRUST) ──
+      const pullBack = power * 75 * (1 - strikeProgress);
       const cueLen   = 290;
-      const tipOffset = BALL_R + 4 + pullBack;
+      const tipOffset = BALL_R + 5 + pullBack;
 
       const tipX = cueBall.x - nx * tipOffset;
       const tipY = cueBall.y - ny * tipOffset;
@@ -944,21 +1301,15 @@ function drawScene(
 
       ctx.save();
 
-      // Cue cast shadow on felt
-      ctx.save();
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.55)';
-      ctx.shadowBlur = 10;
-      ctx.shadowOffsetX = 6;
-      ctx.shadowOffsetY = 8;
+      // Cue cast shadow on felt (0 software blur penalty, 100% GPU accelerated)
       ctx.beginPath();
-      ctx.moveTo(tipX  + perpX * TIP_W,  tipY  + perpY * TIP_W);
-      ctx.lineTo(buttX + perpX * BUTT_W, buttY + perpY * BUTT_W);
-      ctx.lineTo(buttX - perpX * BUTT_W, buttY - perpY * BUTT_W);
-      ctx.lineTo(tipX  - perpX * TIP_W,  tipY  - perpY * TIP_W);
+      ctx.moveTo(tipX + 6  + perpX * (TIP_W + 1),  tipY + 8  + perpY * (TIP_W + 1));
+      ctx.lineTo(buttX + 6 + perpX * (BUTT_W + 1), buttY + 8 + perpY * (BUTT_W + 1));
+      ctx.lineTo(buttX + 6 - perpX * (BUTT_W + 1), buttY + 8 - perpY * (BUTT_W + 1));
+      ctx.lineTo(tipX + 6  - perpX * (TIP_W + 1),  tipY + 8  - perpY * (TIP_W + 1));
       ctx.closePath();
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.28)';
       ctx.fill();
-      ctx.restore();
 
       // Cue shaft gradient customized by selected cue stick
       const cueGrad = ctx.createLinearGradient(tipX, tipY, buttX, buttY);
@@ -1058,139 +1409,63 @@ function drawScene(
 
       ctx.restore();
 
-      // Power Arc around cue ball
-      if (power > 0.04) {
+      // Power Arc around cue ball (clean fast vector)
+      if (power > 0.04 && strikeProgress <= 0.05) {
         const startAngle = Math.atan2(ny, nx) - Math.PI / 2.2;
         const endAngle   = startAngle + (Math.PI / 1.1) * power;
         const pColor     = power < 0.38 ? '#4ade80' : power < 0.72 ? '#facc15' : '#ef4444';
-        ctx.save();
         ctx.beginPath();
         ctx.arc(cueBall.x, cueBall.y, BALL_R + 8, startAngle, endAngle);
         ctx.strokeStyle = pColor;
         ctx.lineWidth = 4;
         ctx.lineCap = 'round';
-        ctx.shadowColor = pColor;
-        ctx.shadowBlur = 8;
         ctx.stroke();
-        ctx.restore();
       }
     }
   }
 
   // 6. Particles (Chalk bursts & sparks)
-  for (const p of particles) {
+  for (let pi = 0; pi < particles.length; pi++) {
+    const p = particles[pi];
     ctx.beginPath();
     ctx.arc(p.x, p.y, p.r * p.life, 0, Math.PI * 2);
     ctx.fillStyle = p.color + Math.round(p.life * 230).toString(16).padStart(2, '0');
     ctx.fill();
   }
 
-  // 7. 3D Phenolic Resin Billiard Balls
-  for (const ball of balls) {
+  // 7. 3D Phenolic Resin Billiard Balls (Using ultra-fast GPU sprites)
+  const shadowSprite = getBallShadowSprite();
+  const halfShadowW = shadowSprite.width / 2;
+  const halfShadowH = shadowSprite.height / 2;
+  const halfSprite = BALL_SPRITE_SIZE / 2;
+
+  for (let bi = 0; bi < balls.length; bi++) {
+    const ball = balls[bi];
     if (ball.pocketed) continue;
-    const col       = BALL_COLORS[ball.id] ?? '#aaa';
-    const isStr     = STRIPE_SET.has(ball.id);
-    const isRolling = Math.hypot(ball.vx, ball.vy) > 0.25;
 
-    ctx.save();
-    // Contact drop-shadow on felt
-    ctx.save();
-    ctx.beginPath();
-    ctx.ellipse(ball.x + 2, ball.y + 4, BALL_R * 0.95, BALL_R * 0.55, 0, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
-    ctx.filter = 'blur(2px)';
-    ctx.fill();
-    ctx.restore();
-
-    ctx.translate(ball.x, ball.y);
+    // Contact drop-shadow: 1 simple drawImage
+    ctx.drawImage(shadowSprite, ball.x - halfShadowW + 2, ball.y - halfShadowH + 3.5);
 
     // Ball Base Sphere (Rotates with rolling angle)
     ctx.save();
-    ctx.rotate(ball.angle);
-
-    const bg = ctx.createRadialGradient(-BALL_R * 0.35, -BALL_R * 0.4, BALL_R * 0.1, 0, 0, BALL_R);
-    bg.addColorStop(0,    lighten(col, 85));
-    bg.addColorStop(0.35, col);
-    bg.addColorStop(1,    darken(col, 75));
-    ctx.fillStyle = bg;
-    ctx.beginPath();
-    ctx.arc(0, 0, BALL_R, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Authentic Stripe Pattern (for striped balls)
-    if (isStr) {
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(0, 0, BALL_R, 0, Math.PI * 2);
-      ctx.clip();
-      ctx.fillStyle = '#f1f5f9';
-      ctx.fillRect(-BALL_R, -BALL_R, BALL_R * 2, BALL_R * 2);
-      ctx.fillStyle = col;
-      ctx.fillRect(-BALL_R, -BALL_R * 0.44, BALL_R * 2, BALL_R * 0.88);
-
-      const sg2 = ctx.createRadialGradient(-BALL_R * 0.35, -BALL_R * 0.4, BALL_R * 0.1, 0, 0, BALL_R);
-      sg2.addColorStop(0,   'rgba(255,255,255,0)');
-      sg2.addColorStop(0.7, 'rgba(0,0,0,0.1)');
-      sg2.addColorStop(1,   'rgba(0,0,0,0.4)');
-      ctx.fillStyle = sg2;
-      ctx.beginPath();
-      ctx.arc(0, 0, BALL_R, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
+    ctx.translate(ball.x, ball.y);
+    const isRolling = Math.hypot(ball.vx, ball.vy) > 0.25;
+    if (isRolling) {
+      ctx.rotate(ball.angle);
     }
+    ctx.drawImage(getBallSprite(ball.id), -halfSprite, -halfSprite);
 
     // Dynamic rolling spin line
     if (isRolling) {
-      ctx.save();
       ctx.beginPath();
       ctx.arc(0, 0, BALL_R * 0.88, 0, Math.PI * 2);
-      ctx.clip();
-      ctx.strokeStyle = 'rgba(0,0,0,0.12)';
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.14)';
+      ctx.lineWidth = 1.8;
       ctx.beginPath();
       ctx.moveTo(-BALL_R * 0.88, 0);
       ctx.lineTo(BALL_R * 0.88, 0);
       ctx.stroke();
-      ctx.restore();
     }
-
-    ctx.restore(); // end rotate
-
-    // Upright Number Patch
-    if (ball.id > 0) {
-      const nr = ball.id < 10 ? 5.8 : 5.2;
-      ctx.beginPath();
-      ctx.arc(0, 0, nr, 0, Math.PI * 2);
-      ctx.fillStyle = '#ffffff';
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(0,0,0,0.15)';
-      ctx.lineWidth = 0.6;
-      ctx.stroke();
-
-      ctx.fillStyle = ball.id === 8 ? '#111827' : darken(col, 40);
-      ctx.font = `900 ${ball.id < 10 ? '8.5' : '7'}px Outfit, Arial, sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(String(ball.id), 0, 0.4);
-    }
-
-    // Dual Specular Gloss Highlights (Sharp glint + soft ambient bloom)
-    const gs = ctx.createRadialGradient(-BALL_R * 0.4, -BALL_R * 0.45, 0.5, -BALL_R * 0.25, -BALL_R * 0.3, BALL_R * 0.65);
-    gs.addColorStop(0,   'rgba(255,255,255,0.75)');
-    gs.addColorStop(0.4, 'rgba(255,255,255,0.18)');
-    gs.addColorStop(1,   'rgba(255,255,255,0)');
-    ctx.beginPath();
-    ctx.arc(0, 0, BALL_R, 0, Math.PI * 2);
-    ctx.fillStyle = gs;
-    ctx.fill();
-
-    // Subtle edge rim definition
-    ctx.beginPath();
-    ctx.arc(0, 0, BALL_R, 0, Math.PI * 2);
-    ctx.strokeStyle = 'rgba(0,0,0,0.3)';
-    ctx.lineWidth = 0.9;
-    ctx.stroke();
-
     ctx.restore();
   }
 
@@ -1232,34 +1507,191 @@ function drawScene(
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  AI DECISION ENGINE
+//  SMART PRO AI DECISION ENGINE
 // ═══════════════════════════════════════════════════════════════
-function computeAIShot(balls: Ball[], playerGroup: 'solid' | 'stripe' | null) {
-  const cue = balls.find(b => b.id === 0);
-  if (!cue) return { tx: TABLE_W / 2, ty: TABLE_H / 2, power: 0.5 };
-  const aiGroup: 'solid' | 'stripe' | null = playerGroup === 'solid' ? 'stripe' : playerGroup === 'stripe' ? 'solid' : null;
+function computeSmartAIShot(
+  balls: Ball[],
+  playerGroup: 'solid' | 'stripe' | null,
+  isBallInHand = false
+): { tx: number; ty: number; power: number; placeCue?: { x: number; y: number } } {
+  const cue = balls.find(b => b.id === 0 && !b.pocketed);
+  const aiGroup: 'solid' | 'stripe' | null =
+    playerGroup === 'solid' ? 'stripe' : playerGroup === 'stripe' ? 'solid' : null;
 
-  const targets = balls.filter(b => {
+  // 1. Identify legal target balls
+  const myGroupBalls = balls.filter(b => {
     if (b.pocketed || b.id === 0 || b.id === 8) return false;
     if (aiGroup === 'solid')  return !STRIPE_SET.has(b.id);
     if (aiGroup === 'stripe') return  STRIPE_SET.has(b.id);
-    return true;
+    return true; // open table
   });
 
-  const target = targets.length > 0
-    ? targets[Math.floor(Math.random() * targets.length)]
-    : balls.find(b => b.id === 8 && !b.pocketed);
+  const targets = myGroupBalls.length > 0
+    ? myGroupBalls
+    : balls.filter(b => b.id === 8 && !b.pocketed);
 
-  if (!target) return { tx: TABLE_W / 2, ty: TABLE_H / 2, power: 0.55 };
+  if (targets.length === 0) {
+    return { tx: TABLE_W / 2, ty: TABLE_H / 2, power: 0.5 };
+  }
 
-  const pocket = POCKETS[Math.floor(Math.random() * POCKETS.length)];
-  const dx = target.x - pocket.x, dy = target.y - pocket.y;
-  const len = Math.hypot(dx, dy) || 1;
+  // 2. Helper to test if a ray between two points is blocked by any obstacle ball
+  const isLineBlocked = (x1: number, y1: number, x2: number, y2: number, ignoreIds: number[]): boolean => {
+    const rx = x2 - x1, ry = y2 - y1;
+    const rLen = Math.hypot(rx, ry);
+    if (rLen < 2) return false;
+    const rnx = rx / rLen, rny = ry / rLen;
+
+    for (const b of balls) {
+      if (b.pocketed || ignoreIds.includes(b.id)) continue;
+      const vx = b.x - x1, vy = b.y - y1;
+      const proj = vx * rnx + vy * rny;
+      if (proj <= 0 || proj >= rLen) continue;
+      const perpSq = (vx * vx + vy * vy) - (proj * proj);
+      if (perpSq < (BALL_R * 1.85) * (BALL_R * 1.85)) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  let bestShot: {
+    target: Ball;
+    pocket: { x: number; y: number };
+    ghostX: number;
+    ghostY: number;
+    score: number;
+    power: number;
+    placeCue?: { x: number; y: number };
+  } | null = null;
+
+  // 3. If AI has Ball in Hand: pick best target and place cue ball in line!
+  if (isBallInHand || !cue) {
+    for (const t of targets) {
+      for (const p of POCKETS) {
+        const pdx = p.x - t.x, pdy = p.y - t.y;
+        const pDist = Math.hypot(pdx, pdy);
+        if (pDist < 2) continue;
+        const pnx = pdx / pDist, pny = pdy / pDist;
+
+        if (isLineBlocked(t.x, t.y, p.x, p.y, [t.id, 0])) continue;
+
+        const ghostX = t.x - pnx * (BALL_R * 2.05);
+        const ghostY = t.y - pny * (BALL_R * 2.05);
+
+        const placeDist = Math.min(130, Math.max(80, pDist * 0.4));
+        const placeX = ghostX - pnx * placeDist;
+        const placeY = ghostY - pny * placeDist;
+
+        if (placeX < PLAY_LEFT + BALL_R + 5 || placeX > PLAY_RIGHT - BALL_R - 5 ||
+            placeY < PLAY_TOP + BALL_R + 5 || placeY > PLAY_BOTTOM - BALL_R - 5) {
+          continue;
+        }
+
+        if (balls.some(b => !b.pocketed && b.id !== 0 && Math.hypot(placeX - b.x, placeY - b.y) < BALL_R * 2.2)) {
+          continue;
+        }
+
+        const score = 500 - pDist * 0.5;
+        if (!bestShot || score > bestShot.score) {
+          bestShot = {
+            target: t,
+            pocket: p,
+            ghostX,
+            ghostY,
+            score,
+            power: Math.min(0.75, Math.max(0.4, pDist / 800 + 0.3)),
+            placeCue: { x: placeX, y: placeY }
+          };
+        }
+      }
+    }
+  }
+
+  // 4. Normal Shot Search (with existing cue ball position)
+  if (!bestShot) {
+    const cuePos = cue || { x: TABLE_W * 0.26, y: TABLE_H / 2 };
+
+    for (const t of targets) {
+      for (const p of POCKETS) {
+        const pdx = p.x - t.x, pdy = p.y - t.y;
+        const pDist = Math.hypot(pdx, pdy);
+        if (pDist < 2) continue;
+        const pnx = pdx / pDist, pny = pdy / pDist;
+
+        if (isLineBlocked(t.x, t.y, p.x, p.y, [t.id, 0])) continue;
+
+        const ghostX = t.x - pnx * (BALL_R * 2.0);
+        const ghostY = t.y - pny * (BALL_R * 2.0);
+
+        if (ghostX < PLAY_LEFT + BALL_R || ghostX > PLAY_RIGHT - BALL_R ||
+            ghostY < PLAY_TOP + BALL_R || ghostY > PLAY_BOTTOM - BALL_R) continue;
+
+        const cdx = ghostX - cuePos.x, cdy = ghostY - cuePos.y;
+        const cDist = Math.hypot(cdx, cdy);
+        if (cDist < 1) continue;
+        const cnx = cdx / cDist, cny = cdy / cDist;
+
+        const cutDot = cnx * pnx + cny * pny;
+        if (cutDot <= 0.08) continue; // Allow sharp pro cut angles
+
+        if (isLineBlocked(cuePos.x, cuePos.y, ghostX, ghostY, [0, t.id])) continue;
+
+        const isCenterPocket = (p.x > TABLE_W * 0.4 && p.x < TABLE_W * 0.6);
+        if (isCenterPocket && cutDot < 0.40) continue;
+
+        let score = (cutDot * 180) - (pDist * 0.06) - (cDist * 0.04);
+        if (pDist < 180) score += 40;
+
+        if (!bestShot || score > bestShot.score) {
+          const power = Math.min(0.85, Math.max(0.35, (cDist + pDist) * 0.00065 + 0.32));
+          bestShot = {
+            target: t,
+            pocket: p,
+            ghostX,
+            ghostY,
+            score,
+            power,
+          };
+        }
+      }
+    }
+  }
+
+  // 5. If high quality pot found: return ghost with pro accuracy
+  if (bestShot) {
+    const jitter = (Math.random() - 0.5) * 0.12; // Pro level tournament precision
+    return {
+      tx: bestShot.ghostX + jitter,
+      ty: bestShot.ghostY + jitter,
+      power: bestShot.power,
+      placeCue: bestShot.placeCue,
+    };
+  }
+
+  // 6. Intelligent Fallback: Hit clearest legal target ball towards closest pocket
+  const cuePos = cue || { x: TABLE_W * 0.26, y: TABLE_H / 2 };
+  let fallbackTarget = targets[0] || balls[1];
+  let fallbackPocket = POCKETS[0];
+  let minFallDist = 99999;
+  for (const t of targets) {
+    for (const p of POCKETS) {
+      const d = Math.hypot(p.x - t.x, p.y - t.y);
+      if (d < minFallDist) {
+        minFallDist = d;
+        fallbackTarget = t;
+        fallbackPocket = p;
+      }
+    }
+  }
+  const fdx = fallbackPocket.x - fallbackTarget.x, fdy = fallbackPocket.y - fallbackTarget.y;
+  const fDist = Math.hypot(fdx, fdy) || 1;
+  const fGhostX = fallbackTarget.x - (fdx / fDist) * (BALL_R * 2.0);
+  const fGhostY = fallbackTarget.y - (fdy / fDist) * (BALL_R * 2.0);
 
   return {
-    tx: target.x + (dx / len) * BALL_R * 2.05 + (Math.random() - 0.5) * 14,
-    ty: target.y + (dy / len) * BALL_R * 2.05 + (Math.random() - 0.5) * 14,
-    power: 0.45 + Math.random() * 0.35,
+    tx: fGhostX,
+    ty: fGhostY,
+    power: 0.55,
   };
 }
 
@@ -1379,59 +1811,72 @@ function SpinBallModal({
   return (
     <div className="bl-spin-overlay" onClick={onClose}>
       <div className="bl-spin-popup" onClick={e => e.stopPropagation()}>
-        <div className="bl-spin-popup-header">
+        <div className="bl-spin-popup-header-mobile">
           <div className="bl-spin-popup-title">🎯 Titik Pukul Cue Ball</div>
           <button className="bl-spin-close-btn" onClick={onClose} title="Tutup">✕</button>
         </div>
-        <div className="bl-spin-popup-sub">
-          Geser titik merah pada bola putih untuk mengatur efek Top, Back, atau Side spin
-        </div>
 
-        <div className="bl-spin-canvas-box">
-          <canvas
-            ref={canvasRef}
-            width={SIZE}
-            height={SIZE}
-            className="bl-spin-ball-canvas"
-            onMouseDown={e => handleCanvas(e.clientX, e.clientY)}
-            onMouseMove={e => { if (e.buttons === 1) handleCanvas(e.clientX, e.clientY); }}
-            onTouchStart={e => { e.preventDefault(); handleCanvas(e.touches[0].clientX, e.touches[0].clientY); }}
-            onTouchMove={e => { e.preventDefault(); handleCanvas(e.touches[0].clientX, e.touches[0].clientY); }}
-          />
-        </div>
+        <div className="bl-spin-popup-split">
+          <div className="bl-spin-left-col">
+            <div className="bl-spin-canvas-box">
+              <canvas
+                ref={canvasRef}
+                width={SIZE}
+                height={SIZE}
+                className="bl-spin-ball-canvas"
+                onMouseDown={e => handleCanvas(e.clientX, e.clientY)}
+                onMouseMove={e => { if (e.buttons === 1) handleCanvas(e.clientX, e.clientY); }}
+                onTouchStart={e => { e.preventDefault(); handleCanvas(e.touches[0].clientX, e.touches[0].clientY); }}
+                onTouchMove={e => { e.preventDefault(); handleCanvas(e.touches[0].clientX, e.touches[0].clientY); }}
+              />
+            </div>
+            <div className="bl-spin-canvas-hint">Tarik titik merah untuk atur spin</div>
+          </div>
 
-        <div className="bl-spin-current-badge">
-          Efek: <span>{spinDesc}</span>
-        </div>
+          <div className="bl-spin-right-col">
+            <div className="bl-spin-popup-header-desktop">
+              <div className="bl-spin-popup-title">🎯 Titik Pukul Cue Ball</div>
+              <button className="bl-spin-close-btn" onClick={onClose} title="Tutup">✕</button>
+            </div>
 
-        <div className="bl-spin-popup-tags">
-          {[
-            ['Tengah', 0, 0],
-            ['Top Spin', 0, -0.8],
-            ['Back Spin', 0, 0.8],
-            ['Kiri', -0.8, 0],
-            ['Kanan', 0.8, 0]
-          ].map(([lbl, x, y]) => {
-            const isSelected = spin.x === x && spin.y === y;
-            return (
-              <button
-                key={lbl as string}
-                className={`bl-spin-tag ${isSelected ? 'active' : ''}`}
-                onClick={() => {
-                  const ns = { x: x as number, y: y as number };
-                  onChange(ns);
-                  drawBall(ns);
-                }}
-              >
-                {lbl as string}
-              </button>
-            );
-          })}
-        </div>
+            <div className="bl-spin-popup-sub">
+              Geser titik merah pada bola putih untuk efek Top, Back, atau Side spin
+            </div>
 
-        <button className="bl-spin-popup-ok" onClick={onClose}>
-          ✓ Terapkan Spin
-        </button>
+            <div className="bl-spin-current-badge">
+              Efek: <span>{spinDesc}</span>
+            </div>
+
+            <div className="bl-spin-popup-tags">
+              {[
+                ['Tengah', 0, 0],
+                ['Top Spin', 0, -0.8],
+                ['Back Spin', 0, 0.8],
+                ['Kiri', -0.8, 0],
+                ['Kanan', 0.8, 0]
+              ].map(([lbl, x, y]) => {
+                const isSelected = spin.x === x && spin.y === y;
+                return (
+                  <button
+                    key={lbl as string}
+                    className={`bl-spin-tag ${isSelected ? 'active' : ''}`}
+                    onClick={() => {
+                      const ns = { x: x as number, y: y as number };
+                      onChange(ns);
+                      drawBall(ns);
+                    }}
+                  >
+                    {lbl as string}
+                  </button>
+                );
+              })}
+            </div>
+
+            <button className="bl-spin-popup-ok" onClick={onClose}>
+              ✓ Terapkan Spin
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -1581,6 +2026,7 @@ export default function BilliardScreen({
   const particlesRef     = useRef<Particle[]>([]);
   const sinkingBallsRef  = useRef<SinkingBall[]>([]);
   const cueBallJustShot  = useRef(false);
+  const firstHitBallRef  = useRef<number | null>(null);
 
   const [aimTarget, setAimTarget]     = useState<{ x: number; y: number } | null>(null);
   const [power, setPower]             = useState(0.5);
@@ -1590,6 +2036,7 @@ export default function BilliardScreen({
 
   const [turn, setTurn]               = useState<'player' | 'ai'>('player');
   const [turnTimer, setTurnTimer]     = useState(25);
+  const [turnCount, setTurnCount]     = useState(0);
   const [playerGroup, setPlayerGroup] = useState<'solid' | 'stripe' | null>(null);
   const [pocketedBalls, setPocketedBalls] = useState<number[]>([]);
   const [winner, setWinner]           = useState<'player' | 'ai' | null>(null);
@@ -1600,6 +2047,11 @@ export default function BilliardScreen({
   const [showMenu, setShowMenu]       = useState(false);
   const [soundOn, setSoundOn]         = useState(true);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [isBallInHand, setIsBallInHand]       = useState(false);
+  const isBallInHandRef                       = useRef(false);
+  const isDraggingCueBallRef                  = useRef(false);
+  const aiScheduleTimeoutRef                  = useRef<any>(null);
+  useEffect(() => { isBallInHandRef.current = isBallInHand; }, [isBallInHand]);
 
   // Cue Stick Customization
   const [cueSkin, setCueSkin]                 = useState<'maple' | 'carbon' | 'dragon' | 'sultan'>('maple');
@@ -1611,7 +2063,7 @@ export default function BilliardScreen({
   // Quick Chat System
   const [showChatMenu, setShowChatMenu]       = useState(false);
   const [activeChat, setActiveChat]           = useState<{ sender: 'player' | 'opponent'; text: string } | null>(null);
-  const chatTimeoutRef                        = useRef<NodeJS.Timeout | null>(null);
+  const chatTimeoutRef                        = useRef<any>(null);
 
   const handleSendChat = (text: string) => {
     setShowChatMenu(false);
@@ -1640,20 +2092,82 @@ export default function BilliardScreen({
     }
   };
 
-  // Left Vertical Cue Power Slider Interactions
+  const moveCueBallTo = (pos: { x: number; y: number }) => {
+    const cue = ballsRef.current.find(b => b.id === 0);
+    if (!cue) return;
+
+    let targetX = Math.max(PLAY_LEFT + BALL_R + 3, Math.min(PLAY_RIGHT - BALL_R - 3, pos.x));
+    let targetY = Math.max(PLAY_TOP + BALL_R + 3, Math.min(PLAY_BOTTOM - BALL_R - 3, pos.y));
+
+    // Prevent placing directly on top of another ball
+    for (const b of ballsRef.current) {
+      if (b.id === 0 || b.pocketed) continue;
+      const d = Math.hypot(targetX - b.x, targetY - b.y);
+      if (d < BALL_R * 2 + 3) {
+        const angle = Math.atan2(targetY - b.y, targetX - b.x);
+        targetX = b.x + Math.cos(angle) * (BALL_R * 2 + 4);
+        targetY = b.y + Math.sin(angle) * (BALL_R * 2 + 4);
+      }
+    }
+
+    cue.x = Math.max(PLAY_LEFT + BALL_R + 3, Math.min(PLAY_RIGHT - BALL_R - 3, targetX));
+    cue.y = Math.max(PLAY_TOP + BALL_R + 3, Math.min(PLAY_BOTTOM - BALL_R - 3, targetY));
+    cue.pocketed = false;
+    cue.vx = 0;
+    cue.vy = 0;
+  };
+
+  const confirmBallInHand = () => {
+    setIsBallInHand(false);
+    isBallInHandRef.current = false;
+    const cue = ballsRef.current.find(b => b.id === 0 && !b.pocketed);
+    if (cue) {
+      const curGroup = playerGroupRef.current;
+      const legalBalls = ballsRef.current.filter(b => {
+        if (b.pocketed || b.id === 0 || b.id === 8) return false;
+        if (curGroup === 'solid') return !STRIPE_SET.has(b.id);
+        if (curGroup === 'stripe') return STRIPE_SET.has(b.id);
+        return true;
+      });
+      const tBall = legalBalls[0] || ballsRef.current.find(b => b.id === 8 && !b.pocketed) || { x: TABLE_W * 0.72, y: TABLE_H / 2 };
+      const ang = Math.atan2(tBall.y - cue.y, tBall.x - cue.x);
+      const defAim = {
+        x: cue.x + Math.cos(ang) * 150,
+        y: cue.y + Math.sin(ang) * 150
+      };
+      setAimTarget(defAim);
+      aimTargetRef.current = defAim;
+      smoothAimRef.current = defAim;
+      setIsAimMode(true);
+      isAimModeRef.current = true;
+    }
+    setMessage('🎯 Posisi bola putih diset! Arahkan stik dan tarik untuk menembak.');
+  };
+
+  // Left Vertical Cue Power Slider Interactions (Authentic 8 Ball Pool Pull-and-Release)
   const verticalCueTrackRef = useRef<HTMLDivElement>(null);
   const isDraggingCueRef    = useRef(false);
+  const [isDraggingCue, setIsDraggingCue] = useState(false);
+  const handleShootRef      = useRef<() => void>(() => {});
 
   const updateVCuePower = (clientY: number) => {
     if (!verticalCueTrackRef.current) return;
     const rect = verticalCueTrackRef.current.getBoundingClientRect();
     const relY = clientY - rect.top;
-    const p = Math.min(1, Math.max(0.05, relY / rect.height));
-    setPower(parseFloat(p.toFixed(2)));
+    const p = Math.min(1, Math.max(0, relY / (rect.height * 0.88)));
+    const rounded = parseFloat(p.toFixed(2));
+    setPower(rounded);
+    powerRef.current = rounded;
   };
 
   const onVCueMouseDown = (e: React.MouseEvent) => {
+    poolSound.unlock();
+    if (turn !== 'player' || isMovingRef.current || winner) return;
     e.preventDefault();
+    if (isBallInHandRef.current) {
+      confirmBallInHand();
+    }
+    setIsDraggingCue(true);
     isDraggingCueRef.current = true;
     updateVCuePower(e.clientY);
 
@@ -1661,7 +2175,17 @@ export default function BilliardScreen({
       if (isDraggingCueRef.current) updateVCuePower(ev.clientY);
     };
     const onMouseUp = () => {
-      isDraggingCueRef.current = false;
+      setIsDraggingCue(false);
+      if (isDraggingCueRef.current) {
+        isDraggingCueRef.current = false;
+        // Release to shoot if pulled back sufficiently!
+        if (powerRef.current >= 0.08) {
+          handleShootRef.current();
+        } else {
+          setPower(0);
+          powerRef.current = 0;
+        }
+      }
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp);
     };
@@ -1670,18 +2194,36 @@ export default function BilliardScreen({
   };
 
   const onVCueTouchStart = (e: React.TouchEvent) => {
+    poolSound.unlock();
+    if (turn !== 'player' || isMovingRef.current || winner) return;
+    if (e.cancelable) e.preventDefault();
+    if (isBallInHandRef.current) {
+      confirmBallInHand();
+    }
+    setIsDraggingCue(true);
     isDraggingCueRef.current = true;
     updateVCuePower(e.touches[0].clientY);
 
     const onTouchMove = (ev: TouchEvent) => {
+      if (ev.cancelable) ev.preventDefault();
       if (isDraggingCueRef.current) updateVCuePower(ev.touches[0].clientY);
     };
     const onTouchEnd = () => {
-      isDraggingCueRef.current = false;
+      setIsDraggingCue(false);
+      if (isDraggingCueRef.current) {
+        isDraggingCueRef.current = false;
+        // Release to shoot if pulled back sufficiently!
+        if (powerRef.current >= 0.08) {
+          handleShootRef.current();
+        } else {
+          setPower(0);
+          powerRef.current = 0;
+        }
+      }
       window.removeEventListener('touchmove', onTouchMove);
       window.removeEventListener('touchend', onTouchEnd);
     };
-    window.addEventListener('touchmove', onTouchMove);
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
     window.addEventListener('touchend', onTouchEnd);
   };
 
@@ -1692,37 +2234,46 @@ export default function BilliardScreen({
   useEffect(() => { selectedRoomRef.current = selectedRoom; }, [selectedRoom]);
 
   const [opponent, setOpponent]         = useState(OPPONENT_LIST[0]);
+  const opponentRef                     = useRef(opponent);
+  useEffect(() => { opponentRef.current = opponent; }, [opponent]);
+  const oppDisplayName                 = isMultiplayer ? realOpponentName : (opponent?.name || 'Lawan');
   const [matchStatus, setMatchStatus]   = useState('🔍 Mencari Lawan Berdasarkan Skill...');
   const [matchCountdown, setMatchCountdown] = useState<number | null>(null);
   const [matchingAvatar, setMatchingAvatar] = useState(OPPONENT_LIST[0].avatar);
+  const matchIntervalRef                = useRef<any>(null);
+  const matchCountIntervalRef           = useRef<any>(null);
+  const aiAnimRef                       = useRef<number | null>(null);
 
-  // Sync sound settings with audio manager
+  // Sync sound settings with audio manager & unlock Web Audio on any user gesture
   useEffect(() => {
     poolSound.enabled = soundOn;
   }, [soundOn]);
 
-  // Turn timer countdown
   useEffect(() => {
-    if (gameStep !== 'playing' || winner || isMovingRef.current) return;
-    const interval = setInterval(() => {
-      setTurnTimer(t => {
-        if (t <= 1) {
-          // Timeout! Switch turn
-          const next = turn === 'player' ? 'ai' : 'player';
-          setMessage(`⏳ Waktu habis! Giliran ${next === 'player' ? 'Anda' : 'AI'}!`);
-          setTurn(next);
-          return 25;
-        }
-        return t - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [gameStep, winner, turn]);
+    const unlockAudio = () => poolSound.unlock();
+    window.addEventListener('pointerdown', unlockAudio, { passive: true });
+    window.addEventListener('mousedown', unlockAudio, { passive: true });
+    window.addEventListener('touchstart', unlockAudio, { passive: true });
+    window.addEventListener('keydown', unlockAudio, { passive: true });
+    return () => {
+      window.removeEventListener('pointerdown', unlockAudio);
+      window.removeEventListener('mousedown', unlockAudio);
+      window.removeEventListener('touchstart', unlockAudio);
+      window.removeEventListener('keydown', unlockAudio);
+    };
+  }, []);
 
-  // Reset timer on turn change
+  // Cleanup timers & animation frame on unmount
   useEffect(() => {
-    setTurnTimer(25);
-  }, [turn]);
+    return () => {
+      if (matchIntervalRef.current) clearInterval(matchIntervalRef.current);
+      if (matchCountIntervalRef.current) clearInterval(matchCountIntervalRef.current);
+      if (aiScheduleTimeoutRef.current) clearTimeout(aiScheduleTimeoutRef.current);
+      if (aiAnimRef.current) cancelAnimationFrame(aiAnimRef.current);
+    };
+  }, []);
+
+
 
   // Responsive scale
   useEffect(() => {
@@ -1756,9 +2307,7 @@ export default function BilliardScreen({
       setOpponent({
         name: realOpponentName,
         avatar: realOpponentData?.avatar || '👑',
-        level: `${realOpponentData?.vipLevel ? `VIP ${realOpponentData.vipLevel}` : '45'}`,
-        winRate: '88%',
-        stick: 'Sultan Gold',
+        level: Number(realOpponentData?.vipLevel || 45),
       });
       if (betAmount) {
         setSelectedRoom({
@@ -1766,11 +2315,18 @@ export default function BilliardScreen({
           name: 'Duel By One 1v1',
           entry: betAmount,
           prize: betAmount * 2,
-          icon: '⚔️',
-          badge: '1V1 DUEL',
+          city: 'Jakarta',
+          flag: '🇮🇩',
+          tier: 'Pro',
           tierCategory: 'pro',
-          description: 'Adu Taruhan 1v1 dengan Teman',
-          bgGradient: 'linear-gradient(135deg,#c0392b,#e74c3c)',
+          minLevel: 1,
+          ringName: 'Duel Champion Ring',
+          feltColor: '#1d4ed8',
+          feltName: 'Simonis Royal Blue',
+          accentColor: '#e74c3c',
+          onlineCount: 2,
+          badge: '1V1 DUEL',
+          bg: 'linear-gradient(135deg,#c0392b,#e74c3c)',
         });
       }
       setGameStep('playing');
@@ -1800,8 +2356,24 @@ export default function BilliardScreen({
     }
   }, [isMultiplayer, realOpponentName, realOpponentData, betAmount, roomCode, socket]);
 
-  // Room Select & Matchmaking
+  // Cancel Matchmaking
+  const cancelMatchmaking = () => {
+    if (matchIntervalRef.current) {
+      clearInterval(matchIntervalRef.current);
+      matchIntervalRef.current = null;
+    }
+    if (matchCountIntervalRef.current) {
+      clearInterval(matchCountIntervalRef.current);
+      matchCountIntervalRef.current = null;
+    }
+    setGameStep('room_select');
+    setMatchCountdown(null);
+    setMatchStatus('🔍 Mencari Lawan Berdasarkan Skill...');
+  };
+
+  // Room Select & Matchmaking (10 detik pencarian di server, lalu pasangkan dengan bot)
   const handleSelectRoom = (room: typeof POOL_ROOMS[0]) => {
+    poolSound.unlock();
     const usableCoins = Math.max(0, coins - bonusCoins);
     if (usableCoins < room.entry) {
       if (bonusCoins > 0 && coins >= room.entry) {
@@ -1813,27 +2385,47 @@ export default function BilliardScreen({
     }
     setSelectedRoom(room);
     setGameStep('matching');
-    setMatchStatus('🔍 Mencari Lawan Berdasarkan Skill...');
     setMatchCountdown(null);
 
+    if (matchIntervalRef.current) clearInterval(matchIntervalRef.current);
+    if (matchCountIntervalRef.current) clearInterval(matchCountIntervalRef.current);
+
+    let searchSeconds = 10;
+    setMatchStatus(`🔍 Mencari pemain lawan di server... (${searchSeconds}s)`);
+
+    // Avatar roulette shuffle with 10-second timer
     let cycleCount = 0;
-    const interval = setInterval(() => {
+    matchIntervalRef.current = setInterval(() => {
       cycleCount++;
       const randomOpp = OPPONENT_LIST[Math.floor(Math.random() * OPPONENT_LIST.length)];
       setMatchingAvatar(randomOpp.avatar);
-      if (cycleCount >= 14) {
-        clearInterval(interval);
+
+      // Setiap 1 detik (8 cycle @ 125ms = 1000ms)
+      if (cycleCount % 8 === 0) {
+        searchSeconds--;
+        if (searchSeconds > 0) {
+          setMatchStatus(`🔍 Mencari pemain lawan di server... (${searchSeconds}s)`);
+        }
+      }
+
+      // Setelah 10 detik belum ada lawan manusia, pasangkan dengan bot berlevel sesuai
+      if (cycleCount >= 80 || searchSeconds <= 0) {
+        clearInterval(matchIntervalRef.current);
+        matchIntervalRef.current = null;
+
         const finalOpp = OPPONENT_LIST[Math.floor(Math.random() * OPPONENT_LIST.length)];
         setOpponent(finalOpp);
+        opponentRef.current = finalOpp;
         setMatchingAvatar(finalOpp.avatar);
         setMatchStatus(`⚡ MUSUH DITEMUKAN: ${finalOpp.name} (Lvl ${finalOpp.level})!`);
 
         let count = 3;
         setMatchCountdown(count);
-        const countInterval = setInterval(() => {
+        matchCountIntervalRef.current = setInterval(() => {
           count--;
           if (count <= 0) {
-            clearInterval(countInterval);
+            clearInterval(matchCountIntervalRef.current);
+            matchCountIntervalRef.current = null;
             setCoins(c => Math.max(0, c - room.entry));
             fetch(`${API_URL}/users/update-coins`, {
               method: 'POST',
@@ -1843,7 +2435,12 @@ export default function BilliardScreen({
             ballsRef.current = createBalls();
             setPocketedBalls([]);
             setWinner(null);
+            setIsBallInHand(false);
+            isBallInHandRef.current = false;
+            firstHitBallRef.current = null;
+            cueBallJustShot.current = false;
             setTurn('player');
+            turnRef.current = 'player';
             setTurnTimer(25);
             setPlayerGroup(null);
             setMessage(`🎱 Permainan Dimulai! Taruhan: 🪙 ${room.entry.toLocaleString('id-ID')}`);
@@ -1853,7 +2450,7 @@ export default function BilliardScreen({
           }
         }, 800);
       }
-    }, 120);
+    }, 125);
   };
 
   // Turn refs for loop
@@ -1863,6 +2460,17 @@ export default function BilliardScreen({
   const aimTargetRef   = useRef(aimTarget);
   const powerRef       = useRef(power);
   const isAimModeRef   = useRef(isAimMode);
+  const smoothAimRef   = useRef<{ x: number; y: number } | null>(null);
+  const cueStrikeRef   = useRef<{
+    active: boolean;
+    startTime: number;
+    duration: number;
+    power: number;
+    cueBall: Ball;
+    targetX: number;
+    targetY: number;
+    progress: number;
+  } | null>(null);
 
   useEffect(() => { turnRef.current        = turn;        }, [turn]);
   useEffect(() => { playerGroupRef.current = playerGroup; }, [playerGroup]);
@@ -1871,61 +2479,338 @@ export default function BilliardScreen({
   useEffect(() => { powerRef.current       = power;       }, [power]);
   useEffect(() => { isAimModeRef.current   = isAimMode;   }, [isAimMode]);
 
-  // AI Turn handler
-  const scheduleAI = useCallback(() => {
-    setMessage('🤖 AI sedang memperhitungkan sudut tembakan...');
-    setTimeout(() => {
-      if (isMovingRef.current) return;
-      const { tx, ty, power: ap } = computeAIShot(ballsRef.current, playerGroupRef.current);
-      const cue = ballsRef.current.find(b => b.id === 0 && !b.pocketed);
-      if (!cue) return;
-      const dx = cue.x - tx, dy = cue.y - ty;
-      const len = Math.hypot(dx, dy);
-      if (len < 1) return;
-      cueBallJustShot.current = true;
-      cue.vx = (dx / len) * ap * 22;
-      cue.vy = (dy / len) * ap * 22;
-      isMovingRef.current = true;
-      poolSound.playCueHit(ap);
-      setMessage('🤖 AI menembak!');
-    }, 1600);
-  }, []);
+  // Robust Smart Human-like AI Execution with Smooth Aim Sweep & Power Pullback
+  const scheduleAI = useCallback((hasBallInHand = false) => {
+    if (aiScheduleTimeoutRef.current) {
+      clearTimeout(aiScheduleTimeoutRef.current);
+      aiScheduleTimeoutRef.current = null;
+    }
+    if (aiAnimRef.current) {
+      cancelAnimationFrame(aiAnimRef.current);
+      aiAnimRef.current = null;
+    }
 
-  // Turn resolution
+    const oppName = opponentRef.current?.name || oppDisplayName;
+    setMessage(`🎯 ${oppName} sedang mengamati meja & memikirkan sudut...`);
+
+    const attemptAIShot = () => {
+      // If balls are still rolling or sinking, wait and retry
+      if (isMovingRef.current) {
+        aiScheduleTimeoutRef.current = setTimeout(attemptAIShot, 250);
+        return;
+      }
+
+      const cue = ballsRef.current.find(b => b.id === 0);
+      if (!cue) return;
+
+      const shot = computeSmartAIShot(
+        ballsRef.current,
+        playerGroupRef.current,
+        hasBallInHand || isBallInHandRef.current
+      );
+
+      // Step 1: If bot had Ball in Hand, place cue ball in prime position!
+      if (shot.placeCue) {
+        cue.x = shot.placeCue.x;
+        cue.y = shot.placeCue.y;
+        cue.pocketed = false;
+        cue.vx = 0;
+        cue.vy = 0;
+        setIsBallInHand(false);
+        isBallInHandRef.current = false;
+        setMessage(`🎯 ${oppName} memposisikan bola putih di tempat strategis...`);
+      } else if (cue.pocketed) {
+        cue.pocketed = false;
+        cue.x = TABLE_W * 0.26;
+        cue.y = TABLE_H / 2;
+        cue.vx = 0;
+        cue.vy = 0;
+      }
+
+      // Target position and final angle
+      const targetAngle = Math.atan2(shot.ty - cue.y, shot.tx - cue.x);
+      const aimDist = 280;
+
+      // Start aiming from an offset angle (+/- 35 to 60 degrees) so it smoothly sweeps to the target!
+      const angleOffset = (Math.random() > 0.5 ? 1 : -1) * (0.6 + Math.random() * 0.4);
+      const startAngle = targetAngle + angleOffset;
+
+      // Step 2: Smooth Aim Sweep Animation using requestAnimationFrame over ~1350ms
+      setMessage(`🎯 ${oppName} sedang membidik sasaran...`);
+      setIsAimMode(true);
+      isAimModeRef.current = true;
+      setPower(0);
+      powerRef.current = 0;
+
+      const aimDuration = 1350; // ms
+      const aimStartTime = performance.now();
+
+      const animateAim = (now: number) => {
+        const elapsed = now - aimStartTime;
+        const rawProgress = Math.min(1, elapsed / aimDuration);
+        // Smooth ease-out cubic curve
+        const ease = 1 - Math.pow(1 - rawProgress, 3);
+        const curAngle = startAngle + (targetAngle - startAngle) * ease;
+
+        const curAimX = cue.x + Math.cos(curAngle) * aimDist;
+        const curAimY = cue.y + Math.sin(curAngle) * aimDist;
+        const aimPos = { x: curAimX, y: curAimY };
+
+        setAimTarget(aimPos);
+        aimTargetRef.current = aimPos;
+        smoothAimRef.current = aimPos;
+
+        if (rawProgress < 1) {
+          aiAnimRef.current = requestAnimationFrame(animateAim);
+        } else {
+          // Lock precisely onto the shot target point
+          const finalAimPos = { x: shot.tx, y: shot.ty };
+          setAimTarget(finalAimPos);
+          aimTargetRef.current = finalAimPos;
+          smoothAimRef.current = finalAimPos;
+
+          // Step 3: Brief micro-pause (250ms), then smoothly pull back cue stick
+          aiScheduleTimeoutRef.current = setTimeout(() => {
+            setMessage(`🎯 ${oppName} menarik stik biliar...`);
+            const powerDuration = 700; // ms
+            const targetPower = Math.max(0.35, shot.power);
+            const powerStartTime = performance.now();
+
+            const animatePower = (pNow: number) => {
+              const pElapsed = pNow - powerStartTime;
+              const pProgress = Math.min(1, pElapsed / powerDuration);
+              // Ease-in-out quad
+              const pEase = pProgress < 0.5 
+                ? 2 * pProgress * pProgress 
+                : 1 - Math.pow(-2 * pProgress + 2, 2) / 2;
+              const curPow = pEase * targetPower;
+
+              setPower(curPow);
+              powerRef.current = curPow;
+
+              if (pProgress < 1) {
+                aiAnimRef.current = requestAnimationFrame(animatePower);
+              } else {
+                // Step 4: Brief tension pause (180ms) then STRIKE!
+                aiScheduleTimeoutRef.current = setTimeout(() => {
+                  if (isMovingRef.current) {
+                    aiScheduleTimeoutRef.current = setTimeout(attemptAIShot, 250);
+                    return;
+                  }
+
+                  const dx = shot.tx - cue.x, dy = shot.ty - cue.y;
+                  const len = Math.hypot(dx, dy) || 1;
+                  const shotPower = targetPower;
+
+                  firstHitBallRef.current = null;
+                  cueBallJustShot.current = true;
+                  cue.vx = (dx / len) * shotPower * 23;
+                  cue.vy = (dy / len) * shotPower * 23;
+                  isMovingRef.current = true;
+
+                  setIsAimMode(false);
+                  isAimModeRef.current = false;
+                  setAimTarget(null);
+                  aimTargetRef.current = null;
+                  smoothAimRef.current = null;
+                  setPower(0);
+                  powerRef.current = 0;
+                  poolSound.playCueHit(shotPower);
+                  setMessage(`💥 ${oppName} melepaskan tembakan!`);
+                }, 180);
+              }
+            };
+
+            aiAnimRef.current = requestAnimationFrame(animatePower);
+          }, 250);
+        }
+      };
+
+      aiAnimRef.current = requestAnimationFrame(animateAim);
+    };
+
+    // Human-like hesitation before starting to aim: 850ms
+    aiScheduleTimeoutRef.current = setTimeout(attemptAIShot, 850);
+  }, [oppDisplayName]);
+
+  // Handle Timeout (Shot clock violation foul)
+  const handleTimeout = useCallback(() => {
+    if (gameStep !== 'playing' || winner) return;
+    const oppName = opponentRef.current?.name || oppDisplayName;
+
+    if (turnRef.current === 'player') {
+      // Player timeout -> Foul! Opponent gets Ball in Hand
+      setMessage(`⏳ Waktu Anda habis! FOUL! Giliran ${oppName} dengan Ball in Hand.`);
+      setIsAimMode(false);
+      isAimModeRef.current = false;
+      setAimTarget(null);
+      aimTargetRef.current = null;
+      smoothAimRef.current = null;
+      setIsDraggingCue(false);
+      isDraggingCueRef.current = false;
+      isDraggingRef.current = false;
+      isDraggingCueBallRef.current = false;
+      setPower(0);
+      powerRef.current = 0;
+      setIsBallInHand(false);
+      isBallInHandRef.current = false;
+
+      setTurn('ai');
+      turnRef.current = 'ai';
+      setTurnTimer(25);
+      setTurnCount(c => c + 1);
+
+      if (!isMultiplayer) {
+        scheduleAI(true);
+      }
+    } else {
+      // Opponent timeout -> Foul! Player gets Ball in Hand
+      setMessage(`⏳ Waktu ${oppName} habis! FOUL! Anda mendapat Ball in Hand.`);
+      setIsBallInHand(true);
+      isBallInHandRef.current = true;
+      setTurn('player');
+      turnRef.current = 'player';
+      setTurnTimer(25);
+      setTurnCount(c => c + 1);
+    }
+  }, [gameStep, winner, isMultiplayer, scheduleAI, oppDisplayName]);
+
+  // Turn timer countdown (pauses when balls move)
+  useEffect(() => {
+    if (gameStep !== 'playing' || winner) return;
+    const interval = setInterval(() => {
+      if (isMovingRef.current) return;
+      setTurnTimer(prev => {
+        if (prev <= 1) return 0;
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [gameStep, winner]);
+
+  // Trigger timeout cleanly outside of state updater
+  useEffect(() => {
+    if (gameStep === 'playing' && !winner && turnTimer === 0) {
+      handleTimeout();
+    }
+  }, [turnTimer, gameStep, winner, handleTimeout]);
+
+  // Reset timer on turn or shot continuation
+  useEffect(() => {
+    setTurnTimer(25);
+  }, [turn, turnCount]);
+
+  // Guarantee AI fires whenever turn becomes 'ai'
+  useEffect(() => {
+    if (gameStep !== 'playing' || winner || isMultiplayer) return;
+    if (turn === 'ai') {
+      scheduleAI(isBallInHandRef.current);
+    }
+  }, [turn, gameStep, winner, isMultiplayer, scheduleAI]);
+
+  // Turn resolution with full 8-Ball Pool Foul rules
   const handleTurnEnd = useCallback(() => {
+    const oppName = opponentRef.current?.name || oppDisplayName;
     const balls   = ballsRef.current;
     const pNow    = Array.from(pocketedThisTurnRef.current);
     pocketedThisTurnRef.current = new Set();
     const curTurn = turnRef.current;
     let curGroup  = playerGroupRef.current;
+    const firstHit = firstHitBallRef.current;
+    firstHitBallRef.current = null;
 
-    // Foul check (cue ball in pocket)
-    if (pNow.includes(0)) {
-      const cue = balls.find(b => b.id === 0);
-      if (cue) {
-        cue.pocketed = false;
-        cue.x = TABLE_W * 0.24;
-        cue.y = TABLE_H / 2;
-        cue.vx = 0; cue.vy = 0;
+    // 1. Foul check: Cue ball sunk (Scratch)
+    const isScratch = pNow.includes(0);
+
+    // 2. Foul check: No contact with any ball
+    const isNoContact = firstHit === null;
+
+    // 3. Foul check: Wrong ball hit first
+    let isWrongBallFirst = false;
+    if (!isScratch && !isNoContact) {
+      if (curGroup === null) {
+        // Open table: Can hit any ball 1-15 first EXCEPT ball 8
+        if (firstHit === 8) {
+          isWrongBallFirst = true;
+        }
+      } else {
+        const ownGroup = curTurn === 'player' ? curGroup : (curGroup === 'solid' ? 'stripe' : 'solid');
+        // Include balls pocketed this turn (pNow) to accurately evaluate table state at shot start
+        const hadOwnRemaining = balls.some(
+          b => (!b.pocketed || pNow.includes(b.id)) && b.id !== 0 && b.id !== 8 && (ownGroup === 'solid' ? !STRIPE_SET.has(b.id) : STRIPE_SET.has(b.id))
+        );
+        if (hadOwnRemaining) {
+          const isOwn = (ownGroup === 'solid' ? !STRIPE_SET.has(firstHit) : STRIPE_SET.has(firstHit));
+          if (!isOwn || firstHit === 8) {
+            isWrongBallFirst = true;
+          }
+        } else {
+          // All group balls were cleared before this shot; must hit 8-ball first
+          if (firstHit !== 8) {
+            isWrongBallFirst = true;
+          }
+        }
       }
+    }
+
+    const isFoul = isScratch || isNoContact || isWrongBallFirst;
+
+    if (isFoul) {
+      if (isScratch) {
+        const cue = balls.find(b => b.id === 0);
+        if (cue) {
+          cue.pocketed = false;
+          cue.x = TABLE_W * 0.26;
+          cue.y = TABLE_H / 2;
+          cue.vx = 0; cue.vy = 0;
+        }
+      }
+
+      // Sinking 8-ball during foul is instant loss
+      if (pNow.includes(8)) {
+        const winResult = curTurn === 'player' ? 'ai' : 'player';
+        setWinner(winResult);
+        if (winResult === 'player') poolSound.playWinFanfare();
+        return;
+      }
+
       const next = curTurn === 'player' ? 'ai' : 'player';
-      setMessage(`⚠️ Foul! Bola putih masuk kantong. Giliran ${next === 'player' ? 'Anda' : 'AI'}!`);
-      setTurn(next);
-      if (next === 'ai') scheduleAI();
+      let reason = 'Bola putih masuk kantong';
+      if (isNoContact) reason = 'Tidak mengenai bola apapun';
+      else if (isWrongBallFirst) reason = 'Menyodok bola yang salah terlebih dahulu';
+
+      if (next === 'player') {
+        setMessage(`⚠️ FOUL ${oppName} (${reason})! Anda mendapat Ball in Hand.`);
+        setIsBallInHand(true);
+        isBallInHandRef.current = true;
+        setTurn('player');
+        setTurnTimer(25);
+        setTurnCount(c => c + 1);
+      } else {
+        setMessage(`⚠️ FOUL (${reason})! Giliran ${oppName} dengan Ball in Hand.`);
+        setIsBallInHand(false);
+        isBallInHandRef.current = false;
+        setTurn('ai');
+        setTurnTimer(25);
+        setTurnCount(c => c + 1);
+        if (!isMultiplayer) scheduleAI(true);
+      }
       return;
     }
 
-    // 8-Ball sink check
+    // 8-Ball sink check (clean shot)
     if (pNow.includes(8)) {
       const solidsDone  = !balls.some(b => !b.pocketed && !STRIPE_SET.has(b.id) && b.id !== 0 && b.id !== 8);
       const stripesDone = !balls.some(b => !b.pocketed && STRIPE_SET.has(b.id));
       const playerClear = curTurn === 'player' && ((curGroup === 'solid' && solidsDone) || (curGroup === 'stripe' && stripesDone));
-      const winResult = playerClear ? 'player' : 'ai';
+      const aiClear     = curTurn === 'ai' && ((curGroup === 'solid' && stripesDone) || (curGroup === 'stripe' && solidsDone));
+      const winResult   = playerClear ? 'player' : (aiClear ? 'ai' : (curTurn === 'player' ? 'ai' : 'player'));
       setWinner(winResult);
       if (winResult === 'player') poolSound.playWinFanfare();
       return;
     }
 
+    // Assign group on first legal pot
     const newPocketed = pNow.filter(id => id !== 0 && id !== 8);
     if (curGroup === null && newPocketed.length > 0) {
       const first = newPocketed[0];
@@ -1936,7 +2821,7 @@ export default function BilliardScreen({
       curGroup = ng;
       setMessage(curTurn === 'player'
         ? `🎯 Anda: ${ng === 'solid' ? 'Solid (● Bola 1-7)' : 'Stripe (◑ Bola 9-15)'}!`
-        : `Lawan: ${ng === 'solid' ? 'Stripe (◑ Bola 9-15)' : 'Solid (● Bola 1-7)'}.`);
+        : `${oppName}: ${ng === 'solid' ? 'Stripe (◑ Bola 9-15)' : 'Solid (● Bola 1-7)'}.`);
     }
 
     const own = newPocketed.filter(id => {
@@ -1947,18 +2832,45 @@ export default function BilliardScreen({
     });
 
     if (own.length === 0) {
+      // Normal missed pot or no legal balls sunk -> Turn passes to opponent WITHOUT Ball in Hand
       const next = curTurn === 'player' ? 'ai' : 'player';
-      setMessage(next === 'player' ? '🎯 Giliran Anda!' : (isMultiplayer ? `🎯 Giliran ${realOpponentName}!` : '🤖 Giliran AI...'));
+      setIsBallInHand(false);
+      isBallInHandRef.current = false;
+      setMessage(next === 'player' ? '🎯 Giliran Anda!' : `🎯 Giliran ${oppName}...`);
       setTurn(next);
+      setTurnTimer(25);
+      setTurnCount(c => c + 1);
       if (next === 'ai' && !isMultiplayer) scheduleAI();
     } else {
-      setMessage(curTurn === 'player' ? '✨ Tembakan Bagus! Lanjut tembak lagi!' : (isMultiplayer ? `✨ ${realOpponentName} memasukkan bola!` : '🤖 AI Memasukkan bola...'));
+      // Legal pot -> Turn continues! (NO Ball in Hand)
+      setIsBallInHand(false);
+      isBallInHandRef.current = false;
+
+      const ownGroup = curTurn === 'player' ? curGroup : (curGroup === 'solid' ? 'stripe' : 'solid');
+      const allOwnCleared = !balls.some(
+        b => !b.pocketed && b.id !== 0 && b.id !== 8 && (ownGroup === 'solid' ? !STRIPE_SET.has(b.id) : STRIPE_SET.has(b.id))
+      );
+
+      if (allOwnCleared) {
+        setMessage(curTurn === 'player'
+          ? '🔥 Tembakan Sempurna! Semua bola grup Anda bersih, sekarang masukkan Bola 8 (Hitam) untuk MENANG!'
+          : `🔥 ${oppName} membersihkan semua bola grupnya! Sekarang mengincar Bola 8...`
+        );
+      } else {
+        setMessage(curTurn === 'player'
+          ? '✨ Tembakan Bagus! Lanjut tembak lagi!'
+          : `✨ ${oppName} memasukkan bola! Lanjut tembak...`
+        );
+      }
+      setTurnTimer(25);
+      setTurnCount(c => c + 1);
       if (curTurn === 'ai' && !isMultiplayer) scheduleAI();
     }
-  }, [scheduleAI, isMultiplayer, realOpponentName]);
+  }, [scheduleAI, isMultiplayer, realOpponentName, oppDisplayName]);
 
-  // Unified Single Animation & Render Loop
+  // Unified Single Animation & Render Loop (Hardware Optimized)
   useEffect(() => {
+    if (gameStep !== 'playing') return;
     let animId: number;
     const loop = () => {
       const canvas = canvasRef.current;
@@ -1973,34 +2885,97 @@ export default function BilliardScreen({
             particlesRef.current,
             sinkingBallsRef.current,
             spinRef.current,
-            cueBallJustShot
+            cueBallJustShot,
+            firstHitBallRef
           );
           const hasSinking = sinkingBallsRef.current.length > 0;
           isMovingRef.current = stillMoving || hasSinking;
 
-          // Update pocketed balls display state (memoized check to avoid 60fps renders)
-          const currentlyPocketed = balls.filter(b => b.pocketed).map(b => b.id);
-          setPocketedBalls(prev => {
-            if (prev.length !== currentlyPocketed.length || prev.some((v, i) => v !== currentlyPocketed[i])) {
-              return currentlyPocketed;
-            }
-            return prev;
-          });
+          // Only update pocketed balls state when physics was active (avoids idle GC churn)
+          if (wasMoving || isMovingRef.current) {
+            const currentlyPocketed = balls.filter(b => b.pocketed).map(b => b.id);
+            setPocketedBalls(prev => {
+              if (prev.length !== currentlyPocketed.length || prev.some((v, i) => v !== currentlyPocketed[i])) {
+                return currentlyPocketed;
+              }
+              return prev;
+            });
+          }
 
           if (wasMoving && !isMovingRef.current) {
             handleTurnEnd();
           }
 
+          // ── SMOOTH AIM LERP (Eliminates touch/mouse jitter) ──
+          if (aimTargetRef.current) {
+            if (!smoothAimRef.current) {
+              smoothAimRef.current = { ...aimTargetRef.current };
+            } else {
+              smoothAimRef.current.x += (aimTargetRef.current.x - smoothAimRef.current.x) * 0.35;
+              smoothAimRef.current.y += (aimTargetRef.current.y - smoothAimRef.current.y) * 0.35;
+            }
+          } else {
+            smoothAimRef.current = null;
+          }
+
+          // ── SNAPPY CUE STRIKE FORWARD THRUST ANIMATION ──
+          let strikeProgress = 0;
+          if (cueStrikeRef.current && cueStrikeRef.current.active) {
+            const strike = cueStrikeRef.current;
+            const elapsed = performance.now() - strike.startTime;
+            strikeProgress = Math.min(1, elapsed / strike.duration);
+            strike.progress = strikeProgress;
+
+            if (strikeProgress >= 1) {
+              // Impact moment! Cue tip strikes the cue ball
+              strike.active = false;
+              cueStrikeRef.current = null;
+              strikeProgress = 1;
+
+              const cue = strike.cueBall;
+              const dx = strike.targetX - cue.x;
+              const dy = strike.targetY - cue.y;
+              const len = Math.hypot(dx, dy) || 1;
+
+              cueBallJustShot.current = true;
+              cue.vx = (dx / len) * strike.power * 23;
+              cue.vy = (dy / len) * strike.power * 23;
+              isMovingRef.current = true;
+              setIsAimMode(false);
+              isAimModeRef.current = false;
+              setAimTarget(null);
+              aimTargetRef.current = null;
+              smoothAimRef.current = null;
+              poolSound.playCueHit(strike.power);
+              setMessage('💥 Tembakan dilepaskan!');
+
+              if (socket && roomCode) {
+                const angle = Math.atan2(cue.vy, cue.vx);
+                socket.emit('billiard_shot', { roomCode, angle, power: strike.power, spin: spinRef.current });
+              }
+
+              setTimeout(() => {
+                setPower(0);
+                powerRef.current = 0;
+              }, 60);
+            }
+          }
+
+          const targetForDraw = smoothAimRef.current || aimTargetRef.current;
+          const showAim = (isAimModeRef.current || (cueStrikeRef.current?.active ?? false)) && !isMovingRef.current;
+
           drawScene(
             ctx,
             balls,
-            aimTargetRef.current,
+            targetForDraw,
             powerRef.current,
-            isAimModeRef.current && !isMovingRef.current,
+            showAim,
             particlesRef.current,
             sinkingBallsRef.current,
             selectedRoomRef.current?.feltColor,
-            cueSkinRef.current
+            cueSkinRef.current,
+            strikeProgress,
+            isBallInHandRef.current
           );
         }
       }
@@ -2008,7 +2983,7 @@ export default function BilliardScreen({
     };
     animId = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(animId);
-  }, [handleTurnEnd]);
+  }, [gameStep, handleTurnEnd, socket, roomCode]);
 
   // Coordinate helper (exact scale independent)
   const getCanvasPos = (e: React.MouseEvent | React.TouchEvent) => {
@@ -2025,71 +3000,178 @@ export default function BilliardScreen({
   const isDraggingRef = useRef(false);
 
   const onCanvasMouseDown = (e: React.MouseEvent) => {
-    if (turn !== 'player' || isMovingRef.current || winner) return;
+    poolSound.unlock();
+    if (turn !== 'player' || isMovingRef.current || winner || cueStrikeRef.current?.active) return;
     e.preventDefault();
-    isDraggingRef.current = true;
     const pos = getCanvasPos(e);
-    setAimTarget(pos);
+
+    const onWindowMouseUp = () => {
+      onCanvasMouseUp();
+      window.removeEventListener('mouseup', onWindowMouseUp);
+    };
+    window.addEventListener('mouseup', onWindowMouseUp);
+
+    if (isBallInHandRef.current) {
+      isDraggingCueBallRef.current = true;
+      moveCueBallTo(pos);
+      return;
+    }
+
+    isDraggingRef.current = true;
+    aimTargetRef.current = pos;
+    if (!smoothAimRef.current) {
+      smoothAimRef.current = { ...pos };
+    }
     setIsAimMode(true);
+    isAimModeRef.current = true;
   };
 
   const onCanvasMouseMove = (e: React.MouseEvent) => {
-    if (!isDraggingRef.current || turn !== 'player' || isMovingRef.current || winner) return;
+    if (turn !== 'player' || isMovingRef.current || winner || cueStrikeRef.current?.active) return;
     const pos = getCanvasPos(e);
+
+    if (isBallInHandRef.current && isDraggingCueBallRef.current) {
+      moveCueBallTo(pos);
+      return;
+    }
+
+    if (!isDraggingRef.current) return;
     aimTargetRef.current = pos;
-    setAimTarget(pos);
   };
 
   const onCanvasMouseUp = () => {
     isDraggingRef.current = false;
+    isDraggingCueBallRef.current = false;
+    if (!isBallInHandRef.current && aimTargetRef.current) {
+      setAimTarget(aimTargetRef.current);
+    }
   };
 
   const onCanvasTouchStart = (e: React.TouchEvent) => {
-    e.preventDefault();
-    if (turn !== 'player' || isMovingRef.current || winner) return;
-    isDraggingRef.current = true;
+    poolSound.unlock();
+    if (e.cancelable) e.preventDefault();
+    if (turn !== 'player' || isMovingRef.current || winner || cueStrikeRef.current?.active) return;
     const pos = getCanvasPos(e);
-    setAimTarget(pos);
+
+    if (isBallInHandRef.current) {
+      isDraggingCueBallRef.current = true;
+      moveCueBallTo(pos);
+      return;
+    }
+
+    isDraggingRef.current = true;
+    aimTargetRef.current = pos;
+    if (!smoothAimRef.current) {
+      smoothAimRef.current = { ...pos };
+    }
     setIsAimMode(true);
+    isAimModeRef.current = true;
   };
 
   const onCanvasTouchMove = (e: React.TouchEvent) => {
-    e.preventDefault();
-    if (!isDraggingRef.current || turn !== 'player' || isMovingRef.current || winner) return;
+    if (e.cancelable) e.preventDefault();
+    if (turn !== 'player' || isMovingRef.current || winner || cueStrikeRef.current?.active) return;
     const pos = getCanvasPos(e);
+
+    if (isBallInHandRef.current && isDraggingCueBallRef.current) {
+      moveCueBallTo(pos);
+      return;
+    }
+
+    if (!isDraggingRef.current) return;
     aimTargetRef.current = pos;
-    setAimTarget(pos);
   };
 
   const onCanvasTouchEnd = () => {
     isDraggingRef.current = false;
+    isDraggingCueBallRef.current = false;
+    if (!isBallInHandRef.current && aimTargetRef.current) {
+      setAimTarget(aimTargetRef.current);
+    }
   };
 
-  // Shoot button
-  const handleShoot = () => {
-    if (turn !== 'player' || isMovingRef.current || !aimTarget || winner) return;
+  // 8 Ball Pool Shoot execution (Initiates 52ms Snappy Strike Plunge)
+  const handleShoot = useCallback(() => {
+    if (turn !== 'player' || isMovingRef.current || winner || cueStrikeRef.current?.active) return;
     const cue = ballsRef.current.find(b => b.id === 0 && !b.pocketed);
     if (!cue) return;
-    const dx = cue.x - aimTarget.x, dy = cue.y - aimTarget.y;
-    const len = Math.hypot(dx, dy);
-    if (len < 5) {
-      setMessage('⚠️ Arahkan stik di meja terlebih dahulu!');
-      return;
-    }
-    cueBallJustShot.current = true;
-    cue.vx = (dx / len) * power * 23;
-    cue.vy = (dy / len) * power * 23;
-    isMovingRef.current = true;
-    setIsAimMode(false);
-    setAimTarget(null);
-    poolSound.playCueHit(power);
-    setMessage('💥 Tembakan dilepaskan!');
 
-    if (socket && roomCode) {
-      const angle = Math.atan2(cue.vy, cue.vx);
-      socket.emit('billiard_shot', { roomCode, angle, power, spin });
+    let target = aimTargetRef.current || smoothAimRef.current;
+    if (!target) {
+      const curGroup = playerGroupRef.current;
+      const legalBalls = ballsRef.current.filter(b => {
+        if (b.pocketed || b.id === 0 || b.id === 8) return false;
+        if (curGroup === 'solid') return !STRIPE_SET.has(b.id);
+        if (curGroup === 'stripe') return STRIPE_SET.has(b.id);
+        return true;
+      });
+      const tBall = legalBalls[0] || ballsRef.current.find(b => b.id === 8 && !b.pocketed) || { x: TABLE_W * 0.72, y: TABLE_H / 2 };
+      const ang = Math.atan2(tBall.y - cue.y, tBall.x - cue.x);
+      target = {
+        x: cue.x + Math.cos(ang) * 150,
+        y: cue.y + Math.sin(ang) * 150
+      };
+      setAimTarget(target);
+      aimTargetRef.current = target;
+      smoothAimRef.current = target;
     }
-  };
+
+    const dx = target.x - cue.x, dy = target.y - cue.y;
+    const len = Math.hypot(dx, dy);
+    if (len < 5) return;
+
+    const currentPower = Math.max(0.12, Math.min(1, powerRef.current));
+
+    firstHitBallRef.current = null;
+    if (isBallInHandRef.current) {
+      setIsBallInHand(false);
+      isBallInHandRef.current = false;
+    }
+
+    // Initiate Snappy Cue Strike Animation
+    cueStrikeRef.current = {
+      active: true,
+      startTime: performance.now(),
+      duration: 52, // 52ms forward thrust
+      power: currentPower,
+      cueBall: cue,
+      targetX: target.x,
+      targetY: target.y,
+      progress: 0,
+    };
+  }, [turn, winner]);
+
+  useEffect(() => {
+    handleShootRef.current = handleShoot;
+  }, [handleShoot]);
+
+  // Auto-align aimTarget at beginning of player turn (8 Ball Pool style)
+  useEffect(() => {
+    if (turn === 'player' && gameStep === 'playing' && !isMovingRef.current && !winner) {
+      if (isBallInHand) return; // Do not auto-aim while user is placing Ball in Hand
+      const cue = ballsRef.current.find(b => b.id === 0 && !b.pocketed);
+      if (cue && !aimTargetRef.current) {
+        const curGroup = playerGroupRef.current;
+        const legalBalls = ballsRef.current.filter(b => {
+          if (b.pocketed || b.id === 0 || b.id === 8) return false;
+          if (curGroup === 'solid') return !STRIPE_SET.has(b.id);
+          if (curGroup === 'stripe') return STRIPE_SET.has(b.id);
+          return true;
+        });
+        const tBall = legalBalls[0] || ballsRef.current.find(b => b.id === 8 && !b.pocketed) || { x: TABLE_W * 0.72, y: TABLE_H / 2 };
+        const ang = Math.atan2(tBall.y - cue.y, tBall.x - cue.x);
+        const defAim = {
+          x: cue.x + Math.cos(ang) * 150,
+          y: cue.y + Math.sin(ang) * 150
+        };
+        setAimTarget(defAim);
+        aimTargetRef.current = defAim;
+        smoothAimRef.current = defAim;
+        setIsAimMode(true);
+        isAimModeRef.current = true;
+      }
+    }
+  }, [turn, gameStep, winner, pocketedBalls, isBallInHand]);
 
   const restart = () => {
     ballsRef.current = createBalls();
@@ -2098,16 +3180,27 @@ export default function BilliardScreen({
     sinkingBallsRef.current = [];
     isMovingRef.current  = false;
     cueBallJustShot.current = false;
+    firstHitBallRef.current = null;
+    smoothAimRef.current = null;
+    cueStrikeRef.current = null;
+    setIsBallInHand(false);
+    isBallInHandRef.current = false;
+    isDraggingCueBallRef.current = false;
+    if (aiScheduleTimeoutRef.current) {
+      clearTimeout(aiScheduleTimeoutRef.current);
+      aiScheduleTimeoutRef.current = null;
+    }
     setTurn('player');
     setTurnTimer(25);
+    setTurnCount(c => c + 1);
     setPlayerGroup(null);
     setPocketedBalls([]);
     setWinner(null);
     setAimTarget(null);
     setIsAimMode(false);
-    setPower(0.5);
+    setPower(0);
     setSpin({ x: 0, y: 0 });
-    setMessage('🎱 Klik meja untuk mengarahkan!');
+    setMessage('🎱 Arahkan bidikan lalu tarik stik ke bawah!');
   };
 
   const saveCoinsResult = () => {
@@ -2351,10 +3444,14 @@ export default function BilliardScreen({
           </div>
 
           <div className="pool8-matching-status">{matchStatus}</div>
-          {matchCountdown !== null && (
+          {matchCountdown !== null ? (
             <div className="pool8-match-countdown">
               PERTANDINGAN DIMULAI DALAM: <span>{matchCountdown}</span>
             </div>
+          ) : (
+            <button className="pool8-match-cancel-btn" onClick={cancelMatchmaking}>
+              ✖ Batalkan Pencarian
+            </button>
           )}
 
           <div className="pool8-match-prize-info">
@@ -2508,7 +3605,7 @@ export default function BilliardScreen({
                   {playerGroup === 'solid' ? '◑ Stripe (9-15)' : '● Solid (1-7)'}
                 </span>
               )}
-              <span className="pool8-meta-name">{opponent.name}</span>
+              <span className="pool8-meta-name">{oppDisplayName}</span>
             </div>
 
             {/* Turn Progress Timer Bar */}
@@ -2560,35 +3657,34 @@ export default function BilliardScreen({
             <span className="star-text">{opponent.level}</span>
           </div>
         </div>
+      </div>
 
-        {/* Far Right Action Buttons (3D Cue Ball Spin + Cue Stick Switcher) */}
-        <div className="pool8-header-right-actions">
-          {/* 3D Circular Cue Ball Spin Trigger */}
-          <button
-            className="pool8-spin-btn-3d"
-            onClick={() => setShowSpinModal(true)}
-            title="Titik Pukul &amp; Efek Spin Cue Ball"
-          >
-            <div className="spin-sphere-3d">
-              <div
-                className="spin-red-hit-dot"
-                style={{
-                  left: `calc(50% + ${spin.x * 12}px)`,
-                  top:  `calc(50% + ${spin.y * 12}px)`,
-                }}
-              />
-            </div>
-          </button>
+      {/* ── FLOATING 3D CUE BALL SPIN & STICK SWITCHER WIDGET (8 BALL POOL STYLE) ── */}
+      <div className="pool8-floating-spin-widget">
+        <button
+          className="pool8-spin-btn-3d"
+          onClick={() => setShowSpinModal(true)}
+          title="Atur Titik Pukul Cue Ball (Top/Back/Side Spin)"
+        >
+          <div className="spin-sphere-3d">
+            <div
+              className="spin-red-hit-dot"
+              style={{
+                left: `calc(50% + ${spin.x * 14}px)`,
+                top:  `calc(50% + ${spin.y * 14}px)`,
+              }}
+            />
+          </div>
+          <span className="spin-btn-badge">SPIN</span>
+        </button>
 
-          {/* Cue Stick Switcher Button */}
-          <button
-            className="pool8-cue-switcher-btn"
-            onClick={() => setShowCueModal(true)}
-            title="Ganti Stik Biliar"
-          >
-            <span className="cue-btn-icon">🥢</span>
-          </button>
-        </div>
+        <button
+          className="pool8-cue-switcher-btn"
+          onClick={() => setShowCueModal(true)}
+          title="Ganti Stik Biliar"
+        >
+          <span className="cue-btn-icon">🥢</span>
+        </button>
       </div>
 
       {/* ── GAME MENU DROPDOWN (ALIGNED UNDER GREEN HAMBURGER BUTTON ON LEFT) ── */}
@@ -2683,12 +3779,12 @@ export default function BilliardScreen({
 
       {/* ── CANVAS FILL & ARENA VIEWPORT (VERTICAL CUE + TABLE + CHROME TRACK) ── */}
       <div className="bl-canvas-fill pool8-arena-wrap">
-        {/* Left Side: Vertical Cue Stick Power Slider */}
+        {/* Left Side: Vertical Cue Stick Power Slider (8 Ball Pool Pull-to-Charge & Release) */}
         <div className="pool8-vertical-cue-wrap">
           {/* Power LED Meter */}
           <div className="pool8-vcue-gauge">
             <div
-              className="pool8-vcue-gauge-fill"
+              className={`pool8-vcue-gauge-fill ${isDraggingCue ? 'dragging' : ''}`}
               style={{
                 height: `${power * 100}%`,
                 background: power < 0.38
@@ -2698,21 +3794,31 @@ export default function BilliardScreen({
                   : 'linear-gradient(0deg, #22c55e, #facc15 60%, #ef4444 100%)',
               }}
             />
+            {/* Graduated Power Ticks */}
+            <div className="pool8-vcue-ticks">
+              <span className="vcue-tick" style={{ bottom: '20%' }} />
+              <span className="vcue-tick" style={{ bottom: '40%' }} />
+              <span className="vcue-tick" style={{ bottom: '60%' }} />
+              <span className="vcue-tick" style={{ bottom: '80%' }} />
+            </div>
             <div className="pool8-vcue-gauge-pct">{Math.round(power * 100)}%</div>
           </div>
 
-          {/* Vertical Cue Track */}
+          {/* Vertical Cue Track (Pull Down to Charge, Release to Shoot) */}
           <div
             className="pool8-vcue-track"
             ref={verticalCueTrackRef}
             onMouseDown={onVCueMouseDown}
             onTouchStart={onVCueTouchStart}
-            title="Tarik stik ke bawah untuk mengatur kekuatan pukulan"
+            title="Tarik stik ke bawah lalu lepaskan untuk memukul bola"
           >
+            {/* White cue ball target at top of track */}
+            <div className="pool8-vcue-ball-target" />
+
             <div
-              className="pool8-vcue-stick"
+              className={`pool8-vcue-stick ${isDraggingCue ? 'dragging' : ''}`}
               style={{
-                transform: `translateY(${power * 135}px)`,
+                transform: `translateY(${power * 130}px)`,
               }}
             >
               <div className="vcue-tip" />
@@ -2721,30 +3827,36 @@ export default function BilliardScreen({
               <div className="vcue-wrap" />
               <div className="vcue-butt" />
             </div>
-          </div>
 
-          {/* Quick Shoot Button below Cue Stick */}
-          <button
-            className={`pool8-vcue-shoot-btn ${turn !== 'player' || isMovingRef.current || !aimTarget ? 'disabled' : ''}`}
-            onClick={handleShoot}
-            disabled={turn !== 'player' || isMovingRef.current || !aimTarget}
-            title="Lepaskan Tembakan"
-          >
-            ⚡ TEMBAK
-          </button>
-          {aimTarget && turn === 'player' && !isMovingRef.current && (
-            <button
-              className="pool8-vcue-reset-aim"
-              onClick={() => { setAimTarget(null); setIsAimMode(false); }}
-              title="Batal Bidik"
-            >
-              ↺ Reset
-            </button>
-          )}
+            {/* Subtle pull guide prompt */}
+            {turn === 'player' && !isMovingRef.current && (
+              <div className="pool8-vcue-pull-hint">
+                <span className="pull-hint-arrow">▼</span>
+                <span className="pull-hint-text">TARIK</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Center: Pool Table Canvas & Lamp */}
         <div className="pool8-table-holder">
+          {/* Ball in Hand Banner on top of table */}
+          {isBallInHand && turn === 'player' && (
+            <div className="pool8-ball-in-hand-banner">
+              <span className="bih-icon">🎱</span>
+              <div className="bih-text">
+                <b>BALL IN HAND AKTIF!</b>
+                <span>Geser bola putih ke posisi mana saja di meja</span>
+              </div>
+              <button
+                className="bih-confirm-btn"
+                onClick={confirmBallInHand}
+              >
+                ✓ Siap Membidik
+              </button>
+            </div>
+          )}
+
           <div className="pool8-hanging-lamp">
             <div className="lamp-chain chain-left" />
             <div className="lamp-shade shade-left" />
@@ -2760,7 +3872,7 @@ export default function BilliardScreen({
             width={TABLE_W}
             height={TABLE_H}
             className="bl-canvas-fs"
-            style={{ cursor: turn === 'player' && !isMovingRef.current ? 'crosshair' : 'default', touchAction: 'none' }}
+            style={{ cursor: isBallInHand ? 'grab' : turn === 'player' && !isMovingRef.current ? 'crosshair' : 'default', touchAction: 'none' }}
             onMouseDown={onCanvasMouseDown}
             onMouseMove={onCanvasMouseMove}
             onMouseUp={onCanvasMouseUp}
@@ -2856,12 +3968,12 @@ export default function BilliardScreen({
           <div className="bl-help-box" onClick={e => e.stopPropagation()}>
             <h3>📖 Panduan Bermain 8-Ball Pool VIP</h3>
             <ul>
-              <li>🖱️ <b>Arahkan Stik:</b> Klik atau geser mouse/jari di atas meja untuk memutar stik ke bola sasaran.</li>
-              <li>⚡ <b>Atur Kekuatan:</b> Gunakan power slider di bawah atau klik preset (25%, 50%, 75%, MAX).</li>
-              <li>🎯 <b>Titik Pukul &amp; Spin:</b> Klik ikon Spin untuk memberi efek Top spin (maju), Back spin (tarik mundur), atau side spin.</li>
-              <li>💥 <b>Tembak:</b> Tekan tombol kuning/merah <b>"⚡ TEMBAK!"</b> untuk melepaskan tembakan.</li>
-              <li>🎱 <b>Aturan Menang:</b> Masukkan seluruh 7 bola grup Anda (Solid 1-7 atau Stripe 9-15), kemudian masukkan bola hitam <b>8</b> ke kantong yang dituju.</li>
-              <li>⚠️ <b>Foul:</b> Jangan biarkan bola putih masuk ke kantong karena akan memberikan giliran bebas kepada lawan!</li>
+              <li>🖱️ <b>Arahkan Stik:</b> Klik atau geser mouse/jari di atas meja untuk memutar stik ke sasaran (otomatis membidik saat giliran dimulai).</li>
+              <li>⚡ <b>Tarik Stik (8 Ball Pool):</b> Tarik stik di sebelah kiri ke bawah untuk mengisi daya kekuatan pukulan.</li>
+              <li>💥 <b>Lepaskan untuk Menembak:</b> Lepaskan tarikan stik (kekuatan &gt; 8%) untuk memukul bola putih secara otomatis!</li>
+              <li>🎯 <b>Titik Pukul &amp; Spin:</b> Tekan bola putih di kanan atas untuk memberi efek Top spin (maju), Back spin (tarik mundur), atau Side spin.</li>
+              <li>🎱 <b>Aturan Menang:</b> Masukkan seluruh 7 bola grup Anda (Solid 1-7 atau Stripe 9-15), kemudian masukkan bola hitam <b>8</b> ke kantong.</li>
+              <li>⚠️ <b>Foul:</b> Jangan biarkan bola putih masuk ke kantong karena giliran akan berpindah ke lawan!</li>
             </ul>
             <button className="bl-btn-cancel" onClick={() => setShowHelp(false)}>Tutup Panduan</button>
           </div>

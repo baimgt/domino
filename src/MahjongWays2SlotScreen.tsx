@@ -8,6 +8,7 @@ import SlotProfileModal, { renderSlotAvatar } from './SlotProfileModal';
 import { useSlotProfile } from './useSlotProfile';
 import { stepSlotBet, MIN_SLOT_BET, MAX_SLOT_BET, getSlotCoins, spendSlotCoinsLocal, addSlotWinLocal, syncSlotBetToBackend, syncSlotWinToBackend } from './slotConfig';
 import SlotSpeedButton from './SlotSpeedButton';
+import { determineSpinOutcome } from './slotRtpEngine';
 
 interface Props {
   onBack: () => void;
@@ -70,6 +71,11 @@ export default function MahjongWays2SlotScreen({ onBack, socket }: Props) {
   const [multiplierIdx, setMultiplierIdx] = useState(0);
   const mjIdxRef = useRef(0);
   const [freeSpinsLeft, setFreeSpinsLeft] = useState(0);
+  const freeSpinsLeftRef = useRef(freeSpinsLeft);
+  useEffect(() => { freeSpinsLeftRef.current = freeSpinsLeft; }, [freeSpinsLeft]);
+  const [freeSpinTotalWin, setFreeSpinTotalWin] = useState(0);
+  const freeSpinTotalWinRef = useRef(0);
+  useEffect(() => { freeSpinTotalWinRef.current = freeSpinTotalWin; }, [freeSpinTotalWin]);
   const [autoSpins, setAutoSpins] = useState(0);
   const autoSpinsRef = useRef<number>(0);
   const isSpinningRef = useRef(false);
@@ -123,7 +129,6 @@ export default function MahjongWays2SlotScreen({ onBack, socket }: Props) {
     let timer: any;
     if (freeSpinsLeft > 0 && !isSpinning && !celebration) {
       timer = setTimeout(() => {
-        setFreeSpinsLeft(prev => Math.max(0, prev - 1));
         doSpin();
       }, Math.max(500, 900 / spinSpeed));
     }
@@ -182,17 +187,31 @@ export default function MahjongWays2SlotScreen({ onBack, socket }: Props) {
       const currentAuto = overrideAutoCount ?? autoSpinsRef.current;
 
       const cost = betAmount;
-    if (myCoins < cost && freeSpinsLeft === 0) {
+    const isFreeRound = freeSpinsLeftRef.current > 0;
+    if (myCoins < cost && !isFreeRound) {
       alert('Koin Anda tidak mencukupi!');
       autoSpinsRef.current = 0;
       setAutoSpins(0);
       return;
     }
 
-    // Pre-calculate whether this spin is a win BEFORE spinning starts so symbols never morph after reels stop!
-    const winOccurred = Math.random() > 0.45;
+    // Deduct coins or decrement free spin
+    if (!isFreeRound) {
+      const res = spendSlotCoinsLocal(cost);
+      setMyCoins(res.total);
+      if (username) {
+        syncSlotBetToBackend(API_URL, username, cost);
+      }
+    } else {
+      const nextFree = Math.max(0, freeSpinsLeftRef.current - 1);
+      freeSpinsLeftRef.current = nextFree;
+      setFreeSpinsLeft(nextFree);
+    }
+
+    // RTP 96.26% & Hit Frequency 15.05% Mathematical Model
+    const rtpOutcome = determineSpinOutcome({ isFreeSpins: isFreeRound });
+    const winOccurred = rtpOutcome.isHit;
     let winAmt = 0;
-    const isFreeRound = freeSpinsLeft > 0;
     const ladder = isFreeRound ? [2, 4, 6, 10] : [1, 2, 3, 5];
     const cascades = 1 + (Math.random() < 0.5 ? 1 : 0) + (Math.random() < 0.3 ? 1 : 0) + (Math.random() < 0.15 ? 1 : 0);
     const lastIdx = Math.min(cascades - 1, 3);
@@ -202,13 +221,8 @@ export default function MahjongWays2SlotScreen({ onBack, socket }: Props) {
     const targetGrid: TileItem[][] = [0, 1, 2, 3, 4].map(cIdx => generateCol(cIdx));
 
     if (winOccurred) {
-      let winSum = 0;
-      for (let k = 0; k < cascades; k++) {
-        const stepBase = cost * (0.6 + Math.random() * 2.2);
-        const currentMult = ladder[Math.min(k, 3)];
-        winSum += stepBase * currentMult;
-      }
-      winAmt = Math.floor(winSum);
+      const targetPayout = rtpOutcome.targetMult > 0 ? rtpOutcome.targetMult : (1.5 + Math.random() * 3);
+      winAmt = Math.max(1, Math.floor(cost * targetPayout));
 
       // Tanam simbol pemenang LANGSUNG ke targetGrid SEBELUM spin dimulai
       const nonScatter = [2, 3, 4, 5, 6, 7, 8];
@@ -225,6 +239,34 @@ export default function MahjongWays2SlotScreen({ onBack, socket }: Props) {
         targetGrid[3][r] = { symId: matchSym, isGold: false };
         winCells.push({ col: 3, row: r });
       }
+    } else {
+      // Clean loss: break any matching tiles on cols 0, 1, 2
+      [0, 1, 2].forEach(c => {
+        if (targetGrid[c] && targetGrid[c][0]) {
+          targetGrid[c][0] = { symId: 2 + c * 2, isGold: false };
+        }
+      });
+    }
+
+    if (rtpOutcome.isScatter) {
+      [0, 2, 4].forEach(c => {
+        if (targetGrid[c] && targetGrid[c][0]) {
+          targetGrid[c][0] = { symId: 0, isGold: false };
+        }
+      });
+    } else {
+      // Ensure scatter count < 3
+      let scatters = 0;
+      targetGrid.forEach(col => {
+        col.forEach(tile => {
+          if (tile.symId === 0) {
+            scatters++;
+            if (scatters >= 3) {
+              tile.symId = 5;
+            }
+          }
+        });
+      });
     }
 
     setGridCols(targetGrid);
@@ -245,14 +287,6 @@ export default function MahjongWays2SlotScreen({ onBack, socket }: Props) {
     // Base game: reset ke x1. Free spin: reset ke x2 per ronde baru
     setMultiplierIdx(0);
     mjIdxRef.current = 0;
-
-    if (freeSpinsLeft === 0) {
-      const res = spendSlotCoinsLocal(cost);
-      setMyCoins(res.total);
-      if (username) {
-        syncSlotBetToBackend(API_URL, username, cost);
-      }
-    }
 
     const spd = spinSpeedRef.current;
     const minSpinBase = spd >= 10 ? 80 : spd >= 5 ? 140 : spd === 3 ? 240 : spd === 2 ? 400 : 750;
@@ -276,6 +310,7 @@ export default function MahjongWays2SlotScreen({ onBack, socket }: Props) {
     // Processing win & tumble sequence after reels settle cleanly
     const allReelsSettled = stopTime + bounceDuration + 60;
     setTimeout(async () => {
+      let scatterCount = 0;
       try {
         if (winOccurred && winAmt > 0) {
           let currentGrid = targetGrid.map(col => [...col]);
@@ -352,6 +387,11 @@ export default function MahjongWays2SlotScreen({ onBack, socket }: Props) {
           }
 
           setTotalWin(winAmt);
+          if (isFreeRound) {
+            const newFsTotal = freeSpinTotalWinRef.current + winAmt;
+            freeSpinTotalWinRef.current = newFsTotal;
+            setFreeSpinTotalWin(newFsTotal);
+          }
           const winRes = addSlotWinLocal(winAmt);
           setMyCoins(winRes.total);
           if (username) {
@@ -359,36 +399,38 @@ export default function MahjongWays2SlotScreen({ onBack, socket }: Props) {
           }
           setMultiplierIdx(lastIdx);
           setActiveWinBanner(`⚡ KEMENANGAN ${ladder[lastIdx]}x! (+Rp ${winAmt.toLocaleString('id-ID')}) ⚡`);
-          const ratio = winAmt / Math.max(1, cost);
-          if (ratio >= 30) {
-            setCelebration({ type: 'super_win', amount: winAmt });
-          } else if (ratio >= 12) {
-            setCelebration({ type: 'mega_win', amount: winAmt });
-          } else if (ratio >= 5) {
-            setCelebration({ type: 'big_win', amount: winAmt });
+          if (!isFreeRound) {
+            const ratio = winAmt / Math.max(1, cost);
+            if (ratio >= 30) {
+              setCelebration({ type: 'super_win', amount: winAmt });
+            } else if (ratio >= 12) {
+              setCelebration({ type: 'mega_win', amount: winAmt });
+            } else if (ratio >= 5) {
+              setCelebration({ type: 'big_win', amount: winAmt });
+            }
           }
         }
 
         // Scatter trigger check: 3+ Scatter memicu 10 Putaran Gratis (PG Soft authentic)
-        const scatterCount = targetGrid.flat().filter(t => t.symId === 0).length;
+        scatterCount = targetGrid.flat().filter(t => t.symId === 0).length;
         if (scatterCount >= 3) {
-          if (freeSpinsLeft === 0) {
-            setCelebration({
-              type: 'scatter',
-              freeSpinsCount: 10,
-              title: '🀄 SCATTER MAHJONG WAYS! 🀄',
-              subtext: 'SELAMAT! 3 SCATTER MEMICU 10 PUTARAN GRATIS PERKALIAN X2-X10!'
-            });
-            setFreeSpinsLeft(10);
-          } else {
-            setCelebration({
-              type: 'scatter',
-              freeSpinsCount: 10,
-              title: '🀄 RETRIGGER MAHJONG WAYS! 🀄',
-              subtext: 'LUAR BIASA! 3 SCATTER MENAMBAH +10 PUTARAN GRATIS!'
-            });
-            setFreeSpinsLeft(prev => prev + 10);
+          const isRetrigger = isFreeRound;
+          const awarded = 10;
+          const totalFree = freeSpinsLeftRef.current + awarded;
+          freeSpinsLeftRef.current = totalFree;
+          setFreeSpinsLeft(totalFree);
+          if (!isRetrigger) {
+            setFreeSpinTotalWin(0);
+            freeSpinTotalWinRef.current = 0;
           }
+          setCelebration({
+            type: 'scatter',
+            freeSpinsCount: awarded,
+            title: isRetrigger ? '🀄 RETRIGGER MAHJONG WAYS! 🀄' : '🀄 SCATTER MAHJONG WAYS! 🀄',
+            subtext: isRetrigger
+              ? `LUAR BIASA! +${awarded} PUTARAN GRATIS DITAMBAHKAN KE SISA SPIN! (TOTAL SISA: ${totalFree} SPIN)`
+              : `SELAMAT! 3+ SCATTER MEMICU ${awarded} PUTARAN GRATIS PERKALIAN X2-X10!`
+          });
         }
       } catch (err) {
         console.error('Error during tumble sequence:', err);
@@ -397,6 +439,17 @@ export default function MahjongWays2SlotScreen({ onBack, socket }: Props) {
         isSpinningRef.current = false;
         setIsSpinning(false);
         setSpinningCols([false, false, false, false, false]);
+        if (isFreeRound && freeSpinsLeftRef.current === 0 && scatterCount < 3) {
+          const finalFsWin = freeSpinTotalWinRef.current;
+          setCelebration({
+            type: 'free_spins_total',
+            amount: finalFsWin,
+            title: 'TOTAL KEMENANGAN',
+            subtext: finalFsWin > 0
+              ? 'SELAMAT! TOTAL KEMENANGAN PUTARAN GRATIS MAHJONG WAYS!'
+              : 'PUTARAN GRATIS SELESAI!'
+          });
+        }
       }
     }, allReelsSettled);
   } catch (err) {
@@ -419,10 +472,14 @@ export default function MahjongWays2SlotScreen({ onBack, socket }: Props) {
     if (username) {
       syncSlotBetToBackend(API_URL, username, cost);
     }
-    setFreeSpinsLeft(10);
+    const newTotal = (freeSpinsLeftRef.current > 0 ? freeSpinsLeftRef.current : 0) + 10;
+    freeSpinsLeftRef.current = newTotal;
+    setFreeSpinsLeft(newTotal);
+    setFreeSpinTotalWin(0);
+    freeSpinTotalWinRef.current = 0;
     setMultiplierIdx(0);
     mjIdxRef.current = 0;
-    alert('Selamat! Anda membeli 10 Putaran Gratis Mahjong Ways 2!');
+    alert(`Selamat! Anda membeli 10 Putaran Gratis! Total Spin Gratis: ${newTotal}`);
   };
 
   return (
@@ -634,7 +691,9 @@ export default function MahjongWays2SlotScreen({ onBack, socket }: Props) {
            
             <div className="mjbot-purple-pill">
               <span className="mjbot-purple-text">
-                {totalWin > 0 ? (
+                {freeSpinsLeft > 0 ? (
+                  <span className="mjbot-win-glow">TOTAL MENANG: {freeSpinTotalWin.toLocaleString('id-ID')}</span>
+                ) : totalWin > 0 ? (
                   <span className="mjbot-win-glow">MENANG: {totalWin.toLocaleString('id-ID')}</span>
                 ) : isSpinning ? (
                   <span>Memutar...</span>

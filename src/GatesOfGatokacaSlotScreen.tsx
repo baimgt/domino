@@ -72,6 +72,9 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
   const [currentMultiplier, setCurrentMultiplier] = useState(1);
   const [freeMultVal, setFreeMultVal] = useState(0); // pengali menumpuk saat free spin
   const [freeSpinsLeft, setFreeSpinsLeft] = useState(0);
+  const [freeSpinTotalWin, setFreeSpinTotalWin] = useState(0);
+  const freeSpinTotalWinRef = useRef(0);
+  useEffect(() => { freeSpinTotalWinRef.current = freeSpinTotalWin; }, [freeSpinTotalWin]);
   const [autoSpins, setAutoSpins] = useState(0);
   const [spinSpeed, setSpinSpeed] = useState(1);
   const [anteMode, setAnteMode] = useState(false); // Taruhan Ganda
@@ -105,6 +108,7 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
   const isStoppingRef = useRef(false);
   const spinningColsRef = useRef<boolean[]>(Array(COLS).fill(false));
   const spinTimer = useRef<any>(null);
+  const isCurrentSpinFreeRef = useRef(false);
 
   useEffect(() => { autoSpinsRef.current = autoSpins; }, [autoSpins]);
   useEffect(() => { freeSpinsLeftRef.current = freeSpinsLeft; }, [freeSpinsLeft]);
@@ -150,7 +154,7 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
         setMultGrid(prev => prev.map((row, _r) =>
           row.map((val, c) => spinningColsRef.current[c] ? 0 : val)
         ));
-      }, Math.max(20, Math.floor(65 / spinSpeedRef.current)));
+      }, Math.max(65, Math.floor(130 / spinSpeedRef.current)));
     }
     return () => { if (interval) clearInterval(interval); };
   }, [isSpinning]);
@@ -263,13 +267,18 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
 
         const appliedMult = data.appliedMultiplier || 1;
         const orbsSum = data.roundOrbsSum || 0;
-        const isFreeRound = freeSpinsLeftRef.current > 0;
+        const isFreeRound = isCurrentSpinFreeRef.current;
 
         if (isFreeRound) {
           setFreeMultVal(data.freeMult || 1);
         }
 
         if (data.totalWinAmount > 0) {
+          if (isFreeRound) {
+            const newFsTotal = freeSpinTotalWinRef.current + data.totalWinAmount;
+            freeSpinTotalWinRef.current = newFsTotal;
+            setFreeSpinTotalWin(newFsTotal);
+          }
           if (appliedMult > 1 || orbsSum > 0) {
             setCurrentMultiplier(appliedMult);
             const isLegendary = appliedMult >= 500;
@@ -289,20 +298,27 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
           setStatusText('GOOD LUCK');
         }
 
-        let totalFree = freeSpinsLeftRef.current;
         const currentBet = betAmountRef.current || MIN_SLOT_BET;
+        const isRetrigger = isFreeRound;
+
         if (data.triggerFreeSpins) {
-          totalFree += data.freeSpinsAwarded;
+          const awarded = data.freeSpinsAwarded || (isRetrigger ? 5 : 15);
+          const totalFree = freeSpinsLeftRef.current + awarded;
+          freeSpinsLeftRef.current = totalFree;
           setFreeSpinsLeft(totalFree);
+          if (!isRetrigger) {
+            setFreeSpinTotalWin(0);
+            freeSpinTotalWinRef.current = 0;
+          }
           setCelebration({
             type: 'scatter',
-            freeSpinsCount: data.freeSpinsAwarded || (isFreeRound ? 5 : 15),
-            title: isFreeRound ? '⚡ +5 FREE SPINS! ⚡' : '⚡ SCATTER GATOTKACA! ⚡',
-            subtext: isFreeRound
-              ? `LUAR BIASA! 3+ SCATTER MEMBERIKAN +${data.freeSpinsAwarded || 5} PUTARAN GRATIS TAMBAHAN!`
-              : `SELAMAT! KAMU MEMICU ${data.freeSpinsAwarded || 15} PUTARAN GRATIS!`
+            freeSpinsCount: awarded,
+            title: isRetrigger ? '⚡ RETRIGGER GATOTKACA! ⚡' : '⚡ SCATTER GATOTKACA! ⚡',
+            subtext: isRetrigger
+              ? `LUAR BIASA! +${awarded} PUTARAN GRATIS DITAMBAHKAN KE SISA SPIN! (TOTAL SISA: ${totalFree} SPIN)`
+              : `SELAMAT! KAMU MEMICU ${awarded} PUTARAN GRATIS!`
           });
-        } else if (data.totalWinAmount > 0) {
+        } else if (data.totalWinAmount > 0 && !isFreeRound) {
           const ratio = data.totalWinAmount / Math.max(1, currentBet);
           if (ratio >= 30) {
             setCelebration({ type: 'super_win', amount: data.totalWinAmount });
@@ -313,15 +329,38 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
           }
         }
 
-        const hasCelebration = data.triggerFreeSpins || (data.totalWinAmount > 0 && (data.totalWinAmount / Math.max(1, currentBet)) >= 5);
-        const nextDelay = hasCelebration ? 3900 : Math.max(250, 1000 / spd);
+        const totalRemainingFree = freeSpinsLeftRef.current;
+        const isEndingFS = (totalRemainingFree === 0 && isFreeRound && !data.triggerFreeSpins);
+        if (isEndingFS) {
+          isCurrentSpinFreeRef.current = false;
+          const finalFsWin = freeSpinTotalWinRef.current;
+          setCelebration({
+            type: 'free_spins_total',
+            amount: finalFsWin,
+            title: 'TOTAL KEMENANGAN',
+            subtext: finalFsWin > 0
+              ? 'SELAMAT! TOTAL KEMENANGAN PUTARAN GRATIS GATOTKACA!'
+              : 'PUTARAN GRATIS SELESAI!'
+          });
+        }
 
-        if (autoSpinsRef.current > 1 || totalFree > 0) {
-          if (autoSpinsRef.current > 1) setAutoSpins(a => a - 1);
-          if (totalFree > 0) setFreeSpinsLeft(f => f - 1);
+        const hasCelebration = Boolean(
+          data.triggerFreeSpins ||
+          isEndingFS ||
+          (!isFreeRound && data.totalWinAmount > 0 && (data.totalWinAmount / Math.max(1, currentBet)) >= 5)
+        );
+        const nextDelay = (hasCelebration || isEndingFS) ? 4600 : Math.max(250, 1000 / spd);
+        const shouldContinue = totalRemainingFree > 0 || autoSpinsRef.current > 0;
+
+        if (shouldContinue) {
+          if (autoSpinsRef.current > 0 && totalRemainingFree === 0) {
+            setAutoSpins(a => Math.max(0, a - 1));
+            autoSpinsRef.current = Math.max(0, autoSpinsRef.current - 1);
+          }
           setTimeout(() => doSpinRef.current?.(), nextDelay);
-        } else if (autoSpinsRef.current === 1) {
+        } else {
           setAutoSpins(0);
+          autoSpinsRef.current = 0;
         }
       }, allReelsSettledTime);
     };
@@ -362,6 +401,8 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
     syncSlotBetToBackend(API_URL, username, cost);
     setFreeSpinsLeft(15);
     freeSpinsLeftRef.current = 15;
+    setFreeSpinTotalWin(0);
+    freeSpinTotalWinRef.current = 0;
     setFreeMultVal(1);
     setCurrentMultiplier(1);
     setStatusText('15 FREE SPINS DIMULAI!');
@@ -383,19 +424,22 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
       return;
     }
 
-    if (freeSpinsLeftRef.current === 0) {
+    const isFree = freeSpinsLeftRef.current > 0;
+    isCurrentSpinFreeRef.current = isFree;
+    if (!isFree) {
       const res = spendSlotCoinsLocal(actualBet);
       setMyCoins(res.total);
+      setCurrentMultiplier(1);
+      setFreeMultVal(1);
+    } else {
+      const nextFree = Math.max(0, freeSpinsLeftRef.current - 1);
+      freeSpinsLeftRef.current = nextFree;
+      setFreeSpinsLeft(nextFree);
     }
-
     setIsSpinning(true);
     spinningColsRef.current = Array(COLS).fill(true);
     setSpinningCols(Array(COLS).fill(true));
     setTotalWin(0);
-    if (freeSpinsLeftRef.current === 0) {
-      setCurrentMultiplier(1);
-      setFreeMultVal(1);
-    }
     setExplodingCells([]);
     setWinningCells([]);
     setStatusText('...');
@@ -413,7 +457,7 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
       username,
       betAmount, // base bet for payouts
       actualBet, // deduction
-      isFreeSpins: freeSpinsLeftRef.current > 0,
+      isFreeSpins: isFree,
       anteMode,
       clientBalance: myCoins
     });
@@ -701,11 +745,13 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
 
         <div className="gato-bot-center">
           <div className="gato-win-banner">
-            <div className="gato-win-label">WIN</div>
+            <div className="gato-win-label">{freeSpinsLeft > 0 ? 'TOTAL WIN' : 'WIN'}</div>
             <div className="gato-win-val">
-              {totalWin > 0 
-                ? Math.floor(totalWin).toLocaleString('en-US') 
-                : (isSpinning ? '...' : (betAmount || MIN_SLOT_BET).toLocaleString('en-US'))}
+              {freeSpinsLeft > 0
+                ? Math.floor(freeSpinTotalWin).toLocaleString('en-US')
+                : (totalWin > 0 
+                  ? Math.floor(totalWin).toLocaleString('en-US') 
+                  : (isSpinning ? '...' : (betAmount || MIN_SLOT_BET).toLocaleString('en-US')))}
             </div>
           </div>
         </div>

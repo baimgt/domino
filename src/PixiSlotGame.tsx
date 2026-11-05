@@ -66,7 +66,10 @@ export const PixiSlotGame: React.FC<PixiSlotGameProps> = ({
       await app.init({ 
         width: REEL_WIDTH * COL_COUNT, 
         height: SYMBOL_SIZE * ROW_COUNT, 
-        backgroundAlpha: 0 
+        backgroundAlpha: 0,
+        resolution: 1,
+        antialias: false,
+        powerPreference: 'low-power'
       });
       
       if (!pixiContainer.current) return;

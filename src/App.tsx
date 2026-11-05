@@ -36,6 +36,7 @@ import { preloadHomeAssets } from './slotAssetPreloader';
 import AvatarSelectionModal from './AvatarSelectionModal';
 import ChangeNameModal from './ChangeNameModal';
 import { MIN_SLOT_BET, MAX_SLOT_BET, stepSlotBet } from './slotConfig';
+import BeritaModal from './BeritaModal';
 
 import { API_URL, getBackendBase, DEFAULT_LAN_SERVER } from './config';
 
@@ -474,7 +475,7 @@ function LoginScreen({ onLoginSuccess }: { onLoginSuccess: () => void }) {
 // =====================================================
 // MODAL PENGATURAN
 // =====================================================
-function PengaturanModal({ onClose, onLogout }: { onClose: () => void; onLogout: () => void }) {
+function PengaturanModal({ onClose, onLogout, onOpenBerita }: { onClose: () => void; onLogout: () => void; onOpenBerita?: () => void }) {
   const [bgm, setBgm] = useState(() => localStorage.getItem('set_bgm') !== 'off');
   const [sfx, setSfx] = useState(() => localStorage.getItem('set_sfx') !== 'off');
   const [anim, setAnim] = useState(() => localStorage.getItem('set_anim') !== 'off');
@@ -650,6 +651,39 @@ function PengaturanModal({ onClose, onLogout }: { onClose: () => void; onLogout:
               </div>
             </div>
           )}
+        </div>
+
+        {/* TOMBOL BERITA & PENGUMUMAN RESMI */}
+        <div
+          className="peng-berita-btn-row g-btn-press"
+          onClick={() => {
+            onClose();
+            onOpenBerita?.();
+          }}
+          style={{
+            background: 'linear-gradient(180deg, #d97706, #b45309)',
+            border: '2px solid #f1c40f',
+            borderRadius: '12px',
+            padding: '1.1vh 1.5vh',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1.2vh',
+            cursor: 'pointer',
+            margin: '1.2vh 0 0.8vh',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+            color: '#fff'
+          }}
+        >
+          <span style={{ fontSize: '2.4vh' }}>📰</span>
+          <div style={{ flex: 1, textAlign: 'left' }}>
+            <div style={{ fontWeight: 900, fontSize: '1.6vh', color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>
+              Berita & Pengumuman Resmi
+            </div>
+            <div style={{ fontSize: '1.25vh', color: '#fef3c7' }}>
+              Update Fitur & Deklarasi Game Bebas Judi
+            </div>
+          </div>
+          <span style={{ fontWeight: 900, color: '#f1c40f', fontSize: '2vh' }}>➔</span>
         </div>
 
         <div className="peng-update-row">
@@ -3655,25 +3689,43 @@ function RulesModal({ onClose, initialCategory }: { onClose: () => void; initial
   ];
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay tm-overlay-fade" onClick={onClose} style={{ zIndex: 1200 }}>
       <div className="rm-modal-box tm-box-bounce" onClick={e => e.stopPropagation()}>
-        {/* Header Ribbon & Close */}
+        {/* 3D Glossy Red Close Button on Top Right */}
+        <button className="rm-close-3d-btn" onClick={onClose} aria-label="Tutup">
+          ✕
+        </button>
+
+        {/* Arched Crown Header with Golden Title and Sparkle Beads */}
         <div className="rm-header">
-          <div className="rm-title-badge">
-            <span className="rm-palm-icon">🌴</span>
-            <span className="rm-title-text">Rules</span>
+          <div className="rm-header-content">
+            <div className="rm-title-wrap">
+              <span className="rm-main-title">Rules</span>
+              <span className="rm-sparkle">✨</span>
+            </div>
+            <div className="rm-beads-row">
+              <span className="rm-bead"></span>
+              <span className="rm-bead"></span>
+              <span className="rm-bead"></span>
+              <span className="rm-bead"></span>
+              <span className="rm-bead"></span>
+              <span className="rm-bead"></span>
+              <span className="rm-bead"></span>
+              <span className="rm-bead"></span>
+              <span className="rm-bead"></span>
+              <span className="rm-bead"></span>
+            </div>
           </div>
-          <button className="rm-close-btn g-btn-press" onClick={onClose}>✕</button>
         </div>
 
-        {/* Modal Main Body */}
-        <div className="rm-body">
+        {/* Inner Body Box: Wine Sidebar + Solid Ivory/White Paper Content */}
+        <div className="rm-inner-body">
           {/* Left Sidebar */}
-          <div className="rm-sidebar">
+          <div className="rm-sidebar-royal">
             {sideCategories.map((cat) => (
               <button
                 key={cat}
-                className={`rm-side-btn g-btn-press ${activeSideCategory === cat ? 'active' : ''}`}
+                className={`rm-side-btn-royal ${activeSideCategory === cat ? 'active' : ''}`}
                 onClick={() => setActiveSideCategory(cat)}
               >
                 {cat}
@@ -3682,31 +3734,57 @@ function RulesModal({ onClose, initialCategory }: { onClose: () => void; initial
           </div>
 
           {/* Right Content Panel */}
-          <div className="rm-content-panel">
-            {/* Top Tab Bar */}
-            <div className="rm-tab-bar">
+          <div className="rm-content-royal">
+            {/* Clean Subtab Bar */}
+            <div className="rm-rules-subtabs">
               <button
-                className={`rm-tab-btn g-btn-press ${activeTab === 'peraturan' ? 'active' : ''}`}
+                className={`rm-rules-subtab-btn ${activeTab === 'peraturan' ? 'active' : ''}`}
                 onClick={() => setActiveTab('peraturan')}
               >
                 Peraturan
               </button>
               <button
-                className={`rm-tab-btn g-btn-press ${activeTab === 'pemenang' ? 'active' : ''}`}
+                className={`rm-rules-subtab-btn ${activeTab === 'pemenang' ? 'active' : ''}`}
                 onClick={() => setActiveTab('pemenang')}
               >
                 Pemenang
               </button>
               <button
-                className={`rm-tab-btn g-btn-press ${activeTab === 'hasil' ? 'active' : ''}`}
+                className={`rm-rules-subtab-btn ${activeTab === 'hasil' ? 'active' : ''}`}
                 onClick={() => setActiveTab('hasil')}
               >
                 Hasil
               </button>
             </div>
 
-            {/* Parchment Paper Text Box with smooth transition animation */}
-            <div className="rm-parchment-box rm-anim-fade-in" key={`${activeSideCategory}-${activeTab}`}>
+            {/* Authentic Dual Domino Tiles Watermark */}
+            <div className="rm-paper-watermark" aria-hidden="true">
+              <svg width="115" height="115" viewBox="0 0 100 100" fill="none">
+                <g transform="rotate(-18 45 45)">
+                  <rect x="20" y="10" width="34" height="64" rx="5" stroke="#701a40" strokeWidth="2.5" fill="none" />
+                  <line x1="20" y1="42" x2="54" y2="42" stroke="#701a40" strokeWidth="2" />
+                  <circle cx="37" cy="26" r="3" fill="#701a40" />
+                  <circle cx="28" cy="50" r="2.8" fill="#701a40" />
+                  <circle cx="46" cy="50" r="2.8" fill="#701a40" />
+                  <circle cx="37" cy="58" r="2.8" fill="#701a40" />
+                  <circle cx="28" cy="66" r="2.8" fill="#701a40" />
+                  <circle cx="46" cy="66" r="2.8" fill="#701a40" />
+                </g>
+                <g transform="rotate(14 65 55)">
+                  <rect x="45" y="20" width="34" height="64" rx="5" stroke="#701a40" strokeWidth="2.5" fill="none" />
+                  <line x1="45" y1="52" x2="79" y2="52" stroke="#701a40" strokeWidth="2" />
+                  <circle cx="53" cy="29" r="2.8" fill="#701a40" />
+                  <circle cx="71" cy="43" r="2.8" fill="#701a40" />
+                  <circle cx="62" cy="36" r="2.8" fill="#701a40" />
+                  <circle cx="53" cy="61" r="2.8" fill="#701a40" />
+                  <circle cx="71" cy="75" r="2.8" fill="#701a40" />
+                  <circle cx="62" cy="68" r="2.8" fill="#701a40" />
+                </g>
+              </svg>
+            </div>
+
+            {/* Scrollable White Paper Body with watermark & animation */}
+            <div className="rm-paper-body rm-anim-fade-in" key={`${activeSideCategory}-${activeTab}`}>
               {/* 5 KARTU MODE TABS */}
               {activeTab === 'peraturan' && (activeSideCategory === '5 Kartu' || activeSideCategory === 'Fokus') && (
                 <div className="rm-text-group">
@@ -4281,7 +4359,7 @@ function HomeScreen({
   onClearSlotPopup
 }: {
   onLogout: () => void;
-  onNavigate: (screen: any, category?: any) => void;
+  onNavigate: (screen: any, category?: any, extra?: any) => void;
   socket?: any;
   initialShowSlotPopup?: boolean;
   onClearSlotPopup?: () => void;
@@ -4292,6 +4370,7 @@ function HomeScreen({
   const [showRightSidebar, setShowRightSidebar] = useState(false);
   const [showPengaturan, setShowPengaturan] = useState(false);
   const [showRules, setShowRules] = useState(false);
+  const [showBerita, setShowBerita] = useState(false);
   const [showCS, setShowCS] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showAvatarSelect, setShowAvatarSelect] = useState(false);
@@ -4492,10 +4571,13 @@ function HomeScreen({
       {modal && <Modal title={modal.title} message={modal.message} onClose={() => setModal(null)} />}
 
       {/* Pengaturan Modal */}
-      {showPengaturan && <PengaturanModal onClose={() => setShowPengaturan(false)} onLogout={() => { setShowPengaturan(false); onLogout(); }} />}
+      {showPengaturan && <PengaturanModal onClose={() => setShowPengaturan(false)} onLogout={() => { setShowPengaturan(false); onLogout(); }} onOpenBerita={() => setShowBerita(true)} />}
 
       {/* Rules Modal */}
       {showRules && <RulesModal onClose={() => setShowRules(false)} />}
+
+      {/* Berita & Pengumuman Modal */}
+      {showBerita && <BeritaModal onClose={() => setShowBerita(false)} />}
 
       {/* Customer Service Modal */}
       {showCS && <CSModal onClose={() => setShowCS(false)} />}
@@ -4772,6 +4854,15 @@ function HomeScreen({
             <span className="ht-act-lbl">Setting</span>
           </button>
 
+          {/* Berita & Pengumuman Button */}
+          <button className="ht-act-btn ht-berita-btn" onClick={() => setShowBerita(true)} title="Berita & Pengumuman Game">
+            {/* Newspaper / Document icon */}
+            <svg className="ht-act-ico-svg" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-1 14H5c-.55 0-1-.45-1-1s.45-1 1-1h14c.55 0 1 .45 1 1s-.45 1-1 1zm0-4H5c-.55 0-1-.45-1-1s.45-1 1-1h14c.55 0 1 .45 1 1s-.45 1-1 1zm0-4H5c-.55 0-1-.45-1-1s.45-1 1-1h14c.55 0 1 .45 1 1s-.45 1-1 1z" />
+            </svg>
+            <span className="ht-act-lbl">Berita</span>
+          </button>
+
           {/* Glowing TOP UP Button — gold/coin style */}
           <button className="ht-topup-btn" onClick={() => setShowToko(true)}>
             {/* Coin stack SVG icon */}
@@ -4810,6 +4901,10 @@ function HomeScreen({
           <div className="hb-rs-item" onClick={() => { setShowRightSidebar(false); setShowRules(true); }}>
             <span className="hb-rs-icon">📖</span>
             <span className="hb-rs-label">Rules</span>
+          </div>
+          <div className="hb-rs-item" onClick={() => { setShowRightSidebar(false); setShowBerita(true); }}>
+            <span className="hb-rs-icon">📰</span>
+            <span className="hb-rs-label">Berita & Info</span>
           </div>
           <div className="hb-rs-item logout" onClick={() => { setShowRightSidebar(false); setShowLogout(true); }}>
             <span className="hb-rs-icon">🚪</span>
@@ -4867,15 +4962,13 @@ function HomeScreen({
             <div className="hrb-sub">SATU APLIKASI • EMPAT PERMAINAN SERU</div>
           </div>
 
-          {/* 4 FEATURED GAME CARDS ROW — VIDEO BG */}
+          {/* 4 FEATURED GAME CARDS ROW — ULTRA LIGHTWEIGHT & FAST */}
           <div className="home-cards-row-v3">
 
             {/* CARD 1: SLOT */}
             <div className="home-game-card-v3 card-slot" onClick={() => setShowSlotPopup(true)}>
-              <div className="hgc-video-wrapper">
-                <video className="hgc-bg-video" autoPlay loop muted playsInline>
-                  <source src="/assets/loby/1000137987.mp4" type="video/mp4" />
-                </video>
+              <div className="hgc-img-wrapper">
+                <img className="hgc-bg-img" src="/assets/home/card_slot_hero.jpg" alt="Slot" loading="eager" decoding="async" />
                 <div className="hgc-video-overlay slot-overlay" />
               </div>
               <div className="hgc-shine" />
@@ -4898,11 +4991,8 @@ function HomeScreen({
               }
               onNavigate('billiard-game');
             }}>
-              <div className="hgc-video-wrapper">
-                <video className="hgc-bg-video" autoPlay loop muted playsInline>
-                  <source src="/assets/loby/billiard.mp4" type="video/mp4" />
-                  <source src="/assets/loby/1000137991.mp4" type="video/mp4" />
-                </video>
+              <div className="hgc-img-wrapper">
+                <img className="hgc-bg-img" src="/assets/home/card_billiard_hero.jpg" alt="Billiard" loading="eager" decoding="async" />
                 <div className="hgc-video-overlay billar-overlay" />
               </div>
               <div className="hgc-shine" />
@@ -4915,10 +5005,8 @@ function HomeScreen({
 
             {/* CARD 3: QIUQIU */}
             <div className="home-game-card-v3 card-qiuqiu" onClick={() => setShowQiuQiuRoomModal(true)}>
-              <div className="hgc-video-wrapper">
-                <video className="hgc-bg-video" autoPlay loop muted playsInline>
-                  <source src="/assets/loby/1000137997.mp4" type="video/mp4" />
-                </video>
+              <div className="hgc-img-wrapper">
+                <img className="hgc-bg-img" src="/assets/home/card_qiuqiu_hero.jpg" alt="QiuQiu" loading="eager" decoding="async" />
                 <div className="hgc-video-overlay qiuqiu-overlay" />
               </div>
               <div className="hgc-shine" />
@@ -4941,10 +5029,8 @@ function HomeScreen({
               }
               onNavigate('kamar-lobby', 'Biasa');
             }}>
-              <div className="hgc-video-wrapper">
-                <video className="hgc-bg-video" autoPlay loop muted playsInline>
-                  <source src="/assets/loby/1000138010.mp4" type="video/mp4" />
-                </video>
+              <div className="hgc-img-wrapper">
+                <img className="hgc-bg-img" src="/assets/home/card_domino_hero.jpg" alt="Domino" loading="eager" decoding="async" />
                 <div className="hgc-video-overlay domino-overlay" />
               </div>
               <div className="hgc-shine" />
@@ -6996,6 +7082,11 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
   const [winningSymbols, setWinningSymbols] = useState<number[]>([]);
   const [showWinAlert, setShowWinAlert] = useState(false);
   const [celebration, setCelebration] = useState<SlotCelebrationData | null>(null);
+  const [freeSpinsLeft, setFreeSpinsLeft] = useState(0);
+  const [freeSpinTotalWin, setFreeSpinTotalWin] = useState(0);
+  const freeSpinsLeftRef = useRef(0);
+  const freeSpinTotalWinRef = useRef(0);
+  const isCurrentSpinFreeRef = useRef(false);
   const [multInfo, setMultInfo] = useState<any>(null); // dari server: tangga pengali
   const [autoSpinCount, setAutoSpinCount] = useState(0);
   const [showAutoMenu, setShowAutoMenu] = useState(false);
@@ -7138,24 +7229,58 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
         else if (data.newBalance !== undefined) localStorage.setItem('domino_coins', data.newBalance.toString());
         window.dispatchEvent(new Event('domino_coins_updated'));
 
+        const isFreeRound = isCurrentSpinFreeRef.current;
+        const winAmt = data.winAmount || 0;
+        if (winAmt > 0 && isFreeRound) {
+          const newFsTotal = freeSpinTotalWinRef.current + winAmt;
+          freeSpinTotalWinRef.current = newFsTotal;
+          setFreeSpinTotalWin(newFsTotal);
+        }
+
+        const isRetrigger = isFreeRound;
         if (data.triggerFreeSpins) {
+          const awarded = data.freeSpinsAwarded || 10;
+          const totalFree = freeSpinsLeftRef.current + awarded;
+          freeSpinsLeftRef.current = totalFree;
+          setFreeSpinsLeft(totalFree);
+          if (!isRetrigger) {
+            setFreeSpinTotalWin(0);
+            freeSpinTotalWinRef.current = 0;
+          }
           setCelebration({
             type: 'scatter',
-            freeSpinsCount: data.freeSpinsAwarded || 10,
-            title: '🧧 SCATTER DUOFU! 🧧',
-            subtext: `SELAMAT! KAMU MEMICU ${data.freeSpinsAwarded || 10} PUTARAN GRATIS!`
+            freeSpinsCount: awarded,
+            title: isRetrigger ? '🧧 RETRIGGER DUOFU! 🧧' : '🧧 SCATTER DUOFU! 🧧',
+            subtext: isRetrigger
+              ? `LUAR BIASA! +${awarded} PUTARAN GRATIS DITAMBAHKAN! (SISA: ${totalFree} SPIN)`
+              : `SELAMAT! KAMU MEMICU ${awarded} PUTARAN GRATIS!`
           });
-        } else if (data.winAmount > 0) {
+        } else if (!isFreeRound && winAmt > 0) {
           setShowWinAlert(true);
           setTimeout(() => setShowWinAlert(false), Math.max(1500, 3000 / spd));
-          const ratio = data.winAmount / Math.max(1, betAmount);
+          const ratio = winAmt / Math.max(1, betAmount);
           if (ratio >= 30) {
-            setCelebration({ type: 'super_win', amount: data.winAmount });
+            setCelebration({ type: 'super_win', amount: winAmt });
           } else if (ratio >= 12) {
-            setCelebration({ type: 'mega_win', amount: data.winAmount });
+            setCelebration({ type: 'mega_win', amount: winAmt });
           } else if (ratio >= 3) {
-            setCelebration({ type: 'big_win', amount: data.winAmount });
+            setCelebration({ type: 'big_win', amount: winAmt });
           }
+        }
+
+        const totalRemainingFree = freeSpinsLeftRef.current;
+        const isEndingFS = (totalRemainingFree === 0 && isFreeRound && !data.triggerFreeSpins);
+        if (isEndingFS) {
+          isCurrentSpinFreeRef.current = false;
+          const finalFsWin = freeSpinTotalWinRef.current;
+          setCelebration({
+            type: 'free_spins_total',
+            amount: finalFsWin,
+            title: 'TOTAL KEMENANGAN',
+            subtext: finalFsWin > 0
+              ? 'SELAMAT! TOTAL KEMENANGAN PUTARAN GRATIS DUOFU!'
+              : 'PUTARAN GRATIS SELESAI!'
+          });
         }
       }, allReelsSettled);
     };
@@ -7176,48 +7301,65 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
     };
   }, [socket, betAmount]);
 
-  // Auto-spin
+  // Auto-spin & Free Spins Auto Progression
   useEffect(() => {
     let timer: any;
-    if (autoSpinCount > 0 && !isSpinning && !showWinAlert && !celebration) {
+    const hasFree = freeSpinsLeftRef.current > 0;
+    const hasAuto = autoSpinCount > 0;
+    if ((hasFree || hasAuto) && !isSpinning && !showWinAlert && !celebration) {
       timer = setTimeout(() => {
-        setAutoSpinCount(prev => prev > 0 ? prev - 1 : 0);
+        if (!hasFree && hasAuto) {
+          setAutoSpinCount(prev => prev > 0 ? prev - 1 : 0);
+        }
         handleSpin();
       }, Math.max(250, 1000 / spinSpeedRef.current));
     }
     return () => clearTimeout(timer);
-  }, [autoSpinCount, isSpinning, showWinAlert, spinSpeed, celebration]);
+  }, [autoSpinCount, isSpinning, showWinAlert, spinSpeed, celebration, freeSpinsLeft]);
 
   const handleSpin = () => {
     if (isSpinning || !socket) return;
-    const available = (profile?.coins || 0) + (profile?.bonusCoins || 0);
-    if (available < betAmount) {
-      alert('Koin tidak cukup! Saldo Koin & Bonus tidak mencukupi taruhan.');
-      setAutoSpinCount(0);
-      return;
+    const isFree = freeSpinsLeftRef.current > 0;
+    isCurrentSpinFreeRef.current = isFree;
+
+    if (!isFree) {
+      const available = (profile?.coins || 0) + (profile?.bonusCoins || 0);
+      if (available < betAmount) {
+        alert('Koin tidak cukup! Saldo Koin & Bonus tidak mencukupi taruhan.');
+        setAutoSpinCount(0);
+        return;
+      }
     }
+
     setWinAmount(0);
     setShowWinAlert(false);
     setWinningSymbols([]);
     setIsSpinning(true);
     spinningColsRef.current = [true, true, true, true, true];
     setSpinningCols([true, true, true, true, true]);
-    setProfile((prev: any) => {
-      if (!prev) return prev;
-      let remBonus = prev.bonusCoins || 0;
-      let remCoins = prev.coins || 0;
-      if (remBonus >= betAmount) {
-        remBonus -= betAmount;
-      } else {
-        const diff = betAmount - remBonus;
-        remBonus = 0;
-        remCoins = Math.max(0, remCoins - diff);
-      }
-      localStorage.setItem('domino_bonus_coins', remBonus.toString());
-      localStorage.setItem('domino_coins', remCoins.toString());
-      window.dispatchEvent(new Event('domino_coins_updated'));
-      return { ...prev, coins: remCoins, bonusCoins: remBonus };
-    });
+
+    if (isFree) {
+      const nextFree = Math.max(0, freeSpinsLeftRef.current - 1);
+      freeSpinsLeftRef.current = nextFree;
+      setFreeSpinsLeft(nextFree);
+    } else {
+      setProfile((prev: any) => {
+        if (!prev) return prev;
+        let remBonus = prev.bonusCoins || 0;
+        let remCoins = prev.coins || 0;
+        if (remBonus >= betAmount) {
+          remBonus -= betAmount;
+        } else {
+          const diff = betAmount - remBonus;
+          remBonus = 0;
+          remCoins = Math.max(0, remCoins - diff);
+        }
+        localStorage.setItem('domino_bonus_coins', remBonus.toString());
+        localStorage.setItem('domino_coins', remCoins.toString());
+        window.dispatchEvent(new Event('domino_coins_updated'));
+        return { ...prev, coins: remCoins, bonusCoins: remBonus };
+      });
+    }
     socket.emit('spin_slot', { username: myUsername, betAmount });
   };
 
@@ -7457,12 +7599,16 @@ function SlotGameScreen({ onBack, socket }: { onBack: () => void; socket: Socket
             }}
           >
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>
-              <span style={{ fontSize: '3.2vh', fontWeight: 900 }}>{isSpinning ? 'STOP' : 'SPIN'}</span>
-              {autoSpinCount > 0 && (
+              <span style={{ fontSize: '3.2vh', fontWeight: 900 }}>{isSpinning ? 'STOP' : freeSpinsLeft > 0 ? 'FREE' : 'SPIN'}</span>
+              {freeSpinsLeft > 0 ? (
+                <span style={{ fontSize: '1.2vh', fontWeight: 900, color: '#00e676', textShadow: '0 1px 3px rgba(0,0,0,0.9)', marginTop: '0.2vh' }}>
+                  SISA: {freeSpinsLeft}
+                </span>
+              ) : autoSpinCount > 0 ? (
                 <span style={{ fontSize: '1.2vh', fontWeight: 900, color: '#ffe082', textShadow: '0 1px 3px rgba(0,0,0,0.9)', marginTop: '0.2vh' }}>
                   {autoSpinCount === 99999 ? 'AUTO ∞' : `AUTO: ${autoSpinCount}`}
                 </span>
-              )}
+              ) : null}
             </div>
           </button>
         </div>
@@ -8933,6 +9079,114 @@ function QiuQiuGameScreen({
 // KOMPONEN UTAMA
 // =====================================================
 
+function MobileLandscapeLockOverlay() {
+  const [isPortraitMobile, setIsPortraitMobile] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const isTouchOrMobile =
+      w <= 900 ||
+      window.matchMedia?.('(pointer: coarse)').matches ||
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(navigator.userAgent);
+    return h > w && isTouchOrMobile;
+  });
+
+  useEffect(() => {
+    const checkOrientation = () => {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const isTouchOrMobile =
+        w <= 900 ||
+        window.matchMedia?.('(pointer: coarse)').matches ||
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(navigator.userAgent);
+      setIsPortraitMobile(h > w && isTouchOrMobile);
+    };
+
+    checkOrientation();
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', checkOrientation);
+    const scrOrient = (window.screen as any)?.orientation;
+    if (scrOrient && typeof scrOrient.addEventListener === 'function') {
+      scrOrient.addEventListener('change', checkOrientation);
+    }
+
+    return () => {
+      window.removeEventListener('resize', checkOrientation);
+      window.removeEventListener('orientationchange', checkOrientation);
+      if (scrOrient && typeof scrOrient.removeEventListener === 'function') {
+        scrOrient.removeEventListener('change', checkOrientation);
+      }
+    };
+  }, []);
+
+  const handleForceLandscape = async () => {
+    try {
+      const docEl = document.documentElement as any;
+      if (!document.fullscreenElement) {
+        if (docEl.requestFullscreen) {
+          await docEl.requestFullscreen();
+        } else if (docEl.webkitRequestFullscreen) {
+          await docEl.webkitRequestFullscreen();
+        }
+      }
+      const scrOrient = (window.screen as any)?.orientation;
+      if (scrOrient && typeof scrOrient.lock === 'function') {
+        await scrOrient.lock('landscape');
+      }
+    } catch {
+      // Browser requires physical device rotation (e.g. iOS Safari)
+    }
+  };
+
+  if (!isPortraitMobile) return null;
+
+  return (
+    <div
+      className="mobile-landscape-lock-overlay"
+      onContextMenu={e => e.preventDefault()}
+    >
+      <div className="mllo-glow-orb" />
+      <div className="mllo-card">
+        <div className="mllo-badge">🎱 KINGS BILLIARDS & DOMINO</div>
+
+        {/* Animated Phone Rotating 90deg Illustration */}
+        <div className="mllo-phone-stage">
+          <div className="mllo-rotate-ring" />
+          <div className="mllo-phone-device">
+            <div className="mllo-phone-notch" />
+            <div className="mllo-phone-screen">
+              <span>🎱</span>
+            </div>
+            <div className="mllo-phone-bar" />
+          </div>
+          <div className="mllo-arrow-arc">↻</div>
+        </div>
+
+        <h2 className="mllo-title">PUTAR LAYAR HP ANDA</h2>
+        <p className="mllo-desc">
+          Game ini hanya dapat dimainkan dalam mode <b>Landscape (Mendatar)</b>.
+          Silakan miringkan HP Anda ke samping untuk mulai bermain!
+        </p>
+
+        <div className="mllo-steps">
+          <div className="mllo-step-item">
+            <span className="mllo-step-icon">🔓</span>
+            <span>Aktifkan <b>Putar Otomatis (Auto-Rotate)</b> di pengaturan HP Anda</span>
+          </div>
+          <div className="mllo-step-item">
+            <span className="mllo-step-icon">📱</span>
+            <span>Miringkan HP secara horizontal (Landscape)</span>
+          </div>
+        </div>
+
+        <button className="mllo-rotate-btn g-btn-press" onClick={handleForceLandscape}>
+          <span>🔄</span> Masuk Mode Landscape Otomatis
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [screen, setScreen] = useState<string>('loading');
   const [returnToSlotPopup, setReturnToSlotPopup] = useState(false);
@@ -9118,11 +9372,12 @@ function App() {
     }
   };
 
-  if (screen === 'loading') return <LoadingScreen onFinish={t => setScreen(t)} />;
-  if (screen === 'login') return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
+  if (screen === 'loading') return <><MobileLandscapeLockOverlay /><LoadingScreen onFinish={t => setScreen(t)} /></>;
+  if (screen === 'login') return <><MobileLandscapeLockOverlay /><LoginScreen onLoginSuccess={handleLoginSuccess} /></>;
 
   return (
     <>
+      <MobileLandscapeLockOverlay />
       {showLoginAnim && (
         <VIPLoginAnimationOverlay
           username={localStorage.getItem('domino_username') || 'PLAYER'}

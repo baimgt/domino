@@ -42,17 +42,16 @@
 .gato-cine-rays {
   position: absolute;
   top: 50%; left: 50%;
-  width: 200vmax; height: 200vmax;
-  margin: -100vmax 0 0 -100vmax;
+  width: 120vmax; height: 120vmax;
+  margin: -60vmax 0 0 -60vmax;
   background: repeating-conic-gradient(
     from 0deg at 50% 50%,
-    rgba(255, 215, 120, 0.16) 0deg 6deg,
-    rgba(255, 215, 120, 0) 6deg 18deg
+    rgba(255, 215, 120, 0.12) 0deg 8deg,
+    transparent 8deg 24deg
   );
-  mix-blend-mode: screen;
-  -webkit-mask-image: radial-gradient(circle at center, #000 0%, transparent 35%);
-  mask-image: radial-gradient(circle at center, #000 0%, transparent 35%);
-  animation: gatoCineSpin 40s linear infinite;
+  animation: gatoCineSpin 45s linear infinite;
+  transform: translateZ(0);
+  contain: strict;
   z-index: 2;
   pointer-events: none;
 }
@@ -64,9 +63,8 @@
 .gato-cine-aura {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 50% 40%, rgba(255, 200, 60, 0.35) 0%, rgba(255, 120, 0, 0.12) 35%, transparent 65%);
-  mix-blend-mode: screen;
-  animation: gatoCineAura 2.6s ease-in-out infinite alternate;
+  background: radial-gradient(circle at 50% 40%, rgba(255, 200, 60, 0.25) 0%, rgba(255, 120, 0, 0.08) 35%, transparent 65%);
+  animation: gatoCineAura 3s ease-in-out infinite alternate;
   z-index: 3;
   pointer-events: none;
 }
@@ -103,10 +101,9 @@
   top: 0; bottom: 0;
   width: 30vw;
   left: -40vw;
-  background: linear-gradient(100deg, transparent 0%, rgba(255, 240, 180, 0.28) 50%, transparent 100%);
+  background: linear-gradient(100deg, transparent 0%, rgba(255, 240, 180, 0.18) 50%, transparent 100%);
   transform: skewX(-18deg);
-  mix-blend-mode: screen;
-  animation: gatoCineShine 3.6s ease-in-out infinite;
+  animation: gatoCineShine 4s ease-in-out infinite;
   z-index: 5;
   pointer-events: none;
 }
@@ -125,9 +122,8 @@
 .gato-cine-ember {
   position: absolute;
   bottom: -2vh;
-  background: radial-gradient(circle, #fff7c2 0%, #ffb300 55%, #ff5722 100%);
+  background: #ffb300;
   border-radius: 50%;
-  box-shadow: 0 0 1vh 0.2vh #ff8a00, 0 0 2vh #ffeb3b;
   animation-name: gatoCineRise;
   animation-timing-function: ease-out;
   animation-iteration-count: infinite;
@@ -293,7 +289,7 @@
   letter-spacing: 2px;
   text-transform: uppercase;
   margin-bottom: 8px;
-  backdrop-filter: blur(8px);
+  /* backdrop-filter: none; */
   box-shadow: 0 4px 12px rgba(0,0,0,0.5);
 }
 

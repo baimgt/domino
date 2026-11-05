@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import './slot-celebration.css';
 
-export type CelebrationType = 'win' | 'big_win' | 'mega_win' | 'super_win' | 'scatter';
+export type CelebrationType = 'win' | 'big_win' | 'mega_win' | 'super_win' | 'scatter' | 'free_spins_total';
 
 export interface SlotCelebrationData {
   type: CelebrationType;
@@ -41,7 +41,7 @@ const STATIC_PARTICLES: ParticleSpec[] = [
   { id: 11, type: 'coin',    left: 92, size: 28, duration: 2.0, delay: 0.25 },
 ];
 
-// Native Web Audio Synth for celebration chime & chord
+// Native Web Audio Synth for celebration chime, chord & fanfare
 function playCelebrationSound(type: CelebrationType) {
   try {
     const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
@@ -63,6 +63,29 @@ function playCelebrationSound(type: CelebrationType) {
         osc.start(now + i * 0.07);
         osc.stop(now + i * 0.07 + 0.95);
       });
+    } else if (type === 'free_spins_total') {
+      // Grand celebratory victory fanfare
+      const chords = [
+        [523.25, 659.25, 783.99],          // C major
+        [587.33, 698.46, 880.00],          // D minor
+        [659.25, 783.99, 987.77],          // E minor
+        [783.99, 987.77, 1174.66],         // G major
+        [1046.50, 1318.51, 1567.98, 2093]  // High C Grand Chord
+      ];
+      chords.forEach((chord, cIdx) => {
+        chord.forEach((f) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(f, now + cIdx * 0.13);
+          gain.gain.setValueAtTime(0.18, now + cIdx * 0.13);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + cIdx * 0.13 + 1.3);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + cIdx * 0.13);
+          osc.stop(now + cIdx * 0.13 + 1.35);
+        });
+      });
     } else {
       const notes = [523.25, 659.25, 783.99, 1046.5, 1318.5, 1567.98];
       notes.forEach((f, i) => {
@@ -83,12 +106,14 @@ function playCelebrationSound(type: CelebrationType) {
   }
 }
 
-export default function SlotCelebrationModal({ data, onClose, autoCloseMs = 2100 }: Props) {
+export default function SlotCelebrationModal({ data, onClose, autoCloseMs = 2400 }: Props) {
   const [displayAmount, setDisplayAmount] = useState(0);
   const [isExiting, setIsExiting] = useState(false);
   const animRef = useRef<number | null>(null);
   const timerRef = useRef<any>(null);
   const exitTimerRef = useRef<any>(null);
+
+  const effectiveAutoCloseMs = data?.type === 'free_spins_total' ? Math.max(autoCloseMs, 4600) : autoCloseMs;
 
   const handleDismiss = () => {
     if (isExiting) return;
@@ -106,11 +131,11 @@ export default function SlotCelebrationModal({ data, onClose, autoCloseMs = 2100
     // Audio SFX
     playCelebrationSound(data.type);
 
-    // Dynamic numeric rolling odometer in 650ms
+    // Dynamic numeric rolling odometer in 750ms
     if (data.amount && data.amount > 0) {
       const target = Math.floor(data.amount);
       const startTime = performance.now();
-      const duration = 650; // ms
+      const duration = data.type === 'free_spins_total' ? 950 : 650; // ms
 
       const updateCount = (currentTime: number) => {
         const elapsed = currentTime - startTime;
@@ -132,22 +157,25 @@ export default function SlotCelebrationModal({ data, onClose, autoCloseMs = 2100
       setDisplayAmount(0);
     }
 
-    // Hands-free auto-dismiss timer (no clicks needed)
+    // Hands-free auto-dismiss timer
     timerRef.current = setTimeout(() => {
       handleDismiss();
-    }, autoCloseMs);
+    }, effectiveAutoCloseMs);
 
     return () => {
       if (animRef.current) cancelAnimationFrame(animRef.current);
       if (timerRef.current) clearTimeout(timerRef.current);
       if (exitTimerRef.current) clearTimeout(exitTimerRef.current);
     };
-  }, [data, autoCloseMs]);
+  }, [data, effectiveAutoCloseMs]);
 
   if (!data) return null;
 
   const isScatter = data.type === 'scatter';
-  const defaultTitle = isScatter
+  const isFSTotal = data.type === 'free_spins_total';
+  const defaultTitle = isFSTotal
+    ? 'TOTAL KEMENANGAN'
+    : isScatter
     ? 'SCATTER BONUS'
     : data.type === 'super_win'
     ? 'SUPER WIN'
@@ -155,7 +183,9 @@ export default function SlotCelebrationModal({ data, onClose, autoCloseMs = 2100
     ? 'MEGA WIN'
     : 'BIG WIN';
 
-  const defaultSubtext = isScatter
+  const defaultSubtext = isFSTotal
+    ? 'SELAMAT! TOTAL KEMENANGAN PUTARAN GRATIS!'
+    : isScatter
     ? 'PUTARAN GRATIS BERHASIL DIAKTIFKAN!'
     : data.type === 'super_win'
     ? 'KEMENANGAN SULTAN FANTASTIS!'
@@ -244,6 +274,21 @@ export default function SlotCelebrationModal({ data, onClose, autoCloseMs = 2100
                   </linearGradient>
                 </defs>
               </svg>
+            ) : isFSTotal ? (
+              <svg viewBox="0 0 24 24" fill="none" className="slot-cel-svg-icon">
+                <path d="M6 3h12v4a6 6 0 01-12 0V3z" fill="url(#trophyGrad)" stroke="#ffd700" strokeWidth="1" />
+                <path d="M6 5H3a2 2 0 00-2 2v1a4 4 0 004 4h1M18 5h3a2 2 0 012 2v1a4 4 0 01-4 4h-1" stroke="#ffd700" strokeWidth="1.8" strokeLinecap="round" />
+                <path d="M12 11v5m-4 5h8m-4-5v5" stroke="#ffd700" strokeWidth="2.2" strokeLinecap="round" />
+                <circle cx="12" cy="7" r="1.5" fill="#ffffff" />
+                <defs>
+                  <linearGradient id="trophyGrad" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="#ffffff" />
+                    <stop offset="35%" stopColor="#ffd700" />
+                    <stop offset="75%" stopColor="#f59e0b" />
+                    <stop offset="100%" stopColor="#b45309" />
+                  </linearGradient>
+                </defs>
+              </svg>
             ) : (
               <svg viewBox="0 0 24 24" fill="none" className="slot-cel-svg-icon">
                 <circle cx="12" cy="12" r="10" fill="url(#coinGrad)" stroke="#fff" strokeWidth="1" />
@@ -287,6 +332,8 @@ export default function SlotCelebrationModal({ data, onClose, autoCloseMs = 2100
         <div className="slot-cel-auto-bar-wrap" title="Menghilang otomatis">
           <div className="slot-cel-auto-bar" />
         </div>
+
+        <div className="slot-cel-tap-hint">KLIK DI MANA SAJA UNTUK MELANJUTKAN ❯</div>
       </div>
     </div>
   );

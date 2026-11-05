@@ -36,6 +36,9 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
   });
   const [totalWin, setTotalWin] = useState(0);
   const [freeSpinsLeft, setFreeSpinsLeft] = useState(0);
+  const [freeSpinTotalWin, setFreeSpinTotalWin] = useState(0);
+  const freeSpinTotalWinRef = useRef(0);
+  useEffect(() => { freeSpinTotalWinRef.current = freeSpinTotalWin; }, [freeSpinTotalWin]);
   const [autoSpins, setAutoSpins] = useState(0);
   const [spinSpeed, setSpinSpeed] = useState(1);
   const [anteMode, setAnteMode] = useState(false);
@@ -63,6 +66,7 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
   const doSpinRef = useRef<any>(null);
   const spinningColsRef = useRef<boolean[]>(Array(COLS).fill(false));
   const spinTimer = useRef<any>(null);
+  const isCurrentSpinFreeRef = useRef(false);
 
   useEffect(() => { autoSpinsRef.current = autoSpins; }, [autoSpins]);
   useEffect(() => { freeSpinsLeftRef.current = freeSpinsLeft; }, [freeSpinsLeft]);
@@ -96,7 +100,7 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
         setGrid(prev => prev.map((row, r) =>
           row.map((cell, c) => spinningColsRef.current[c] ? Math.floor(Math.random() * 11) : cell)
         ));
-      }, Math.max(20, Math.floor(65 / spinSpeedRef.current)));
+      }, Math.max(65, Math.floor(130 / spinSpeedRef.current)));
     }
     return () => { if (interval) clearInterval(interval); };
   }, [isSpinning]);
@@ -212,17 +216,31 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
         setMyCoins(data.newBalance != null ? data.newBalance : applied.total);
         setFreeMultVal(data.freeMult || 0);
         setTotalWin(data.totalWinAmount || 0);
-        let totalFree = freeSpinsLeftRef.current;
+        const isFreeRound = isCurrentSpinFreeRef.current;
+        if (data.totalWinAmount > 0 && isFreeRound) {
+          const newFsTotal = freeSpinTotalWinRef.current + data.totalWinAmount;
+          freeSpinTotalWinRef.current = newFsTotal;
+          setFreeSpinTotalWin(newFsTotal);
+        }
+        const isRetrigger = isFreeRound;
         if (data.triggerFreeSpins) {
-          totalFree += data.freeSpinsAwarded;
+          const awarded = data.freeSpinsAwarded || (isRetrigger ? 5 : 10);
+          const totalFree = freeSpinsLeftRef.current + awarded;
+          freeSpinsLeftRef.current = totalFree;
           setFreeSpinsLeft(totalFree);
+          if (!isRetrigger) {
+            setFreeSpinTotalWin(0);
+            freeSpinTotalWinRef.current = 0;
+          }
           setCelebration({
             type: 'scatter',
-            freeSpinsCount: data.freeSpinsAwarded || 10,
-            title: '🍬 SCATTER CANDY RUSH! 🍬',
-            subtext: `SELAMAT! KAMU MEMICU ${data.freeSpinsAwarded || 10} PUTARAN GRATIS!`
+            freeSpinsCount: awarded,
+            title: isRetrigger ? '🍬 RETRIGGER CANDY RUSH! 🍬' : '🍬 SCATTER CANDY RUSH! 🍬',
+            subtext: isRetrigger
+              ? `LUAR BIASA! +${awarded} PUTARAN GRATIS DITAMBAHKAN KE SISA SPIN! (TOTAL SISA: ${totalFree} SPIN)`
+              : `SELAMAT! KAMU MEMICU ${awarded} PUTARAN GRATIS!`
           });
-        } else if (data.totalWinAmount > 0) {
+        } else if (data.totalWinAmount > 0 && !isFreeRound) {
           const ratio = data.totalWinAmount / Math.max(1, betAmount);
           if (ratio >= 30) {
             setCelebration({ type: 'super_win', amount: data.totalWinAmount });
@@ -232,13 +250,39 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
             setCelebration({ type: 'big_win', amount: data.totalWinAmount });
           }
         }
-        const hasCelebration = data.triggerFreeSpins || (data.totalWinAmount > 0 && (data.totalWinAmount / Math.max(1, betAmount)) >= 3);
-        const nextDelay = hasCelebration ? 3900 : Math.max(250, 1000 / spd);
-        if (autoSpinsRef.current > 1 || totalFree > 0) {
-          if (autoSpinsRef.current > 1) setAutoSpins(a => a - 1);
-          if (totalFree > 0) setFreeSpinsLeft(f => f - 1);
+
+        const totalRemainingFree = freeSpinsLeftRef.current;
+        const isEndingFS = (totalRemainingFree === 0 && isFreeRound && !data.triggerFreeSpins);
+        if (isEndingFS) {
+          isCurrentSpinFreeRef.current = false;
+          const finalFsWin = freeSpinTotalWinRef.current;
+          setCelebration({
+            type: 'free_spins_total',
+            amount: finalFsWin,
+            title: 'TOTAL KEMENANGAN',
+            subtext: finalFsWin > 0
+              ? 'SELAMAT! TOTAL KEMENANGAN PUTARAN GRATIS CANDY RUSH!'
+              : 'PUTARAN GRATIS SELESAI!'
+          });
+        }
+
+        const hasCelebration = Boolean(
+          data.triggerFreeSpins ||
+          isEndingFS ||
+          (!isFreeRound && data.totalWinAmount > 0 && (data.totalWinAmount / Math.max(1, betAmount)) >= 3)
+        );
+        const nextDelay = (hasCelebration || isEndingFS) ? 4600 : Math.max(250, 1000 / spd);
+        const shouldContinue = totalRemainingFree > 0 || autoSpinsRef.current > 0;
+        if (shouldContinue) {
+          if (autoSpinsRef.current > 0 && totalRemainingFree === 0) {
+            setAutoSpins(a => Math.max(0, a - 1));
+            autoSpinsRef.current = Math.max(0, autoSpinsRef.current - 1);
+          }
           setTimeout(() => doSpinRef.current?.(), nextDelay);
-        } else if (autoSpinsRef.current === 1) setAutoSpins(0);
+        } else {
+          setAutoSpins(0);
+          autoSpinsRef.current = 0;
+        }
       }, allReelsSettled);
     };
 
@@ -272,11 +316,13 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
     }
     const res = spendSlotCoinsLocal(cost);
     setMyCoins(res.total);
-    syncSlotBetToBackend(API_URL, username, cost);
-    setFreeSpinsLeft(10);
-    freeSpinsLeftRef.current = 10;
+    const newTotal = (freeSpinsLeftRef.current > 0 ? freeSpinsLeftRef.current : 0) + 10;
+    setFreeSpinsLeft(newTotal);
+    freeSpinsLeftRef.current = newTotal;
+    setFreeSpinTotalWin(0);
+    freeSpinTotalWinRef.current = 0;
     setFreeMultVal(1);
-    setStatusText('10 FREE SPINS DIMULAI!');
+    setStatusText(`${newTotal} FREE SPINS AKTIF!`);
     setTimeout(() => {
       doSpinRef.current?.();
     }, 400);
@@ -288,7 +334,9 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
       setStatusText('Tidak terhubung ke server!');
       return;
     }
-    const actualBet = anteMode ? Math.round(betAmount * 1.25) : betAmount;
+    const actualBet = anteMode ? Math.floor(betAmount * 1.25) : betAmount;
+    const isFree = freeSpinsLeftRef.current > 0;
+    isCurrentSpinFreeRef.current = isFree;
     if (freeSpinsLeftRef.current === 0 && myCoins < actualBet) {
       alert(`Koin tidak cukup! Taruhan: ${actualBet.toLocaleString('id-ID')} koin.`);
       setAutoSpins(0);
@@ -298,11 +346,15 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
     setIsSpinning(true);
     spinningColsRef.current = Array(COLS).fill(true);
     setSpinningCols(Array(COLS).fill(true));
-    if (freeSpinsLeftRef.current === 0) {
+    if (!isFree) {
       const res = spendSlotCoinsLocal(actualBet);
       setMyCoins(res.total);
       setMultIdx(0);
       setFreeMultVal(1);
+    } else {
+      const nextFree = Math.max(0, freeSpinsLeftRef.current - 1);
+      freeSpinsLeftRef.current = nextFree;
+      setFreeSpinsLeft(nextFree);
     }
     setTotalWin(0);
     setExplodingCells([]);
@@ -322,7 +374,7 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
       username, 
       betAmount, // base bet for payouts
       actualBet, // deduction
-      isFreeSpins: freeSpinsLeftRef.current > 0, 
+      isFreeSpins: isFree, 
       anteMode, 
       clientBalance: myCoins 
     });
@@ -639,7 +691,9 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
 
         <div className="cr-bot-center">
           <div className="cr-status-pill">
-            {totalWin > 0 ? Math.floor(totalWin).toLocaleString('id-ID') : statusText}
+            {freeSpinsLeft > 0
+              ? `TOTAL MENANG: ${Math.floor(freeSpinTotalWin).toLocaleString('id-ID')}`
+              : (totalWin > 0 ? Math.floor(totalWin).toLocaleString('id-ID') : statusText)}
           </div>
         </div>
 

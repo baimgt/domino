@@ -26,18 +26,17 @@
   image-rendering: crisp-edges;
   transform: none;
   animation: olympusLiveBreathing 7s ease-in-out infinite alternate;
-  will-change: filter;
 }
 
 @keyframes olympusLiveBreathing {
   0% {
-    filter: brightness(1) contrast(1.02) saturate(1.02);
+    opacity: 0.96;
   }
   50% {
-    filter: brightness(1.05) contrast(1.06) saturate(1.06);
+    opacity: 1;
   }
   100% {
-    filter: brightness(1.01) contrast(1.03) saturate(1.03);
+    opacity: 0.97;
   }
 }
 
@@ -87,16 +86,15 @@
 
 @keyframes zeusAuraPulse {
   0% {
-    transform: translate(-50%, -50%) scale(0.9);
+    transform: translate(-50%, -50%) scale(0.92);
     opacity: 0.35;
   }
   50% {
-    transform: translate(-50%, -50%) scale(1.1);
-    opacity: 0.75;
-    filter: drop-shadow(0 0 25px rgba(0, 230, 255, 0.7));
+    transform: translate(-50%, -50%) scale(1.08);
+    opacity: 0.85;
   }
   100% {
-    transform: translate(-50%, -50%) scale(0.95);
+    transform: translate(-50%, -50%) scale(0.96);
     opacity: 0.45;
   }
 }
@@ -127,7 +125,7 @@
   100% {
     transform: translate(-50%, -50%) scale(1.15);
     opacity: 0.95;
-    filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.85));
+    
   }
 }
 
@@ -200,7 +198,7 @@
   box-shadow: 0 0 20px rgba(255, 215, 0, 0.4), inset 0 0 10px rgba(255, 215, 0, 0.25);
   padding: 5px 18px;
   border-radius: 24px;
-  backdrop-filter: blur(8px);
+  /* backdrop-filter: none; */
   margin-bottom: 8px;
 }
 
@@ -212,8 +210,8 @@
 }
 
 @keyframes crestBoltPulse {
-  from { transform: scale(0.9); filter: drop-shadow(0 0 4px #ffd700); }
-  to { transform: scale(1.2); filter: drop-shadow(0 0 12px #00f0ff); }
+  from { transform: scale(0.9);  }
+  to { transform: scale(1.2);  }
 }
 
 .olympus-crest-badge-text {
@@ -299,7 +297,7 @@
     inset 0 2px 10px rgba(0, 0, 0, 0.9),
     0 4px 16px rgba(0, 0, 0, 0.8);
   overflow: hidden;
-  backdrop-filter: blur(6px);
+  /* backdrop-filter: none; */
 }
 
 .olympus-progress-fill {
@@ -359,7 +357,6 @@
   background: rgba(10, 16, 46, 0.88) !important;
   border: 2px solid #ffd452 !important;
   box-shadow: 0 0 35px rgba(255, 212, 82, 0.4), 0 10px 40px rgba(0, 0, 0, 0.9) !important;
-  backdrop-filter: blur(12px) !important;
 }
 
 .tap-to-enter-anim.login-olympus-tap {
@@ -373,7 +370,7 @@
   border-radius: 40px;
   padding: 10px 36px;
   box-shadow: 0 0 25px rgba(255, 212, 82, 0.5), inset 0 0 12px rgba(255, 215, 0, 0.2);
-  backdrop-filter: blur(8px);
+  /* backdrop-filter: none; */
   animation: tapPulseOlympus 1.5s infinite alternate;
   cursor: pointer;
   margin-top: 1vh;
@@ -382,10 +379,10 @@
 @keyframes tapPulseOlympus {
   from {
     transform: scale(0.97);
-    filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5));
+    
   }
   to {
     transform: scale(1.03);
-    filter: drop-shadow(0 0 24px rgba(0, 240, 255, 0.85));
+    
   }
 }

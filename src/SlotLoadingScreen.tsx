@@ -163,9 +163,9 @@ export default function SlotLoadingScreen({ gameId, onFinish, durationMs = 2600 
 
   const [currentArt, setCurrentArt] = useState(cfg.art);
 
-  // Generate 60 floating golden embers matching Gatotkaca cinematic
+  // Generate 20 floating golden embers matching Gatotkaca cinematic (optimized for smooth 60fps)
   useEffect(() => {
-    const newParticles = Array.from({ length: 60 }).map((_, i) => ({
+    const newParticles = Array.from({ length: 20 }).map((_, i) => ({
       id: i,
       x: Math.random() * 100,
       size: Math.random() * 0.6 + 0.2,
