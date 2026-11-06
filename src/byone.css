@@ -1419,4 +1419,979 @@
   }
 }
 
+/* =====================================================
+   BY ONE ROOM MODAL V2 (ESPORTS & ROYAL ARENA THEME)
+   ===================================================== */
+.bo2-modal-box {
+  width: min(880px, 95vw);
+  height: min(510px, 90vh);
+  max-width: 96vw;
+  max-height: 92vh;
+  background:
+    radial-gradient(circle at 15% 15%, rgba(239, 68, 68, 0.14) 0%, transparent 45%),
+    radial-gradient(circle at 85% 85%, rgba(245, 158, 11, 0.14) 0%, transparent 50%),
+    linear-gradient(160deg, #161124 0%, #0d0a17 55%, #07050c 100%);
+  border: 2px solid rgba(251, 191, 36, 0.75);
+  border-radius: clamp(16px, 2.4vh, 24px);
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.92),
+    0 0 35px rgba(239, 68, 68, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: #ffffff;
+  position: relative;
+  box-sizing: border-box;
+}
+
+/* TOP HEADER */
+.bo2-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: clamp(8px, 1.4vh, 13px) clamp(12px, 1.8vw, 22px);
+  background: linear-gradient(90deg, rgba(35, 12, 26, 0.95) 0%, rgba(20, 16, 40, 0.92) 50%, rgba(35, 12, 26, 0.95) 100%);
+  border-bottom: 1.5px solid rgba(251, 191, 36, 0.35);
+  flex-shrink: 0;
+}
+
+.bo2-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.bo2-brand-emblem {
+  width: clamp(30px, 5vh, 40px);
+  height: clamp(30px, 5vh, 40px);
+  border-radius: 10px;
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+  border: 1.5px solid #fca5a5;
+  box-shadow: 0 0 14px rgba(239, 68, 68, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(15px, 2.5vh, 20px);
+}
+
+.bo2-brand-title {
+  font-size: clamp(13px, 2.1vh, 17px);
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  background: linear-gradient(180deg, #ffffff 0%, #fde68a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1.15;
+}
+
+.bo2-brand-sub {
+  font-size: clamp(9px, 1.3vh, 11px);
+  color: rgba(203, 213, 225, 0.72);
+  font-weight: 600;
+}
+
+.bo2-nav-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(9, 7, 16, 0.8);
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.bo2-nav-tab {
+  background: transparent;
+  border: 1px solid transparent;
+  color: #cbd5e1;
+  font-size: clamp(10.5px, 1.65vh, 13px);
+  font-weight: 800;
+  padding: clamp(5px, 0.9vh, 8px) clamp(10px, 1.3vw, 16px);
+  border-radius: 9px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.bo2-nav-tab:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.bo2-nav-tab.active-create {
+  background: linear-gradient(135deg, #ef4444 0%, #d97706 100%);
+  color: #fff;
+  border-color: #fde68a;
+  box-shadow: 0 2px 12px rgba(239, 68, 68, 0.45);
+}
+
+.bo2-nav-tab.active-join {
+  background: linear-gradient(135deg, #2563eb 0%, #0284c7 100%);
+  color: #fff;
+  border-color: #93c5fd;
+  box-shadow: 0 2px 12px rgba(37, 99, 235, 0.45);
+}
+
+.bo2-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.bo2-wallet-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(251, 191, 36, 0.14);
+  border: 1.5px solid rgba(251, 191, 36, 0.6);
+  padding: clamp(4px, 0.7vh, 6px) clamp(10px, 1.2vw, 14px);
+  border-radius: 999px;
+  font-size: clamp(11px, 1.7vh, 14px);
+  font-weight: 900;
+  color: #fde047;
+}
+
+.bo2-close-btn {
+  width: clamp(28px, 4.4vh, 36px);
+  height: clamp(28px, 4.4vh, 36px);
+  background: linear-gradient(135deg, #ef4444, #b91c1c);
+  border: 1.5px solid rgba(254, 240, 138, 0.75);
+  border-radius: 50%;
+  color: white;
+  font-size: clamp(12px, 1.9vh, 16px);
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+}
+
+/* BANNERS */
+.bo2-banner {
+  padding: 6px 14px;
+  text-align: center;
+  font-size: clamp(10.5px, 1.55vh, 13px);
+  font-weight: 800;
+  flex-shrink: 0;
+}
+.bo2-banner.error {
+  background: linear-gradient(90deg, #dc2626, #b91c1c);
+  color: #fff;
+}
+.bo2-banner.success {
+  background: linear-gradient(90deg, #059669, #10b981);
+  color: #fff;
+}
+
+/* MAIN BODY */
+.bo2-body {
+  flex: 1;
+  min-height: 0;
+  padding: clamp(10px, 2vh, 18px) clamp(12px, 1.8vw, 22px);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+/* =====================================================
+   TAB 1: CREATE ROOM (2-COLUMN ARENA BUILDER)
+   ===================================================== */
+.bo2-create-layout {
+  display: grid;
+  grid-template-columns: 1.12fr 1fr;
+  gap: clamp(12px, 1.8vw, 20px);
+  flex: 1;
+  min-height: 0;
+  align-items: stretch;
+}
+
+.bo2-col-modes,
+.bo2-col-stakes {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: clamp(8px, 1.4vh, 12px);
+  min-height: 0;
+}
+
+.bo2-section-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: clamp(11px, 1.7vh, 13.5px);
+  font-weight: 900;
+  color: #fde68a;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+.bo2-step-num {
+  width: clamp(18px, 2.8vh, 22px);
+  height: clamp(18px, 2.8vh, 22px);
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #090b16;
+  font-size: clamp(10px, 1.5vh, 12px);
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bo2-modes-list {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: clamp(6px, 1.2vh, 10px);
+  flex: 1;
+  min-height: 0;
+}
+
+.bo2-mode-card {
+  flex: 1;
+  background: rgba(15, 23, 42, 0.72);
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  padding: clamp(7px, 1.3vh, 12px) clamp(10px, 1.2vw, 14px);
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.bo2-mode-card:hover {
+  border-color: var(--mode-accent, #fbbf24);
+  transform: translateX(2px);
+}
+
+.bo2-mode-card.selected {
+  background: var(--mode-bg);
+  border: 2px solid var(--mode-accent, #fbbf24);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+}
+
+.bo2-mode-icon-box {
+  width: clamp(38px, 6.8vh, 52px);
+  height: clamp(38px, 6.8vh, 52px);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(20px, 3.8vh, 28px);
+  flex-shrink: 0;
+}
+
+.bo2-mode-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.bo2-mode-top-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.bo2-mode-name {
+  font-size: clamp(11.5px, 1.8vh, 14.5px);
+  font-weight: 900;
+  color: #ffffff;
+}
+
+.bo2-mode-tag {
+  font-size: clamp(8.5px, 1.25vh, 10px);
+  font-weight: 900;
+  color: #fff;
+  padding: 1px 7px;
+  border-radius: 999px;
+  letter-spacing: 0.3px;
+}
+
+.bo2-mode-desc {
+  font-size: clamp(9.5px, 1.35vh, 11.5px);
+  color: #cbd5e1;
+  line-height: 1.25;
+}
+
+.bo2-mode-radio {
+  width: clamp(20px, 3.2vh, 24px);
+  height: clamp(20px, 3.2vh, 24px);
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 900;
+  color: #090b16;
+  flex-shrink: 0;
+}
+
+.bo2-mode-radio.checked {
+  background: #fbbf24;
+  border-color: #fef08a;
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.6);
+}
+
+/* RIGHT COLUMN: STAKES & POT PREVIEW */
+.bo2-stakes-box {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(251, 191, 36, 0.25);
+  border-radius: 14px;
+  padding: clamp(8px, 1.5vh, 14px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(8px, 1.4vh, 12px);
+}
+
+.bo2-quick-bets-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(6px, 0.9vw, 10px);
+}
+
+.bo2-bet-chip {
+  padding: clamp(7px, 1.3vh, 11px) 6px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1.5px solid rgba(255, 255, 255, 0.14);
+  color: #f8fafc;
+  font-size: clamp(11.5px, 1.8vh, 14px);
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: all 0.15s ease;
+}
+
+.bo2-bet-chip:hover {
+  border-color: #fbbf24;
+  background: rgba(251, 191, 36, 0.12);
+}
+
+.bo2-bet-chip.active {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border-color: #fef08a;
+  color: #090b16;
+  box-shadow: 0 3px 12px rgba(245, 158, 11, 0.45);
+}
+
+.bo2-custom-bet-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bo2-custom-bet-lbl {
+  font-size: clamp(10px, 1.45vh, 12px);
+  color: #94a3b8;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.bo2-custom-bet-input {
+  flex: 1;
+  min-width: 0;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  border-radius: 9px;
+  padding: clamp(5px, 1vh, 8px) 10px;
+  color: #fde047;
+  font-size: clamp(11px, 1.65vh, 13.5px);
+  font-weight: 800;
+  outline: none;
+}
+
+.bo2-custom-bet-input:focus {
+  border-color: #fbbf24;
+}
+
+.bo2-pot-preview-card {
+  background: linear-gradient(135deg, rgba(66, 32, 6, 0.65) 0%, rgba(24, 13, 4, 0.85) 100%);
+  border: 1.5px solid rgba(251, 191, 36, 0.45);
+  border-radius: 14px;
+  padding: clamp(8px, 1.5vh, 14px) clamp(12px, 1.4vw, 16px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.bo2-pot-side {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.bo2-pot-side.right {
+  text-align: right;
+}
+
+.bo2-pot-lbl {
+  font-size: clamp(8.5px, 1.25vh, 10.5px);
+  font-weight: 800;
+  color: #cbd5e1;
+  letter-spacing: 0.4px;
+}
+
+.bo2-pot-val {
+  font-size: clamp(14px, 2.3vh, 19px);
+  font-weight: 900;
+  color: #ffffff;
+}
+.bo2-pot-val.highlight {
+  color: #fde047;
+  text-shadow: 0 0 12px rgba(251, 191, 36, 0.45);
+}
+
+.bo2-pot-vs-divider {
+  width: clamp(30px, 5vh, 38px);
+  height: clamp(30px, 5vh, 38px);
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(14px, 2.3vh, 18px);
+  flex-shrink: 0;
+}
+
+.bo2-submit-create-btn {
+  width: 100%;
+  padding: clamp(9px, 1.7vh, 14px) 12px;
+  border-radius: 13px;
+  background: linear-gradient(90deg, #ef4444 0%, #f59e0b 100%);
+  border: 1.5px solid #fef08a;
+  color: #ffffff;
+  font-size: clamp(12px, 1.9vh, 15px);
+  font-weight: 900;
+  letter-spacing: 0.6px;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* =====================================================
+   TAB 2: JOIN ROOM (6-DIGIT PIN + TOUCH NUMPAD)
+   ===================================================== */
+.bo2-join-layout {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: clamp(14px, 2vw, 24px);
+  flex: 1;
+  min-height: 0;
+  align-items: stretch;
+}
+
+.bo2-join-left {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 16px;
+  padding: clamp(12px, 2.2vh, 20px);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  text-align: center;
+  gap: clamp(8px, 1.5vh, 14px);
+}
+
+.bo2-join-title {
+  font-size: clamp(14px, 2.3vh, 18px);
+  font-weight: 900;
+  color: #38bdf8;
+  letter-spacing: 0.6px;
+}
+
+.bo2-join-sub {
+  font-size: clamp(10px, 1.45vh, 12px);
+  color: #94a3b8;
+  max-width: 380px;
+  margin-top: 3px;
+}
+
+.bo2-pin-boxes-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(6px, 0.9vw, 10px);
+  cursor: text;
+}
+
+.bo2-pin-slot {
+  width: clamp(36px, 6.5vh, 48px);
+  height: clamp(44px, 8vh, 58px);
+  border-radius: 12px;
+  background: rgba(9, 11, 22, 0.9);
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(18px, 3.4vh, 26px);
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.25);
+  transition: all 0.15s ease;
+}
+
+.bo2-pin-slot.filled {
+  border-color: #fbbf24;
+  color: #fde047;
+  background: rgba(251, 191, 36, 0.12);
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.3);
+}
+
+.bo2-pin-slot.active {
+  border-color: #38bdf8;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.45);
+}
+
+.bo2-hidden-input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.bo2-join-quick-tools {
+  display: flex;
+  gap: 10px;
+}
+
+.bo2-tool-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #e2e8f0;
+  font-size: clamp(10px, 1.45vh, 12px);
+  font-weight: 800;
+  padding: 5px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.bo2-tool-btn.clear {
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+.bo2-submit-join-btn {
+  width: 100%;
+  padding: clamp(9px, 1.7vh, 14px) 12px;
+  border-radius: 13px;
+  background: linear-gradient(90deg, #0284c7 0%, #2563eb 100%);
+  border: 1.5px solid #7dd3fc;
+  color: #ffffff;
+  font-size: clamp(12px, 1.9vh, 15px);
+  font-weight: 900;
+  letter-spacing: 0.6px;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.4);
+}
+.bo2-submit-join-btn.ready {
+  background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+  border-color: #6ee7b7;
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
+}
+
+/* Right Side Touch Keypad */
+.bo2-join-numpad {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(251, 191, 36, 0.25);
+  border-radius: 16px;
+  padding: clamp(8px, 1.6vh, 14px);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(6px, 1vh, 10px);
+}
+
+.bo2-numpad-key {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 11px;
+  color: #ffffff;
+  font-size: clamp(14px, 2.4vh, 20px);
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.bo2-numpad-key:hover {
+  background: rgba(251, 191, 36, 0.16);
+  border-color: #fbbf24;
+}
+
+.bo2-numpad-key.key-clr {
+  color: #fca5a5;
+  font-size: clamp(11px, 1.8vh, 14px);
+}
+
+.bo2-numpad-key.key-del {
+  color: #fde047;
+}
+
+/* =====================================================
+   WAITING ROOM STAGE (REAL-TIME SLOTS & VS ARENA)
+   ===================================================== */
+.bo2-waiting-stage {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: clamp(8px, 1.6vh, 14px);
+  flex: 1;
+  min-height: 0;
+}
+
+.bo2-waiting-topbar {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: clamp(8px, 1.2vw, 14px);
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.bo2-code-ticket {
+  background: linear-gradient(135deg, rgba(66, 32, 6, 0.8) 0%, rgba(24, 13, 4, 0.95) 100%);
+  border: 2px dashed #fbbf24;
+  border-radius: 14px;
+  padding: clamp(6px, 1.2vh, 10px) clamp(12px, 1.5vw, 18px);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.bo2-code-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.bo2-code-kicker {
+  font-size: clamp(8.5px, 1.2vh, 10px);
+  font-weight: 800;
+  color: #fde68a;
+  letter-spacing: 0.6px;
+}
+
+.bo2-code-digits {
+  font-size: clamp(18px, 3.2vh, 26px);
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 3px;
+  line-height: 1.1;
+}
+
+.bo2-copy-code-btn {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border: 1px solid #fef08a;
+  color: #090b16;
+  font-size: clamp(10px, 1.5vh, 12.5px);
+  font-weight: 900;
+  padding: clamp(5px, 1vh, 8px) 12px;
+  border-radius: 9px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.bo2-room-stats-group {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(6px, 1vw, 10px);
+}
+
+.bo2-room-stat-pill {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: clamp(6px, 1.1vh, 10px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.bo2-rs-lbl {
+  font-size: clamp(8.5px, 1.2vh, 10px);
+  color: #94a3b8;
+  font-weight: 800;
+}
+
+.bo2-rs-val {
+  font-size: clamp(11px, 1.75vh, 14px);
+  font-weight: 900;
+  color: #ffffff;
+  margin-top: 2px;
+}
+.bo2-rs-val.gold { color: #fde047; }
+.bo2-rs-val.green { color: #34d399; }
+
+/* SLOTS SECTION */
+.bo2-slots-section {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(6px, 1.1vh, 10px);
+}
+
+.bo2-slots-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.bo2-slots-title {
+  font-size: clamp(10.5px, 1.6vh, 13px);
+  font-weight: 900;
+  color: #e2e8f0;
+}
+
+.bo2-slots-status {
+  font-size: clamp(10px, 1.5vh, 12px);
+  font-weight: 800;
+  color: #fbbf24;
+}
+.bo2-slots-status.ready {
+  color: #34d399;
+}
+
+/* 1V1 DUEL ROW */
+.bo2-vs-duel-row {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: clamp(14px, 2.5vw, 28px);
+}
+
+.bo2-vs-slot-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: clamp(14px, 2.5vw, 28px);
+}
+
+.bo2-vs-center-badge {
+  width: clamp(38px, 6.8vh, 52px);
+  height: clamp(38px, 6.8vh, 52px);
+  border-radius: 50%;
+  background: radial-gradient(circle, #ef4444 0%, #991b1b 100%);
+  border: 2px solid #fde047;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(13px, 2.2vh, 18px);
+  font-weight: 900;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+/* MULTI SLOTS GRID */
+.bo2-multi-slots-grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  gap: clamp(8px, 1.1vw, 12px);
+}
+.bo2-multi-slots-grid.cols-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+.bo2-multi-slots-grid.cols-6 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.bo2-player-card {
+  flex: 1;
+  background: rgba(15, 23, 42, 0.82);
+  border: 1.5px solid rgba(255, 255, 255, 0.16);
+  border-radius: 16px;
+  padding: clamp(8px, 1.6vh, 14px) 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: clamp(4px, 0.8vh, 8px);
+  position: relative;
+}
+
+.bo2-player-card.is-me {
+  background: linear-gradient(145deg, rgba(245, 158, 11, 0.18), rgba(239, 68, 68, 0.18));
+  border: 2px solid #fbbf24;
+  box-shadow: 0 0 20px rgba(251, 191, 36, 0.25);
+}
+
+.bo2-player-card.empty {
+  background: rgba(9, 11, 22, 0.55);
+  border: 2px dashed rgba(255, 255, 255, 0.16);
+}
+
+.bo2-role-tag {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  font-size: clamp(8px, 1.2vh, 10px);
+  font-weight: 900;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+.bo2-role-tag.host {
+  background: #fbbf24;
+  color: #090b16;
+}
+.bo2-role-tag.ready {
+  background: #10b981;
+  color: #fff;
+}
+
+.bo2-player-avatar-ring {
+  width: clamp(42px, 8vh, 62px);
+  height: clamp(42px, 8vh, 62px);
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2.5px solid #fbbf24;
+  background: #1e1b4b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 14px rgba(251, 191, 36, 0.4);
+}
+
+.bo2-player-name {
+  font-size: clamp(11.5px, 1.8vh, 15px);
+  font-weight: 900;
+  color: #ffffff;
+}
+
+.bo2-you-tag {
+  color: #fde047;
+  font-size: 0.9em;
+}
+
+.bo2-player-coins {
+  font-size: clamp(10px, 1.5vh, 12.5px);
+  font-weight: 800;
+  color: #fde68a;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 2px 9px;
+  border-radius: 999px;
+}
+
+.bo2-empty-avatar-pulse {
+  width: clamp(38px, 7vh, 52px);
+  height: clamp(38px, 7vh, 52px);
+  border-radius: 50%;
+  border: 1.5px dashed rgba(255, 255, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(18px, 3.2vh, 24px);
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.bo2-empty-title {
+  font-size: clamp(11px, 1.7vh, 13.5px);
+  font-weight: 800;
+  color: #94a3b8;
+}
+
+.bo2-empty-sub {
+  font-size: clamp(9.5px, 1.35vh, 11px);
+  color: #38bdf8;
+  font-weight: 700;
+}
+
+/* WAITING ROOM FOOTER */
+.bo2-waiting-footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.bo2-start-btn {
+  flex: 1.6;
+  padding: clamp(9px, 1.7vh, 14px) 14px;
+  border-radius: 13px;
+  font-size: clamp(12px, 1.9vh, 15px);
+  font-weight: 900;
+  letter-spacing: 0.6px;
+  cursor: pointer;
+  border: none;
+}
+
+.bo2-start-btn.ready {
+  background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+  border: 1.5px solid #6ee7b7;
+  color: #ffffff;
+  box-shadow: 0 4px 18px rgba(16, 185, 129, 0.5);
+}
+
+.bo2-start-btn.disabled {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: rgba(255, 255, 255, 0.45);
+  cursor: not-allowed;
+}
+
+.bo2-guest-wait-banner {
+  flex: 1.6;
+  padding: clamp(9px, 1.7vh, 13px) 14px;
+  border-radius: 13px;
+  background: rgba(37, 99, 235, 0.18);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  color: #7dd3fc;
+  font-size: clamp(11px, 1.7vh, 13.5px);
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.bo2-cancel-btn {
+  flex: 0.8;
+  padding: clamp(9px, 1.7vh, 14px) 14px;
+  border-radius: 13px;
+  background: rgba(239, 68, 68, 0.16);
+  border: 1.5px solid #ef4444;
+  color: #fca5a5;
+  font-size: clamp(11.5px, 1.8vh, 14px);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+
 

@@ -116,8 +116,8 @@ export const POOL_ROOMS: PoolRoom[] = [
   {
     id: 'london',
     name: 'London Pub',
-    entry: 5000,
-    prize: 10000,
+    entry: 20000,
+    prize: 40000,
     city: 'London',
     flag: '🇬🇧',
     tier: 'Pemula',
@@ -134,8 +134,8 @@ export const POOL_ROOMS: PoolRoom[] = [
   {
     id: 'sydney',
     name: 'Sydney Marina',
-    entry: 20000,
-    prize: 40000,
+    entry: 50000,
+    prize: 100000,
     city: 'Sydney',
     flag: '🇦🇺',
     tier: 'Menengah',
@@ -152,8 +152,8 @@ export const POOL_ROOMS: PoolRoom[] = [
   {
     id: 'jakarta',
     name: 'Jakarta Club',
-    entry: 50000,
-    prize: 100000,
+    entry: 100000,
+    prize: 200000,
     city: 'Jakarta',
     flag: '🇮🇩',
     tier: 'Pro',
@@ -170,8 +170,8 @@ export const POOL_ROOMS: PoolRoom[] = [
   {
     id: 'tokyo',
     name: 'Tokyo Arena',
-    entry: 100000,
-    prize: 200000,
+    entry: 200000,
+    prize: 400000,
     city: 'Tokyo',
     flag: '🇯🇵',
     tier: 'Master',
@@ -188,8 +188,8 @@ export const POOL_ROOMS: PoolRoom[] = [
   {
     id: 'vegas',
     name: 'Las Vegas VIP',
-    entry: 200000,
-    prize: 400000,
+    entry: 500000,
+    prize: 1000000,
     city: 'Las Vegas',
     flag: '🇺🇸',
     tier: 'Raja',
@@ -2040,6 +2040,10 @@ export default function BilliardScreen({
   const [playerGroup, setPlayerGroup] = useState<'solid' | 'stripe' | null>(null);
   const [pocketedBalls, setPocketedBalls] = useState<number[]>([]);
   const [winner, setWinner]           = useState<'player' | 'ai' | null>(null);
+  const [winByOpponentLeft, setWinByOpponentLeft] = useState(false);
+  const winnerRef                     = useRef<'player' | 'ai' | null>(null);
+  const hasForfeitedRef               = useRef(false);
+  useEffect(() => { winnerRef.current = winner; }, [winner]);
   const [message, setMessage]         = useState('🎱 Klik meja untuk mengarahkan tembakan');
   const [coins, setCoins]             = useState(10000000);
   const [bonusCoins, setBonusCoins]   = useState(0);
@@ -2263,15 +2267,23 @@ export default function BilliardScreen({
     };
   }, []);
 
-  // Cleanup timers & animation frame on unmount
+  // Cleanup timers, animation frame & forfeit multiplayer match on unmount
   useEffect(() => {
     return () => {
       if (matchIntervalRef.current) clearInterval(matchIntervalRef.current);
       if (matchCountIntervalRef.current) clearInterval(matchCountIntervalRef.current);
       if (aiScheduleTimeoutRef.current) clearTimeout(aiScheduleTimeoutRef.current);
       if (aiAnimRef.current) cancelAnimationFrame(aiAnimRef.current);
+      if (isMultiplayer && socket && !winnerRef.current && !hasForfeitedRef.current) {
+        hasForfeitedRef.current = true;
+        socket.emit('byone_forfeit', {
+          matchId: roomCode ? `byone_${roomCode}` : undefined,
+          roomCode: roomCode || undefined,
+          username,
+        });
+      }
     };
-  }, []);
+  }, [isMultiplayer, socket, roomCode, username]);
 
 
 
@@ -2339,8 +2351,10 @@ export default function BilliardScreen({
           : `⚔️ Duel 1v1 melawan ${realOpponentName}! Giliran ${realOpponentName} sodok pertama.`
       );
 
-      if (socket && roomCode) {
-        socket.emit('billiard_join_room', { roomCode });
+      if (socket) {
+        if (roomCode) {
+          socket.emit('billiard_join_room', { roomCode });
+        }
 
         const handleOpponentShot = ({ angle, power: oppPower, spin: oppSpin, cueX, cueY }: any) => {
           const cue = ballsRef.current.find(b => b.id === 0);
@@ -2360,9 +2374,37 @@ export default function BilliardScreen({
           setMessage(`💥 ${realOpponentName} melepaskan tembakan!`);
         };
 
+        const handleOpponentLeftOrMatchEnd = (data: any) => {
+          if (winnerRef.current) return;
+          const meWon = data?.isMeWinner === true || data?.winner === username || Boolean(data?.leaver && data.leaver !== username);
+          if (meWon || data?.byOpponentLeft || data?.byDisconnect) {
+            hasForfeitedRef.current = true;
+            if (data?.byOpponentLeft || data?.byDisconnect || data?.byFold || data?.leaver) {
+              setWinByOpponentLeft(true);
+            }
+            const prizeAmt = betAmount ? betAmount * 2 : selectedRoomRef.current.prize;
+            if (typeof data?.newCoins === 'number') {
+              setCoins(Math.max(0, data.newCoins - prizeAmt));
+              localStorage.setItem('domino_coins', String(data.newCoins));
+            }
+            setWinner('player');
+            winnerRef.current = 'player';
+            poolSound.playWinFanfare();
+            setMessage(`🏳️ ${realOpponentName} keluar dari pertandingan! Anda OTOMATIS MENANG!`);
+          } else if (data?.winner && data.winner !== username) {
+            hasForfeitedRef.current = true;
+            setWinner('ai');
+            winnerRef.current = 'ai';
+          }
+        };
+
         socket.on('billiard_opponent_shot', handleOpponentShot);
+        socket.on('billiard_opponent_left', handleOpponentLeftOrMatchEnd);
+        socket.on('byone_match_ended', handleOpponentLeftOrMatchEnd);
         return () => {
           socket.off('billiard_opponent_shot', handleOpponentShot);
+          socket.off('billiard_opponent_left', handleOpponentLeftOrMatchEnd);
+          socket.off('byone_match_ended', handleOpponentLeftOrMatchEnd);
         };
       }
     }
@@ -3238,7 +3280,9 @@ export default function BilliardScreen({
 
     const filteredRooms = roomFilter === 'all'
       ? POOL_ROOMS
-      : POOL_ROOMS.filter(r => r.tierCategory === roomFilter);
+      : roomFilter === 'pemula'
+        ? POOL_ROOMS.filter(r => r.tierCategory === 'pemula' || r.tierCategory === 'menengah')
+        : POOL_ROOMS.filter(r => r.tierCategory === roomFilter);
 
     return (
       <div className="billiard-screen pool8-room-screen">
@@ -3251,7 +3295,7 @@ export default function BilliardScreen({
           
           <div className="pool8-room-header-center">
             <div className="pool8-room-title">🎱 PILIH ARENA TURNAMEN 1 ON 1</div>
-            <div className="pool8-room-sub">Taklukkan 5 kota dunia, kumpulkan Cincin Juara & raih koin puluhan juta!</div>
+            <div className="pool8-room-sub">Taklukkan 5 kota dunia, kumpulkan Cincin Juara & raih koin jutaan!</div>
           </div>
 
           <div className="pool8-room-user-chip">
@@ -3270,9 +3314,9 @@ export default function BilliardScreen({
         <div className="pool8-room-tabs">
           {[
             { id: 'all', label: '🌐 Semua Arena' },
-            { id: 'pemula', label: '⭐ Pemula (5K - 20K)' },
-            { id: 'pro', label: '🔥 Pro Club (50K - 100K)' },
-            { id: 'sultan', label: '👑 Sultan VIP (200K)' }
+            { id: 'pemula', label: '⭐ Pemula (20K - 50K)' },
+            { id: 'pro', label: '🔥 Pro & Master (100K - 200K)' },
+            { id: 'sultan', label: '👑 Sultan VIP (500K)' }
           ].map(tab => (
             <button
               key={tab.id}
@@ -3306,7 +3350,7 @@ export default function BilliardScreen({
                 {/* Recommendation ribbon */}
                 {isRec && (
                   <div className="arena-rec-ribbon">
-                    <span>🔥 REKOMENDASI TERBAIK</span>
+                    <span>🔥 REKOMENDASI</span>
                   </div>
                 )}
 
@@ -3317,7 +3361,6 @@ export default function BilliardScreen({
                     <span className="arena-city-name">{room.city}</span>
                   </div>
                   <div className="arena-badge-group">
-                    <span className="arena-badge-pill">{room.badge}</span>
                     <span className={`arena-tier-pill tier-${room.tier.toLowerCase()}`}>{room.tier}</span>
                   </div>
                 </div>
@@ -3355,7 +3398,7 @@ export default function BilliardScreen({
                   <div className="arena-title">{room.name}</div>
                   <div className="arena-cloth-tag">
                     <span className="cloth-dot" style={{ background: room.feltColor }} />
-                    <span>Laken: {room.feltName}</span>
+                    <span>{room.feltName}</span>
                   </div>
                 </div>
 
@@ -3363,7 +3406,7 @@ export default function BilliardScreen({
                 <div className="arena-prize-box">
                   <div className="arena-prize-header">
                     <span className="arena-trophy-ico">🏆</span>
-                    <span>TOTAL HADIAH JUARA</span>
+                    <span>HADIAH JUARA</span>
                   </div>
                   <div className="arena-prize-amount">
                     <span className="arena-coin-ico">🪙</span>
@@ -3374,12 +3417,11 @@ export default function BilliardScreen({
                 {/* Entry fee & online stats */}
                 <div className="arena-meta-box">
                   <div className="arena-meta-item">
-                    <span className="arena-meta-label">Biaya Masuk:</span>
+                    <span className="arena-meta-label">Masuk:</span>
                     <span className="arena-meta-val entry">🪙 {room.entry.toLocaleString('id-ID')}</span>
                   </div>
                   <div className="arena-meta-sep">•</div>
                   <div className="arena-meta-item">
-                    <span className="arena-meta-label">Pemain Online:</span>
                     <span className="arena-meta-val online">
                       <span className="pulse-green-dot" />
                       {room.onlineCount.toLocaleString('id-ID')}
@@ -3958,7 +4000,7 @@ export default function BilliardScreen({
             <div className="bl-modal-icon">⚠️</div>
             <h2 className="bl-modal-title">Keluar dari Meja?</h2>
             <p className="bl-modal-sub">
-              Pertandingan sedang berlangsung. Jika Anda keluar sekarang, taruhan <b>🪙 {selectedRoom.entry.toLocaleString('id-ID')}</b> tidak dapat dikembalikan!
+              Pertandingan sedang berlangsung. Jika Anda keluar sekarang, Anda dianggap menyerah (lawan otomatis menang) dan taruhan <b>🪙 {selectedRoom.entry.toLocaleString('id-ID')}</b> tidak dapat dikembalikan!
             </p>
             <button className="bl-btn-cancel" onClick={() => setShowExitConfirm(false)}>
               Tetap Main
@@ -3966,7 +4008,18 @@ export default function BilliardScreen({
             <button
               className="bl-btn-start"
               style={{ background: 'linear-gradient(135deg, #dc2626, #b91c1c)' }}
-              onClick={() => { setShowExitConfirm(false); onBack(); }}
+              onClick={() => {
+                if (isMultiplayer && socket && !winnerRef.current && !hasForfeitedRef.current) {
+                  hasForfeitedRef.current = true;
+                  socket.emit('byone_forfeit', {
+                    matchId: roomCode ? `byone_${roomCode}` : undefined,
+                    roomCode: roomCode || undefined,
+                    username,
+                  });
+                }
+                setShowExitConfirm(false);
+                onBack();
+              }}
             >
               Ya, Keluar ke Lobi
             </button>
@@ -3997,10 +4050,18 @@ export default function BilliardScreen({
         <div className="bl-overlay">
           <div className={`bl-modal ${winner === 'player' ? 'win' : 'lose'}`}>
             <div className="bl-modal-icon">{winner === 'player' ? '🏆' : '😢'}</div>
-            <h2 className="bl-modal-title">{winner === 'player' ? 'KEMENANGAN TELAK!' : 'ANDA KALAH!'}</h2>
+            <h2 className="bl-modal-title">
+              {winner === 'player'
+                ? winByOpponentLeft
+                  ? 'AUTO WIN! LAWAN KELUAR!'
+                  : 'KEMENANGAN TELAK!'
+                : 'ANDA KALAH!'}
+            </h2>
             <p className="bl-modal-sub">
               {winner === 'player'
-                ? `Selamat! Anda berhasil memenangkan hadiah 🪙 +${selectedRoom.prize.toLocaleString('id-ID')}!`
+                ? winByOpponentLeft
+                  ? `🏳️ ${oppDisplayName} keluar dari pertandingan! Anda OTOMATIS MENANG dan berhak atas seluruh Pot 🪙 +${selectedRoom.prize.toLocaleString('id-ID')}!`
+                  : `Selamat! Anda berhasil memenangkan hadiah 🪙 +${selectedRoom.prize.toLocaleString('id-ID')}!`
                 : `Sayang sekali! Anda kehilangan taruhan 🪙 -${selectedRoom.entry.toLocaleString('id-ID')}.`}
             </p>
             <div className="bl-coins-row">

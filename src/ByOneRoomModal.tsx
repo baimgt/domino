@@ -13,40 +13,46 @@ interface ByOneRoomModalProps {
 const AVAILABLE_MODES = [
   {
     id: 'billiard' as const,
-    name: 'KINGS BILLIARDS 8-BALL',
+    name: 'KINGS BILLIARD 8-BALL',
+    shortName: 'Billiard 8-Ball',
     icon: '🎱',
-    tag: '2 PEMAIN (1v1)',
-    desc: 'Adu Sodok Bola 1v1, Masukkan Bola 8 & Ambil Pot!',
+    tag: '1 VS 1 DUEL',
+    desc: 'Adu sodok bola 1 lawan 1, masukkan bola 8 & rebut seluruh pot!',
     maxPlayers: 2,
-    badgeColor: '#2ecc71',
+    accent: '#10b981',
+    bgGrad: 'linear-gradient(135deg, rgba(16, 185, 129, 0.22) 0%, rgba(6, 78, 59, 0.45) 100%)',
   },
   {
     id: 'domino' as const,
-    name: 'DOMINO GAPLE',
+    name: 'DOMINO GAPLE ARENA',
+    shortName: 'Domino Gaple',
     icon: '🀄',
-    tag: 'MAKS 4 PEMAIN',
-    desc: 'Duel Balak, Banting Kartu & Dobel Taruhan 2X!',
+    tag: '2 - 4 PEMAIN',
+    desc: 'Duel balak & strategi kartu di meja privat bersama teman!',
     maxPlayers: 4,
-    badgeColor: '#e74c3c',
+    accent: '#ef4444',
+    bgGrad: 'linear-gradient(135deg, rgba(239, 68, 68, 0.22) 0%, rgba(127, 29, 29, 0.45) 100%)',
   },
   {
     id: 'qiuqiu' as const,
-    name: 'QIUQIU (QQ)',
+    name: 'QIUQIU (QQ) ROYAL',
+    shortName: 'QiuQiu (QQ)',
     icon: '🃏',
-    tag: 'MAKS 6 PEMAIN',
-    desc: 'Adu Kombinasi Kartu Qiu 9-9 & Balak Kembar!',
+    tag: '2 - 6 PEMAIN',
+    desc: 'Adu kombinasi kartu Qiu 9-9, Murni & Six Devil bareng kawan!',
     maxPlayers: 6,
-    badgeColor: '#f39c12',
+    accent: '#f59e0b',
+    bgGrad: 'linear-gradient(135deg, rgba(245, 158, 11, 0.22) 0%, rgba(120, 53, 15, 0.45) 100%)',
   },
 ];
 
 const QUICK_BETS = [
-  { val: 5000, label: '5K' },
-  { val: 10000, label: '10K' },
   { val: 20000, label: '20K' },
   { val: 50000, label: '50K' },
   { val: 100000, label: '100K' },
   { val: 200000, label: '200K' },
+  { val: 300000, label: '300K' },
+  { val: 500000, label: '500K' },
 ];
 
 export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneRoomModalProps) {
@@ -64,6 +70,7 @@ export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneR
   const [activeRoomCode, setActiveRoomCode] = useState<string | null>(null);
   const [roomData, setRoomData] = useState<any>(null);
   const [joinToast, setJoinToast] = useState<string | null>(null);
+  const [copiedCode, setCopiedCode] = useState<boolean>(false);
 
   // Join State
   const [inputCode, setInputCode] = useState<string>('');
@@ -102,7 +109,7 @@ export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneR
       setRoomData(room);
       setErrorMsg(null);
       if (newPlayer?.username) {
-        setJoinToast(`🎉 ${newPlayer.username} telah bergabung ke kamar!`);
+        setJoinToast(`🎉 ${newPlayer.username} telah bergabung ke kamar duel!`);
         setTimeout(() => setJoinToast(null), 3500);
       }
     });
@@ -141,8 +148,8 @@ export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneR
 
   const formatCoins = (n: number) => {
     if (!n) return '0';
-    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
-    if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+    if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+    if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
     return n.toLocaleString('id-ID');
   };
 
@@ -156,8 +163,8 @@ export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneR
   // Create Room
   const handleCreateRoom = () => {
     const bet = getEffectiveBet();
-    if (bet < 5000 || bet > 200000) {
-      setErrorMsg('Taruhan harus antara 5.000 (5K) sampai 200.000 (200K) koin!');
+    if (bet < 5000 || bet > 500000) {
+      setErrorMsg('Taruhan harus antara 5.000 (5K) sampai 500.000 (500K) koin!');
       return;
     }
     const usableCoins = Math.max(0, myCoins - myBonusCoins);
@@ -185,7 +192,7 @@ export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneR
   const handleStartGame = () => {
     if (!activeRoomCode || !socket || !socket.connected) return;
     if (!roomData || (roomData.players && roomData.players.length < 2)) {
-      setErrorMsg('Minimal butuh 2 pemain untuk memulai permainan!');
+      setErrorMsg('Minimal butuh 2 pemain untuk memulai pertandingan!');
       return;
     }
     socket.emit('byone_start_custom_room', {
@@ -214,9 +221,9 @@ export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneR
 
   // Join Room via Code
   const handleJoinRoom = () => {
-    const cleanCode = inputCode.replace(/[^0-9a-zA-Z]/g, '').trim();
+    const cleanCode = inputCode.replace(/[^0-9]/g, '').trim();
     if (!cleanCode || cleanCode.length !== 6) {
-      setErrorMsg('Masukkan 6-digit kode kamar!');
+      setErrorMsg('Masukkan 6-digit angka kode kamar!');
       return;
     }
 
@@ -230,6 +237,35 @@ export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneR
     }
   };
 
+  const handleCopyRoomCode = () => {
+    if (!activeRoomCode) return;
+    navigator.clipboard?.writeText(activeRoomCode);
+    setCopiedCode(true);
+    setTimeout(() => setCopiedCode(false), 2200);
+  };
+
+  const handlePasteCode = async () => {
+    try {
+      const txt = await navigator.clipboard.readText();
+      const digits = txt.replace(/[^0-9]/g, '').slice(0, 6);
+      if (digits) setInputCode(digits);
+    } catch {
+      // Ignore clipboard permission errors
+    }
+  };
+
+  const handleNumpadPress = (digit: string) => {
+    if (digit === 'CLR') {
+      setInputCode('');
+      return;
+    }
+    if (digit === 'DEL') {
+      setInputCode(prev => prev.slice(0, -1));
+      return;
+    }
+    setInputCode(prev => (prev.length < 6 ? prev + digit : prev));
+  };
+
   const currentModeConfig = AVAILABLE_MODES.find(m => m.id === (roomData?.mode || selectedMode)) || AVAILABLE_MODES[0];
   const isHost = roomData?.hostUsername === myUsername;
   const playersList: any[] = roomData?.players || [];
@@ -237,690 +273,377 @@ export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneR
 
   return (
     <div className="modal-overlay tm-overlay-fade" style={{ zIndex: 1700 }} onClick={onClose}>
-      <div
-        className="byone-modal-card tm-box-bounce"
-        onClick={e => e.stopPropagation()}
-        style={{
-          width: '94vw',
-          maxWidth: '720px',
-          maxHeight: '92vh',
-          background: 'linear-gradient(165deg, #1b0a2a 0%, #0c0415 100%)',
-          border: '2px solid rgba(255, 215, 0, 0.4)',
-          borderRadius: '24px',
-          boxShadow: '0 10px 40px rgba(0,0,0,0.95), 0 0 35px rgba(231,76,60,0.3)',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          color: '#fff',
-          position: 'relative',
-        }}
-      >
-        {/* Header */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '1.8vh 2.5vw',
-            background: 'linear-gradient(90deg, rgba(231,76,60,0.25) 0%, rgba(241,196,15,0.2) 100%)',
-            borderBottom: '1px solid rgba(255,215,0,0.25)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1vw' }}>
-            <span style={{ fontSize: '3.2vh' }}>⚔️</span>
+      <div className="bo2-modal-box tm-box-bounce" onClick={e => e.stopPropagation()}>
+        {/* TOP HEADER BAR */}
+        <div className="bo2-header">
+          <div className="bo2-brand">
+            <div className="bo2-brand-emblem">⚔️</div>
             <div>
-              <div style={{ fontSize: '2.4vh', fontWeight: 900, color: '#f1c40f', letterSpacing: '1px' }}>
-                LOBBY BY ONE PRIVAT
-              </div>
-              <div style={{ fontSize: '1.3vh', color: 'rgba(255,255,255,0.7)' }}>
-                Billiard (2P) • Domino (Max 4P) • QiuQiu (Max 6P)
-              </div>
+              <div className="bo2-brand-title">ARENA BY ONE PRIVAT</div>
+              <div className="bo2-brand-sub">Duel Langsung Bareng Teman • Auto-Win Anti Kabur</div>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5vw' }}>
-            <div
-              style={{
-                background: 'rgba(0,0,0,0.4)',
-                border: '1px solid #f1c40f',
-                padding: '0.4vh 1.2vw',
-                borderRadius: '20px',
-                fontSize: '1.5vh',
-                fontWeight: 'bold',
-                color: '#f1c40f',
-              }}
-            >
-              🪙 {formatCoins(myCoins)}
+          {!activeRoomCode && (
+            <div className="bo2-nav-tabs">
+              <button
+                className={`bo2-nav-tab g-btn-press ${tab === 'create' ? 'active-create' : ''}`}
+                onClick={() => setTab('create')}
+              >
+                <span>⚔️</span> Buat Kamar Duel
+              </button>
+              <button
+                className={`bo2-nav-tab g-btn-press ${tab === 'join' ? 'active-join' : ''}`}
+                onClick={() => setTab('join')}
+              >
+                <span>🔑</span> Gabung Pakai Kode
+              </button>
             </div>
-            <button
-              onClick={onClose}
-              style={{
-                background: 'rgba(255,255,255,0.1)',
-                border: 'none',
-                color: '#fff',
-                fontSize: '2vh',
-                borderRadius: '50%',
-                width: '4vh',
-                height: '4vh',
-                cursor: 'pointer',
-              }}
-            >
-              ✖
+          )}
+
+          <div className="bo2-header-right">
+            <div className="bo2-wallet-pill">
+              <span>🪙</span>
+              <span>{formatCoins(myCoins)}</span>
+            </div>
+            <button className="bo2-close-btn g-btn-press" onClick={onClose} aria-label="Tutup">
+              ✕
             </button>
           </div>
         </div>
 
-        {/* Error Notification */}
-        {errorMsg && (
-          <div
-            style={{
-              background: '#e74c3c',
-              color: '#fff',
-              padding: '0.8vh 2vw',
-              textAlign: 'center',
-              fontSize: '1.4vh',
-              fontWeight: 'bold',
-            }}
-          >
-            {errorMsg}
-          </div>
-        )}
+        {/* FLOATING BANNERS (ERROR / TOAST) */}
+        {errorMsg && <div className="bo2-banner error">{errorMsg}</div>}
+        {joinToast && <div className="bo2-banner success">{joinToast}</div>}
 
-        {/* Join Toast Alert */}
-        {joinToast && (
-          <div
-            style={{
-              background: 'linear-gradient(90deg, #27ae60, #2ecc71)',
-              color: '#fff',
-              padding: '0.8vh 2vw',
-              textAlign: 'center',
-              fontSize: '1.4vh',
-              fontWeight: 'bold',
-              boxShadow: '0 4px 15px rgba(46,204,113,0.4)',
-            }}
-          >
-            {joinToast}
-          </div>
-        )}
-
-        {/* Content Body */}
-        <div style={{ padding: '2vh 2.5vw', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '2vh' }}>
-
-          {/* =====================================================
-              WAITING ROOM SCREEN (REAL-TIME LIVE PLAYER SLOTS)
-          ===================================================== */}
+        {/* MAIN BODY */}
+        <div className="bo2-body">
           {activeRoomCode ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2vh' }}>
-
-              {/* Top Banner: Room Code & Summary */}
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  background: 'rgba(0,0,0,0.5)',
-                  border: '2px dashed #f1c40f',
-                  borderRadius: '16px',
-                  padding: '1.5vh 2vw',
-                  boxShadow: '0 0 20px rgba(241,196,15,0.2)',
-                  flexWrap: 'wrap',
-                  gap: '1.5vh',
-                }}
-              >
-                <div>
-                  <div style={{ fontSize: '1.3vh', color: 'rgba(255,255,255,0.6)', letterSpacing: '1px' }}>
-                    KODE KAMAR PRIVAT (BAGIKAN KE TEMAN):
+            /* =====================================================
+               WAITING ROOM (LIVE PLAYER SLOTS & VS ARENA)
+               ===================================================== */
+            <div className="bo2-waiting-stage">
+              {/* Top Ticket & Info Bar */}
+              <div className="bo2-waiting-topbar">
+                <div className="bo2-code-ticket">
+                  <div className="bo2-code-meta">
+                    <span className="bo2-code-kicker">KODE KAMAR PRIVAT</span>
+                    <span className="bo2-code-digits">#{activeRoomCode}</span>
                   </div>
-                  <div style={{ fontSize: '4vh', fontWeight: 1000, letterSpacing: '4px', color: '#f1c40f' }}>
-                    #{activeRoomCode}
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', gap: '1vw', alignItems: 'center' }}>
-                  <button
-                    style={{
-                      background: 'linear-gradient(90deg, #f39c12, #e67e22)',
-                      border: 'none',
-                      color: '#fff',
-                      padding: '0.8vh 1.6vw',
-                      borderRadius: '12px',
-                      fontSize: '1.4vh',
-                      fontWeight: 'bold',
-                      cursor: 'pointer',
-                      boxShadow: '0 2px 10px rgba(243,156,18,0.3)',
-                    }}
-                    onClick={() => {
-                      navigator.clipboard?.writeText(activeRoomCode);
-                      alert(`Kode Kamar #${activeRoomCode} berhasil disalin! Bagikan ke teman.`);
-                    }}
-                  >
-                    📋 Salin Kode
+                  <button className="bo2-copy-code-btn g-btn-press" onClick={handleCopyRoomCode}>
+                    {copiedCode ? '✓ Tersalin!' : '📋 Salin Kode'}
                   </button>
                 </div>
-              </div>
 
-              {/* Game Mode & Pot Info Bar */}
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-around',
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  borderRadius: '14px',
-                  padding: '1.2vh 1.5vw',
-                  fontSize: '1.4vh',
-                  textAlign: 'center',
-                }}
-              >
-                <div>
-                  <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1.2vh' }}>GAME MODE</div>
-                  <div style={{ fontWeight: 900, color: '#fff', marginTop: '0.3vh' }}>
-                    {currentModeConfig.icon} {currentModeConfig.name}
+                <div className="bo2-room-stats-group">
+                  <div className="bo2-room-stat-pill">
+                    <span className="bo2-rs-lbl">CABANG DUEL</span>
+                    <span className="bo2-rs-val">{currentModeConfig.icon} {currentModeConfig.shortName}</span>
                   </div>
-                </div>
-                <div style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '1.5vw' }}>
-                  <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1.2vh' }}>TARUHAN / ORANG</div>
-                  <div style={{ fontWeight: 900, color: '#f1c40f', marginTop: '0.3vh' }}>
-                    {formatCoins(roomData?.betAmount || getEffectiveBet())} 🪙
+                  <div className="bo2-room-stat-pill">
+                    <span className="bo2-rs-lbl">TARUHAN / ORANG</span>
+                    <span className="bo2-rs-val gold">🪙 {formatCoins(roomData?.betAmount || getEffectiveBet())}</span>
                   </div>
-                </div>
-                <div style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '1.5vw' }}>
-                  <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1.2vh' }}>TOTAL POT HADIAH</div>
-                  <div style={{ fontWeight: 1000, color: '#2ecc71', marginTop: '0.3vh' }}>
-                    {formatCoins((roomData?.betAmount || getEffectiveBet()) * Math.max(1, playersList.length))} 🪙
-                  </div>
-                </div>
-                <div style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '1.5vw' }}>
-                  <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1.2vh' }}>KAPASITAS KAMAR</div>
-                  <div style={{ fontWeight: 900, color: '#3498db', marginTop: '0.3vh' }}>
-                    {playersList.length} / {maxCapacity} Pemain
+                  <div className="bo2-room-stat-pill">
+                    <span className="bo2-rs-lbl">TOTAL POT JUARA</span>
+                    <span className="bo2-rs-val green">
+                      🏆 {formatCoins((roomData?.betAmount || getEffectiveBet()) * Math.max(2, playersList.length))}
+                    </span>
                   </div>
                 </div>
               </div>
 
-              {/* Section Title */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.5vh' }}>
-                <div style={{ fontSize: '1.5vh', fontWeight: 900, color: 'rgba(255,255,255,0.9)' }}>
-                  👥 DAFTAR PEMAIN DI KAMAR:
+              {/* Center Live Player Slots */}
+              <div className="bo2-slots-section">
+                <div className="bo2-slots-header">
+                  <span className="bo2-slots-title">
+                    👥 PEMAIN DI DALAM KAMAR ({playersList.length}/{maxCapacity})
+                  </span>
+                  <span className={`bo2-slots-status ${playersList.length >= 2 ? 'ready' : ''}`}>
+                    {playersList.length < 2
+                      ? '⏳ Bagikan kode kamar ke teman Anda untuk memulai...'
+                      : '✨ Lawan sudah siap! Pertandingan siap dimulai!'}
+                  </span>
                 </div>
-                <div style={{ fontSize: '1.3vh', color: '#f39c12', fontWeight: 800 }}>
-                  {playersList.length < 2 ? '⏳ Menunggu teman masuk...' : '✨ Siap dimulai!'}
-                </div>
-              </div>
 
-              {/* LIVE PLAYER SLOTS GRID */}
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: maxCapacity <= 2 ? 'repeat(2, 1fr)' : maxCapacity <= 4 ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)',
-                  gap: '1.2vw',
-                }}
-              >
-                {Array.from({ length: maxCapacity }).map((_, idx) => {
-                  const player = playersList[idx];
-                  const isMe = player?.username === myUsername;
+                {maxCapacity === 2 ? (
+                  /* 1v1 ESPORTS VERSUS CARD LAYOUT FOR BILLIARD */
+                  <div className="bo2-vs-duel-row">
+                    {[0, 1].map(idx => {
+                      const player = playersList[idx];
+                      const isMe = player?.username === myUsername;
 
-                  if (player) {
-                    return (
-                      <div
-                        key={idx}
-                        style={{
-                          background: isMe
-                            ? 'linear-gradient(145deg, rgba(241,196,15,0.2), rgba(231,76,60,0.25))'
-                            : 'rgba(255,255,255,0.07)',
-                          border: isMe ? '2px solid #f1c40f' : '1px solid rgba(255,255,255,0.2)',
-                          borderRadius: '16px',
-                          padding: '1.8vh 1vw',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          textAlign: 'center',
-                          gap: '0.8vh',
-                          boxShadow: isMe ? '0 0 15px rgba(241,196,15,0.3)' : 'none',
-                          position: 'relative',
-                        }}
-                      >
-                        {/* Status Pin */}
-                        <div
-                          style={{
-                            position: 'absolute',
-                            top: '8px',
-                            right: '8px',
-                            fontSize: '1vh',
-                            fontWeight: 900,
-                            padding: '0.2vh 0.6vw',
-                            borderRadius: '10px',
-                            background: player.isHost ? '#f1c40f' : '#2ecc71',
-                            color: player.isHost ? '#000' : '#fff',
-                          }}
-                        >
-                          {player.isHost ? '👑 HOST' : '✅ SIAP'}
+                      return (
+                        <div key={idx} className="bo2-vs-slot-wrap">
+                          {idx === 1 && (
+                            <div className="bo2-vs-center-badge">
+                              <span>VS</span>
+                            </div>
+                          )}
+                          {player ? (
+                            <div className={`bo2-player-card duel-size ${isMe ? 'is-me' : ''}`}>
+                              <span className={`bo2-role-tag ${player.isHost ? 'host' : 'ready'}`}>
+                                {player.isHost ? '👑 HOST' : '✅ SIAP TANDING'}
+                              </span>
+                              <div className="bo2-player-avatar-ring">
+                                {renderSlotAvatar(player.avatar, 'byone-slot-avatar', '🐸')}
+                              </div>
+                              <div className="bo2-player-name">
+                                {player.username} {isMe && <span className="bo2-you-tag">(Anda)</span>}
+                              </div>
+                              <div className="bo2-player-coins">🪙 {formatCoins(player.coins || 0)} Koin</div>
+                            </div>
+                          ) : (
+                            <div className="bo2-player-card duel-size empty">
+                              <div className="bo2-empty-avatar-pulse">👤</div>
+                              <div className="bo2-empty-title">Menunggu Lawan...</div>
+                              <div className="bo2-empty-sub">Kirim Kode #{activeRoomCode} ke Teman</div>
+                            </div>
+                          )}
                         </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  /* MULTI-PLAYER GRID FOR DOMINO (4P) & QIUQIU (6P) */
+                  <div className={`bo2-multi-slots-grid cols-${maxCapacity <= 4 ? '4' : '6'}`}>
+                    {Array.from({ length: maxCapacity }).map((_, idx) => {
+                      const player = playersList[idx];
+                      const isMe = player?.username === myUsername;
 
-                        {/* Avatar */}
-                        <div
-                          style={{
-                            width: '6.5vh',
-                            height: '6.5vh',
-                            borderRadius: '50%',
-                            overflow: 'hidden',
-                            border: '2px solid #ffd700',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            background: '#1a102a',
-                          }}
-                        >
-                          {renderSlotAvatar(player.avatar, 'byone-slot-avatar', '🐸')}
-                        </div>
-
-                        {/* Username & VIP */}
-                        <div>
-                          <div style={{ fontSize: '1.6vh', fontWeight: 900, color: isMe ? '#f1c40f' : '#fff' }}>
-                            {player.username} {isMe && '(Anda)'}
+                      if (player) {
+                        return (
+                          <div key={idx} className={`bo2-player-card ${isMe ? 'is-me' : ''}`}>
+                            <span className={`bo2-role-tag ${player.isHost ? 'host' : 'ready'}`}>
+                              {player.isHost ? '👑 HOST' : '✅ SIAP'}
+                            </span>
+                            <div className="bo2-player-avatar-ring">
+                              {renderSlotAvatar(player.avatar, 'byone-slot-avatar', '🐸')}
+                            </div>
+                            <div className="bo2-player-name">
+                              {player.username} {isMe && <span className="bo2-you-tag">(Anda)</span>}
+                            </div>
+                            <div className="bo2-player-coins">🪙 {formatCoins(player.coins || 0)}</div>
                           </div>
-                          <div
-                            style={{
-                              fontSize: '1.1vh',
-                              color: '#ffd700',
-                              fontWeight: 800,
-                              background: 'rgba(0,0,0,0.4)',
-                              padding: '0.2vh 0.6vw',
-                              borderRadius: '8px',
-                              marginTop: '0.3vh',
-                              display: 'inline-block',
-                            }}
-                          >
-                            VIP {player.vipLevel || 0}
-                          </div>
-                        </div>
+                        );
+                      }
 
-                        {/* Balance */}
-                        <div style={{ fontSize: '1.2vh', color: 'rgba(255,255,255,0.7)' }}>
-                          🪙 {formatCoins(player.coins || 0)}
+                      return (
+                        <div key={idx} className="bo2-player-card empty">
+                          <div className="bo2-empty-avatar-pulse">👤</div>
+                          <div className="bo2-empty-title">Slot {idx + 1} Kosong</div>
+                          <div className="bo2-empty-sub">Menunggu teman...</div>
                         </div>
-                      </div>
-                    );
-                  }
-
-                  // Empty Slot
-                  return (
-                    <div
-                      key={idx}
-                      style={{
-                        background: 'rgba(0,0,0,0.25)',
-                        border: '2px dashed rgba(255,255,255,0.18)',
-                        borderRadius: '16px',
-                        padding: '2vh 1vw',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        textAlign: 'center',
-                        gap: '0.8vh',
-                        minHeight: '13vh',
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: '5.5vh',
-                          height: '5.5vh',
-                          borderRadius: '50%',
-                          border: '1px dashed rgba(255,255,255,0.25)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '2.5vh',
-                          color: 'rgba(255,255,255,0.3)',
-                        }}
-                      >
-                        👤
-                      </div>
-                      <div style={{ fontSize: '1.3vh', color: 'rgba(255,255,255,0.4)', fontWeight: 'bold' }}>
-                        Slot {idx + 1}
-                      </div>
-                      <div style={{ fontSize: '1.1vh', color: '#3498db' }}>
-                        Menunggu pemain...
-                      </div>
-                    </div>
-                  );
-                })}
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
-              {/* Action Buttons for Waiting Room */}
-              <div style={{ marginTop: '1vh', display: 'flex', gap: '1.5vw', width: '100%' }}>
+              {/* Bottom Action Bar */}
+              <div className="bo2-waiting-footer">
                 {isHost ? (
                   <>
                     <button
-                      style={{
-                        flex: 1.5,
-                        padding: '1.5vh 0',
-                        borderRadius: '14px',
-                        background: playersList.length >= 2
-                          ? 'linear-gradient(90deg, #27ae60, #2ecc71)'
-                          : 'rgba(255,255,255,0.1)',
-                        border: playersList.length >= 2 ? 'none' : '1px solid rgba(255,255,255,0.2)',
-                        color: playersList.length >= 2 ? '#fff' : 'rgba(255,255,255,0.4)',
-                        fontSize: '1.7vh',
-                        fontWeight: 900,
-                        cursor: playersList.length >= 2 ? 'pointer' : 'not-allowed',
-                        boxShadow: playersList.length >= 2 ? '0 4px 20px rgba(46,204,113,0.5)' : 'none',
-                        letterSpacing: '1px',
-                        transition: 'all 0.2s ease',
-                      }}
+                      className={`bo2-start-btn g-btn-press ${playersList.length >= 2 ? 'ready' : 'disabled'}`}
                       disabled={playersList.length < 2}
                       onClick={handleStartGame}
                     >
                       {playersList.length >= 2
-                        ? `🚀 MULAI PERMAINAN (${playersList.length}/${maxCapacity} PEMAIN)`
-                        : `⏳ MENUNGGU TEMAN MASUK (${playersList.length}/${maxCapacity})`}
+                        ? `🚀 MULAI PERTANDINGAN SEKARANG (${playersList.length}/${maxCapacity} PEMAIN)`
+                        : `⏳ MENUNGGU TEMAN BERGABUNG (${playersList.length}/${maxCapacity})`}
                     </button>
-                    <button
-                      style={{
-                        flex: 1,
-                        padding: '1.5vh 0',
-                        borderRadius: '14px',
-                        background: 'rgba(231,76,60,0.2)',
-                        border: '1px solid #e74c3c',
-                        color: '#ff7675',
-                        fontSize: '1.6vh',
-                        fontWeight: 800,
-                        cursor: 'pointer',
-                      }}
-                      onClick={handleCancelRoom}
-                    >
-                      Batal Room
+                    <button className="bo2-cancel-btn g-btn-press" onClick={handleCancelRoom}>
+                      ✖ Bubarkan Kamar
                     </button>
                   </>
                 ) : (
                   <>
-                    <div
-                      style={{
-                        flex: 1.5,
-                        padding: '1.5vh 0',
-                        borderRadius: '14px',
-                        background: 'rgba(52,152,219,0.2)',
-                        border: '1px solid #3498db',
-                        color: '#5dade2',
-                        fontSize: '1.5vh',
-                        fontWeight: 800,
-                        textAlign: 'center',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.8vw',
-                      }}
-                    >
-                      <span>⏳</span>
-                      <span>Menunggu Host ({roomData?.hostUsername}) Memulai Permainan...</span>
+                    <div className="bo2-guest-wait-banner">
+                      <span className="bo2-wait-spinner">⏳</span>
+                      <span>Menunggu Host (<strong>{roomData?.hostUsername}</strong>) memulai pertandingan...</span>
                     </div>
-                    <button
-                      style={{
-                        flex: 1,
-                        padding: '1.5vh 0',
-                        borderRadius: '14px',
-                        background: 'rgba(231,76,60,0.2)',
-                        border: '1px solid #e74c3c',
-                        color: '#ff7675',
-                        fontSize: '1.6vh',
-                        fontWeight: 800,
-                        cursor: 'pointer',
-                      }}
-                      onClick={handleLeaveRoom}
-                    >
-                      Keluar Kamar
+                    <button className="bo2-cancel-btn g-btn-press" onClick={handleLeaveRoom}>
+                      🚪 Keluar Kamar
                     </button>
                   </>
                 )}
               </div>
-
             </div>
-          ) : (
-            <>
-              {/* =====================================================
-                  TABS: CREATE ROOM vs JOIN ROOM
-              ===================================================== */}
-              <div style={{ display: 'flex', gap: '1vw' }}>
-                <button
-                  style={{
-                    flex: 1,
-                    padding: '1.2vh 0',
-                    borderRadius: '12px',
-                    background: tab === 'create' ? 'linear-gradient(90deg, #e74c3c, #c0392b)' : 'rgba(255,255,255,0.06)',
-                    border: tab === 'create' ? '1px solid #ff7675' : '1px solid rgba(255,255,255,0.15)',
-                    color: '#fff',
-                    fontSize: '1.6vh',
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                  }}
-                  onClick={() => setTab('create')}
-                >
-                  ⚔️ BIKIN ROOM BY ONE
-                </button>
-                <button
-                  style={{
-                    flex: 1,
-                    padding: '1.2vh 0',
-                    borderRadius: '12px',
-                    background: tab === 'join' ? 'linear-gradient(90deg, #2980b9, #3498db)' : 'rgba(255,255,255,0.06)',
-                    border: tab === 'join' ? '1px solid #5dade2' : '1px solid rgba(255,255,255,0.15)',
-                    color: '#fff',
-                    fontSize: '1.6vh',
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                  }}
-                  onClick={() => setTab('join')}
-                >
-                  🔑 GABUNG ROOM (KODE)
-                </button>
-              </div>
+          ) : tab === 'create' ? (
+            /* =====================================================
+               TAB 1: CREATE ROOM (2-COLUMN ARENA BUILDER)
+               ===================================================== */
+            <div className="bo2-create-layout">
+              {/* LEFT COLUMN: CHOOSE GAME MODE */}
+              <div className="bo2-col-modes">
+                <div className="bo2-section-heading">
+                  <span className="bo2-step-num">1</span>
+                  <span>PILIH CABANG PERMAINAN</span>
+                </div>
 
-              {/* TAB 1: CREATE ROOM */}
-              {tab === 'create' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2vh' }}>
-
-                  {/* Step 1: Mode Selection with capacity tags */}
-                  <div>
-                    <div style={{ fontSize: '1.5vh', fontWeight: 800, color: 'rgba(255,255,255,0.8)', marginBottom: '1vh' }}>
-                      1. PILIH GAME & JUMLAH PEMAIN:
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1vw' }}>
-                      {AVAILABLE_MODES.map(m => {
-                        const isSelected = selectedMode === m.id;
-                        return (
-                          <div
-                            key={m.id}
-                            onClick={() => setSelectedMode(m.id)}
-                            style={{
-                              background: isSelected ? 'linear-gradient(145deg, rgba(241,196,15,0.2), rgba(231,76,60,0.25))' : 'rgba(255,255,255,0.05)',
-                              border: isSelected ? '2px solid #f1c40f' : '1px solid rgba(255,255,255,0.15)',
-                              borderRadius: '16px',
-                              padding: '1.6vh 1vw',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'center',
-                              textAlign: 'center',
-                              cursor: 'pointer',
-                              boxShadow: isSelected ? '0 0 20px rgba(241,196,15,0.3)' : 'none',
-                              transition: 'all 0.2s ease',
-                            }}
-                          >
-                            <span style={{ fontSize: '3.6vh', marginBottom: '0.5vh' }}>{m.icon}</span>
-                            <span style={{ fontSize: '1.6vh', fontWeight: 900, color: isSelected ? '#f1c40f' : '#fff' }}>
-                              {m.name}
-                            </span>
-                            <span
-                              style={{
-                                fontSize: '1.2vh',
-                                background: m.badgeColor,
-                                color: '#fff',
-                                padding: '0.2vh 0.8vw',
-                                borderRadius: '8px',
-                                fontWeight: 800,
-                                marginTop: '0.6vh',
-                              }}
-                            >
+                <div className="bo2-modes-list">
+                  {AVAILABLE_MODES.map(m => {
+                    const isSelected = selectedMode === m.id;
+                    return (
+                      <div
+                        key={m.id}
+                        className={`bo2-mode-card g-btn-press ${isSelected ? 'selected' : ''}`}
+                        style={{
+                          '--mode-accent': m.accent,
+                          '--mode-bg': m.bgGrad,
+                        } as React.CSSProperties}
+                        onClick={() => setSelectedMode(m.id)}
+                      >
+                        <div className="bo2-mode-icon-box">{m.icon}</div>
+                        <div className="bo2-mode-info">
+                          <div className="bo2-mode-top-row">
+                            <span className="bo2-mode-name">{m.name}</span>
+                            <span className="bo2-mode-tag" style={{ background: m.accent }}>
                               {m.tag}
                             </span>
-                            <span style={{ fontSize: '1.2vh', color: 'rgba(255,255,255,0.6)', marginTop: '0.6vh', lineHeight: '1.3' }}>
-                              {m.desc}
-                            </span>
                           </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+                          <div className="bo2-mode-desc">{m.desc}</div>
+                        </div>
+                        <div className={`bo2-mode-radio ${isSelected ? 'checked' : ''}`}>
+                          {isSelected ? '✓' : ''}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
 
-                  {/* Step 2: Bet Selection */}
-                  <div>
-                    <div style={{ fontSize: '1.5vh', fontWeight: 800, color: 'rgba(255,255,255,0.8)', marginBottom: '1vh' }}>
-                      2. PILIH NOMINAL TARUHAN PER PEMAIN:
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '0.8vw', marginBottom: '1vh' }}>
-                      {QUICK_BETS.map(b => (
+              {/* RIGHT COLUMN: CHOOSE STAKE & CREATE */}
+              <div className="bo2-col-stakes">
+                <div className="bo2-section-heading">
+                  <span className="bo2-step-num">2</span>
+                  <span>ATUR TARUHAN PER PEMAIN</span>
+                </div>
+
+                <div className="bo2-stakes-box">
+                  <div className="bo2-quick-bets-grid">
+                    {QUICK_BETS.map(b => {
+                      const active = selectedBet === b.val && !customBetInput;
+                      return (
                         <button
                           key={b.val}
-                          style={{
-                            padding: '1vh 0',
-                            borderRadius: '10px',
-                            background: selectedBet === b.val && !customBetInput ? 'linear-gradient(135deg, #f1c40f, #e67e22)' : 'rgba(255,255,255,0.08)',
-                            border: selectedBet === b.val && !customBetInput ? '1.5px solid #f1c40f' : '1px solid rgba(255,255,255,0.15)',
-                            color: selectedBet === b.val && !customBetInput ? '#000' : '#fff',
-                            fontWeight: 900,
-                            fontSize: '1.5vh',
-                            cursor: 'pointer',
-                          }}
+                          className={`bo2-bet-chip g-btn-press ${active ? 'active' : ''}`}
                           onClick={() => {
                             setSelectedBet(b.val);
                             setCustomBetInput('');
                           }}
                         >
-                          {b.label}
+                          <span className="bo2-chip-coin">🪙</span>
+                          <span>{b.label}</span>
                         </button>
-                      ))}
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1vw' }}>
-                      <span style={{ fontSize: '1.4vh', color: 'rgba(255,255,255,0.7)' }}>Atau Kustom Koin:</span>
-                      <input
-                        type="number"
-                        placeholder="Min 5.000 - Max 200.000"
-                        value={customBetInput}
-                        onChange={e => setCustomBetInput(e.target.value)}
-                        style={{
-                          background: 'rgba(0,0,0,0.4)',
-                          border: '1px solid rgba(255,215,0,0.3)',
-                          borderRadius: '8px',
-                          padding: '0.8vh 1vw',
-                          color: '#fff',
-                          fontSize: '1.5vh',
-                          flex: 1,
-                        }}
-                      />
-                    </div>
+                      );
+                    })}
                   </div>
 
-                  {/* Step 3: Pot Calculation Summary */}
-                  <div
-                    style={{
-                      background: 'rgba(0,0,0,0.4)',
-                      border: '1px solid rgba(255,215,0,0.2)',
-                      borderRadius: '14px',
-                      padding: '1.4vh 2vw',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontSize: '1.3vh', color: 'rgba(255,255,255,0.6)' }}>TARUHAN ANDA:</div>
-                      <div style={{ fontSize: '1.9vh', fontWeight: 900, color: '#fff' }}>
-                        {formatCoins(getEffectiveBet())} 🪙
-                      </div>
-                    </div>
-                    <div style={{ fontSize: '2.5vh', color: '#e74c3c' }}>⚔️</div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: '1.3vh', color: 'rgba(255,255,255,0.6)' }}>POT MINIMAL (2 PEMAIN):</div>
-                      <div style={{ fontSize: '2.2vh', fontWeight: 1000, color: '#f1c40f' }}>
-                        {formatCoins(getEffectiveBet() * 2)} 🪙
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Create Room Button */}
-                  <button
-                    style={{
-                      width: '100%',
-                      padding: '1.6vh 0',
-                      borderRadius: '14px',
-                      background: 'linear-gradient(90deg, #e74c3c, #f39c12)',
-                      border: 'none',
-                      color: '#fff',
-                      fontSize: '1.8vh',
-                      fontWeight: 900,
-                      cursor: 'pointer',
-                      boxShadow: '0 4px 20px rgba(231,76,60,0.4)',
-                      letterSpacing: '1px',
-                    }}
-                    onClick={handleCreateRoom}
-                  >
-                    ✨ BIKIN ROOM BY ONE (KODE 6-DIGIT)
-                  </button>
-                </div>
-              )}
-
-              {/* TAB 2: JOIN ROOM */}
-              {tab === 'join' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5vh', padding: '2vh 1vw' }}>
-                  <div style={{ textAlign: 'center', fontSize: '1.6vh', color: 'rgba(255,255,255,0.8)' }}>
-                    Punya Kode Kamar dari Teman? Masukkan 6 Digit Kode di bawah untuk melihat siapa yang ada di kamar dan langsung bergabung!
-                  </div>
-
-                  <div style={{ display: 'flex', justifyContent: 'center' }}>
+                  <div className="bo2-custom-bet-row">
+                    <span className="bo2-custom-bet-lbl">Nominal Kustom:</span>
                     <input
-                      type="text"
-                      maxLength={6}
-                      placeholder="849201"
-                      value={inputCode}
-                      onChange={e => setInputCode(e.target.value)}
-                      style={{
-                        background: 'rgba(0,0,0,0.5)',
-                        border: '2px solid #f1c40f',
-                        borderRadius: '16px',
-                        padding: '1.5vh 2vw',
-                        color: '#f1c40f',
-                        fontSize: '4vh',
-                        fontWeight: 900,
-                        letterSpacing: '6px',
-                        textAlign: 'center',
-                        width: '260px',
-                        boxShadow: '0 0 20px rgba(241,196,15,0.2)',
-                      }}
+                      type="number"
+                      className="bo2-custom-bet-input"
+                      placeholder="Ketik 5.000 - 500.000"
+                      value={customBetInput}
+                      onChange={e => setCustomBetInput(e.target.value)}
                     />
                   </div>
+                </div>
 
-                  <button
-                    style={{
-                      width: '100%',
-                      padding: '1.6vh 0',
-                      borderRadius: '14px',
-                      background: 'linear-gradient(90deg, #2980b9, #3498db)',
-                      border: 'none',
-                      color: '#fff',
-                      fontSize: '1.8vh',
-                      fontWeight: 900,
-                      cursor: 'pointer',
-                      boxShadow: '0 4px 20px rgba(52,152,219,0.4)',
-                    }}
-                    onClick={handleJoinRoom}
-                  >
-                    🚪 GABUNG KE KAMAR
+                {/* Live Pot Preview Card */}
+                <div className="bo2-pot-preview-card">
+                  <div className="bo2-pot-side">
+                    <span className="bo2-pot-lbl">TARUHAN ANDA</span>
+                    <span className="bo2-pot-val">🪙 {formatCoins(getEffectiveBet())}</span>
+                  </div>
+                  <div className="bo2-pot-vs-divider">⚔️</div>
+                  <div className="bo2-pot-side right">
+                    <span className="bo2-pot-lbl">ESTIMASI TOTAL POT</span>
+                    <span className="bo2-pot-val highlight">
+                      🏆 {formatCoins(getEffectiveBet() * 2)}
+                      {currentModeConfig.maxPlayers > 2 ? ` - ${formatCoins(getEffectiveBet() * currentModeConfig.maxPlayers)}` : ''}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Create CTA Button */}
+                <button className="bo2-submit-create-btn g-btn-press" onClick={handleCreateRoom}>
+                  <span>✨</span>
+                  <span>BUAT KAMAR & DAPATKAN KODE 6-DIGIT</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* =====================================================
+               TAB 2: JOIN ROOM (6-DIGIT PIN DISPLAY + TOUCH NUMPAD)
+               ===================================================== */
+            <div className="bo2-join-layout">
+              {/* Left Side: 6-Digit Visual Code Input & Submit */}
+              <div className="bo2-join-left">
+                <div className="bo2-join-header-text">
+                  <div className="bo2-join-title">🔑 MASUKKAN 6-DIGIT KODE KAMAR</div>
+                  <div className="bo2-join-sub">
+                    Mintalah kode 6 angka dari teman yang membuat kamar untuk langsung masuk ke meja duel!
+                  </div>
+                </div>
+
+                {/* 6 Individual Digit Boxes + Hidden/Direct Input */}
+                <div className="bo2-pin-boxes-wrap" onClick={() => document.getElementById('bo2-hidden-code-input')?.focus()}>
+                  {Array.from({ length: 6 }).map((_, i) => {
+                    const char = inputCode[i] || '';
+                    const isFocused = inputCode.length === i || (inputCode.length === 6 && i === 5);
+                    return (
+                      <div key={i} className={`bo2-pin-slot ${char ? 'filled' : ''} ${isFocused ? 'active' : ''}`}>
+                        {char || '•'}
+                      </div>
+                    );
+                  })}
+                  <input
+                    id="bo2-hidden-code-input"
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={inputCode}
+                    onChange={e => setInputCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))}
+                    className="bo2-hidden-input"
+                    autoFocus
+                  />
+                </div>
+
+                <div className="bo2-join-quick-tools">
+                  <button className="bo2-tool-btn g-btn-press" onClick={handlePasteCode}>
+                    📋 Tempel Kode
+                  </button>
+                  <button className="bo2-tool-btn clear g-btn-press" onClick={() => setInputCode('')}>
+                    🗑️ Bersihkan
                   </button>
                 </div>
-              )}
-            </>
-          )}
 
+                <button
+                  className={`bo2-submit-join-btn g-btn-press ${inputCode.length === 6 ? 'ready' : ''}`}
+                  onClick={handleJoinRoom}
+                >
+                  🚪 GABUNG KE KAMAR SEKARANG
+                </button>
+              </div>
+
+              {/* Right Side: Interactive Touch Keypad */}
+              <div className="bo2-join-numpad">
+                {['1', '2', '3', '4', '5', '6', '7', '8', '9', 'CLR', '0', 'DEL'].map(key => (
+                  <button
+                    key={key}
+                    className={`bo2-numpad-key g-btn-press ${key === 'CLR' ? 'key-clr' : key === 'DEL' ? 'key-del' : ''}`}
+                    onClick={() => handleNumpadPress(key)}
+                  >
+                    {key === 'DEL' ? '⌫' : key}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

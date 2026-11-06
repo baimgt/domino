@@ -250,6 +250,35 @@ export default function ByOneScreen({
   const [winnerUsername, setWinnerUsername] = useState<string | null>(null);
   const [isMeWinner, setIsMeWinner] = useState<boolean>(false);
   const [winPayout, setWinPayout] = useState<number>(0);
+  const [winByOpponentLeft, setWinByOpponentLeft] = useState<boolean>(false);
+
+  // Refs for safe unmount forfeit tracking
+  const viewModeRef = useRef(viewMode);
+  const isOpponentBotRef = useRef(isOpponentBot);
+  const matchIdRef = useRef(matchId);
+  const hasForfeitedRef = useRef(false);
+  useEffect(() => { viewModeRef.current = viewMode; }, [viewMode]);
+  useEffect(() => { isOpponentBotRef.current = isOpponentBot; }, [isOpponentBot]);
+  useEffect(() => { matchIdRef.current = matchId; }, [matchId]);
+
+  useEffect(() => {
+    return () => {
+      if (
+        !hasForfeitedRef.current &&
+        !isOpponentBotRef.current &&
+        (viewModeRef.current === 'playing' || viewModeRef.current === 'versus') &&
+        socket &&
+        socket.connected
+      ) {
+        hasForfeitedRef.current = true;
+        socket.emit('byone_forfeit', {
+          matchId: matchIdRef.current,
+          roomCode: customCode || undefined,
+          username: myUsername,
+        });
+      }
+    };
+  }, [socket, customCode, myUsername]);
 
   // Matchmaking timer ref
   const matchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -350,11 +379,16 @@ export default function ByOneScreen({
       setTimeout(() => setOppTaunt(null), 3500);
     });
 
-    socket.on('byone_match_ended', ({ winner, pot, isMeWinner: meWon, newCoins }: any) => {
+    socket.on('byone_match_ended', ({ winner, pot, isMeWinner: meWon, newCoins, byOpponentLeft, byDisconnect, byFold }: any) => {
+      hasForfeitedRef.current = true;
       setWinnerUsername(winner);
-      setIsMeWinner(meWon);
+      setIsMeWinner(Boolean(meWon || winner === myUsername));
       setWinPayout(pot);
-      if (newCoins !== undefined) setMyCoins(newCoins);
+      setWinByOpponentLeft(Boolean(byOpponentLeft || byDisconnect || byFold));
+      if (newCoins !== undefined) {
+        setMyCoins(newCoins);
+        localStorage.setItem('domino_coins', String(newCoins));
+      }
       setViewMode('result');
     });
 
@@ -1207,11 +1241,13 @@ export default function ByOneScreen({
       <div className={`byone-result-box ${isMeWinner ? 'victory' : 'defeat'}`}>
         <div className="byone-result-trophy">{isMeWinner ? '🏆' : '💀'}</div>
         <div className="byone-result-headline">
-          {isMeWinner ? 'VICTORY! JUARA DUEL BY ONE' : 'DEFEAT! KALAH DUEL'}
+          {isMeWinner ? (winByOpponentLeft ? 'AUTO WIN! LAWAN KELUAR' : 'VICTORY! JUARA DUEL BY ONE') : 'DEFEAT! KALAH DUEL'}
         </div>
         <div className="byone-result-msg">
           {isMeWinner
-            ? `Selamat! Anda berhasil menumbangkan ${opponent?.username || 'lawan'}!`
+            ? winByOpponentLeft
+              ? `🏳️ ${opponent?.username || 'Lawan'} keluar dari pertandingan! Anda OTOMATIS MENANG dan berhak atas seluruh Pot!`
+              : `Selamat! Anda berhasil menumbangkan ${opponent?.username || 'lawan'}!`
             : `${winnerUsername} berhasil memenangkan duel taruhan kali ini.`}
         </div>
 
@@ -1250,7 +1286,26 @@ export default function ByOneScreen({
       {/* Header */}
       <div className="byone-header">
         <div className="byone-header-left">
-          <button className="byone-back-btn" onClick={onBack} title="Kembali ke Beranda">
+          <button
+            className="byone-back-btn"
+            onClick={() => {
+              if ((viewMode === 'playing' || viewMode === 'versus') && !isOpponentBot) {
+                if (!confirm('Keluar dari duel? Anda akan dianggap menyerah dan lawan otomatis menang!')) {
+                  return;
+                }
+                if (socket && socket.connected && !hasForfeitedRef.current) {
+                  hasForfeitedRef.current = true;
+                  socket.emit('byone_forfeit', {
+                    matchId,
+                    roomCode: customCode || undefined,
+                    username: myUsername,
+                  });
+                }
+              }
+              onBack();
+            }}
+            title="Kembali ke Beranda"
+          >
             «
           </button>
           <div className="byone-header-title">

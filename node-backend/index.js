@@ -89,6 +89,8 @@ app.get('/api/transfers/:username', transferController.getTransferHistory);
 app.post('/api/users/update-coins', userController.updateCoins);
 app.post('/api/users/avatar', userController.updateAvatar);
 app.post('/api/users/change-username', userController.changeUsername);
+app.post('/api/users/link-google', userController.linkGoogleAccount);
+app.post('/api/users/google-login', userController.googleLogin);
 
 // Inbox routes
 app.get('/api/inbox/:username',           inboxController.getInbox);

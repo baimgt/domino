@@ -81,7 +81,8 @@ export const performFullLogout = async (onDone?: () => void) => {
     'domino_coins',
     'domino_rp',
     'domino_custom_frame',
-    'domino_login_provider'
+    'domino_login_provider',
+    'domino_google_email'
   ];
   sessionKeys.forEach(k => localStorage.removeItem(k));
 
@@ -210,7 +211,11 @@ function LoginScreen({ onLoginSuccess }: { onLoginSuccess: () => void }) {
         if (checkRes.ok) {
           const profileData = await checkRes.json();
           if (profileData && profileData.username) {
-            localStorage.setItem('domino_username', existingGuest);
+            localStorage.setItem('domino_username', profileData.username);
+            localStorage.setItem('domino_login_provider', profileData.authProvider || 'guest');
+            if (profileData.googleEmail) {
+              localStorage.setItem('domino_google_email', profileData.googleEmail);
+            }
             if (profileData.userId || profileData.id) {
               localStorage.setItem('domino_user_id', String(profileData.userId || profileData.id));
             }
@@ -263,6 +268,8 @@ function LoginScreen({ onLoginSuccess }: { onLoginSuccess: () => void }) {
     setIsLoggingIn(true);
     let username = '';
     let googleAvatar = '';
+    let googleEmail = '';
+    let googleId = '';
 
     try {
       // Ensure GoogleAuth is initialized before signing in
@@ -281,6 +288,8 @@ function LoginScreen({ onLoginSuccess }: { onLoginSuccess: () => void }) {
       const user: any = await GoogleAuth.signIn();
       username = `Google_${user.name || user.givenName || Math.floor(Math.random() * 9999)}`;
       googleAvatar = user.imageUrl || user.picture || user.photoUrl || (user.authentication as any)?.picture || '';
+      googleEmail = user.email || '';
+      googleId = user.id || user.sub || '';
     } catch (error: any) {
       console.warn('Google Native Login error:', error);
       const errStr = String(error?.message || error?.error || error || '');
@@ -296,22 +305,67 @@ function LoginScreen({ onLoginSuccess }: { onLoginSuccess: () => void }) {
       } else if (errStr) {
         infoMsg = `Info: ${errStr}\n`;
       }
-      const promptUsername = prompt(
-        `[Google Sign-In]\n${infoMsg}\nMasukkan nama profil Google Anda untuk melanjutkan:`,
+      const promptInput = prompt(
+        `[Google Sign-In]\n${infoMsg}\nMasukkan Email Gmail atau nama profil Google Anda untuk melanjutkan:`,
         defaultName
       );
-      if (!promptUsername) {
+      if (!promptInput) {
         setIsLoggingIn(false);
         return;
       }
-      username = promptUsername;
+      const trimmedInput = promptInput.trim();
+      if (trimmedInput.includes('@')) {
+        googleEmail = trimmedInput.toLowerCase();
+        const emailPrefix = trimmedInput.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '');
+        username = `Google_${emailPrefix || Math.floor(1000 + Math.random() * 9000)}`;
+      } else {
+        username = trimmedInput;
+      }
     }
 
     try {
       // Sanitize username (remove spaces and special chars to prevent API issues)
       const sanitizedUsername = username.replace(/[^a-zA-Z0-9_]/g, '') || `Google_${Math.floor(1000 + Math.random() * 9000)}`;
 
-      // 1. Check if user already exists
+      // Gunakan endpoint terpadu /users/google-login agar akun Tamu yang sudah dikaitkan ke Google langsung dikenali
+      const googleLoginRes = await fetch(`${API_URL}/users/google-login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          googleId,
+          googleEmail,
+          googleName: sanitizedUsername,
+          googleAvatar
+        })
+      });
+
+      const loginContentType = googleLoginRes.headers.get('content-type') || '';
+      if (googleLoginRes.ok && loginContentType.includes('application/json')) {
+        const gData = await googleLoginRes.json();
+        if (gData && gData.username) {
+          localStorage.setItem('domino_username', gData.username);
+          localStorage.setItem('domino_login_provider', 'google');
+          if (gData.googleEmail || googleEmail) {
+            localStorage.setItem('domino_google_email', gData.googleEmail || googleEmail);
+          }
+          if (gData.userId) {
+            localStorage.setItem('domino_user_id', String(gData.userId));
+          }
+          if (gData.avatar) {
+            localStorage.setItem('domino_avatar', gData.avatar);
+          }
+          if (gData.customFrame) {
+            localStorage.setItem('domino_custom_frame', gData.customFrame);
+          }
+          if (gData.coins !== undefined) {
+            localStorage.setItem('domino_coins', String(gData.coins));
+          }
+          onLoginSuccess();
+          return;
+        }
+      }
+
+      // Fallback: Check if user already exists via /profile/:username
       const checkRes = await fetch(`${API_URL}/profile/${encodeURIComponent(sanitizedUsername)}`);
       const checkContentType = checkRes.headers.get('content-type') || '';
 
@@ -326,7 +380,11 @@ function LoginScreen({ onLoginSuccess }: { onLoginSuccess: () => void }) {
       if (checkRes.ok) {
         const existingData = await checkRes.json().catch(() => null);
         if (existingData) {
-          localStorage.setItem('domino_username', sanitizedUsername);
+          localStorage.setItem('domino_username', existingData.username || sanitizedUsername);
+          localStorage.setItem('domino_login_provider', 'google');
+          if (existingData.googleEmail || googleEmail) {
+            localStorage.setItem('domino_google_email', existingData.googleEmail || googleEmail);
+          }
           if (existingData.userId || existingData.id) {
             localStorage.setItem('domino_user_id', String(existingData.userId || existingData.id));
           }
@@ -358,7 +416,10 @@ function LoginScreen({ onLoginSuccess }: { onLoginSuccess: () => void }) {
           coins: 100000,
           rp: 0,
           score: 50,
-          avatar: initialAvatar
+          avatar: initialAvatar,
+          authProvider: 'google',
+          googleEmail: googleEmail || null,
+          googleId: googleId || null
         })
       });
 
@@ -371,6 +432,8 @@ function LoginScreen({ onLoginSuccess }: { onLoginSuccess: () => void }) {
         const uData = await res.json().catch(() => ({}));
         if (uData.userId) localStorage.setItem('domino_user_id', uData.userId);
         localStorage.setItem('domino_username', sanitizedUsername);
+        localStorage.setItem('domino_login_provider', 'google');
+        if (googleEmail) localStorage.setItem('domino_google_email', googleEmail);
         localStorage.setItem('domino_avatar', initialAvatar);
         localStorage.setItem('domino_coins', '100000');
         onLoginSuccess();
@@ -484,6 +547,158 @@ function PengaturanModal({ onClose, onLogout, onOpenBerita }: { onClose: () => v
   const [customSongName, setCustomSongName] = useState<string | null>(() => lobbyAudio.getCustomAudioName());
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  // State untuk Status Akun & Pengaitan Google
+  const [accountUsername, setAccountUsername] = useState<string>(() => localStorage.getItem('domino_username') || 'Tamu');
+  const [accountUserId, setAccountUserId] = useState<string>(() => localStorage.getItem('domino_user_id') || '');
+  const [authProvider, setAuthProvider] = useState<'guest' | 'google'>(() => {
+    const u = localStorage.getItem('domino_username') || '';
+    const prov = localStorage.getItem('domino_login_provider');
+    const email = localStorage.getItem('domino_google_email');
+    if (prov === 'google' || email || u.startsWith('Google_')) return 'google';
+    return 'guest';
+  });
+  const [googleEmail, setGoogleEmail] = useState<string | null>(() => localStorage.getItem('domino_google_email'));
+  const [isLinkingGoogle, setIsLinkingGoogle] = useState(false);
+  const [linkFeedback, setLinkFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  useEffect(() => {
+    const currentU = localStorage.getItem('domino_username');
+    if (!currentU) return;
+    fetch(`${API_URL}/profile/${encodeURIComponent(currentU)}`)
+      .then(r => (r.ok ? r.json() : null))
+      .then(data => {
+        if (!data) return;
+        if (data.username) setAccountUsername(data.username);
+        if (data.userId || data.id) setAccountUserId(String(data.userId || data.id));
+        const isGoogle = data.authProvider === 'google' || Boolean(data.googleEmail) || String(data.username || '').startsWith('Google_');
+        setAuthProvider(isGoogle ? 'google' : 'guest');
+        localStorage.setItem('domino_login_provider', isGoogle ? 'google' : 'guest');
+        if (data.googleEmail) {
+          setGoogleEmail(data.googleEmail);
+          localStorage.setItem('domino_google_email', data.googleEmail);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleLinkGoogleAccount = async () => {
+    if (isLinkingGoogle || authProvider === 'google') return;
+    setIsLinkingGoogle(true);
+    setLinkFeedback(null);
+
+    let gName = '';
+    let gEmail = '';
+    let gId = '';
+    let gAvatar = '';
+
+    try {
+      await GoogleAuth.initialize({
+        clientId: '933896189377-hphu2lam3pj4okj9ravdvd3od1oqr6s1.apps.googleusercontent.com',
+        scopes: ['profile', 'email'],
+        grantOfflineAccess: false
+      });
+      try {
+        await GoogleAuth.signOut();
+      } catch (_) {}
+
+      const user: any = await GoogleAuth.signIn();
+      gName = user.name || user.givenName || '';
+      gEmail = user.email || '';
+      gId = user.id || user.sub || '';
+      gAvatar = user.imageUrl || user.picture || user.photoUrl || (user.authentication as any)?.picture || '';
+    } catch (error: any) {
+      const errStr = String(error?.message || error?.error || error || '');
+      if (errStr.includes('canceled') || errStr.includes('cancelled') || errStr.includes('12501')) {
+        setIsLinkingGoogle(false);
+        return;
+      }
+
+      const promptInput = prompt(
+        `[Kaitkan Akun Tamu ke Google]\n` +
+        `Masukkan alamat Email Gmail atau Nama Google Anda untuk mengaitkan akun ${accountUsername}:`,
+        ''
+      );
+      if (!promptInput || !promptInput.trim()) {
+        setIsLinkingGoogle(false);
+        return;
+      }
+      const cleanVal = promptInput.trim();
+      if (cleanVal.includes('@')) {
+        gEmail = cleanVal.toLowerCase();
+        gName = cleanVal.split('@')[0];
+      } else {
+        gName = cleanVal;
+      }
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/users/link-google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentUsername: accountUsername,
+          userId: accountUserId,
+          googleId: gId,
+          googleEmail: gEmail,
+          googleName: gName,
+          googleAvatar: gAvatar
+        })
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setLinkFeedback({
+          type: 'error',
+          text: data.error || 'Gagal mengaitkan akun Google. Silakan coba lagi.'
+        });
+        setIsLinkingGoogle(false);
+        return;
+      }
+
+      // Perbarui LocalStorage & sinkronkan ke seluruh aplikasi
+      const updatedUsername = data.username || accountUsername;
+      localStorage.setItem('domino_username', updatedUsername);
+      localStorage.setItem('domino_login_provider', 'google');
+      if (data.googleEmail || gEmail) {
+        localStorage.setItem('domino_google_email', data.googleEmail || gEmail);
+        setGoogleEmail(data.googleEmail || gEmail);
+      }
+      if (data.userId) {
+        localStorage.setItem('domino_user_id', String(data.userId));
+        setAccountUserId(String(data.userId));
+      }
+      if (data.avatar) {
+        localStorage.setItem('domino_avatar', data.avatar);
+        window.dispatchEvent(new CustomEvent('domino_avatar_changed', { detail: { avatar: data.avatar } }));
+      }
+      localStorage.removeItem('domino_device_guest_username');
+
+      setAccountUsername(updatedUsername);
+      setAuthProvider('google');
+      setLinkFeedback({
+        type: 'success',
+        text: data.message || 'Akun Tamu Anda berhasil dikaitkan ke Google!'
+      });
+
+      window.dispatchEvent(
+        new CustomEvent('domino_username_updated', {
+          detail: {
+            oldUsername: data.oldUsername || accountUsername,
+            newUsername: updatedUsername,
+            coins: data.coins
+          }
+        })
+      );
+    } catch (err: any) {
+      setLinkFeedback({
+        type: 'error',
+        text: err?.message || 'Gagal menghubungi server untuk mengaitkan akun.'
+      });
+    } finally {
+      setIsLinkingGoogle(false);
+    }
+  };
+
   useEffect(() => {
     const onTrackChange = (e: any) => {
       if (e.detail?.track) setBgmTrack(e.detail.track);
@@ -578,6 +793,55 @@ function PengaturanModal({ onClose, onLogout, onOpenBerita }: { onClose: () => v
               <span className="peng-toggle-label">{item.label}</span>
             </div>
           ))}
+        </div>
+
+        {/* PANEL STATUS AKUN & KAITKAN AKUN GOOGLE (KHUSUS GUEST / TAMU) */}
+        <div className={`peng-account-bind-card ${authProvider === 'google' ? 'linked' : 'guest'}`}>
+          <div className="peng-account-bind-top">
+            <div className="peng-account-bind-info">
+              <div className="peng-account-bind-badge-row">
+                <span className={`peng-account-status-pill ${authProvider === 'google' ? 'google' : 'guest'}`}>
+                  {authProvider === 'google' ? '✅ TERKAIT GOOGLE' : '👤 AKUN TAMU (GUEST)'}
+                </span>
+                {accountUserId && (
+                  <span className="peng-account-id-tag">ID: #{accountUserId}</span>
+                )}
+              </div>
+              <div className="peng-account-name-line">
+                <b>{accountUsername}</b>
+                {googleEmail && <span className="peng-account-email">({googleEmail})</span>}
+              </div>
+              <div className="peng-account-desc">
+                {authProvider === 'google'
+                  ? '🔒 Koin, ID, dan progres permainan Anda telah tersimpan aman di akun Google.'
+                  : '⚠️ Kaitkan ke Google agar koin & progres tidak hilang saat keluar atau ganti HP.'}
+              </div>
+            </div>
+
+            {authProvider !== 'google' ? (
+              <button
+                type="button"
+                className="peng-google-bind-btn g-btn-press"
+                onClick={handleLinkGoogleAccount}
+                disabled={isLinkingGoogle}
+              >
+                <span className="peng-google-g-icon">G</span>
+                <span>{isLinkingGoogle ? 'Menghubungkan...' : 'Kaitkan Google'}</span>
+              </button>
+            ) : (
+              <div className="peng-google-linked-chip">
+                <span className="peng-google-g-icon small">G</span>
+                <span>Terhubung</span>
+              </div>
+            )}
+          </div>
+
+          {linkFeedback && (
+            <div className={`peng-account-feedback ${linkFeedback.type}`}>
+              {linkFeedback.type === 'success' ? '🎉 ' : '⚠️ '}
+              {linkFeedback.text}
+            </div>
+          )}
         </div>
 
         {/* PILIHAN MUSIK LOBI (LAGU ITU VS LAGU KITA) */}
@@ -864,36 +1128,60 @@ function OtherProfileModal({ username, onClose, onAddFriend, onSendCoins, onChal
   }
 
   const baseScore = profile.score || 50;
+  const playerLevel = profile.level || Math.max(1, Math.floor(baseScore / 25));
   const stats = {
     ronde: baseScore * 5 + 12,
     menang: baseScore * 2 + 3,
-    winStreak: (baseScore % 7) + 1,
-    radar: { domino: 0.85, poker: 0.4, santai: 0.9, slot: 0.6, ludo: 0.75 }
+    winStreak: (baseScore % 7) + 2,
+    radar: { domino: 0.88, qiuqiu: 0.78, billiard: 0.82, slot: 0.68, byone: 0.85 }
   };
-  const winRate = ((stats.menang / stats.ronde) * 100).toFixed(2);
+  const winRate = ((stats.menang / stats.ronde) * 100).toFixed(1);
 
-  // SVG Radar Pentagon
+  // SVG Radar Pentagon (5-Axis with Grid Rings & Vertex Dots)
   const renderRadar = () => {
-    const size = 100, center = size / 2, radius = size / 2.5;
+    const size = 120, center = size / 2, radius = 42;
     const angles = [0, 72, 144, 216, 288].map(deg => (deg * Math.PI) / 180);
-    const vals = [stats.radar.domino, stats.radar.poker, stats.radar.santai, stats.radar.slot, stats.radar.ludo];
-    const bgPts = angles.map(a => `${center + radius * Math.sin(a)},${center - radius * Math.cos(a)}`).join(' ');
+    const vals = [stats.radar.domino, stats.radar.qiuqiu, stats.radar.billiard, stats.radar.slot, stats.radar.byone];
+    const rings = [0.35, 0.68, 1.0];
     const valPts = angles.map((a, i) => `${center + vals[i] * radius * Math.sin(a)},${center - vals[i] * radius * Math.cos(a)}`).join(' ');
 
     return (
-      <div className="pm-radar-wrapper" style={{ width: '20vh', height: '20vh' }}>
-        <svg width="100%" height="100%" viewBox="0 0 100 100">
-          <polygon points={bgPts} fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.3)" strokeWidth="0.5" />
+      <div className="pm-radar-wrapper op-radar-size">
+        <svg width="100%" height="100%" viewBox="0 0 120 120">
+          {rings.map((r, idx) => {
+            const pts = angles.map(a => `${center + r * radius * Math.sin(a)},${center - r * radius * Math.cos(a)}`).join(' ');
+            return (
+              <polygon
+                key={idx}
+                points={pts}
+                fill={idx === rings.length - 1 ? 'rgba(255, 215, 0, 0.04)' : 'none'}
+                stroke="rgba(255, 255, 255, 0.16)"
+                strokeWidth="0.7"
+                strokeDasharray={idx < rings.length - 1 ? '2,2' : undefined}
+              />
+            );
+          })}
           {angles.map((a, i) => (
-            <line key={i} x1={center} y1={center} x2={center + radius * Math.sin(a)} y2={center - radius * Math.cos(a)} stroke="rgba(255,255,255,0.2)" strokeWidth="0.5" />
+            <line key={i} x1={center} y1={center} x2={center + radius * Math.sin(a)} y2={center - radius * Math.cos(a)} stroke="rgba(255,255,255,0.18)" strokeWidth="0.7" />
           ))}
-          <polygon points={valPts} fill="rgba(241,196,15,0.6)" stroke="#f1c40f" strokeWidth="1.5" />
+          <polygon points={valPts} fill="rgba(251, 191, 36, 0.35)" stroke="#fbbf24" strokeWidth="2" />
+          {angles.map((a, i) => (
+            <circle
+              key={i}
+              cx={center + vals[i] * radius * Math.sin(a)}
+              cy={center - vals[i] * radius * Math.cos(a)}
+              r="2.6"
+              fill="#fff"
+              stroke="#f59e0b"
+              strokeWidth="1.5"
+            />
+          ))}
         </svg>
         <span className="rl rl-top">Domino</span>
-        <span className="rl rl-tr">Poker</span>
-        <span className="rl rl-br">Santai</span>
+        <span className="rl rl-tr">QiuQiu</span>
+        <span className="rl rl-br">Billiard</span>
         <span className="rl rl-bl">Slot</span>
-        <span className="rl rl-tl">Ludo</span>
+        <span className="rl rl-tl">By One</span>
       </div>
     );
   };
@@ -904,45 +1192,66 @@ function OtherProfileModal({ username, onClose, onAddFriend, onSendCoins, onChal
   return (
     <div className="modal-overlay tm-overlay-fade" style={{ zIndex: 1500 }} onClick={onClose}>
       <div className="op-box tm-box-bounce" onClick={e => e.stopPropagation()}>
-        <button className="tm-close-btn g-btn-press" style={{ top: '-1vh', right: '-1vw' }} onClick={onClose}>✖</button>
-        <div className="op-header">KARTU PEMAIN</div>
+        <div className="op-header">
+          <div className="op-header-title-group">
+            <span className="op-header-icon">👑</span>
+            <div>
+              <div className="op-header-title">KARTU PROFIL PEMAIN</div>
+              <div className="op-header-sub">Statistik Resmi & Rekor Pertandingan</div>
+            </div>
+          </div>
+          <button className="pm-close-btn g-btn-press" style={{ position: 'static' }} onClick={onClose}>✕</button>
+        </div>
 
         <div className="op-body">
-          {/* Kiri: Avatar & Basic Info */}
+          {/* Kiri: Avatar & Identitas */}
           <div className="op-left-card">
             <div className="op-avatar-glow" style={{ overflow: 'hidden' }}>
               <span className="op-avatar-emoji" style={{ display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
                 {renderPlayerAvatar(profile.avatar, '🐸', 'op-avatar-pic')}
               </span>
             </div>
-            <div className="op-name">{profile.username}</div>
-            <div className="op-coins">🪙 {formatCoins(profile.coins)}</div>
-            <div className="op-level-tag">LEVEL 1</div>
+            <div className="op-name-row">
+              <span className="op-name">{profile.username}</span>
+              <span className="op-verified-badge" title="Pemain Terverifikasi">✓</span>
+            </div>
+            <div className="op-level-tag">⭐ LEVEL {playerLevel} • MASTER</div>
+            <div className="op-coins-pill">
+              <span>🪙</span>
+              <span>{formatCoins(profile.coins)} Koin</span>
+            </div>
           </div>
 
-          {/* Tengah: Stats List */}
+          {/* Tengah: 2x2 Stats Grid */}
           <div className="op-stats-card">
-            <div className="op-stat-row">
-              <span className="op-stat-lbl">Total Main</span>
-              <span className="op-stat-val">{stats.ronde}x</span>
-            </div>
-            <div className="op-stat-row">
-              <span className="op-stat-lbl">Menang</span>
-              <span className="op-stat-val">{stats.menang}x</span>
-            </div>
-            <div className="op-stat-row">
-              <span className="op-stat-lbl">Win Rate</span>
-              <span className="op-stat-val" style={{ color: '#2ecc71' }}>{winRate}%</span>
-            </div>
-            <div className="op-stat-row">
-              <span className="op-stat-lbl">Win Streak</span>
-              <span className="op-stat-val" style={{ color: '#f1c40f' }}>{stats.winStreak}</span>
+            <div className="op-section-title">📊 Rekor Pertandingan</div>
+            <div className="op-stats-grid">
+              <div className="op-stat-box">
+                <span className="op-stat-icon">🎮</span>
+                <span className="op-stat-val">{stats.ronde}x</span>
+                <span className="op-stat-lbl">Total Main</span>
+              </div>
+              <div className="op-stat-box">
+                <span className="op-stat-icon">🏆</span>
+                <span className="op-stat-val" style={{ color: '#fde047' }}>{stats.menang}x</span>
+                <span className="op-stat-lbl">Total Menang</span>
+              </div>
+              <div className="op-stat-box">
+                <span className="op-stat-icon">📈</span>
+                <span className="op-stat-val" style={{ color: '#34d399' }}>{winRate}%</span>
+                <span className="op-stat-lbl">Win Rate</span>
+              </div>
+              <div className="op-stat-box">
+                <span className="op-stat-icon">🔥</span>
+                <span className="op-stat-val" style={{ color: '#fb923c' }}>{stats.winStreak}x</span>
+                <span className="op-stat-lbl">Win Streak</span>
+              </div>
             </div>
           </div>
 
           {/* Kanan: Radar Ability */}
           <div className="op-radar-card">
-            <div className="op-stat-lbl" style={{ marginBottom: '1vh', textAlign: 'center' }}>Grafik Kemampuan</div>
+            <div className="op-section-title" style={{ textAlign: 'center' }}>🎯 Penguasaan Mode</div>
             {renderRadar()}
           </div>
         </div>
@@ -950,9 +1259,9 @@ function OtherProfileModal({ username, onClose, onAddFriend, onSendCoins, onChal
         {/* Action Button di bawah */}
         <div className="op-actions">
           {isSelf ? (
-            <div style={{ color: 'rgba(255,255,255,0.6)', fontStyle: 'italic', fontSize: '2vh' }}>Ini adalah profil Anda</div>
+            <div className="op-self-note">✨ Ini adalah tampilan kartu profil Anda di mata pemain lain</div>
           ) : (
-            <div style={{ display: 'flex', gap: '1vw', width: '100%' }}>
+            <div className="op-action-row">
               {isFriend ? (
                 <button className="op-action-btn send g-btn-press" onClick={() => { onClose(); onSendCoins?.(profile.username); }}>
                   💸 Kirim Koin
@@ -963,8 +1272,7 @@ function OtherProfileModal({ username, onClose, onAddFriend, onSendCoins, onChal
                 </button>
               )}
               <button
-                className="op-action-btn send g-btn-press"
-                style={{ background: 'linear-gradient(90deg, #e74c3c, #c0392b)', borderColor: '#ff7675' }}
+                className="op-action-btn challenge g-btn-press"
                 onClick={() => { onClose(); onChallengeByOne?.(profile.username); }}
               >
                 ⚔️ Tantang By One
@@ -3051,11 +3359,10 @@ function VIPLoginAnimationOverlay({ username, onComplete }: { username: string; 
 }
 
 // =====================================================
-// KOMPONEN PROFILE MODAL (VIP EXECUTIVE CASINO THEME)
+// KOMPONEN PROFILE MODAL (ROYAL OBSIDIAN & GOLD LUXURY THEME)
 // =====================================================
 function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onOpenChangeName, onClose }: { profile: any; avatarEmoji: string; onOpenAvatarSelection: () => void; onOpenChangeName?: () => void; onClose: () => void }) {
-  const [activeTab, setActiveTab] = useState('informasi');
-  const [isProfileOpen, setIsProfileOpen] = useState(true);
+  const [activeTab, setActiveTab] = useState<'informasi' | 'statistik' | 'custom' | 'lencana' | 'prestasi'>('informasi');
   const [copiedId, setCopiedId] = useState(false);
 
   const [selectedFrame, setSelectedFrame] = useState(() => localStorage.getItem('domino_custom_frame') || 'crown');
@@ -3098,7 +3405,7 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onOpenChang
   };
 
   const frames = [
-    { id: 'crown', name: 'Mahkota VIP', icon: '👑', color: '#ffd700' },
+    { id: 'crown', name: 'Mahkota Raja', icon: '👑', color: '#ffd700' },
     { id: 'fire', name: 'Api Inferno', icon: '🔥', color: '#ff4500' },
     { id: 'diamond', name: 'Kristal Neon', icon: '💎', color: '#00f2fe' },
     { id: 'lightning', name: 'Petir Quantum', icon: '⚡', color: '#ffe600' },
@@ -3106,19 +3413,19 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onOpenChang
   ];
 
   const tables = [
-    { id: 'green', name: 'Kasino Hijau', icon: '🟢' },
-    { id: 'red', name: 'Velvet Merah', icon: '🔴' },
-    { id: 'blue', name: 'Cyber Biru', icon: '🔵' },
-    { id: 'purple', name: 'Galaxy VIP', icon: '🟣' },
+    { id: 'green', name: 'Kasino Emerald', icon: '🟢' },
+    { id: 'red', name: 'Velvet Ruby', icon: '🔴' },
+    { id: 'blue', name: 'Cyber Sapphire', icon: '🔵' },
+    { id: 'purple', name: 'Galaxy Royal', icon: '🟣' },
   ];
 
   const badgesList = [
     { id: 'domi_master', name: '🥇 Domi Master', desc: 'Menangkan 100 ronde Domino Kasino', unlocked: true },
     { id: 'win_streak', name: '🔥 Win Streak King', desc: 'Capai 5x Win Streak berturut-turut', unlocked: true },
-    { id: 'millionaire', name: '💰 Jutawan Koin', desc: 'Miliki saldo koin di atas 10.000.000', unlocked: true },
-    { id: 'wild_legend', name: '🃏 Wild Legend', desc: 'Menangkan pertarungan di Kamar Wild', unlocked: true },
-    { id: 'partner_hero', name: '🤝 Partner Sejati', desc: 'Menangkan 20x match Domino Partner (14/20)', unlocked: false },
-    { id: 'slot_hunter', name: '🎰 Jackpot Hunter', desc: 'Dapatkan Mega Jackpot Slot (1/3)', unlocked: false },
+    { id: 'millionaire', name: '💰 Sultan Koin', desc: 'Miliki saldo koin di atas 10.000.000', unlocked: true },
+    { id: 'wild_legend', name: '🎱 Master Billiard', desc: 'Menangkan pertarungan sengit 8-Ball Pool', unlocked: true },
+    { id: 'partner_hero', name: '🃏 Raja QiuQiu', desc: 'Dapatkan kombinasi Kartu Six Devil / Murni (14/20)', unlocked: false },
+    { id: 'slot_hunter', name: '🎰 Jackpot Hunter', desc: 'Raih Mega Jackpot di Mesin Slot (1/3)', unlocked: false },
   ];
 
   const formatCoins = (n: number) => {
@@ -3159,19 +3466,20 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onOpenChang
   };
 
   const baseScore = profile?.score || 50;
+  const playerLevel = profile?.level || localStorage.getItem('domino_level') || Math.max(1, Math.floor(baseScore / 25));
   const stats = {
     ronde: baseScore * 5 + 12,
     menang: baseScore * 2 + 3,
-    winStreak: (baseScore % 7) + 1,
-    radar: { domino: 0.85, poker: 0.4, santai: 0.9, slot: 0.6, ludo: 0.75 }
+    winStreak: (baseScore % 7) + 2,
+    radar: { domino: 0.90, qiuqiu: 0.80, billiard: 0.85, slot: 0.72, byone: 0.88 }
   };
-  const winRate = ((stats.menang / stats.ronde) * 100).toFixed(2);
+  const winRate = ((stats.menang / stats.ronde) * 100).toFixed(1);
 
   const prestasiList = [
     {
       id: 'p1',
       title: '🏆 Penguasa Meja',
-      desc: 'Menangkan 25 Pertandingan Kasino',
+      desc: 'Menangkan 25 Pertandingan di Semua Mode',
       icon: '👑',
       progress: Math.min(stats.menang, 25),
       target: 25,
@@ -3191,7 +3499,7 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onOpenChang
     {
       id: 'p3',
       title: '💰 Sultan Kasino',
-      desc: 'Miliki 5.000.000 Koin di Saldo Akun',
+      desc: 'Miliki 5.000.000 Koin di Saldo Utama',
       icon: '💰',
       progress: Math.min(profile?.coins || 0, 5000000),
       target: 5000000,
@@ -3200,7 +3508,7 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onOpenChang
     },
     {
       id: 'p4',
-      title: '⚔️ Pejuang Domino',
+      title: '⚔️ Pejuang Arena',
       desc: 'Mainkan Total 50 Ronde Pertandingan',
       icon: '🀱',
       progress: Math.min(stats.ronde, 50),
@@ -3210,9 +3518,9 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onOpenChang
     },
     {
       id: 'p5',
-      title: '🃏 Master Balak',
-      desc: 'Keluarkan 10 Kartu Balak di Meja',
-      icon: '💎',
+      title: '🎱 Master Duel',
+      desc: 'Menangkan 10 Pertandingan By One / Billiard',
+      icon: '🎱',
       progress: Math.min(stats.menang, 10),
       target: 10,
       reward: 100000,
@@ -3220,8 +3528,8 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onOpenChang
     },
     {
       id: 'p6',
-      title: '🎁 Dermawan Kasino',
-      desc: 'Kirim Koin Hadiah ke Teman Kasino',
+      title: '🎁 Sahabat Sejati',
+      desc: 'Kirim Koin Hadiah ke Teman',
       icon: '🎁',
       progress: 1,
       target: 1,
@@ -3230,29 +3538,57 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onOpenChang
     }
   ];
 
-  // Fungsi membuat grafik Radar SVG
-  const renderRadar = () => {
-    const size = 100, center = size / 2, radius = size / 2.5;
-    const angles = [0, 72, 144, 216, 288].map(deg => (deg * Math.PI) / 180);
-    const vals = [stats.radar.domino, stats.radar.poker, stats.radar.santai, stats.radar.slot, stats.radar.ludo];
+  const claimableCount = prestasiList.filter(p => p.progress >= p.target && !claimedPrestasi[p.id]).length;
+  const claimedCount = Object.values(claimedPrestasi).filter(Boolean).length;
+  const activeFrameObj = frames.find(f => f.id === selectedFrame) || frames[0];
+  const activeTableObj = tables.find(t => t.id === selectedTable) || tables[0];
+  const activeBadgeObj = badgesList.find(b => b.id === equippedBadge) || badgesList[0];
 
-    const bgPts = angles.map(a => `${center + radius * Math.sin(a)},${center - radius * Math.cos(a)}`).join(' ');
+  // Grafik Radar Pentagon SVG (5-Axis dengan Grid Rings & Vertex Dots)
+  const renderRadar = () => {
+    const size = 120, center = size / 2, radius = 42;
+    const angles = [0, 72, 144, 216, 288].map(deg => (deg * Math.PI) / 180);
+    const vals = [stats.radar.domino, stats.radar.qiuqiu, stats.radar.billiard, stats.radar.slot, stats.radar.byone];
+    const rings = [0.35, 0.68, 1.0];
     const valPts = angles.map((a, i) => `${center + vals[i] * radius * Math.sin(a)},${center - vals[i] * radius * Math.cos(a)}`).join(' ');
 
     return (
       <div className="pm-radar-wrapper">
-        <svg width="100%" height="100%" viewBox="0 0 100 100">
-          <polygon points={bgPts} fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.3)" strokeWidth="0.5" />
+        <svg width="100%" height="100%" viewBox="0 0 120 120">
+          {rings.map((r, idx) => {
+            const pts = angles.map(a => `${center + r * radius * Math.sin(a)},${center - r * radius * Math.cos(a)}`).join(' ');
+            return (
+              <polygon
+                key={idx}
+                points={pts}
+                fill={idx === rings.length - 1 ? 'rgba(255, 215, 0, 0.04)' : 'none'}
+                stroke="rgba(255, 255, 255, 0.16)"
+                strokeWidth="0.7"
+                strokeDasharray={idx < rings.length - 1 ? '2,2' : undefined}
+              />
+            );
+          })}
           {angles.map((a, i) => (
-            <line key={i} x1={center} y1={center} x2={center + radius * Math.sin(a)} y2={center - radius * Math.cos(a)} stroke="rgba(255,255,255,0.2)" strokeWidth="0.5" />
+            <line key={i} x1={center} y1={center} x2={center + radius * Math.sin(a)} y2={center - radius * Math.cos(a)} stroke="rgba(255,255,255,0.18)" strokeWidth="0.7" />
           ))}
-          <polygon points={valPts} fill="rgba(255,215,0,0.6)" stroke="#ffd700" strokeWidth="1.5" />
+          <polygon points={valPts} fill="rgba(251, 191, 36, 0.35)" stroke="#fbbf24" strokeWidth="2" />
+          {angles.map((a, i) => (
+            <circle
+              key={i}
+              cx={center + vals[i] * radius * Math.sin(a)}
+              cy={center - vals[i] * radius * Math.cos(a)}
+              r="2.6"
+              fill="#fff"
+              stroke="#f59e0b"
+              strokeWidth="1.5"
+            />
+          ))}
         </svg>
         <span className="rl rl-top">Domino</span>
-        <span className="rl rl-tr">Poker</span>
-        <span className="rl rl-br">Santai</span>
+        <span className="rl rl-tr">QiuQiu</span>
+        <span className="rl rl-br">Billiard</span>
         <span className="rl rl-bl">Slot</span>
-        <span className="rl rl-tl">Ludo</span>
+        <span className="rl rl-tl">By One</span>
       </div>
     );
   };
@@ -3291,11 +3627,11 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onOpenChang
                     className={`pm-prestasi-claim-btn g-btn-press ${isClaimed ? 'claimed' : ''}`}
                     onClick={() => handleClaimPrestasi(p.id, p.reward, p.title)}
                   >
-                    {isClaimed ? 'KLAIMED ✅' : 'KLAIM HADIAH 🎁'}
+                    {isClaimed ? 'SELESAI ✅' : 'KLAIM 🎁'}
                   </button>
                 ) : (
-                  <button className="pm-prestasi-claim-btn claimed" style={{ opacity: 0.6 }}>
-                    PROGRES...
+                  <button className="pm-prestasi-claim-btn claimed" style={{ opacity: 0.55 }}>
+                    BELUM SELESAI
                   </button>
                 )}
               </div>
@@ -3311,16 +3647,16 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onOpenChang
           {/* Section 1: Bingkai Avatar */}
           <div className="pm-custom-section">
             <div className="pm-custom-title">
-              <span>🖼️</span> <span>Bingkai Avatar Keren & Efek Aura</span>
+              <span>🖼️</span> <span>Bingkai Avatar & Efek Aura Eksklusif</span>
             </div>
-            <div className="pm-custom-grid">
+            <div className="pm-custom-grid pm-custom-grid-5">
               {frames.map(f => (
                 <div
                   key={f.id}
                   className={`pm-custom-card g-btn-press ${selectedFrame === f.id ? 'active' : ''}`}
                   onClick={() => handleEquipFrame(f.id)}
                 >
-                  {selectedFrame === f.id && <span className="pm-equipped-badge-pill">DIPAKAI</span>}
+                  {selectedFrame === f.id && <span className="pm-equipped-badge-pill">AKTIF</span>}
                   <div className="pm-card-icon">{f.icon}</div>
                   <div className="pm-card-label">{f.name}</div>
                 </div>
@@ -3331,7 +3667,7 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onOpenChang
           {/* Section 2: Skin Meja Kasino */}
           <div className="pm-custom-section">
             <div className="pm-custom-title">
-              <span>🎴</span> <span>Tema & Color Skin Meja</span>
+              <span>🎴</span> <span>Tema & Warna Karpet Meja Permainan</span>
             </div>
             <div className="pm-custom-grid">
               {tables.map(t => (
@@ -3340,7 +3676,7 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onOpenChang
                   className={`pm-custom-card g-btn-press ${selectedTable === t.id ? 'active' : ''}`}
                   onClick={() => handleEquipTable(t.id)}
                 >
-                  {selectedTable === t.id && <span className="pm-equipped-badge-pill">DIPAKAI</span>}
+                  {selectedTable === t.id && <span className="pm-equipped-badge-pill">AKTIF</span>}
                   <div className="pm-card-icon">{t.icon}</div>
                   <div className="pm-card-label">{t.name}</div>
                 </div>
@@ -3368,10 +3704,10 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onOpenChang
                   className={`pm-badge-btn g-btn-press ${equippedBadge === b.id ? 'equipped' : ''}`}
                   onClick={() => handleEquipBadge(b.id)}
                 >
-                  {equippedBadge === b.id ? 'Dipakai ✅' : 'Pakai Lencana'}
+                  {equippedBadge === b.id ? 'Terpasang ✅' : 'Pasang'}
                 </button>
               ) : (
-                <span style={{ fontSize: '1.2vh', color: '#e74c3c', fontWeight: 800 }}>🔒 TERKUNCI</span>
+                <span className="pm-badge-locked-tag">🔒 Terkunci</span>
               )}
             </div>
           ))}
@@ -3380,196 +3716,133 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onOpenChang
     }
 
     if (activeTab === 'statistik') {
+      const modeBars = [
+        { name: 'Domino & By One', icon: '🀱', pct: 90, color: '#fbbf24', detail: `${Math.floor(stats.menang * 0.45)} Menang` },
+        { name: 'QiuQiu Kasino', icon: '🎴', pct: 80, color: '#34d399', detail: `${Math.floor(stats.menang * 0.25)} Menang` },
+        { name: 'Billiard 8-Ball', icon: '🎱', pct: 85, color: '#60a5fa', detail: `${Math.floor(stats.menang * 0.20)} Menang` },
+        { name: 'Mesin Slot', icon: '🎰', pct: 72, color: '#c084fc', detail: `${Math.floor(stats.menang * 0.10)} Jackpot` },
+      ];
       return (
         <div className="pm-tab-pane pm-stats-view">
-          <div className="pm-stats-col">
-            <div className="pm-stat-item"><div className="pm-stat-label">Total Main</div><div className="pm-stat-val">{stats.ronde}x</div></div>
-            <div className="pm-stat-item"><div className="pm-stat-label">Menang</div><div className="pm-stat-val">{stats.menang}x</div></div>
-            <div className="pm-stat-item"><div className="pm-stat-label">Win Rate</div><div className="pm-stat-val">{winRate}%</div></div>
-            <div className="pm-stat-item"><div className="pm-stat-label">Win Streak</div><div className="pm-stat-val">{stats.winStreak}</div></div>
+          <div className="pm-stats-detail-card">
+            <div className="pm-panel-subtitle">📈 Performa Per Mode Permainan</div>
+            <div className="pm-mode-bars-list">
+              {modeBars.map((m, idx) => (
+                <div key={idx} className="pm-mode-bar-item">
+                  <div className="pm-mode-bar-top">
+                    <span className="pm-mode-bar-name"><span>{m.icon}</span> {m.name}</span>
+                    <span className="pm-mode-bar-pct" style={{ color: m.color }}>{m.detail} • {m.pct}%</span>
+                  </div>
+                  <div className="pm-mode-bar-track">
+                    <div className="pm-mode-bar-fill" style={{ width: `${m.pct}%`, background: m.color }} />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="pm-stats-col pm-radar-col">
-            <div className="pm-stat-label" style={{ marginBottom: '1vh', fontSize: '1.6vh' }}>Kemampuan Master</div>
+
+          <div className="pm-radar-showcase-card">
+            <div className="pm-panel-subtitle" style={{ textAlign: 'center' }}>🎯 Grafik Penguasaan</div>
             {renderRadar()}
           </div>
         </div>
       );
     }
 
-    // Default 'informasi' view
+    // Default 'informasi' (Ringkasan) view
     return (
-      <div className="pm-tab-pane pm-flex-row" style={{ height: '100%', alignItems: 'stretch' }}>
-        {/* MIDDLE COLUMN */}
-        <div className="pm-center" style={{ flex: 1, justifyContent: 'space-between', display: 'flex', flexDirection: 'column' }}>
-          {/* Level Box */}
-          <div className="pm-level-box pm-anim-bump" style={{ flex: 1 }}>
-            <div className="pm-level-star"><span className="pm-star-num">{profile?.level || localStorage.getItem('domino_level') || '1'}</span></div>
-            <div className="pm-level-info">
-              <div className="pm-level-text">
-                <span>Level {profile?.level || localStorage.getItem('domino_level') || '1'} (Master Kasino)</span>
-                <span style={{ color: '#ffd700' }}>35% XP</span>
+      <div className="pm-tab-pane pm-summary-pane">
+        {/* Top Row: Level & Saldo Cards */}
+        <div className="pm-summary-top-row">
+          <div className="pm-level-card-v2">
+            <div className="pm-level-emblem">
+              <span className="pm-level-emblem-sub">LV</span>
+              <span className="pm-level-emblem-num">{playerLevel}</span>
+            </div>
+            <div className="pm-level-body">
+              <div className="pm-level-head-row">
+                <span className="pm-level-rank-title">Master Kasino</span>
+                <span className="pm-level-xp-tag">65% XP</span>
               </div>
-              <div className="pm-level-bar-bg"><div className="pm-level-bar-fill" style={{ width: '35%' }}></div></div>
+              <div className="pm-level-bar-bg">
+                <div className="pm-level-bar-fill" style={{ width: '65%' }} />
+              </div>
+              <div className="pm-level-sub-note">
+                🏆 Prestasi Terbuka: <strong>{claimedCount}/6 Selesai</strong>
+              </div>
             </div>
           </div>
 
-          {/* VIP & Prestasi */}
-          <div className="pm-vip-prestasi-box pm-anim-bump" style={{ animationDelay: '0.1s', flex: 1 }}>
-            <div className="pm-vp-item" style={{ flex: 1, justifyContent: 'center' }}>
-              <div className="pm-vp-icon vip-icon">V</div>
-              <div className="pm-vp-text">VIP TIER<br /><span>VIP {profile?.vipLevel || localStorage.getItem('domino_vip') || '3'}</span></div>
-            </div>
-            <div className="pm-vp-item" style={{ flex: 1, justifyContent: 'center' }}>
-              <div className="pm-vp-icon prestasi-icon">💎</div>
-              <div className="pm-vp-text">Prestasi<br /><span>{Object.values(claimedPrestasi).filter(Boolean).length}/6</span></div>
-            </div>
-          </div>
-
-          {/* Stats Row */}
-          <div className="pm-stats-row pm-anim-bump" style={{ animationDelay: '0.2s', flex: 2 }}>
-            <div className="pm-stats-col" style={{ flex: 1, justifyContent: 'center' }}>
-              <div className="pm-stat-item">
-                <div className="pm-stat-label">Jumlah Ronde</div>
-                <div className="pm-stat-val">{stats.ronde}</div>
-              </div>
-              <div className="pm-stat-item">
-                <div className="pm-stat-label">Rasio Menang</div>
-                <div className="pm-stat-val">{winRate}%</div>
-              </div>
-              <div className="pm-stat-item">
-                <div className="pm-stat-label">Win Streak</div>
-                <div className="pm-stat-val">{stats.winStreak}</div>
-              </div>
-            </div>
-            <div className="pm-stats-col pm-radar-col" style={{ flex: 1.5, justifyContent: 'center' }}>
-              <div className="pm-stat-label">Master Kasino</div>
-              {renderRadar()}
+          <div className="pm-wallet-card-v2">
+            <div className="pm-wallet-icon-circle">🪙</div>
+            <div className="pm-wallet-details">
+              <span className="pm-wallet-label">SALDO KOIN UTAMA</span>
+              <span className="pm-wallet-amount">{formatCoins(profile?.coins || 0)}</span>
+              <span className="pm-wallet-exact">{(profile?.coins || 0).toLocaleString('id-ID')} Koin</span>
             </div>
           </div>
         </div>
 
-        {/* RIGHT COLUMN */}
-        <div className="pm-right pm-anim-bump" style={{ animationDelay: '0.3s', flex: '0 0 27%', height: '100%', justifyContent: 'center' }}>
-          <div className="pm-avatar-area">
-            {/* Dynamic Avatar Frame Wrap */}
-            <div
-              className={`pm-avatar-circle pm-hover-glow avatar-frame-${selectedFrame}`}
-              onClick={onOpenAvatarSelection}
-              title="Klik untuk Ganti Avatar & Bingkai"
-              style={{
-                position: 'relative',
-                overflow: 'visible',
-              }}
-            >
-              {selectedFrame === 'crown' && (
-                <span style={{ position: 'absolute', top: '-2.8vh', fontSize: '3.6vh', filter: 'drop-shadow(0 2px 5px rgba(0,0,0,0.8))' }}>👑</span>
-              )}
-              {selectedFrame === 'fire' && (
-                <span style={{ position: 'absolute', top: '-2.2vh', fontSize: '3vh', filter: 'drop-shadow(0 0 10px #ff4500)' }}>🔥</span>
-              )}
-              {selectedFrame === 'lightning' && (
-                <span style={{ position: 'absolute', top: '-2.2vh', fontSize: '3vh', filter: 'drop-shadow(0 0 10px #ffe600)' }}>⚡</span>
-              )}
-              {selectedFrame === 'dragon' && (
-                <span style={{ position: 'absolute', top: '-2.2vh', fontSize: '3vh', filter: 'drop-shadow(0 0 10px #f39c12)' }}>🐉</span>
-              )}
-
-              {/* Clean, 100% Unobstructed Photo Avatar Container */}
-              <div style={{ width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span className="pm-avatar-emoji" style={{ display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-                  {renderPlayerAvatar(avatarEmoji, '🐸', 'pm-avatar-pic')}
-                </span>
-              </div>
-
-              {/* Edit Icon on Avatar Corner */}
-              <div className="pm-avatar-refresh pm-btn-anim" onClick={(e) => { e.stopPropagation(); onOpenAvatarSelection(); }} title="Ganti Avatar">
-                ✏️
-              </div>
-            </div>
-
-            {/* Subrow: VIP Tag (Placed neatly below photo, NEVER blocking the face!) & Ganti Avatar button */}
-            <div className="pm-avatar-subrow">
-              <div className="pm-avatar-vip-pill">
-                <span className="pm-vip-crown-icon">👑</span> VIP {profile?.vipLevel || localStorage.getItem('domino_vip') || '3'}
-              </div>
-              <button
-                className="pm-change-avatar-btn g-btn-press"
-                onClick={onOpenAvatarSelection}
-                title="Ganti Avatar & Bingkai Keren"
-              >
-                <span>🎨</span> Ganti Avatar
-              </button>
-            </div>
-
-            {/* User ID Row: Spacious, un-cramped with beautiful copy button */}
-            <div className="pm-userid">
-              <div className="pm-userid-left">
-                <span className="pm-userid-prefix">ID:</span>
-                <span className="pm-userid-number">{profile?.userId || profile?.id || localStorage.getItem('domino_user_id') || '...'}</span>
-              </div>
-              <button
-                className="pm-copy-btn pm-btn-anim g-btn-press"
-                onClick={handleCopyUserId}
-                title="Salin ID Akun"
-              >
-                {copiedId ? '✓ Tersalin!' : '📋 Salin'}
-              </button>
+        {/* Middle Row: 4 Stat Highlights */}
+        <div className="pm-summary-stats-grid">
+          <div className="pm-metric-card">
+            <div className="pm-metric-icon" style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa' }}>🎮</div>
+            <div className="pm-metric-info">
+              <span className="pm-metric-val">{stats.ronde}x</span>
+              <span className="pm-metric-lbl">Total Main</span>
             </div>
           </div>
+          <div className="pm-metric-card">
+            <div className="pm-metric-icon" style={{ background: 'rgba(234, 179, 8, 0.2)', color: '#fde047' }}>🏆</div>
+            <div className="pm-metric-info">
+              <span className="pm-metric-val" style={{ color: '#fde047' }}>{stats.menang}x</span>
+              <span className="pm-metric-lbl">Total Menang</span>
+            </div>
+          </div>
+          <div className="pm-metric-card">
+            <div className="pm-metric-icon" style={{ background: 'rgba(16, 185, 129, 0.2)', color: '#34d399' }}>📈</div>
+            <div className="pm-metric-info">
+              <span className="pm-metric-val" style={{ color: '#34d399' }}>{winRate}%</span>
+              <span className="pm-metric-lbl">Rasio Menang</span>
+            </div>
+          </div>
+          <div className="pm-metric-card">
+            <div className="pm-metric-icon" style={{ background: 'rgba(249, 115, 22, 0.2)', color: '#fb923c' }}>🔥</div>
+            <div className="pm-metric-info">
+              <span className="pm-metric-val" style={{ color: '#fb923c' }}>{stats.winStreak}x</span>
+              <span className="pm-metric-lbl">Win Streak</span>
+            </div>
+          </div>
+        </div>
 
-          <div className="pm-info-list">
-            <div className="pm-info-row pm-hover-glow" style={{ justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, overflow: 'hidden' }}>
-                <span className="pm-info-icon" style={{ color: '#60a5fa' }}>👤</span>
-                <span className="pm-info-text" style={{ maxWidth: '110px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {profile?.username || 'Guest'}
-                </span>
-                <span style={{ color: '#00e676', fontSize: '1.4vh' }} title="Akun Terverifikasi">✓</span>
+        {/* Bottom Row: Equipped Loadout Showcase */}
+        <div className="pm-loadout-bar">
+          <div className="pm-loadout-items">
+            <div className="pm-loadout-pill" onClick={() => setActiveTab('custom')}>
+              <span className="pm-loadout-icon">{activeFrameObj.icon}</span>
+              <div>
+                <div className="pm-loadout-kicker">Bingkai Aura</div>
+                <div className="pm-loadout-val">{activeFrameObj.name}</div>
               </div>
-              {onOpenChangeName && (
-                <button
-                  className="g-btn-press"
-                  onClick={onOpenChangeName}
-                  title={(profile?.nameChangeCount || 0) === 0 ? "Ubah Nama (Gratis 1x untuk Pengguna Baru)" : "Ubah Nama (Biaya: 50.000 Koin)"}
-                  style={{
-                    background: (profile?.nameChangeCount || 0) === 0 ? 'rgba(16, 185, 129, 0.25)' : 'rgba(255, 215, 0, 0.25)',
-                    border: (profile?.nameChangeCount || 0) === 0 ? '1px solid #10b981' : '1px solid rgba(255, 215, 0, 0.6)',
-                    color: (profile?.nameChangeCount || 0) === 0 ? '#34d399' : '#ffd700',
-                    borderRadius: '6px',
-                    padding: '2px 8px',
-                    fontSize: '1.1vh',
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '3px',
-                    marginLeft: 'auto'
-                  }}
-                >
-                  ✏️ {(profile?.nameChangeCount || 0) === 0 ? 'Gratis 1x' : '50K'}
-                </button>
-              )}
             </div>
-            <div className="pm-info-row pm-hover-glow">
-              <span className="pm-info-icon" style={{ color: '#ffd700' }}>🪙</span>
-              <span className="pm-info-text">{formatCoins(profile?.coins || 0)}</span>
-              <span style={{ fontSize: '1.2vh', color: '#ffd700', marginLeft: 'auto', fontWeight: 800 }}>Koin</span>
+            <div className="pm-loadout-pill" onClick={() => setActiveTab('custom')}>
+              <span className="pm-loadout-icon">{activeTableObj.icon}</span>
+              <div>
+                <div className="pm-loadout-kicker">Tema Meja</div>
+                <div className="pm-loadout-val">{activeTableObj.name}</div>
+              </div>
             </div>
-            <div className="pm-info-row pm-hover-glow">
-              <span className="pm-info-icon rp-tag">Rp</span>
-              <span className="pm-info-text">{formatCoins(profile?.rp || 0)}</span>
-              <span style={{ fontSize: '1.2vh', color: '#ffedd5', marginLeft: 'auto', fontWeight: 800 }}>Kupon</span>
-            </div>
-            <div className="pm-info-row pm-hover-glow">
-              <span className="pm-info-icon" style={{ color: '#c084fc' }}>💎</span>
-              <span className="pm-info-text">100</span>
-              <span style={{ fontSize: '1.2vh', color: '#c084fc', marginLeft: 'auto', fontWeight: 800 }}>Berlian</span>
+            <div className="pm-loadout-pill" onClick={() => setActiveTab('lencana')}>
+              <span className="pm-loadout-icon">{activeBadgeObj.name.split(' ')[0]}</span>
+              <div>
+                <div className="pm-loadout-kicker">Lencana Aktif</div>
+                <div className="pm-loadout-val">{activeBadgeObj.name.replace(/^[^\s]+\s/, '')}</div>
+              </div>
             </div>
           </div>
-
-          <div className="pm-login-days">
-            <span>🔥 Login Streak: 1 Hari</span> • <span style={{ color: '#00e676' }}>Online 🟢</span>
-          </div>
+          <button className="pm-loadout-edit-btn g-btn-press" onClick={() => setActiveTab('custom')}>
+            🎨 Kustomisasi
+          </button>
         </div>
       </div>
     );
@@ -3594,61 +3867,153 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onOpenChang
       )}
 
       <div className="profile-modal-box" onClick={e => e.stopPropagation()}>
-        {/* Header Label */}
-        <div className="pm-header-label">
-          <span className="pm-header-icon">👑</span> PROFIL VIP EKSEKUTIF
-        </div>
-        {/* Close Button */}
-        <button className="pm-close-btn" onClick={onClose}>✖</button>
-
-        <div className="pm-content">
-          {/* LEFT SIDEBAR */}
-          <div className="pm-sidebar">
-            <button className="pm-sidebar-item static pm-btn-anim" onClick={() => setIsProfileOpen(!isProfileOpen)}>
-              <div className="pm-sb-left-group">
-                <span className="pm-sb-icon">👤</span>
-                <span className="pm-sb-title">Profil</span>
-              </div>
-              <span className="pm-sb-arrow">{isProfileOpen ? '▼' : '▶'}</span>
-            </button>
-            <div className={`pm-accordion-content ${isProfileOpen ? 'open' : 'closed'}`}>
-              <button className={`pm-sidebar-item sub-item pm-btn-anim ${activeTab === 'informasi' ? 'active-sub' : ''}`} onClick={() => setActiveTab('informasi')}>
-                <span className="pm-sub-dot">•</span> Informasi
-              </button>
-              <button className={`pm-sidebar-item sub-item pm-btn-anim ${activeTab === 'statistik' ? 'active-sub' : ''}`} onClick={() => setActiveTab('statistik')}>
-                <span className="pm-sub-dot">•</span> Statistik
-              </button>
-              <button className={`pm-sidebar-item sub-item pm-btn-anim ${activeTab === 'custom' ? 'active-sub' : ''}`} onClick={() => setActiveTab('custom')}>
-                <span className="pm-sub-dot">•</span> Custom
-              </button>
-              <button className={`pm-sidebar-item sub-item pm-btn-anim ${activeTab === 'lencana' ? 'active-sub' : ''}`} onClick={() => setActiveTab('lencana')}>
-                <span className="pm-sub-dot">•</span> Lencana
-              </button>
+        {/* TOP HEADER BAR WITH NAVIGATION TABS */}
+        <div className="pm-top-bar">
+          <div className="pm-brand-group">
+            <div className="pm-brand-emblem">👑</div>
+            <div>
+              <div className="pm-brand-title">PROFIL PEMAIN</div>
+              <div className="pm-brand-sub">Kartu Identitas & Rekor Resmi</div>
             </div>
+          </div>
 
+          <div className="pm-nav-pills">
             <button
-              className="pm-sidebar-item pm-btn-anim"
-              onClick={onOpenAvatarSelection}
-              style={{ marginTop: '0.8vh', background: 'linear-gradient(90deg, rgba(139, 92, 246, 0.25), rgba(109, 40, 217, 0.1))', color: '#e9d5ff', borderLeft: '3px solid #c084fc' }}
+              className={`pm-nav-pill g-btn-press ${activeTab === 'informasi' ? 'active' : ''}`}
+              onClick={() => setActiveTab('informasi')}
             >
-              <div className="pm-sb-left-group">
-                <span className="pm-sb-icon">🎨</span>
-                <span className="pm-sb-title">Ganti Avatar</span>
-              </div>
-              <span className="pm-sb-arrow">⚡</span>
+              <span>🪪</span> Ringkasan
             </button>
-
-            <button className={`pm-sidebar-item pm-btn-anim ${activeTab === 'prestasi' ? 'active' : ''}`} onClick={() => setActiveTab('prestasi')} style={{ marginTop: '0.8vh' }}>
-              <div className="pm-sb-left-group">
-                <span className="pm-sb-icon">🏆</span>
-                <span className="pm-sb-title">Prestasi</span>
-              </div>
-              <span className="pm-sb-arrow">▶</span>
+            <button
+              className={`pm-nav-pill g-btn-press ${activeTab === 'statistik' ? 'active' : ''}`}
+              onClick={() => setActiveTab('statistik')}
+            >
+              <span>📊</span> Statistik
+            </button>
+            <button
+              className={`pm-nav-pill g-btn-press ${activeTab === 'custom' ? 'active' : ''}`}
+              onClick={() => setActiveTab('custom')}
+            >
+              <span>🎨</span> Bingkai & Meja
+            </button>
+            <button
+              className={`pm-nav-pill g-btn-press ${activeTab === 'lencana' ? 'active' : ''}`}
+              onClick={() => setActiveTab('lencana')}
+            >
+              <span>🏅</span> Lencana
+            </button>
+            <button
+              className={`pm-nav-pill g-btn-press ${activeTab === 'prestasi' ? 'active' : ''}`}
+              onClick={() => setActiveTab('prestasi')}
+            >
+              <span>🏆</span> Prestasi
+              {claimableCount > 0 && <span className="pm-nav-badge">{claimableCount}</span>}
             </button>
           </div>
 
-          {/* DYNAMIC CONTENT AREA */}
-          {renderTabContent()}
+          <button className="pm-close-btn g-btn-press" onClick={onClose} aria-label="Tutup">✕</button>
+        </div>
+
+        {/* MAIN BODY: LEFT HERO IDENTITY CARD + RIGHT DYNAMIC CONTENT */}
+        <div className="pm-main-body">
+          {/* LEFT HERO IDENTITY CARD */}
+          <div className="pm-hero-sidebar">
+            <div className="pm-avatar-stage">
+              <div
+                className={`pm-avatar-circle pm-hover-glow avatar-frame-${selectedFrame}`}
+                onClick={onOpenAvatarSelection}
+                title="Klik untuk Ganti Avatar & Bingkai"
+              >
+                {selectedFrame === 'crown' && (
+                  <span className="pm-frame-topper">👑</span>
+                )}
+                {selectedFrame === 'fire' && (
+                  <span className="pm-frame-topper" style={{ filter: 'drop-shadow(0 0 8px #ff4500)' }}>🔥</span>
+                )}
+                {selectedFrame === 'diamond' && (
+                  <span className="pm-frame-topper" style={{ filter: 'drop-shadow(0 0 8px #00f2fe)' }}>💎</span>
+                )}
+                {selectedFrame === 'lightning' && (
+                  <span className="pm-frame-topper" style={{ filter: 'drop-shadow(0 0 8px #ffe600)' }}>⚡</span>
+                )}
+                {selectedFrame === 'dragon' && (
+                  <span className="pm-frame-topper" style={{ filter: 'drop-shadow(0 0 8px #f39c12)' }}>🐉</span>
+                )}
+
+                <div className="pm-avatar-inner">
+                  <span className="pm-avatar-emoji">
+                    {renderPlayerAvatar(avatarEmoji, '🐸', 'pm-avatar-pic')}
+                  </span>
+                </div>
+
+                <div
+                  className="pm-avatar-refresh pm-btn-anim"
+                  onClick={(e) => { e.stopPropagation(); onOpenAvatarSelection(); }}
+                  title="Ganti Foto / Avatar"
+                >
+                  📷
+                </div>
+              </div>
+            </div>
+
+            {/* Player Name & Verified Badge */}
+            <div className="pm-hero-name-wrap">
+              <div className="pm-hero-name-line">
+                <span className="pm-hero-username" title={profile?.username || 'Guest'}>
+                  {profile?.username || 'Guest'}
+                </span>
+                <span className="pm-verified-check" title="Akun Terverifikasi">✓</span>
+              </div>
+
+              {onOpenChangeName && (
+                <button
+                  className="pm-rename-chip g-btn-press"
+                  onClick={onOpenChangeName}
+                  title={(profile?.nameChangeCount || 0) === 0 ? "Ubah Nama (Gratis 1x)" : "Ubah Nama (50.000 Koin)"}
+                >
+                  ✏️ Ubah Nama ({(profile?.nameChangeCount || 0) === 0 ? 'Gratis 1x' : '50K'})
+                </button>
+              )}
+            </div>
+
+            {/* Equipped Badge Title Pill */}
+            <div className="pm-hero-badge-pill" onClick={() => setActiveTab('lencana')} title="Klik untuk ganti lencana">
+              {activeBadgeObj.name}
+            </div>
+
+            {/* Copyable User ID Pill */}
+            <div className="pm-userid">
+              <div className="pm-userid-left">
+                <span className="pm-userid-prefix">ID:</span>
+                <span className="pm-userid-number">{profile?.userId || profile?.id || localStorage.getItem('domino_user_id') || '...'}</span>
+              </div>
+              <button
+                className="pm-copy-btn pm-btn-anim g-btn-press"
+                onClick={handleCopyUserId}
+                title="Salin ID Akun"
+              >
+                {copiedId ? '✓ Tersalin' : '📋 Salin'}
+              </button>
+            </div>
+
+            {/* Change Avatar Action Button */}
+            <button
+              className="pm-hero-avatar-btn g-btn-press"
+              onClick={onOpenAvatarSelection}
+            >
+              <span>🎨</span> Ganti Foto & Avatar
+            </button>
+
+            <div className="pm-hero-status-bar">
+              <span className="pm-online-dot" />
+              <span>Online • Aktif Bermain</span>
+            </div>
+          </div>
+
+          {/* RIGHT DYNAMIC CONTENT AREA */}
+          <div className="pm-content-stage">
+            {renderTabContent()}
+          </div>
         </div>
       </div>
     </div>
@@ -4785,27 +5150,16 @@ function HomeScreen({
               ID: {profile?.userId || profile?.id || localStorage.getItem('domino_user_id') || '...'} 📋
             </div>
           </div>
-          <div className="ht-vip-pill" onClick={() => setShowKirimKoin(true)}>
-            <span>VIP {profile?.vipLevel ?? 0}</span>
-          </div>
         </div>
 
         {/* Tengah: Koin Display */}
         <div className="ht-coins-block">
           <span className="ht-coin-ico">🪙</span>
           <span className="ht-coin-val">{(profile?.coins ?? 1234567890).toLocaleString('id-ID')}</span>
-          <button className="ht-coin-plus" onClick={() => setShowToko(true)}>+</button>
         </div>
 
-        {/* Kanan: Quick Actions (Event, Inbox, Ranking, Setting, TOP UP) */}
+        {/* Kanan: Quick Actions (Inbox, Ranking, Setting, Berita) */}
         <div className="ht-actions-block">
-          <button className="ht-act-btn" onClick={() => pop('Event', 'Ikuti event spesial berhadiah!')}>
-            {/* Gift/Event icon */}
-            <svg className="ht-act-ico-svg" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M20 6h-2.18c.07-.26.18-.5.18-.75C18 3.89 16.96 3 15.75 3c-.89 0-1.6.42-2.05 1.07L12 6.03l-1.7-1.96C9.85 3.42 9.14 3 8.25 3 7.04 3 6 3.89 6 5.25c0 .25.11.49.18.75H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-1.5c.41 0 .75.34.75.75S15.41 6 15 6c-.41 0-.75-.34-.75-.75s.34-.75.75-.75zM9 5.25c0-.41.34-.75.75-.75s.75.34.75.75S10.16 6 9.75 6c-.41 0-.75-.34-.75-.75zm3 7.75l-4-4h8l-4 4z" />
-            </svg>
-            <span className="ht-act-lbl">Event</span>
-          </button>
           <button className="ht-act-btn" onClick={() => setShowInbox(true)}>
             {inboxUnread > 0 && <div className="ht-notif-dot" />}
             {/* Inbox/Mail icon */}
@@ -4863,15 +5217,6 @@ function HomeScreen({
             <span className="ht-act-lbl">Berita</span>
           </button>
 
-          {/* Glowing TOP UP Button — gold/coin style */}
-          <button className="ht-topup-btn" onClick={() => setShowToko(true)}>
-            {/* Coin stack SVG icon */}
-            <svg className="ht-topup-ico-svg" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05.82 1.87 2.65 1.87 1.96 0 2.4-.98 2.4-1.59 0-.83-.44-1.61-2.67-2.14-2.48-.6-4.18-1.62-4.18-3.67 0-1.72 1.39-2.84 3.11-3.21V4h2.67v1.95c1.86.45 2.79 1.86 2.85 3.39H14.3c-.05-1.11-.64-1.87-2.22-1.87-1.5 0-2.4.68-2.4 1.64 0 .84.65 1.39 2.67 1.91s4.18 1.39 4.18 3.91c-.01 1.83-1.38 2.83-3.12 3.16z" />
-            </svg>
-            <span className="ht-topup-txt">TOP UP</span>
-          </button>
-
           <button
             className={`ht-menu-burger ${showRightSidebar ? 'active' : ''}`}
             onClick={() => setShowRightSidebar(v => !v)}
@@ -4917,20 +5262,13 @@ function HomeScreen({
       {/* ===== MAIN BODY V3 ===== */}
       <div className="home-body-v3">
 
-        {/* SIDEBAR KIRI (Beranda, Turnamen, Misi, Hadiah, VIP) */}
-        {/* SIDEBAR KIRI (Beranda, Turnamen, Misi, Hadiah, VIP) */}
+        {/* SIDEBAR KIRI (Beranda, Misi & Hadiah) */}
         <div className="home-sidebar-v3">
           <button className="hs-nav-btn active">
             <span className="hs-nav-ico">
               <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" /></svg>
             </span>
             <span className="hs-nav-lbl">Beranda</span>
-          </button>
-          <button className="hs-nav-btn" onClick={() => pop('Turnamen', 'Ikuti turnamen resmi berhadiah!')}>
-            <span className="hs-nav-ico">
-              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0011 15.9V19H7v2h10v-2h-4v-3.1a5.01 5.01 0 003.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM7 10.82C5.84 10.4 5 9.3 5 8V7h2v3.82zM19 8c0 1.3-.84 2.4-2 2.82V7h2v1z" /></svg>
-            </span>
-            <span className="hs-nav-lbl">Turnamen</span>
           </button>
           <button className="hs-nav-btn" onClick={() => pop('Misi', 'Selesaikan misi harian!')}>
             <span className="hs-nav-ico">
@@ -4939,17 +5277,10 @@ function HomeScreen({
             <span className="hs-nav-lbl">Misi</span>
           </button>
           <button className="hs-nav-btn" onClick={() => setShowDailyBonus(true)}>
-            {canClaimBonus && <div className="hs-notif-dot" />}
             <span className="hs-nav-ico">
               <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3-1.05 0-1.96.54-2.5 1.35l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 11 8.76l1-1.36 1 1.36L15.38 12 17 10.83 14.92 8H20v6z" /></svg>
             </span>
             <span className="hs-nav-lbl">Hadiah</span>
-          </button>
-          <button className="hs-nav-btn" onClick={() => setShowKirimKoin(true)}>
-            <span className="hs-nav-ico">
-              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l-3.09 8H2l6.18 4.77L5.82 22 12 17.27 18.18 22l-2.36-7.23L22 10h-6.91L12 2z" /></svg>
-            </span>
-            <span className="hs-nav-lbl">VIP</span>
           </button>
         </div>
 
@@ -4982,10 +5313,10 @@ function HomeScreen({
             {/* CARD 2: BILLAR */}
             <div className="home-game-card-v3 card-billar" onClick={() => {
               const usable = Math.max(0, (profile?.coins || 0) - (profile?.bonusCoins || 0));
-              if (usable < 50000 && (profile?.bonusCoins || 0) > 0 && (profile?.coins || 0) >= 50000) {
+              if (usable < 20000 && (profile?.bonusCoins || 0) > 0 && (profile?.coins || 0) >= 20000) {
                 setModal({
                   title: 'Koin Bonus Khusus Slot',
-                  message: `⚠️ Koin dari klaim bonus harian (${(profile?.bonusCoins || 0).toLocaleString('id-ID')} koin) hanya dapat dimainkan di SLOT!\n\nKoin biliar Anda: ${usable.toLocaleString('id-ID')} koin (Butuh minimal 50.000 koin untuk masuk meja biliar).`
+                  message: `⚠️ Koin dari klaim bonus harian (${(profile?.bonusCoins || 0).toLocaleString('id-ID')} koin) hanya dapat dimainkan di SLOT!\n\nKoin biliar Anda: ${usable.toLocaleString('id-ID')} koin (Butuh minimal 20.000 koin untuk masuk meja biliar).`
                 });
                 return;
               }
@@ -5043,49 +5374,6 @@ function HomeScreen({
 
           </div>
 
-          {/* BOTTOM 3 FEATURE BANNERS — ENHANCED */}
-          <div className="home-feature-banners-v3">
-
-            {/* Left: DAILY BONUS */}
-            <div className="hfb-card hfb-bonus" onClick={() => setShowDailyBonus(true)}>
-              <div className="hfb-img-wrap">
-                <img src="/assets/loby/chest_bonus.jpg" alt="Daily Bonus" className="hfb-img" />
-              </div>
-              <div className="hfb-text">
-                <div className="hfb-title hfb-gold-bright">DAILY BONUS</div>
-                <div className="hfb-sub">Login Setiap Hari</div>
-                <div className="hfb-sub">Dapatkan Hadiah Menarik</div>
-              </div>
-            </div>
-
-            {/* Center: TURNAMEN */}
-            <div className="hfb-card hfb-turnamen" onClick={() => pop('Turnamen', 'Ikuti turnamen dan dapatkan hadiah hingga 100M koin!')}>
-              <div className="hfb-img-wrap">
-                <img src="/assets/loby/golden_trophy.jpg" alt="Turnamen" className="hfb-img" />
-              </div>
-              <div className="hfb-text">
-                <div className="hfb-title hfb-gold-bright">TURNAMEN</div>
-                <div className="hfb-sub">Ikuti Turnamen</div>
-                <div className="hfb-sub">Menangkan Hadiah Fantastis</div>
-                <button className="hfb-btn red-btn">IKUTI SEKARANG</button>
-              </div>
-            </div>
-
-            {/* Right: AJAK TEMAN */}
-            <div className="hfb-card hfb-ajak" onClick={() => setShowAjakTeman(true)}>
-              <div className="hfb-img-wrap">
-                <img src="/assets/loby/gift_boxes.jpg" alt="Ajak Teman" className="hfb-img" />
-              </div>
-              <div className="hfb-text">
-                <div className="hfb-title hfb-gold-bright">AJAK TEMAN</div>
-                <div className="hfb-sub">Dapatkan Bonus Koin</div>
-                <div className="hfb-sub">Tanpa Batas</div>
-                <button className="hfb-btn green-btn">AJAK SEKARANG</button>
-              </div>
-            </div>
-
-          </div>
-
         </div>
 
       </div>
@@ -5128,12 +5416,6 @@ function HomeScreen({
               <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v2c0 2.21 1.79 4 4 4 .19 0 .37-.02.55-.05C8.36 12.59 10 14 12 14s3.64-1.41 4.45-3.05c.18.03.36.05.55.05 2.21 0 4-1.79 4-4V5c0-1.1-.9-2-2-2zm-2 4H7V5h10v2zm-5 5c-1.1 0-2-.9-2-2h4c0 1.1-.9 2-2 2zm7-5h-2v2c0 1.1-.9 2-2 2-.19 0-.37-.02-.55-.05C15.64 8.59 14 7 12 7s-3.64 1.41-4.45 3.05c-.18.03-.36.05-.55.05-1.1 0-2-.9-2-2V7H5V5h14v2zm-5 13v-3h-4v3H8v2h8v-2h-2z" /></svg>
             </span>
             <span className="hb3-lbl">Leaderboard</span>
-          </button>
-          <button className="hb3-nav-btn" onClick={() => setShowToko(true)}>
-            <span className="hb3-ico">
-              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z" /></svg>
-            </span>
-            <span className="hb3-lbl">Toko</span>
           </button>
         </div>
         <div className="hb3-nav-right">
@@ -7991,12 +8273,14 @@ function QiuQiuGameScreen({
   room,
   customPlayers,
   customBet,
+  customCode,
 }: {
   onBack: () => void;
   socket: Socket | null;
   room?: QiuQiuRoomConfig;
   customPlayers?: any[] | null;
   customBet?: number | null;
+  customCode?: string | null;
 }) {
   const activeRoom = room || QIUQIU_ROOMS[0];
   const myUsername = localStorage.getItem('domino_username') || 'V2043';
@@ -8102,12 +8386,52 @@ function QiuQiuGameScreen({
   }, [seats]);
 
   const hasCashedOutRef = useRef(false);
+  const isByOneCustom = Boolean(customPlayers && customPlayers.length >= 2);
+  const byOneForfeitedRef = useRef(false);
+
+  // Listen for opponent leaving in By One QiuQiu mode -> Auto Win!
+  useEffect(() => {
+    if (!isByOneCustom || !socket) return;
+    const handleByOneMatchEnd = (data: any) => {
+      if (data?.isMeWinner || data?.winner === myUsername || data?.byOpponentLeft || data?.byDisconnect) {
+        byOneForfeitedRef.current = true;
+        const winPot = data?.pot || (customBet ? customBet * (customPlayers?.length || 2) : potAmount);
+        setWinnerNotice({
+          winnerName: myUsername,
+          amount: winPot,
+          title: `🏳️ ${data?.leaver || 'Lawan'} Keluar — AUTO WIN!`,
+        });
+        showToast(`🏆 Lawan keluar dari kamar! Anda OTOMATIS MENANG +${winPot.toLocaleString('id-ID')} koin!`);
+        if (typeof data?.newCoins === 'number') {
+          localStorage.setItem('domino_coins', String(data.newCoins));
+          window.dispatchEvent(new Event('domino_coins_updated'));
+        }
+      }
+    };
+    socket.on('byone_match_ended', handleByOneMatchEnd);
+    return () => {
+      socket.off('byone_match_ended', handleByOneMatchEnd);
+    };
+  }, [isByOneCustom, socket, myUsername, customBet, customPlayers, potAmount]);
 
   // Refund / Cashout player's table chips back to main wallet on exit
   const handleExecuteCashoutAndExit = async () => {
     if (isExiting || hasCashedOutRef.current) return;
     setIsExiting(true);
     hasCashedOutRef.current = true;
+
+    if (isByOneCustom && socket && !byOneForfeitedRef.current) {
+      byOneForfeitedRef.current = true;
+      socket.emit('byone_forfeit', {
+        matchId: customCode ? `byone_${customCode}` : undefined,
+        roomCode: customCode || undefined,
+        username: myUsername,
+      });
+      setShowExitConfirm(false);
+      onBack();
+      return;
+    }
+
     const remainingChips = seatsRef.current[0]?.coins || 0;
     const savedUser = localStorage.getItem('domino_username');
 
@@ -9580,6 +9904,7 @@ function App() {
           room={selectedQiuRoom || QIUQIU_ROOMS[0]}
           customPlayers={byonePlayers}
           customBet={byoneBet}
+          customCode={byoneRoomCode}
         />
       )}
 

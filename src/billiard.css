@@ -1269,60 +1269,57 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 20px 20px 44px;
+  justify-content: space-between;
+  padding: clamp(8px, 1.8vh, 18px) clamp(12px, 2vw, 24px) clamp(10px, 2vh, 20px);
   box-sizing: border-box;
   position: relative;
-  overflow-y: auto;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
+  overflow: hidden;
   height: 100vh;
   height: 100dvh;
   max-height: 100dvh;
+  gap: clamp(6px, 1.4vh, 14px);
 }
 
 /* Header */
 .pool8-room-header {
   width: 100%;
-  max-width: 1360px;
+  max-width: 1400px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 22px;
-  padding: 12px 24px;
+  margin-bottom: 0;
+  padding: clamp(6px, 1.2vh, 12px) clamp(12px, 1.8vw, 22px);
   background: linear-gradient(180deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.92) 100%);
-  border-radius: 24px;
+  border-radius: clamp(14px, 2vh, 22px);
   border: 1.5px solid rgba(212, 175, 55, 0.35);
-  /* perf: optimized */
-  /* backdrop-filter: none; */
-  /* -webkit-backdrop-filter: none; */
   z-index: 20;
-  gap: 16px;
-  flex-wrap: wrap;
+  gap: 12px;
+  flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .bl-back-btn-rich {
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: linear-gradient(180deg, rgba(51, 65, 85, 0.8) 0%, rgba(30, 41, 59, 0.8) 100%);
-  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  gap: 7px;
+  background: linear-gradient(180deg, rgba(51, 65, 85, 0.85) 0%, rgba(30, 41, 59, 0.9) 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
   color: #fff;
-  padding: 10px 18px;
-  border-radius: 14px;
-  font-size: 14px;
+  padding: clamp(6px, 1vh, 9px) clamp(12px, 1.3vw, 16px);
+  border-radius: 12px;
+  font-size: clamp(11.5px, 1.7vh, 13.5px);
   font-weight: 800;
   cursor: pointer;
-  transition: transform 0.25s ease, opacity 0.25s ease;
-  /* perf: optimized */
+  transition: transform 0.2s ease, border-color 0.2s ease;
+  white-space: nowrap;
 }
 .bl-back-btn-rich:hover {
-  background: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.2);
   border-color: #38bdf8;
-  transform: translateX(-3px);
-  /* perf: optimized */
+  transform: translateX(-2px);
 }
 .btn-back-ico {
-  font-size: 16px;
+  font-size: clamp(13px, 1.9vh, 16px);
   font-weight: 900;
 }
 
@@ -1331,38 +1328,40 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
+  min-width: 0;
 }
 .pool8-room-title {
   color: #fff;
-  font-size: 22px;
+  font-size: clamp(14px, 2.4vh, 20px);
   font-weight: 900;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.6px;
   text-transform: uppercase;
   background: linear-gradient(180deg, #ffffff 0%, #fde047 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  text-shadow: 0 3px 12px rgba(253, 224, 71, 0.4);
+  text-shadow: 0 3px 12px rgba(253, 224, 71, 0.35);
+  line-height: 1.15;
 }
 .pool8-room-sub {
   color: #94a3b8;
-  font-size: 12.5px;
+  font-size: clamp(10px, 1.4vh, 12px);
   font-weight: 600;
-  margin-top: 2px;
+  margin-top: 1px;
 }
 
 /* User status chip */
 .pool8-room-user-chip {
   display: flex;
   align-items: center;
-  gap: 10px;
-  background: rgba(15, 23, 42, 0.85);
+  gap: 8px;
+  background: rgba(15, 23, 42, 0.88);
   border: 1.5px solid #ffd700;
-  padding: 6px 14px;
-  border-radius: 18px;
-  /* perf: optimized */
+  padding: clamp(4px, 0.7vh, 6px) clamp(10px, 1.2vw, 14px);
+  border-radius: 14px;
+  flex-shrink: 0;
 }
 .user-chip-avatar {
-  font-size: 24px;
+  font-size: clamp(18px, 2.8vh, 22px);
   line-height: 1;
 }
 .user-chip-info {
@@ -1371,21 +1370,21 @@
 }
 .user-chip-name {
   color: #e2e8f0;
-  font-size: 12px;
+  font-size: clamp(10px, 1.4vh, 11.5px);
   font-weight: 800;
 }
 .user-chip-coins {
   color: #ffd700;
-  font-size: 14px;
+  font-size: clamp(11px, 1.65vh, 13.5px);
   font-weight: 900;
 }
 .user-chip-lvl {
   background: linear-gradient(180deg, #a855f7 0%, #7e22ce 100%);
   color: #fff;
-  font-size: 11px;
+  font-size: clamp(9.5px, 1.35vh, 11px);
   font-weight: 900;
-  padding: 3px 8px;
-  border-radius: 10px;
+  padding: 2px 7px;
+  border-radius: 8px;
   border: 1px solid #d8b4fe;
 }
 
@@ -1393,23 +1392,24 @@
 .pool8-room-tabs {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 24px;
-  max-width: 1360px;
+  gap: 8px;
+  margin-bottom: 0;
+  max-width: 1400px;
   width: 100%;
   overflow-x: auto;
-  padding-bottom: 4px;
+  padding-bottom: 2px;
+  flex-shrink: 0;
 }
 .pool8-tab-btn {
-  padding: 8px 18px;
-  background: rgba(30, 41, 59, 0.7);
+  padding: clamp(5px, 0.9vh, 8px) clamp(12px, 1.4vw, 18px);
+  background: rgba(30, 41, 59, 0.75);
   border: 1.5px solid rgba(255, 255, 255, 0.14);
-  border-radius: 20px;
+  border-radius: 999px;
   color: #cbd5e1;
-  font-size: 13px;
+  font-size: clamp(11px, 1.65vh, 13px);
   font-weight: 800;
   cursor: pointer;
-  transition: transform 0.25s ease, opacity 0.25s ease;
+  transition: transform 0.2s ease, opacity 0.2s ease;
   white-space: nowrap;
 }
 .pool8-tab-btn:hover {
@@ -1417,79 +1417,90 @@
   color: #fff;
 }
 .pool8-tab-btn.active {
-  background: linear-gradient(180deg, rgba(250, 204, 21, 0.25) 0%, rgba(217, 119, 6, 0.35) 100%);
+  background: linear-gradient(180deg, rgba(250, 204, 21, 0.28) 0%, rgba(217, 119, 6, 0.38) 100%);
   border-color: #facc15;
   color: #fef08a;
-  /* perf: optimized */
 }
 
-/* Showcase Grid of Arena Cards */
+/* Showcase Row of 5 Arena Cards */
 .pool8-room-showcase {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(235px, 1fr));
-  gap: 20px;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  justify-content: safe center;
+  gap: clamp(10px, 1.3vw, 18px);
   width: 100%;
   max-width: 1400px;
+  flex: 1;
+  min-height: 0;
   z-index: 10;
-  margin-bottom: 24px;
+  margin-bottom: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 4px 6px;
+  box-sizing: border-box;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Arena Card */
 .pool8-arena-card {
   position: relative;
-  background: rgba(15, 23, 42, 0.88);
-  border: 1.5px solid rgba(255, 255, 255, 0.15);
-  border-radius: 28px;
-  padding: 20px 20px 22px;
+  flex: 1 1 210px;
+  min-width: clamp(185px, 18vw, 240px);
+  max-width: 268px;
+  height: 100%;
+  max-height: 100%;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1.5px solid rgba(255, 255, 255, 0.16);
+  border-radius: clamp(16px, 2.4vh, 24px);
+  padding: clamp(8px, 1.8vh, 16px) clamp(10px, 1.2vw, 16px);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
-  /* perf: optimized */
+  justify-content: space-between;
+  gap: clamp(4px, 0.9vh, 10px);
   cursor: pointer;
-  transition: transform 0.25s ease, opacity 0.25s ease;
+  transition: transform 0.22s ease, border-color 0.22s ease;
   overflow: hidden;
-  /* backdrop-filter: none; */
-  /* -webkit-backdrop-filter: none; */
+  box-sizing: border-box;
 }
 .pool8-arena-card:hover {
-  transform: translateY(-10px) scale(1.025);
+  transform: translateY(-4px);
   border-color: var(--arena-accent, #38bdf8);
-  /* perf: optimized */
 }
 .pool8-arena-card.locked {
   filter: grayscale(0.65) opacity(0.85);
   cursor: not-allowed;
 }
 .pool8-arena-card.locked:hover {
-  transform: translateY(-3px) scale(1.005);
+  transform: translateY(-2px);
 }
 
 .arena-card-ambient {
   position: absolute;
   inset: 0;
-  opacity: 0.32;
+  opacity: 0.34;
   z-index: 0;
   transition: opacity 0.3s;
 }
 .pool8-arena-card:hover .arena-card-ambient {
-  opacity: 0.52;
+  opacity: 0.54;
 }
 
 /* Recommendation ribbon */
 .arena-rec-ribbon {
   position: absolute;
-  top: 14px;
-  right: -32px;
+  top: 10px;
+  right: -30px;
   transform: rotate(45deg);
   background: linear-gradient(90deg, #ef4444 0%, #f97316 100%);
   color: #fff;
-  font-size: 9.5px;
+  font-size: clamp(7.5px, 1.1vh, 9px);
   font-weight: 900;
-  padding: 4px 34px;
-  /* perf: optimized */
+  padding: 2px 30px;
   z-index: 5;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
   pointer-events: none;
 }
 
@@ -1501,44 +1512,36 @@
   width: 100%;
   position: relative;
   z-index: 2;
+  flex-shrink: 0;
 }
 .arena-city-badge {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 5px;
   background: rgba(0, 0, 0, 0.45);
-  padding: 4px 10px;
-  border-radius: 12px;
+  padding: 3px 8px;
+  border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.12);
 }
 .arena-flag {
-  font-size: 20px;
+  font-size: clamp(14px, 2.2vh, 18px);
   line-height: 1;
 }
 .arena-city-name {
   color: #f1f5f9;
-  font-size: 13px;
+  font-size: clamp(10.5px, 1.6vh, 12.5px);
   font-weight: 800;
 }
 .arena-badge-group {
   display: flex;
   align-items: center;
-  gap: 5px;
-}
-.arena-badge-pill {
-  font-size: 9.5px;
-  font-weight: 900;
-  padding: 3px 8px;
-  border-radius: 8px;
-  background: rgba(250, 204, 21, 0.2);
-  color: #fde047;
-  border: 1px solid rgba(250, 204, 21, 0.4);
+  gap: 4px;
 }
 .arena-tier-pill {
-  font-size: 10px;
+  font-size: clamp(8.5px, 1.25vh, 10px);
   font-weight: 900;
-  padding: 3px 9px;
-  border-radius: 8px;
+  padding: 2px 7px;
+  border-radius: 7px;
   text-transform: uppercase;
 }
 .arena-tier-pill.tier-pemula   { background: rgba(52, 211, 153, 0.2); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.45); }
@@ -1550,21 +1553,21 @@
 /* 3D Tournament Ring Medallion */
 .arena-medallion-container {
   position: relative;
-  width: 124px;
-  height: 124px;
+  width: clamp(58px, 13.5vh, 104px);
+  height: clamp(58px, 13.5vh, 104px);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 6px 0 2px;
+  margin: 2px 0;
   z-index: 2;
+  flex-shrink: 0;
 }
 .arena-cue-left, .arena-cue-right {
   position: absolute;
-  width: 140px;
-  height: 6px;
+  width: clamp(68px, 15vh, 118px);
+  height: clamp(3.5px, 0.6vh, 5px);
   background: linear-gradient(90deg, #d97706 0%, #fef3c7 60%, #1e293b 100%);
   border-radius: 3px;
-  /* perf: optimized */
 }
 .arena-cue-left {
   transform: rotate(-45deg);
@@ -1575,46 +1578,43 @@
 
 .arena-ring-outer {
   position: relative;
-  width: 106px;
-  height: 106px;
+  width: clamp(50px, 11.5vh, 90px);
+  height: clamp(50px, 11.5vh, 90px);
   border-radius: 50%;
-  border: 4px solid #ffd700;
+  border: clamp(2.5px, 0.45vh, 4px) solid #ffd700;
   display: flex;
   align-items: center;
   justify-content: center;
   background: radial-gradient(circle, #2a1f0c 0%, #0d0802 100%);
-  /* perf: optimized */
   z-index: 3;
 }
 .arena-ring-felt {
-  width: 82px;
-  height: 82px;
+  width: clamp(38px, 8.8vh, 70px);
+  height: clamp(38px, 8.8vh, 70px);
   border-radius: 50%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   position: relative;
-  /* perf: optimized */
 }
 .arena-8ball {
-  width: 44px;
-  height: 44px;
+  width: clamp(22px, 5vh, 38px);
+  height: clamp(22px, 5vh, 38px);
   border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, #374151 0%, #111827 65%, #030712 100%);
   border: 1.5px solid rgba(255, 255, 255, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
-  /* perf: optimized */
 }
 .arena-8ball-num {
-  width: 18px;
-  height: 18px;
+  width: clamp(9px, 2vh, 15px);
+  height: clamp(9px, 2vh, 15px);
   border-radius: 50%;
   background: #fff;
   color: #111827;
-  font-size: 11px;
+  font-size: clamp(6px, 1.25vh, 10px);
   font-weight: 900;
   display: flex;
   align-items: center;
@@ -1622,22 +1622,21 @@
 }
 .arena-center-flag {
   position: absolute;
-  bottom: 4px;
-  font-size: 15px;
+  bottom: 2px;
+  font-size: clamp(10px, 1.8vh, 14px);
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
 }
 .arena-ring-title-badge {
   position: absolute;
-  bottom: -10px;
+  bottom: -6px;
   background: linear-gradient(180deg, #2b1f0c 0%, #150f05 100%);
-  border: 1.5px solid #ffd700;
-  padding: 3px 12px;
-  border-radius: 14px;
+  border: 1px solid #ffd700;
+  padding: 1px 8px;
+  border-radius: 10px;
   color: #fde047;
-  font-size: 10px;
+  font-size: clamp(7.5px, 1.15vh, 9.5px);
   font-weight: 900;
   white-space: nowrap;
-  /* perf: optimized */
   z-index: 4;
 }
 
@@ -1646,35 +1645,36 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   position: relative;
   z-index: 2;
-  margin-top: 4px;
+  flex-shrink: 0;
 }
 .arena-title {
   color: #ffffff;
-  font-size: 21px;
+  font-size: clamp(13px, 2.2vh, 18px);
   font-weight: 900;
-  letter-spacing: 0.5px;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+  letter-spacing: 0.3px;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
   text-align: center;
+  line-height: 1.15;
 }
 .arena-cloth-tag {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 11px;
+  gap: 5px;
+  font-size: clamp(8.5px, 1.3vh, 10.5px);
   font-weight: 700;
   color: #cbd5e1;
   background: rgba(0, 0, 0, 0.4);
-  padding: 2px 10px;
-  border-radius: 10px;
+  padding: 1px 8px;
+  border-radius: 8px;
+  white-space: nowrap;
 }
 .cloth-dot {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  /* perf: optimized */
 }
 
 /* Prize Box */
@@ -1682,62 +1682,70 @@
   width: 100%;
   background: linear-gradient(180deg, #291c07 0%, #170f03 100%);
   border: 1.5px solid #facc15;
-  border-radius: 16px;
-  padding: 8px 12px;
+  border-radius: clamp(10px, 1.6vh, 14px);
+  padding: clamp(4px, 0.9vh, 8px) 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  /* perf: optimized */
+  gap: 1px;
   position: relative;
   z-index: 2;
+  flex-shrink: 0;
+  box-sizing: border-box;
 }
 .arena-prize-header {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 10px;
+  gap: 4px;
+  font-size: clamp(8px, 1.2vh, 9.5px);
   font-weight: 900;
   color: #fde047;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.6px;
 }
 .arena-trophy-ico {
-  font-size: 12px;
+  font-size: clamp(9px, 1.35vh, 11px);
 }
 .arena-prize-amount {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
 .arena-coin-ico {
-  font-size: 18px;
+  font-size: clamp(12px, 2vh, 16px);
 }
 .arena-amount-num {
   color: #ffd700;
-  font-size: 21px;
+  font-size: clamp(13.5px, 2.3vh, 19px);
   font-weight: 900;
-  letter-spacing: 0.5px;
-  text-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
+  letter-spacing: 0.4px;
+  text-shadow: 0 2px 6px rgba(255, 215, 0, 0.4);
+  line-height: 1.1;
 }
 
 /* Meta info row */
 .arena-meta-box {
   display: flex;
   align-items: center;
-  justify-content: space-around;
+  justify-content: space-between;
   width: 100%;
-  font-size: 11.5px;
+  font-size: clamp(9.5px, 1.4vh, 11.5px);
   color: #94a3b8;
   position: relative;
   z-index: 2;
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.32);
+  padding: clamp(3px, 0.6vh, 5px) 8px;
+  border-radius: 8px;
+  box-sizing: border-box;
+  white-space: nowrap;
 }
 .arena-meta-item {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
 }
 .arena-meta-label {
-  color: #64748b;
+  color: #94a3b8;
   font-weight: 700;
 }
 .arena-meta-val {
@@ -1757,7 +1765,6 @@
   height: 6px;
   border-radius: 50%;
   background: #22c55e;
-  /* perf: optimized */
   animation: pulseDot 1.5s infinite;
 }
 @keyframes pulseDot {
@@ -1768,44 +1775,44 @@
   color: rgba(255, 255, 255, 0.2);
 }
 
-/* CTA Button */
+/* CTA Button (Always visible at bottom of card) */
 .arena-cta-btn {
   width: 100%;
-  padding: 12px 0;
-  border-radius: 16px;
+  padding: clamp(6px, 1.3vh, 11px) 8px;
+  border-radius: clamp(10px, 1.5vh, 14px);
   background: linear-gradient(180deg, #10b981 0%, #059669 100%);
   border: 1.5px solid #34d399;
   color: #fff;
-  font-size: 15px;
+  font-size: clamp(11px, 1.75vh, 14px);
   font-weight: 900;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.6px;
   cursor: pointer;
-  /* perf: optimized */
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  transition: transform 0.25s ease, opacity 0.25s ease;
+  gap: 6px;
+  transition: transform 0.2s ease, filter 0.2s ease;
   position: relative;
   z-index: 2;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.4);
 }
 .arena-cta-btn:hover:not(.disabled) {
   filter: brightness(1.15);
-  transform: translateY(-2px);
-  /* perf: optimized */
+  transform: translateY(-1px);
 }
 .arena-cta-btn:active:not(.disabled) {
   transform: translateY(1px);
 }
 .arena-cta-btn.disabled {
-  background: rgba(30, 41, 59, 0.6);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(30, 41, 59, 0.65);
+  border-color: rgba(255, 255, 255, 0.12);
   color: #64748b;
   cursor: not-allowed;
-  /* perf: optimized */
+  box-shadow: none;
 }
 .arena-cta-icon {
-  font-size: 14px;
+  font-size: clamp(10px, 1.5vh, 13px);
 }
 
 /* ── MATCHMAKING SCREEN ────────────────────────────────── */
@@ -2608,34 +2615,36 @@
 @media screen and (max-height: 600px), screen and (max-width: 1024px) and (orientation: landscape) {
   /* ── 1. ROOM SELECTION SCREEN ── */
   .pool8-room-screen {
-    padding: 6px 12px 10px !important;
-    justify-content: flex-start !important;
-    overflow-y: hidden !important;
-    height: 100vh !important;
+    padding: 5px 10px 8px !important;
+    justify-content: space-between !important;
+    overflow: hidden !important;
+    height: var(--app-height, 100dvh) !important;
+    gap: 4px !important;
   }
 
   .pool8-room-header {
-    margin-bottom: 6px !important;
-    padding: 4px 12px !important;
+    margin-bottom: 0 !important;
+    padding: 3px 10px !important;
     gap: 8px !important;
     flex-wrap: nowrap !important;
-    border-radius: 12px !important;
-    height: 40px !important;
+    border-radius: 10px !important;
+    height: 36px !important;
+    min-height: 36px !important;
   }
 
   .bl-back-btn-rich {
-    padding: 4px 10px !important;
-    font-size: 11.5px !important;
+    padding: 3px 9px !important;
+    font-size: 11px !important;
     border-radius: 8px !important;
-    gap: 5px !important;
+    gap: 4px !important;
   }
   .btn-back-ico {
-    font-size: 13px !important;
+    font-size: 12px !important;
   }
 
   .pool8-room-title {
-    font-size: 14px !important;
-    letter-spacing: 0.4px !important;
+    font-size: 13px !important;
+    letter-spacing: 0.3px !important;
   }
   .pool8-room-sub {
     display: none !important;
@@ -2643,33 +2652,33 @@
 
   .pool8-room-user-chip {
     padding: 2px 8px !important;
-    border-radius: 12px !important;
-    gap: 6px !important;
+    border-radius: 10px !important;
+    gap: 5px !important;
   }
   .user-chip-avatar {
-    font-size: 16px !important;
+    font-size: 15px !important;
   }
   .user-chip-name {
-    font-size: 9.5px !important;
+    font-size: 9px !important;
   }
   .user-chip-coins {
-    font-size: 11px !important;
+    font-size: 10.5px !important;
   }
   .user-chip-lvl {
-    font-size: 8.5px !important;
+    font-size: 8px !important;
     padding: 1px 5px !important;
     border-radius: 6px !important;
   }
 
   .pool8-room-tabs {
-    margin-bottom: 6px !important;
+    margin-bottom: 0 !important;
     gap: 6px !important;
-    padding-bottom: 2px !important;
+    padding-bottom: 1px !important;
   }
   .pool8-tab-btn {
-    padding: 3px 10px !important;
-    font-size: 10.5px !important;
-    border-radius: 10px !important;
+    padding: 2px 9px !important;
+    font-size: 10px !important;
+    border-radius: 999px !important;
   }
 
   /* Horizontal swipeable arena showcase carousel on mobile landscape */
@@ -2679,138 +2688,142 @@
     flex-wrap: nowrap !important;
     overflow-x: auto !important;
     overflow-y: hidden !important;
-    gap: 12px !important;
+    gap: 10px !important;
     width: 100% !important;
-    padding: 4px 6px 10px !important;
+    padding: 2px 4px 4px !important;
     scroll-snap-type: x mandatory !important;
     -webkit-overflow-scrolling: touch !important;
     align-items: stretch !important;
+    justify-content: safe center !important;
     margin-bottom: 0 !important;
-    flex: 1 !important;
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
   }
 
   .pool8-arena-card {
-    flex: 0 0 230px !important;
-    min-width: 230px !important;
-    max-width: 230px !important;
-    padding: 8px 10px 10px !important;
-    gap: 5px !important;
-    border-radius: 16px !important;
+    flex: 0 0 clamp(175px, 22vw, 215px) !important;
+    min-width: clamp(175px, 22vw, 215px) !important;
+    max-width: 220px !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    padding: clamp(5px, 1.2vh, 8px) 8px !important;
+    gap: clamp(2px, 0.6vh, 5px) !important;
+    border-radius: 14px !important;
     scroll-snap-align: center !important;
+    justify-content: space-between !important;
+    box-sizing: border-box !important;
   }
   .pool8-arena-card:hover {
-    transform: translateY(-3px) scale(1.01) !important;
+    transform: translateY(-2px) !important;
   }
 
   .arena-card-header {
     gap: 4px !important;
   }
   .arena-city-badge {
-    padding: 2px 7px !important;
-    border-radius: 8px !important;
-    gap: 5px !important;
+    padding: 1px 6px !important;
+    border-radius: 7px !important;
+    gap: 4px !important;
   }
   .arena-flag {
-    font-size: 15px !important;
+    font-size: 13px !important;
   }
   .arena-city-name {
-    font-size: 11px !important;
-  }
-  .arena-badge-pill {
-    font-size: 8.5px !important;
-    padding: 2px 6px !important;
+    font-size: 10px !important;
   }
   .arena-tier-pill {
-    font-size: 8.5px !important;
-    padding: 2px 6px !important;
+    font-size: 8px !important;
+    padding: 1px 5px !important;
   }
 
   .arena-medallion-container {
-    width: 68px !important;
-    height: 68px !important;
-    margin: 1px 0 !important;
+    width: clamp(42px, 11vh, 60px) !important;
+    height: clamp(42px, 11vh, 60px) !important;
+    margin: 0 !important;
   }
   .arena-cue-left, .arena-cue-right {
-    width: 76px !important;
-    height: 3.5px !important;
+    width: clamp(50px, 12.5vh, 68px) !important;
+    height: 3px !important;
   }
   .arena-ring-outer {
-    width: 58px !important;
-    height: 58px !important;
-    border-width: 2.5px !important;
+    width: clamp(36px, 9.5vh, 52px) !important;
+    height: clamp(36px, 9.5vh, 52px) !important;
+    border-width: 2px !important;
   }
   .arena-ring-felt {
-    width: 44px !important;
-    height: 44px !important;
+    width: clamp(28px, 7.2vh, 40px) !important;
+    height: clamp(28px, 7.2vh, 40px) !important;
   }
   .arena-8ball {
-    width: 24px !important;
-    height: 24px !important;
+    width: clamp(16px, 4.2vh, 22px) !important;
+    height: clamp(16px, 4.2vh, 22px) !important;
   }
   .arena-8ball-num {
-    width: 10px !important;
-    height: 10px !important;
-    font-size: 6.5px !important;
+    width: 8px !important;
+    height: 8px !important;
+    font-size: 5.5px !important;
   }
   .arena-center-flag {
-    font-size: 11px !important;
-    bottom: 2px !important;
+    font-size: 9px !important;
+    bottom: 1px !important;
   }
   .arena-ring-title-badge {
-    bottom: -6px !important;
-    padding: 1px 7px !important;
-    font-size: 8px !important;
-    border-radius: 8px !important;
+    bottom: -4px !important;
+    padding: 0 5px !important;
+    font-size: 7px !important;
+    border-radius: 6px !important;
   }
 
   .arena-title-section {
-    gap: 2px !important;
-    margin-top: 2px !important;
+    gap: 1px !important;
+    margin-top: 1px !important;
   }
   .arena-title {
-    font-size: 13.5px !important;
+    font-size: clamp(11px, 2.2vh, 13px) !important;
   }
   .arena-cloth-tag {
-    font-size: 9px !important;
-    padding: 1px 6px !important;
+    font-size: 8px !important;
+    padding: 1px 5px !important;
   }
   .cloth-dot {
-    width: 6px !important;
-    height: 6px !important;
+    width: 5px !important;
+    height: 5px !important;
   }
 
   .arena-prize-box {
-    padding: 4px 8px !important;
-    border-radius: 10px !important;
-    gap: 1px !important;
+    padding: clamp(2px, 0.6vh, 4px) 6px !important;
+    border-radius: 8px !important;
+    gap: 0 !important;
   }
   .arena-prize-header {
-    font-size: 8.5px !important;
+    font-size: 7.5px !important;
   }
   .arena-trophy-ico {
-    font-size: 9.5px !important;
+    font-size: 8.5px !important;
   }
   .arena-coin-ico {
-    font-size: 13px !important;
+    font-size: 11px !important;
   }
   .arena-amount-num {
-    font-size: 14.5px !important;
+    font-size: clamp(11.5px, 2.2vh, 14px) !important;
   }
 
   .arena-meta-box {
-    font-size: 9.5px !important;
+    font-size: 8.5px !important;
+    padding: 2px 6px !important;
   }
   .arena-cta-btn {
-    padding: 6px 0 !important;
-    border-radius: 10px !important;
-    font-size: 12px !important;
-    gap: 5px !important;
+    padding: clamp(4px, 1vh, 6px) 0 !important;
+    border-radius: 8px !important;
+    font-size: clamp(10px, 1.8vh, 11.5px) !important;
+    gap: 4px !important;
+    flex-shrink: 0 !important;
   }
   .arena-rec-ribbon {
-    font-size: 7.5px !important;
-    padding: 2px 24px !important;
-    top: 8px !important;
-    right: -26px !important;
+    font-size: 7px !important;
+    padding: 1px 22px !important;
+    top: 7px !important;
+    right: -25px !important;
   }
 
   /* ── 2. IN-GAME TOURNAMENT ARENA ── */
