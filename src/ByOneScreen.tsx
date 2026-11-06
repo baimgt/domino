@@ -418,20 +418,22 @@ export default function ByOneScreen({
       });
     }
 
-    // Matchmaking timeout -> pair with AI rival if no human found after 3.5s
-    matchTimerRef.current = setTimeout(() => {
-      const randomBot = BOT_RIVALS[Math.floor(Math.random() * BOT_RIVALS.length)];
-      setOpponent(randomBot);
-      setIsOpponentBot(true);
-      const initialPot = tier.bet * 2;
-      setCurrentPot(initialPot);
-      setMatchId(`byone_bot_${Date.now()}`);
+    // Matchmaking timeout -> pair with AI rival ONLY for public quick matchmaking (never for private friend code!)
+    if (!code) {
+      matchTimerRef.current = setTimeout(() => {
+        const randomBot = BOT_RIVALS[Math.floor(Math.random() * BOT_RIVALS.length)];
+        setOpponent(randomBot);
+        setIsOpponentBot(true);
+        const initialPot = tier.bet * 2;
+        setCurrentPot(initialPot);
+        setMatchId(`byone_bot_${Date.now()}`);
 
-      // Deduct bet from player
-      syncCoins(-tier.bet);
+        // Deduct bet from player
+        syncCoins(-tier.bet);
 
-      startVersusIntro(randomBot, initialPot);
-    }, 3500);
+        startVersusIntro(randomBot, initialPot);
+      }, 3500);
+    }
   };
 
   const cancelMatchmaking = () => {
@@ -472,8 +474,10 @@ export default function ByOneScreen({
     setBoardChain([]);
     setCurrentPot(pot);
 
-    // Turn selection: random or whoever has the highest double
-    const firstTurn = Math.random() > 0.5 ? myUsername : opp.username;
+    // Turn selection: deterministic host-first when playing in a friend room so both clients stay in sync
+    const firstTurn = (customPlayers && customPlayers.length > 0 && customPlayers[0]?.username)
+      ? customPlayers[0].username
+      : (Math.random() > 0.5 ? myUsername : opp.username);
     setCurrentTurn(firstTurn);
     setTurnTimer(15);
     setActionLog(`Duel dimulai! ${firstTurn === myUsername ? 'Giliran Anda!' : `Giliran ${opp.username}!`}`);

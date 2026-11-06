@@ -2329,16 +2329,28 @@ export default function BilliardScreen({
           bg: 'linear-gradient(135deg,#c0392b,#e74c3c)',
         });
       }
+      const isHostPlayer = !players || players.length === 0 || players[0].username === username;
       setGameStep('playing');
-      setTurn('player');
-      setMessage(`⚔️ Duel 1v1 melawan ${realOpponentName}! Giliran Anda sodok.`);
+      setTurn(isHostPlayer ? 'player' : 'ai');
+      turnRef.current = isHostPlayer ? 'player' : 'ai';
+      setMessage(
+        isHostPlayer
+          ? `⚔️ Duel 1v1 melawan ${realOpponentName}! Giliran Anda sodok pertama.`
+          : `⚔️ Duel 1v1 melawan ${realOpponentName}! Giliran ${realOpponentName} sodok pertama.`
+      );
 
       if (socket && roomCode) {
         socket.emit('billiard_join_room', { roomCode });
 
-        const handleOpponentShot = ({ angle, power: oppPower, spin: oppSpin }: any) => {
-          const cue = ballsRef.current.find(b => b.id === 0 && !b.pocketed);
+        const handleOpponentShot = ({ angle, power: oppPower, spin: oppSpin, cueX, cueY }: any) => {
+          const cue = ballsRef.current.find(b => b.id === 0);
           if (!cue) return;
+          cue.pocketed = false;
+          if (typeof cueX === 'number' && typeof cueY === 'number') {
+            cue.x = cueX;
+            cue.y = cueY;
+          }
+          firstHitBallRef.current = null;
           cueBallJustShot.current = true;
           cue.vx = Math.cos(angle) * oppPower * 23;
           cue.vy = Math.sin(angle) * oppPower * 23;
@@ -2951,7 +2963,7 @@ export default function BilliardScreen({
 
               if (socket && roomCode) {
                 const angle = Math.atan2(cue.vy, cue.vx);
-                socket.emit('billiard_shot', { roomCode, angle, power: strike.power, spin: spinRef.current });
+                socket.emit('billiard_shot', { roomCode, angle, power: strike.power, spin: spinRef.current, cueX: cue.x, cueY: cue.y });
               }
 
               setTimeout(() => {

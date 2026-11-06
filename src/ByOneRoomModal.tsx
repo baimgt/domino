@@ -92,17 +92,23 @@ export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneR
     if (!socket) return;
 
     socket.on('byone_custom_room_created', ({ code, room }: any) => {
-      setActiveRoomCode(code);
+      setActiveRoomCode(code || room?.code);
       setRoomData(room);
+      setErrorMsg(null);
     });
 
-    socket.on('byone_room_player_joined', ({ room, newPlayer }: any) => {
+    socket.on('byone_room_player_joined', ({ code, room, newPlayer }: any) => {
+      if (code || room?.code) setActiveRoomCode(code || room.code);
       setRoomData(room);
-      setJoinToast(`🎉 ${newPlayer.username} telah bergabung ke kamar!`);
-      setTimeout(() => setJoinToast(null), 3500);
+      setErrorMsg(null);
+      if (newPlayer?.username) {
+        setJoinToast(`🎉 ${newPlayer.username} telah bergabung ke kamar!`);
+        setTimeout(() => setJoinToast(null), 3500);
+      }
     });
 
-    socket.on('byone_room_updated', ({ room }: any) => {
+    socket.on('byone_room_updated', ({ code, room }: any) => {
+      if (code || room?.code) setActiveRoomCode(code || room.code);
       setRoomData(room);
     });
 
@@ -208,7 +214,8 @@ export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneR
 
   // Join Room via Code
   const handleJoinRoom = () => {
-    if (!inputCode.trim() || inputCode.trim().length !== 6) {
+    const cleanCode = inputCode.replace(/[^0-9a-zA-Z]/g, '').trim();
+    if (!cleanCode || cleanCode.length !== 6) {
       setErrorMsg('Masukkan 6-digit kode kamar!');
       return;
     }
@@ -216,7 +223,7 @@ export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneR
     if (socket && socket.connected) {
       socket.emit('byone_join_custom_room', {
         username: myUsername,
-        code: inputCode.trim(),
+        code: cleanCode,
       });
     } else {
       setErrorMsg('Koneksi server terputus. Silakan coba lagi.');

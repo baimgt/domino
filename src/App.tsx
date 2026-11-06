@@ -4047,13 +4047,13 @@ interface SlotGameDef {
 const SLOT_GAMES: SlotGameDef[] = [
   // ===== 8 ACTIVE GAMES (Semua di depan / berdampingan) =====
   { id: 'zeus', name: 'Gates of Olympus', img: '/assets/zeus/bg_olympus_hd.jpg', jackpot: '5,000,000,000', players: 320450, bg: 'linear-gradient(160deg,#1a1a6e,#4a0e8f)', locked: false },
-  { id: 'gatotkaca', name: 'Gates of Gatotkaca 1000', img: '/assets/gatokaca/loading_art.jpg', jackpot: '100,000,000,000', players: 39464, bg: 'linear-gradient(160deg,#f39c12,#8a4b0e)', locked: false },
   { id: 'mahjong2', name: 'Mahjong Ways 2', img: '/assets/mahjong2/loading.jpg', jackpot: '100,000,000,000', players: 161974, bg: 'linear-gradient(160deg,#27ae60,#145a32)', locked: false },
-  { id: '5lions', name: '5 Lions Megaways', img: '/assets/fivelions/loading.jpg', jackpot: '200,000,000,000', players: 156431, bg: 'linear-gradient(160deg,#172c72,#050b24)', locked: false },
-  { id: 'fafafa2', name: 'Fafafa 2 Deluxe', img: '/assets/fafafa2/loading.jpg', jackpot: '10,000,000,000', players: 104598, bg: 'linear-gradient(160deg,#8b0000,#ff0000)', locked: false },
 
   // ===== COMING SOON GAMES =====
   { id: 'duofugrand', name: 'DuoFu DuoCai Grand', img: '/assets/duofuduocai/loading_art.jpg', jackpot: '99,899,264,448', players: 22728, bg: 'linear-gradient(160deg,#800010,#311b92)', locked: true, lockText: 'COMING SOON' },
+  { id: 'fafafa2', name: 'Fafafa 2 Deluxe', img: '/assets/fafafa2/loading.jpg', jackpot: '10,000,000,000', players: 104598, bg: 'linear-gradient(160deg,#8b0000,#ff0000)', locked: true, lockText: 'COMING SOON' },
+  { id: '5lions', name: '5 Lions Megaways', img: '/assets/fivelions/loading.jpg', jackpot: '200,000,000,000', players: 156431, bg: 'linear-gradient(160deg,#172c72,#050b24)', locked: true, lockText: 'COMING SOON' },
+  { id: 'gatotkaca', name: 'Gates of Gatotkaca 1000', img: '/assets/gatokaca/loading_art.jpg', jackpot: '100,000,000,000', players: 39464, bg: 'linear-gradient(160deg,#f39c12,#8a4b0e)', locked: true, lockText: 'COMING SOON' },
   { id: 'superace', name: 'Super Ace', img: '/assets/slot_loading_bg.jpg', jackpot: '200,000,000,000', players: 150598, bg: 'linear-gradient(160deg,#8e44ad,#3a0e5c)', locked: true, lockText: 'COMING SOON' },
   { id: 'speedwinner', name: 'Speed Winner', img: '/assets/slot_loading_bg.jpg', jackpot: '100,000,000,000', players: 59273, bg: 'linear-gradient(160deg,#2c3e50,#0f1c2e)', locked: true, lockText: 'COMING SOON' },
   { id: 'yingcaishen', name: 'Ying Cai Shen', img: '/assets/fafafa2/bg_temple_clean.jpg', jackpot: '176,000,000,000', players: 12181, bg: 'linear-gradient(160deg,#b91d47,#5c0e22)', locked: true, lockText: 'COMING SOON' },
