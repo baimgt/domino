@@ -4189,7 +4189,6 @@ export default function BilliardScreen({
         className="pool8-menu"
         items={[
           { id: 'lobi', icon: '🚪', label: 'Keluar ke Lobi', onClick: () => { setShowMenu(false); setShowExitConfirm(true); } },
-          { id: 'restart', icon: '🔄', label: 'Mulai Ulang', onClick: () => { setShowMenu(false); restart(); } },
           { id: 'stik', icon: '🥢', label: 'Ganti Stik Biliar', onClick: () => { setShowMenu(false); setShowCueModal(true); } },
           { id: 'suara', icon: '🔊', label: 'Suara Meja', badge: soundOn ? 'ON' : 'OFF', onClick: () => setSoundOn(v => !v) },
           { id: 'bantuan', icon: '📖', label: 'Panduan Main', onClick: () => { setShowMenu(false); setShowHelp(true); } }
