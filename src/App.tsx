@@ -1453,22 +1453,25 @@ function TemanModal({ defaultTab = 'Teman', onViewProfile, onClose }: { defaultT
   };
 
   const handleSearchAndAdd = async () => {
-    const target = searchId.trim();
-    if (!target) return;
+    const rawTarget = searchId.trim();
+    if (!rawTarget) {
+      showAlert('Ketik ID (contoh: 12345678) atau Username pemain');
+      return;
+    }
+    const cleanTarget = rawTarget.replace(/^#/, '').trim();
     try {
       const res = await fetch(`${API_URL}/friends/add`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: myUsername, friendId: target, friendUsername: target })
+        body: JSON.stringify({ username: myUsername, friendId: cleanTarget, friendUsername: rawTarget })
       });
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        const data = await res.json().catch(() => ({}));
-        showAlert(data.message || `Permintaan pertemanan dikirim ke ID ${target}!`);
+        showAlert(data.message || `Permintaan pertemanan terkirim ke ${cleanTarget}!`);
         setSearchId('');
         fetchData();
       } else {
-        const err = await res.json().catch(() => ({}));
-        showAlert(err.error || `Pemain dengan ID "${target}" tidak ditemukan atau sudah berteman`);
+        showAlert(data.error || `Pemain dengan ID atau Username "${rawTarget}" tidak ditemukan atau sudah berteman`);
       }
     } catch {
       showAlert('Koneksi server gagal');
@@ -1571,10 +1574,12 @@ function TemanModal({ defaultTab = 'Teman', onViewProfile, onClose }: { defaultT
     }
 
     if (activeTab === 'Rekomendasi') {
-      const q = searchId.trim().toLowerCase();
+      const rawQ = searchId.trim();
+      const q = rawQ.toLowerCase();
+      const cleanQ = rawQ.replace(/^#/, '').toLowerCase();
       const filteredRecs = recommendations.filter(r => {
         if (!q) return true;
-        const matchId = r.userId && String(r.userId).toLowerCase().includes(q);
+        const matchId = r.userId && (String(r.userId).toLowerCase().includes(q) || String(r.userId).toLowerCase().includes(cleanQ));
         const matchUser = r.username && r.username.toLowerCase().includes(q);
         return matchId || matchUser;
       });
@@ -1584,9 +1589,10 @@ function TemanModal({ defaultTab = 'Teman', onViewProfile, onClose }: { defaultT
           <div className="tm-search-row">
             <input
               type="text"
-              placeholder="Cari ID Teman (8 digit) atau Username..."
+              placeholder="Cari ID Teman (misal: 12345678) atau Username..."
               value={searchId}
               onChange={e => setSearchId(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleSearchAndAdd(); }}
               className="tm-input"
             />
             <button className="tm-search-add-btn g-btn-press" onClick={handleSearchAndAdd}>Cari & Tambah</button>
@@ -1601,7 +1607,7 @@ function TemanModal({ defaultTab = 'Teman', onViewProfile, onClose }: { defaultT
                   <div>
                     <div className="tm-li-name">{r.username}</div>
                     <div className="tm-li-id">
-                      {r.userId && <span style={{ color: '#ffd54f', fontWeight: 'bold', marginRight: '6px' }}>ID: {r.userId} • </span>}
+                      {r.userId && <span style={{ color: '#ffd54f', fontWeight: 'bold', marginRight: '6px' }}>ID: #{r.userId} • </span>}
                       Koin: {formatCoins(r.coins)}
                     </div>
                   </div>
@@ -1612,7 +1618,7 @@ function TemanModal({ defaultTab = 'Teman', onViewProfile, onClose }: { defaultT
           ) : (
             <div className="tm-empty-state">
               <div className="tm-empty-text">
-                {searchId ? `Tidak ditemukan pemain dengan ID/Username "${searchId}"` : 'Tidak ada rekomendasi saat ini.'}
+                {searchId ? `Tidak ditemukan pemain dengan ID/Username "${searchId}". Tekan tombol "Cari & Tambah" di atas untuk mencari di server.` : 'Tidak ada rekomendasi saat ini.'}
               </div>
             </div>
           )}
@@ -3362,7 +3368,7 @@ function VIPLoginAnimationOverlay({ username, onComplete }: { username: string; 
 // KOMPONEN PROFILE MODAL (ROYAL OBSIDIAN & GOLD LUXURY THEME)
 // =====================================================
 function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onOpenChangeName, onClose }: { profile: any; avatarEmoji: string; onOpenAvatarSelection: () => void; onOpenChangeName?: () => void; onClose: () => void }) {
-  const [activeTab, setActiveTab] = useState<'informasi' | 'statistik' | 'custom' | 'lencana' | 'prestasi'>('informasi');
+  const [activeTab, setActiveTab] = useState<'informasi' | 'statistik' | 'custom' | 'lencana'>('informasi');
   const [copiedId, setCopiedId] = useState(false);
 
   const [selectedFrame, setSelectedFrame] = useState(() => localStorage.getItem('domino_custom_frame') || 'crown');
@@ -3435,36 +3441,6 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onOpenChang
     return n.toString();
   };
 
-  const [claimedPrestasi, setClaimedPrestasi] = useState<{ [key: string]: boolean }>(() => {
-    const obj: any = {};
-    ['p1', 'p2', 'p3', 'p4', 'p5', 'p6'].forEach(id => {
-      obj[id] = localStorage.getItem(`prestasi_claimed_${id}`) === 'true';
-    });
-    return obj;
-  });
-
-  const [claimToast, setClaimToast] = useState<{ title: string; amount: number } | null>(null);
-
-  const handleClaimPrestasi = (id: string, rewardCoins: number, titleStr: string) => {
-    if (claimedPrestasi[id]) return;
-    localStorage.setItem(`prestasi_claimed_${id}`, 'true');
-    setClaimedPrestasi(prev => ({ ...prev, [id]: true }));
-
-    const username = localStorage.getItem('domino_username');
-    if (username) {
-      fetch(`${API_URL}/bonus/claim`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, amount: rewardCoins })
-      }).catch(() => { });
-    }
-
-    setClaimToast({ title: titleStr, amount: rewardCoins });
-    setTimeout(() => {
-      setClaimToast(null);
-    }, 3200);
-  };
-
   const baseScore = profile?.score || 50;
   const playerLevel = profile?.level || localStorage.getItem('domino_level') || Math.max(1, Math.floor(baseScore / 25));
   const stats = {
@@ -3475,71 +3451,6 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onOpenChang
   };
   const winRate = ((stats.menang / stats.ronde) * 100).toFixed(1);
 
-  const prestasiList = [
-    {
-      id: 'p1',
-      title: '🏆 Penguasa Meja',
-      desc: 'Menangkan 25 Pertandingan di Semua Mode',
-      icon: '👑',
-      progress: Math.min(stats.menang, 25),
-      target: 25,
-      reward: 200000,
-      rewardText: '+200.000 Koin'
-    },
-    {
-      id: 'p2',
-      title: '🔥 Raja Streak',
-      desc: 'Capai 3x Win Streak berturut-turut',
-      icon: '🔥',
-      progress: Math.min(stats.winStreak, 3),
-      target: 3,
-      reward: 150000,
-      rewardText: '+150.000 Koin'
-    },
-    {
-      id: 'p3',
-      title: '💰 Sultan Kasino',
-      desc: 'Miliki 5.000.000 Koin di Saldo Utama',
-      icon: '💰',
-      progress: Math.min(profile?.coins || 0, 5000000),
-      target: 5000000,
-      reward: 500000,
-      rewardText: '+500.000 Koin'
-    },
-    {
-      id: 'p4',
-      title: '⚔️ Pejuang Arena',
-      desc: 'Mainkan Total 50 Ronde Pertandingan',
-      icon: '🀱',
-      progress: Math.min(stats.ronde, 50),
-      target: 50,
-      reward: 300000,
-      rewardText: '+300.000 Koin'
-    },
-    {
-      id: 'p5',
-      title: '🎱 Master Duel',
-      desc: 'Menangkan 10 Pertandingan By One / Billiard',
-      icon: '🎱',
-      progress: Math.min(stats.menang, 10),
-      target: 10,
-      reward: 100000,
-      rewardText: '+100.000 Koin'
-    },
-    {
-      id: 'p6',
-      title: '🎁 Sahabat Sejati',
-      desc: 'Kirim Koin Hadiah ke Teman',
-      icon: '🎁',
-      progress: 1,
-      target: 1,
-      reward: 50000,
-      rewardText: '+50.000 Koin'
-    }
-  ];
-
-  const claimableCount = prestasiList.filter(p => p.progress >= p.target && !claimedPrestasi[p.id]).length;
-  const claimedCount = Object.values(claimedPrestasi).filter(Boolean).length;
   const activeFrameObj = frames.find(f => f.id === selectedFrame) || frames[0];
   const activeTableObj = tables.find(t => t.id === selectedTable) || tables[0];
   const activeBadgeObj = badgesList.find(b => b.id === equippedBadge) || badgesList[0];
@@ -3594,53 +3505,6 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onOpenChang
   };
 
   const renderTabContent = () => {
-    if (activeTab === 'prestasi') {
-      return (
-        <div className="pm-tab-pane pm-prestasi-pane">
-          {prestasiList.map(p => {
-            const isCompleted = p.progress >= p.target;
-            const isClaimed = claimedPrestasi[p.id];
-            const pct = Math.min(100, Math.floor((p.progress / p.target) * 100));
-
-            return (
-              <div key={p.id} className={`pm-prestasi-card ${isCompleted ? 'completed' : ''}`}>
-                <div className="pm-prestasi-icon-box">
-                  {p.icon}
-                </div>
-                <div className="pm-prestasi-details">
-                  <div className="pm-prestasi-header-row">
-                    <span className="pm-prestasi-title">{p.title}</span>
-                    <span className="pm-prestasi-reward-tag">{p.rewardText}</span>
-                  </div>
-                  <div className="pm-prestasi-desc">{p.desc}</div>
-
-                  <div className="pm-prestasi-progress-bar-bg">
-                    <div className="pm-prestasi-progress-fill" style={{ width: `${pct}%` }} />
-                  </div>
-                  <div className="pm-prestasi-progress-text">
-                    {p.progress.toLocaleString()} / {p.target.toLocaleString()} ({pct}%)
-                  </div>
-                </div>
-
-                {isCompleted ? (
-                  <button
-                    className={`pm-prestasi-claim-btn g-btn-press ${isClaimed ? 'claimed' : ''}`}
-                    onClick={() => handleClaimPrestasi(p.id, p.reward, p.title)}
-                  >
-                    {isClaimed ? 'SELESAI ✅' : 'KLAIM 🎁'}
-                  </button>
-                ) : (
-                  <button className="pm-prestasi-claim-btn claimed" style={{ opacity: 0.55 }}>
-                    BELUM SELESAI
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      );
-    }
-
     if (activeTab === 'custom') {
       return (
         <div className="pm-tab-pane pm-custom-pane">
@@ -3768,7 +3632,7 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onOpenChang
                 <div className="pm-level-bar-fill" style={{ width: '65%' }} />
               </div>
               <div className="pm-level-sub-note">
-                🏆 Prestasi Terbuka: <strong>{claimedCount}/6 Selesai</strong>
+                🌟 Status Akun: <strong>VIP Member Aktif</strong>
               </div>
             </div>
           </div>
@@ -3850,22 +3714,6 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onOpenChang
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      {/* Floating Claim Toast Notification */}
-      {claimToast && (
-        <div className="claim-toast-overlay">
-          <div className="claim-toast-box">
-            <div className="claim-toast-icon">🎁</div>
-            <div className="claim-toast-content">
-              <div className="claim-toast-title">PRESTASI DIKLAIM!</div>
-              <div className="claim-toast-sub">
-                {claimToast.title}: <span>+{claimToast.amount.toLocaleString()} Koin</span>
-              </div>
-            </div>
-            <div className="claim-toast-shimmer" />
-          </div>
-        </div>
-      )}
-
       <div className="profile-modal-box" onClick={e => e.stopPropagation()}>
         {/* TOP HEADER BAR WITH NAVIGATION TABS */}
         <div className="pm-top-bar">
@@ -3901,13 +3749,6 @@ function ProfileModal({ profile, avatarEmoji, onOpenAvatarSelection, onOpenChang
               onClick={() => setActiveTab('lencana')}
             >
               <span>🏅</span> Lencana
-            </button>
-            <button
-              className={`pm-nav-pill g-btn-press ${activeTab === 'prestasi' ? 'active' : ''}`}
-              onClick={() => setActiveTab('prestasi')}
-            >
-              <span>🏆</span> Prestasi
-              {claimableCount > 0 && <span className="pm-nav-badge">{claimableCount}</span>}
             </button>
           </div>
 
@@ -6769,17 +6610,54 @@ function WaitingRoomScreen({
 // =====================================================
 type Tile = [number, number];
 
+const DOMINO_BOT_NAMES = [
+  'RajaGaple', 'BosDomino', 'Sultan99', 'DewaBalak', 'PutriHoki', 'MasterQiu',
+  'KaptenBalak', 'JawaraGaple', 'SultanBanten', 'SultanAndara', 'BosMuda_JKT',
+  'KuncianMaut', 'GapleMaster_Sby', 'BantingMeja', 'SniperBalak', 'TutupJalan',
+  'SapuBersih99', 'PakarGaple', 'Cak_Kumis', 'Om_Brewok', 'Kang_Asep',
+  'Bung_Fajar', 'Bang_Bule', 'Mas_Agung', 'Teh_Lilis', 'Koh_Aming',
+  'Daeng_Umar', 'Bli_Wayan', 'Opung_Batak', 'Pak_Haji_Gaul', 'Neng_Geulis',
+  'Mpok_Siti', 'Bro_Rian', 'Aldo_Palembang', 'Fikri_Makassar', 'Dimas_Semarang',
+  'Bagas_Jogja', 'Gilang_Bandung', 'Rendy_Malang', 'HokiSelalu', 'SiPalingHoki',
+  'AutoWin_88', 'BintangMalam', 'PangeranGaple', 'LaskarGaple', 'KudaHitam_99',
+  'ElangMalam', 'GarudaSakty', 'BocahPetualang', 'PendekarKartu', 'BegalChip',
+  'PemburuJackpot', 'AntiKalah', 'HokiSejati', 'RajaBluffing', 'PembalapMeja',
+  'PantangFold', 'TaktikBunglon', 'KartuJoker', 'DewaKoplok', 'CemeMaster',
+  'BandarKecil', 'JokerHitam', 'DoubleEnam', 'BalakKosong', 'SiKocokGaple',
+  'AuraSultan', 'PetirBalak', 'KartuMaut', 'DewaJudi_88', 'GatotGaple',
+  'BimaSakti99', 'PendekarBalak', 'KeraSakti_QQ', 'NagaEmas_88', 'SingaMeja',
+  'MacanKembar', 'Rajawali_ID', 'HiuPutih_QQ', 'BantengMerah', 'SerigalaMalam',
+  'PendekarSakti', 'KsatriaGaple', 'PangeranBalak', 'RatuDomino', 'NonaManis_99',
+  'BintangKejora', 'SuryaKencana', 'MegaBintang', 'CahayaHoki', 'BerkahMelimpah',
+  'RezekiNomplok', 'UntungTerus', 'MajuJaya_QQ', 'Sentosa_Gaple', 'WiraBalak',
+  'SatriaMalam', 'GunturGaple', 'KilatDomino', 'Tegar99', 'FajarHoki',
+  'BintangGaple', 'DewaKartu_ID', 'RajaBanting', 'KuncianSakti', 'SultanMeja'
+];
+
+const BOT_AVATAR_LIST = ['😎', '🐯', '👑', '🦅', '🦁', '🐺', '🦊', '🎩', '🧔‍♂️', '👨‍🦱', '👩‍🦰', '👱‍♂️', '🧕', '🐼', '🐲', '🐉', '⚡', '🔥'];
+const getAvatarForName = (name: string, fallbackIdx = 0) => {
+  if (!name) return BOT_AVATAR_LIST[fallbackIdx % BOT_AVATAR_LIST.length];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = (hash << 5) - hash + name.charCodeAt(i);
+    hash |= 0;
+  }
+  return BOT_AVATAR_LIST[Math.abs(hash) % BOT_AVATAR_LIST.length];
+};
+
 function DominoPlayScreen({
   room,
   gameId,
   socket,
   onBack,
+  onRematch,
   onUpdateCoins
 }: {
   room: Room;
   gameId: string;
   socket: Socket | null;
   onBack: () => void;
+  onRematch?: () => void;
   onUpdateCoins: (msg: string) => void;
 }) {
   const myUsername = localStorage.getItem('domino_username') || 'Pemain';
@@ -6976,8 +6854,8 @@ function DominoPlayScreen({
     const fee = room?.entryFee || 1000;
     const buyIn = (room as any)?.buyIn || (fee * 4);
 
-    const botPool = ['RajaGaple', 'BosDomino', 'Sultan99', 'DewaBalak', 'PutriHoki', 'MasterQiu'];
-    const shuffledBots = [...botPool].sort(() => Math.random() - 0.5);
+    const botCandidates = DOMINO_BOT_NAMES.filter(n => n.toLowerCase() !== myUsername.toLowerCase());
+    const shuffledBots = [...botCandidates].sort(() => Math.random() - 0.5);
 
     const players = [
       { username: myUsername, isBot: false, seatIndex: 0, hand: [] as Tile[], tableStack: buyIn, initialBuyIn: buyIn, isBankrupt: false },
@@ -7640,7 +7518,7 @@ function DominoPlayScreen({
     }
   };
 
-  const handlePlayAgain = () => {
+  const handleRematch = () => {
     setShowEndModal(false);
     autoPassExecutedTurnRef.current = null;
     if (isLocalEngineRef.current && !hasServerStateRef.current) {
@@ -7648,6 +7526,18 @@ function DominoPlayScreen({
       initLocalDominoGame();
       return;
     }
+    // Keluar dari room game saat ini dan cari lawan baru di waiting room
+    socket?.emit('leave-room', { gameId });
+    if (onRematch) {
+      onRematch();
+    } else {
+      onBack();
+    }
+  };
+
+  const handleExitToLobby = () => {
+    setShowEndModal(false);
+    autoPassExecutedTurnRef.current = null;
     socket?.emit('leave-room', { gameId });
     onBack();
   };
@@ -7824,7 +7714,7 @@ function DominoPlayScreen({
 
   // Render opponent seat pod with clean non-overlapping layout
   const renderSeat = (player: ReturnType<typeof getSeatInfo>, position: 'top' | 'left' | 'right') => {
-    const avatars = { top: '👑', left: '🐯', right: '🦅' };
+    const avatarIcon = getAvatarForName(player.username, position === 'top' ? 2 : position === 'left' ? 1 : 3);
     const timerFraction = player.isTurn ? turnTimer / 30 : 0;
     const playerCoinChange = coinChanges[player.username] || 0;
     return (
@@ -7840,7 +7730,7 @@ function DominoPlayScreen({
                 />
               </svg>
             )}
-            <div className="gs-avatar-img">{avatars[position]}</div>
+            <div className="gs-avatar-img">{avatarIcon}</div>
             <div className={`gs-card-badge ${player.isTurn ? 'pulse' : ''}`} title="Sisa kartu di tangan">
               {player.cardCount}
             </div>
@@ -7979,8 +7869,8 @@ function DominoPlayScreen({
             isOpen={showMenu}
             onClose={() => setShowMenu(false)}
             items={[
-              { id: 'lobi', icon: '🚪', label: 'Kembali ke Lobi', onClick: () => { setShowMenu(false); socket?.emit('leave-room', { gameId }); onBack(); } },
-              { id: 'ganti', icon: '🔄', label: 'Meja Baru', onClick: () => { setShowMenu(false); handlePlayAgain(); } },
+              { id: 'lobi', icon: '🚪', label: 'Keluar ke Lobi', onClick: () => { setShowMenu(false); handleExitToLobby(); } },
+              { id: 'ganti', icon: '⚔️', label: 'Tanding Ulang (Cari Lawan)', onClick: () => { setShowMenu(false); handleRematch(); } },
               { id: 'suara', icon: '🔊', label: 'Suara', badge: soundOn ? 'ON' : 'OFF', onClick: () => setSoundOn(v => !v) },
               { id: 'efek', icon: '✨', label: 'Efek Visual', badge: effectOn ? 'ON' : 'OFF', onClick: () => setEffectOn(v => !v) },
               { id: 'bantuan', icon: '❓', label: 'Panduan & Aturan', onClick: () => { setShowMenu(false); setShowRules(true); } }
@@ -8079,7 +7969,9 @@ function DominoPlayScreen({
                       const change = coinChanges[p.username] || 0;
                       const isWinnerRow = idx === winner;
                       const isMeRow = p.username === myUsername;
-                      const avatarIcon = seatAvatars[p.seatIndex ?? idx] || '👤';
+                      const avatarIcon = isMeRow
+                        ? (localStorage.getItem('domino_avatar') || '😎')
+                        : getAvatarForName(p.username, p.seatIndex ?? idx);
                       return (
                         <div key={p.username} className={`gs-result-row ${isWinnerRow ? 'winner-row' : ''} ${isMeRow ? 'me-row' : ''}`}>
                           <div className="gs-result-user">
@@ -8107,12 +7999,15 @@ function DominoPlayScreen({
                     })}
                   </div>
                 </div>
+                <div className="victory-action-prompt">
+                  Ingin tanding ulang mencari musuh baru, atau kembali ke lobi?
+                </div>
                 <div className="victory-actions-bar">
-                  <button className="victory-action-btn g-btn-press restart" onClick={handlePlayAgain}>
-                    🔄 Main Lagi
+                  <button className="victory-action-btn g-btn-press restart" onClick={handleRematch}>
+                    <span>⚔️</span> Tanding Ulang (Cari Lawan)
                   </button>
-                  <button className="victory-action-btn g-btn-press close" onClick={() => { socket?.emit('leave-room', { gameId }); onBack(); }}>
-                    🚪 Kembali ke Lobi
+                  <button className="victory-action-btn g-btn-press close" onClick={handleExitToLobby}>
+                    <span>🚪</span> Keluar ke Lobi
                   </button>
                 </div>
               </div>
@@ -9389,6 +9284,48 @@ interface QiuSeatState {
 // =====================================================
 // KOMPONEN GAME DOMINO QIUQIU (99) AUTHENTIC CASINO TABLE
 // =====================================================
+const QIUQIU_BOT_POOL = [
+  { name: 'Sultan_QQ', avatar: '🐯', stackMult: 1.4 },
+  { name: 'Dewi_99', avatar: '👩', stackMult: 1.1 },
+  { name: 'RajaBalak', avatar: '🧔‍♂️', stackMult: 2.2 },
+  { name: 'Putri_Hoki', avatar: '👩‍🦰', stackMult: 1.3 },
+  { name: 'Bos_Domino', avatar: '👨‍🦱', stackMult: 0.95 },
+  { name: 'Kapten_Qiu', avatar: '🦁', stackMult: 1.8 },
+  { name: 'Naga_Sembilan', avatar: '🐲', stackMult: 2.5 },
+  { name: 'Ratu_Ceme', avatar: '👸', stackMult: 1.25 },
+  { name: 'Dewa_Banting', avatar: '🐺', stackMult: 1.6 },
+  { name: 'Begal_Chip', avatar: '🦊', stackMult: 1.05 },
+  { name: 'Bang_Jago_QQ', avatar: '🕶️', stackMult: 1.7 },
+  { name: 'Kuncian_Maut', avatar: '🦅', stackMult: 1.35 },
+  { name: 'Sultan_Andara', avatar: '👑', stackMult: 3.0 },
+  { name: 'Om_Brewok', avatar: '🧔', stackMult: 1.15 },
+  { name: 'Nona_Manis', avatar: '👱‍♀️', stackMult: 1.0 },
+  { name: 'Pangeran_Qiu', avatar: '🎩', stackMult: 1.9 },
+  { name: 'SiPaling_Hoki', avatar: '🐼', stackMult: 1.45 },
+  { name: 'Cak_Kumis', avatar: '👨‍🦳', stackMult: 1.2 },
+  { name: 'Master_Balak', avatar: '🦸‍♂️', stackMult: 2.1 },
+  { name: 'Elang_Malam', avatar: '🦅', stackMult: 1.5 },
+  { name: 'Gatot_Gaple', avatar: '⚡', stackMult: 1.85 },
+  { name: 'Kuda_Hitam', avatar: '🐎', stackMult: 1.3 },
+  { name: 'Mpok_Siti', avatar: '🧕', stackMult: 0.9 },
+  { name: 'Bli_Wayan', avatar: '🌴', stackMult: 1.1 },
+  { name: 'Daeng_Umar', avatar: '🐅', stackMult: 1.65 },
+  { name: 'Kang_Asep', avatar: '☕', stackMult: 1.0 },
+  { name: 'Aldo_Plg', avatar: '🐊', stackMult: 1.4 },
+  { name: 'Fikri_Mks', avatar: '🦈', stackMult: 1.55 },
+  { name: 'Dimas_Smg', avatar: '🎯', stackMult: 1.15 },
+  { name: 'Bagas_Jgj', avatar: '🏹', stackMult: 1.25 },
+  { name: 'Hoki_Sejati', avatar: '🍀', stackMult: 1.75 },
+  { name: 'Petir_99', avatar: '⚡', stackMult: 2.0 },
+  { name: 'Pendekar_Kartu', avatar: '⚔️', stackMult: 1.6 },
+  { name: 'AutoWin_88', avatar: '🔥', stackMult: 2.4 },
+  { name: 'Pembalap_Meja', avatar: '🏎️', stackMult: 1.3 },
+  { name: 'Macan_Kembar', avatar: '🐯', stackMult: 1.5 },
+  { name: 'Bintang_Malam', avatar: '⭐', stackMult: 1.2 },
+  { name: 'Cahaya_Hoki', avatar: '✨', stackMult: 1.4 },
+  { name: 'Sentosa_QQ', avatar: '💎', stackMult: 1.9 }
+];
+
 function QiuQiuGameScreen({
   onBack,
   socket,
@@ -9537,13 +9474,18 @@ function QiuQiuGameScreen({
       return realSeats;
     }
 
+    const botCandidates = [...QIUQIU_BOT_POOL]
+      .filter(b => b.name.toLowerCase() !== myUsername.toLowerCase())
+      .sort(() => Math.random() - 0.5);
+    const chosenBots = botCandidates.slice(0, 5);
+
     return [
       { id: 0, name: myUsername, coins: baseBuyIn, avatar: avatarEmoji, isDealer: false, badge: '', roundBet: 0, totalBet: 0, hasActed: false, hand: [[0, 0], [0, 0], [0, 0], [0, 0]], folded: false, allIn: false, isEmpty: false },
-      { id: 1, name: 'Sultan_QQ', coins: Math.round(baseBuyIn * 1.4), avatar: '🐯', isDealer: true, badge: '', roundBet: 0, totalBet: 0, hasActed: false, hand: [[0, 0], [0, 0], [0, 0], [0, 0]], folded: false, allIn: false, isEmpty: false },
-      { id: 2, name: 'Dewi_99', coins: Math.round(baseBuyIn * 1.1), avatar: '👩', isDealer: false, badge: '', roundBet: 0, totalBet: 0, hasActed: false, hand: [[0, 0], [0, 0], [0, 0], [0, 0]], folded: false, allIn: false, isEmpty: false },
-      { id: 3, name: 'RajaBalak', coins: Math.round(baseBuyIn * 2.2), avatar: '🧔‍♂️', isDealer: false, badge: '', roundBet: 0, totalBet: 0, hasActed: false, hand: [[0, 0], [0, 0], [0, 0], [0, 0]], folded: false, allIn: false, isEmpty: false },
-      { id: 4, name: 'Putri_Hoki', coins: Math.round(baseBuyIn * 1.3), avatar: '👩‍🦰', isDealer: false, badge: '', roundBet: 0, totalBet: 0, hasActed: false, hand: [[0, 0], [0, 0], [0, 0], [0, 0]], folded: false, allIn: false, isEmpty: false },
-      { id: 5, name: 'Bos_Domino', coins: Math.round(baseBuyIn * 0.95), avatar: '👨‍🦱', isDealer: false, badge: '', roundBet: 0, totalBet: 0, hasActed: false, hand: [[0, 0], [0, 0], [0, 0], [0, 0]], folded: false, allIn: false, isEmpty: false },
+      { id: 1, name: chosenBots[0].name, coins: Math.round(baseBuyIn * chosenBots[0].stackMult), avatar: chosenBots[0].avatar, isDealer: true, badge: '', roundBet: 0, totalBet: 0, hasActed: false, hand: [[0, 0], [0, 0], [0, 0], [0, 0]], folded: false, allIn: false, isEmpty: false },
+      { id: 2, name: chosenBots[1].name, coins: Math.round(baseBuyIn * chosenBots[1].stackMult), avatar: chosenBots[1].avatar, isDealer: false, badge: '', roundBet: 0, totalBet: 0, hasActed: false, hand: [[0, 0], [0, 0], [0, 0], [0, 0]], folded: false, allIn: false, isEmpty: false },
+      { id: 3, name: chosenBots[2].name, coins: Math.round(baseBuyIn * chosenBots[2].stackMult), avatar: chosenBots[2].avatar, isDealer: false, badge: '', roundBet: 0, totalBet: 0, hasActed: false, hand: [[0, 0], [0, 0], [0, 0], [0, 0]], folded: false, allIn: false, isEmpty: false },
+      { id: 4, name: chosenBots[3].name, coins: Math.round(baseBuyIn * chosenBots[3].stackMult), avatar: chosenBots[3].avatar, isDealer: false, badge: '', roundBet: 0, totalBet: 0, hasActed: false, hand: [[0, 0], [0, 0], [0, 0], [0, 0]], folded: false, allIn: false, isEmpty: false },
+      { id: 5, name: chosenBots[4].name, coins: Math.round(baseBuyIn * chosenBots[4].stackMult), avatar: chosenBots[4].avatar, isDealer: false, badge: '', roundBet: 0, totalBet: 0, hasActed: false, hand: [[0, 0], [0, 0], [0, 0], [0, 0]], folded: false, allIn: false, isEmpty: false },
     ];
   });
 
@@ -9657,6 +9599,10 @@ function QiuQiuGameScreen({
     '📢 Selamat "Sultan_QQ" mendapatkan [Kartu Balak Kembar 💎] di Meja VIP!',
     '📢 Selamat "Rizky_Domino" mendapatkan [QiuQiu 9 : 9 🔥] dan menyapu bersih Pot Meja!',
     '📢 Selamat "Dewi_99" mendapatkan [Murni Kecil 🌟] & klaim Kupon Jackpot 100x!',
+    '📢 Selamat "Kapten_Qiu" memenangkan [Balak Murni 👑] dengan hadiah +25,000,000 Koin!',
+    '📢 Selamat "Bang_Jago_QQ" mendapatkan [QiuQiu 9 : 9 🔥] dan menyapu bersih Pot Meja VIP!',
+    '📢 Selamat "Putri_Hoki" memicu [Murni Besar 🌟] & meraih Jackpot Meja!',
+    '📢 Selamat "Naga_Sembilan" mengalahkan meja dengan [Kartu Enam Dewa 😈]!'
   ];
 
   useEffect(() => {
@@ -9753,6 +9699,63 @@ function QiuQiuGameScreen({
     return mapped;
   };
 
+  // Dealer Cerdas: Mengontrol probabilitas agar perolehan QiuQiu (9:9) & Qiu langka dan susah didapat
+  const dealControlledQiuHand = (deck: QiuTile[]): QiuTile[] => {
+    let hand: QiuTile[] = [
+      deck.pop() || [0, 0],
+      deck.pop() || [0, 0],
+      deck.pop() || [0, 0],
+      deck.pop() || [0, 0]
+    ];
+
+    let ev = evaluateQiuHand(hand);
+
+    // 1. Jika mendapatkan QiuQiu (9:9) atau kartu jackpot spesial (Balak, Enam Dewa, dll):
+    // Dibuat sangat susah didapat (hanya ~12% kesempatan lolos, 88% diacak ulang menjadi kartu normal)
+    if (ev.rank >= 2 && Math.random() > 0.12) {
+      for (let k = 0; k < deck.length; k++) {
+        const candidate: QiuTile[] = [hand[0], hand[1], hand[2], deck[k]];
+        const candidateEv = evaluateQiuHand(candidate);
+        if (candidateEv.rank < 2) {
+          const swapped = deck.splice(k, 1, hand[3])[0];
+          hand[3] = swapped;
+          ev = candidateEv;
+          break;
+        }
+      }
+    }
+
+    // 2. Jika mendapatkan Qiu X (nilai 9 di sisi kiri, misal 9:7, 9:5):
+    // Dibuat lebih menantang (hanya ~38% lolos, 62% diredam agar mayoritas kartu adalah 8, 7, 6, 5)
+    if (ev.leftScore === 9 && ev.rank === 1 && Math.random() > 0.38) {
+      for (let k = 0; k < deck.length; k++) {
+        const candidate: QiuTile[] = [hand[0], hand[1], hand[2], deck[k]];
+        const candidateEv = evaluateQiuHand(candidate);
+        if (candidateEv.leftScore < 9) {
+          const swapped = deck.splice(k, 1, hand[3])[0];
+          hand[3] = swapped;
+          ev = candidateEv;
+          break;
+        }
+      }
+    }
+
+    // 3. Pada ronde 1 (3 kartu pertama): jika 3 kartu pertama langsung menghasilkan 9 di awal,
+    // redam juga (hanya ~40% lolos) agar pemain harus berjuang di ronde ke-2
+    let arr3 = arrangeBestThreeCards([hand[0], hand[1], hand[2]]);
+    if (arr3.leftScore === 9 && Math.random() > 0.40) {
+      const altArr3 = arrangeBestThreeCards([hand[0], hand[1], hand[3]]);
+      if (altArr3.leftScore < 9) {
+        const temp = hand[2];
+        hand[2] = hand[3];
+        hand[3] = temp;
+        arr3 = altArr3;
+      }
+    }
+
+    return [arr3.ordered[0], arr3.ordered[1], arr3.ordered[2], hand[3]];
+  };
+
   // Start a new authentic QiuQiu round: Collect Ante -> Deal 3 cards -> Start Betting Round 1
   const startNewRound = (overrideStanding?: boolean) => {
     const standingNow = overrideStanding !== undefined ? overrideStanding : isStanding;
@@ -9809,12 +9812,8 @@ function QiuQiuGameScreen({
       const newCoins = Math.max(0, seatCoins - antePaid - jpFee);
       initialPot += antePaid;
 
-      // Deal 4 cards from deck, and arrange the first 3 cards so best pair is on the Left!
-      const raw1 = shuffled.pop() || [0, 0];
-      const raw2 = shuffled.pop() || [0, 0];
-      const raw3 = shuffled.pop() || [0, 0];
-      const raw4 = shuffled.pop() || [0, 0];
-      const best3 = arrangeBestThreeCards([raw1, raw2, raw3]);
+      // Deal 4 cards from deck dengan algoritma probabilitas QiuQiu terkontrol
+      const dealtHand = dealControlledQiuHand(shuffled);
 
       initialChips.push({
         id: Date.now() + idx + Math.random(),
@@ -9838,7 +9837,7 @@ function QiuQiuGameScreen({
         hasActed: false,
         allIn: newCoins === 0,
         folded: false,
-        hand: [best3.ordered[0], best3.ordered[1], best3.ordered[2], raw4],
+        hand: dealtHand,
       };
     });
 
@@ -11349,6 +11348,10 @@ function App() {
           gameId={gameId}
           socket={socketRef.current}
           onBack={() => setScreen('kamar-lobby')}
+          onRematch={() => {
+            setGameId(null);
+            setScreen('waiting-room');
+          }}
           onUpdateCoins={setAppAlert}
         />
       )}

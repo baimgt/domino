@@ -206,14 +206,85 @@ export const POOL_ROOMS: PoolRoom[] = [
 ];
 
 const OPPONENT_LIST = [
-  { name: 'Mike Champion', level: 46, avatar: 'https://i.pravatar.cc/100?img=68' },
-  { name: 'Sarah Queen',   level: 52, avatar: 'https://i.pravatar.cc/100?img=44' },
-  { name: 'Budi Pool Master', level: 39, avatar: 'https://i.pravatar.cc/100?img=12' },
-  { name: 'Alex Trickshot', level: 61, avatar: 'https://i.pravatar.cc/100?img=60' },
-  { name: 'David Hustler', level: 48, avatar: 'https://i.pravatar.cc/100?img=33' },
-  { name: 'Jessica Miller', level: 55, avatar: 'https://i.pravatar.cc/100?img=47' },
-  { name: 'Rian Sultan 8', level: 42, avatar: 'https://i.pravatar.cc/100?img=11' },
-  { name: 'Farhan Snooker', level: 50, avatar: 'https://i.pravatar.cc/100?img=53' }
+  // Indonesian Masters & Hustlers
+  { name: 'Budi Pool Master',  level: 39, avatar: 'https://i.pravatar.cc/100?img=12' },
+  { name: 'Rian Sultan 8',     level: 42, avatar: 'https://i.pravatar.cc/100?img=11' },
+  { name: 'Farhan Snooker',    level: 50, avatar: 'https://i.pravatar.cc/100?img=53' },
+  { name: 'Hendro CueMaster',  level: 45, avatar: 'https://i.pravatar.cc/100?img=3' },
+  { name: 'Bayu SpinShot',     level: 48, avatar: 'https://i.pravatar.cc/100?img=15' },
+  { name: 'Rizky 8-Ball',      level: 37, avatar: 'https://i.pravatar.cc/100?img=8' },
+  { name: 'Adit Breaker',      level: 44, avatar: 'https://i.pravatar.cc/100?img=7' },
+  { name: 'Doni Carom',        level: 53, avatar: 'https://i.pravatar.cc/100?img=14' },
+  { name: 'Agus DrawShot',     level: 41, avatar: 'https://i.pravatar.cc/100?img=17' },
+  { name: 'Taufik PocketPro',  level: 55, avatar: 'https://i.pravatar.cc/100?img=18' },
+  { name: 'Eko DoubleBank',    level: 46, avatar: 'https://i.pravatar.cc/100?img=4' },
+  { name: 'Dimas Massé',       level: 51, avatar: 'https://i.pravatar.cc/100?img=59' },
+  { name: 'Arya StickPro',     level: 38, avatar: 'https://i.pravatar.cc/100?img=69' },
+  { name: 'Kevin GoldenCue',   level: 58, avatar: 'https://i.pravatar.cc/100?img=51' },
+  { name: 'Irfan ChalkKing',   level: 43, avatar: 'https://i.pravatar.cc/100?img=65' },
+  { name: 'Gilang JumpShot',   level: 47, avatar: 'https://i.pravatar.cc/100?img=67' },
+  { name: 'Vino EnglishSpin',  level: 52, avatar: 'https://i.pravatar.cc/100?img=64' },
+  { name: 'Wahyu Predator',    level: 60, avatar: 'https://i.pravatar.cc/100?img=58' },
+  { name: 'Indra MezzCue',     level: 49, avatar: 'https://i.pravatar.cc/100?img=52' },
+  { name: 'Fajar SideSpin',    level: 36, avatar: 'https://i.pravatar.cc/100?img=56' },
+  { name: 'Rangga BlackBall',  level: 45, avatar: 'https://i.pravatar.cc/100?img=55' },
+  { name: 'Dedy CornerPocket', level: 41, avatar: 'https://i.pravatar.cc/100?img=57' },
+  { name: 'Bambang StunShot',  level: 54, avatar: 'https://i.pravatar.cc/100?img=50' },
+  { name: 'Yudi TableKing',    level: 47, avatar: 'https://i.pravatar.cc/100?img=32' },
+  { name: 'Nanda PureAngle',   level: 39, avatar: 'https://i.pravatar.cc/100?img=25' },
+  { name: 'Sari CueQueen',     level: 43, avatar: 'https://i.pravatar.cc/100?img=26' },
+  { name: 'Nadia SpinMaster',  level: 49, avatar: 'https://i.pravatar.cc/100?img=24' },
+  { name: 'Maya PocketStar',   level: 52, avatar: 'https://i.pravatar.cc/100?img=23' },
+  { name: 'Dewi GoldenShot',   level: 46, avatar: 'https://i.pravatar.cc/100?img=20' },
+  { name: 'Putri Snooker',     level: 44, avatar: 'https://i.pravatar.cc/100?img=21' },
+
+  // International Masters & Hustlers
+  { name: 'Mike Champion',     level: 46, avatar: 'https://i.pravatar.cc/100?img=68' },
+  { name: 'Sarah Queen',       level: 52, avatar: 'https://i.pravatar.cc/100?img=44' },
+  { name: 'Alex Trickshot',    level: 61, avatar: 'https://i.pravatar.cc/100?img=60' },
+  { name: 'David Hustler',     level: 48, avatar: 'https://i.pravatar.cc/100?img=33' },
+  { name: 'Jessica Miller',    level: 55, avatar: 'https://i.pravatar.cc/100?img=47' },
+  { name: 'Marcus FastCue',    level: 54, avatar: 'https://i.pravatar.cc/100?img=70' },
+  { name: 'Elena PureSpin',    level: 49, avatar: 'https://i.pravatar.cc/100?img=48' },
+  { name: 'Viktor GhostBall',  level: 57, avatar: 'https://i.pravatar.cc/100?img=62' },
+  { name: 'Carlos SpinDoctor', level: 50, avatar: 'https://i.pravatar.cc/100?img=61' },
+  { name: 'Jimmy Nitro',       level: 43, avatar: 'https://i.pravatar.cc/100?img=13' },
+  { name: 'Samantha Sharpe',   level: 51, avatar: 'https://i.pravatar.cc/100?img=49' },
+  { name: 'Kenji Quickdraw',   level: 63, avatar: 'https://i.pravatar.cc/100?img=63' },
+  { name: 'Lucas BankShot',    level: 47, avatar: 'https://i.pravatar.cc/100?img=54' },
+  { name: 'Liam BreakMaster',  level: 56, avatar: 'https://i.pravatar.cc/100?img=30' },
+  { name: 'Zack SharpEye',     level: 45, avatar: 'https://i.pravatar.cc/100?img=31' },
+  { name: 'Mia CrossPocket',   level: 42, avatar: 'https://i.pravatar.cc/100?img=45' },
+  { name: 'Oliver SteadyHand', level: 53, avatar: 'https://i.pravatar.cc/100?img=35' },
+  { name: 'Dmitri ShadowCue',  level: 59, avatar: 'https://i.pravatar.cc/100?img=36' },
+  { name: 'Chloe Velvet',      level: 48, avatar: 'https://i.pravatar.cc/100?img=42' },
+  { name: 'Nathan TopSpin',    level: 50, avatar: 'https://i.pravatar.cc/100?img=37' },
+  { name: 'Raymond Ace',       level: 52, avatar: 'https://i.pravatar.cc/100?img=38' },
+  { name: 'Sophia SilkCue',    level: 46, avatar: 'https://i.pravatar.cc/100?img=41' },
+  { name: 'Leo Lightning',     level: 55, avatar: 'https://i.pravatar.cc/100?img=39' },
+  { name: 'Daniel IceVeins',   level: 62, avatar: 'https://i.pravatar.cc/100?img=40' },
+  { name: 'Valerie Venom',     level: 54, avatar: 'https://i.pravatar.cc/100?img=43' },
+  { name: 'Arthur PureAngle',  level: 48, avatar: 'https://i.pravatar.cc/100?img=28' },
+  { name: 'Sean RazorEdge',    level: 56, avatar: 'https://i.pravatar.cc/100?img=29' },
+  { name: 'Felix SmoothStroke',level: 44, avatar: 'https://i.pravatar.cc/100?img=27' },
+  { name: 'Mason Magnet',      level: 51, avatar: 'https://i.pravatar.cc/100?img=22' },
+  { name: 'Emma SilverCue',    level: 47, avatar: 'https://i.pravatar.cc/100?img=19' },
+
+  // VIP Champions & Hall of Fame Legends
+  { name: 'The Magician Reyes',level: 68, avatar: 'https://i.pravatar.cc/100?img=6' },
+  { name: 'Earl The Rocket',   level: 65, avatar: 'https://i.pravatar.cc/100?img=5' },
+  { name: 'Ronnie Precision',  level: 69, avatar: 'https://i.pravatar.cc/100?img=9' },
+  { name: 'Sultan Pool Club',  level: 64, avatar: 'https://i.pravatar.cc/100?img=10' },
+  { name: 'Golden Break 99',   level: 62, avatar: 'https://i.pravatar.cc/100?img=16' },
+  { name: 'VIP BlackBaller',   level: 66, avatar: 'https://i.pravatar.cc/100?img=66' },
+  { name: 'Apex ShotMaker',    level: 60, avatar: 'https://i.pravatar.cc/100?img=34' },
+  { name: 'Phantom Striker',   level: 63, avatar: 'https://i.pravatar.cc/100?img=8' },
+  { name: 'Baron Von Cue',     level: 61, avatar: 'https://i.pravatar.cc/100?img=1' },
+  { name: 'Lady Velvet VIP',   level: 59, avatar: 'https://i.pravatar.cc/100?img=46' },
+  { name: 'Titan Break 8',     level: 67, avatar: 'https://i.pravatar.cc/100?img=2' },
+  { name: 'Royal Pocket King', level: 70, avatar: 'https://i.pravatar.cc/100?img=68' },
+  { name: 'Diamond Cue Ace',   level: 64, avatar: 'https://i.pravatar.cc/100?img=44' },
+  { name: 'Shadow Breaker',    level: 58, avatar: 'https://i.pravatar.cc/100?img=33' }
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -2450,13 +2521,13 @@ export default function BilliardScreen({
   const selectedRoomRef                 = useRef(selectedRoom);
   useEffect(() => { selectedRoomRef.current = selectedRoom; }, [selectedRoom]);
 
-  const [opponent, setOpponent]         = useState(OPPONENT_LIST[0]);
+  const [opponent, setOpponent]         = useState(() => OPPONENT_LIST[Math.floor(Math.random() * OPPONENT_LIST.length)]);
   const opponentRef                     = useRef(opponent);
   useEffect(() => { opponentRef.current = opponent; }, [opponent]);
   const oppDisplayName                 = isMultiplayer ? realOpponentName : (opponent?.name || 'Lawan');
   const [matchStatus, setMatchStatus]   = useState('🔍 Mencari Lawan Berdasarkan Skill...');
   const [matchCountdown, setMatchCountdown] = useState<number | null>(null);
-  const [matchingAvatar, setMatchingAvatar] = useState(OPPONENT_LIST[0].avatar);
+  const [matchingAvatar, setMatchingAvatar] = useState(() => OPPONENT_LIST[Math.floor(Math.random() * OPPONENT_LIST.length)].avatar);
   const matchIntervalRef                = useRef<any>(null);
   const matchCountIntervalRef           = useRef<any>(null);
   const aiAnimRef                       = useRef<number | null>(null);
