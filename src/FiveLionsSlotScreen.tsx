@@ -407,11 +407,11 @@ export default function FiveLionsSlotScreen({ onBack, socket }: Props) {
       saveFreeSpinsState(nextSpins, selectedLionMode, activeLionRange);
     }
 
-    // RTP 96.26% & Hit Frequency 15.05% Mathematical Model
+    // Low RTP & Hit Frequency Mathematical Model
     const rtpOutcome = determineSpinOutcome({ isFreeSpins: isFreeRound, anteMode: anteBetActive });
     const winOccurred = rtpOutcome.isHit;
     const precomputedWinCells: { row: number; col: number }[] = [];
-    const willHaveWild = winOccurred && Math.random() < (isFreeRound ? 0.80 : 0.55);
+    const willHaveWild = winOccurred && Math.random() < (isFreeRound ? 0.18 : 0.10);
     const wildCol = 1 + Math.floor(Math.random() * 3); // reel 2, 3, or 4 (cols 1, 2, 3)
 
     // Generate base random columns
@@ -422,7 +422,8 @@ export default function FiveLionsSlotScreen({ onBack, socket }: Props) {
 
     // Embed winning symbols directly into newCols NOW before starting spin
     if (winOccurred) {
-      const matchSym = REGULAR_SYM_IDS[Math.floor(Math.random() * REGULAR_SYM_IDS.length)];
+      const lowSyms = [7, 8, 9, 10, 11];
+      const matchSym = lowSyms[Math.floor(Math.random() * lowSyms.length)];
       [0, 1, 2].forEach(c => {
         const r = Math.floor(Math.random() * (newCols[c]?.length || 3));
         if (newCols[c] && newCols[c][r]) {
@@ -432,7 +433,7 @@ export default function FiveLionsSlotScreen({ onBack, socket }: Props) {
         }
       });
 
-      if (Math.random() < 0.65 && newCols[3]) {
+      if (Math.random() < 0.25 && newCols[3]) {
         const r = Math.floor(Math.random() * newCols[3].length);
         const symToUse = (willHaveWild && 3 === wildCol) ? 5 : matchSym;
         newCols[3][r] = { ...newCols[3][r], symId: symToUse };
@@ -442,8 +443,23 @@ export default function FiveLionsSlotScreen({ onBack, socket }: Props) {
       hasWildInWin = precomputedWinCells.some(w => newCols[w.col]?.[w.row]?.symId === 5);
       if (hasWildInWin) {
         const range = isFreeRound ? activeLionRange : BASE_WILD_RANGE;
-        spinMult = range[Math.floor(Math.random() * range.length)];
+        // Bobot ke pengali terkecil di dalam range
+        const idx = Math.random() < 0.78 ? 0 : (Math.random() < 0.95 ? Math.min(1, range.length - 1) : range.length - 1);
+        spinMult = range[idx];
       }
+    } else {
+      // Break any accidental 3-reel matches on cols 0, 1, 2 and remove Wilds on non-hit spins
+      const col0Syms = [0, 1, 2];
+      const col1Syms = [3, 4, 7];
+      const col2Syms = [8, 9, 10];
+      [col0Syms, col1Syms, col2Syms].forEach((allowed, c) => {
+        if (newCols[c]) {
+          newCols[c] = newCols[c].map((cell, r) => ({
+            ...cell,
+            symId: cell.symId === 6 ? 6 : allowed[r % allowed.length]
+          }));
+        }
+      });
     }
 
     // Scatter Trigger check (3+ Yin Yang Scatters, symId 6)
@@ -521,7 +537,9 @@ export default function FiveLionsSlotScreen({ onBack, socket }: Props) {
           setIsWildMultActive(false);
         }
 
-        const basePayout = rtpOutcome.targetMult > 0 ? rtpOutcome.targetMult : (1.5 + Math.random() * 4);
+        const basePayout = hasWildInWin
+          ? (0.08 + Math.random() * 0.14)
+          : (rtpOutcome.targetMult > 0 ? rtpOutcome.targetMult : (0.30 + Math.random() * 0.70));
         winAmt = Math.max(1, Math.floor(cost * basePayout * spinMult));
         setTotalWin(winAmt);
         if (winAmt > 0 && isFreeRound) {

@@ -115,25 +115,74 @@ export default function MahjongWays2SlotScreen({ onBack, socket }: Props) {
   // Auto-Spin Reactive Machine (proven identical to Zeus & DuoFu)
   useEffect(() => {
     let timer: any;
-    if (autoSpins > 0 && !isSpinning && !celebration) {
+    if (autoSpins > 0 && !isSpinning && !celebration && freeSpinsLeft === 0) {
       timer = setTimeout(() => {
         setAutoSpins(prev => Math.max(0, prev - 1));
-        doSpin();
+        doSpinRef.current?.();
       }, Math.max(400, 800 / spinSpeed));
     }
     return () => clearTimeout(timer);
-  }, [autoSpins, isSpinning, celebration, spinSpeed]);
+  }, [autoSpins, isSpinning, celebration, spinSpeed, freeSpinsLeft]);
 
   // Free-Spins Reactive Machine
   useEffect(() => {
     let timer: any;
     if (freeSpinsLeft > 0 && !isSpinning && !celebration) {
       timer = setTimeout(() => {
-        doSpin();
+        doSpinRef.current?.();
       }, Math.max(500, 900 / spinSpeed));
     }
     return () => clearTimeout(timer);
   }, [freeSpinsLeft, isSpinning, celebration, spinSpeed]);
+
+  // Web Audio sound effects for reel stop & Scatter landing
+  const playReelStopSound = () => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = (window as any)._mjAudioCtx || new AudioCtx();
+      (window as any)._mjAudioCtx = ctx;
+      if (ctx.state === 'suspended') ctx.resume();
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(145, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(48, ctx.currentTime + 0.08);
+      gain.gain.setValueAtTime(0.22, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.09);
+    } catch {}
+  };
+
+  const playScatterLandSound = (scatterIdx: number) => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = (window as any)._mjAudioCtx || new AudioCtx();
+      (window as any)._mjAudioCtx = ctx;
+      if (ctx.state === 'suspended') ctx.resume();
+
+      const baseFreqs = [523.25, 659.25, 783.99, 1046.5];
+      const freq = baseFreqs[Math.min(scatterIdx, baseFreqs.length - 1)];
+      const now = ctx.currentTime;
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, now);
+      osc.frequency.exponentialRampToValueAtTime(freq * 1.25, now + 0.22);
+      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.3);
+    } catch {}
+  };
 
   const spinSpeedRef = useRef(spinSpeed);
   useEffect(() => { spinSpeedRef.current = spinSpeed; }, [spinSpeed]);
@@ -158,7 +207,7 @@ export default function MahjongWays2SlotScreen({ onBack, socket }: Props) {
   }, []);
 
   // Helper to generate a random column for reel cIdx (Reels 0 & 4 have 4 rows, Reels 1, 2, 3 have 5 rows)
-  const generateCol = (colIdx: number): TileItem[] => {
+  const generateCol = (colIdx: number, isFreeRound: boolean = false): TileItem[] => {
     const rowCount = (colIdx === 0 || colIdx === 4) ? 4 : 5;
     const regularIds = [2, 3, 4, 5, 6, 7, 8, 9, 10];
     const items: TileItem[] = [];
@@ -167,319 +216,363 @@ export default function MahjongWays2SlotScreen({ onBack, socket }: Props) {
       const roll = Math.random();
       let symId = regularIds[Math.floor(Math.random() * regularIds.length)];
       // Peluang Scatter ~1.6% per ubin -> 3+ Scatter di 23 ubin = ~0.6% (1 dalam ~165 putaran - PG Soft authentic)
-      const scatterProb = freeSpinsLeft > 0 ? 0.008 : 0.016;
+      const scatterProb = isFreeRound ? 0.008 : 0.016;
       if (roll < scatterProb) {
         symId = 0; // Scatter
       } else if (roll < (scatterProb + 0.07) && colIdx >= 1 && colIdx <= 3) {
         symId = 1; // Wild
       }
       
-      // Top cell on middle reels or ~25% of middle reel tiles can be Golden framed!
-      const isGold = (colIdx >= 1 && colIdx <= 3 && symId >= 2) ? (r === 0 || Math.random() < 0.25) : false;
+      // Di Free Spins Mahjong Ways 2 asli: seluruh ubin reguler di reel 3 (colIdx === 2) berubah menjadi ubin Emas!
+      const isGold = isFreeRound && colIdx === 2 && symId >= 2
+        ? true
+        : (colIdx >= 1 && colIdx <= 3 && symId >= 2) ? (r === 0 || Math.random() < 0.25) : false;
       items.push({ symId, isGold });
     }
     return items;
   };
 
-  const doSpin = (overrideAutoCount?: number) => {
+  const doSpin = (overrideAutoCount?: number, isBuyFeature: boolean = false) => {
     if (isSpinningRef.current) return;
     try {
-      const currentAuto = overrideAutoCount ?? autoSpinsRef.current;
+      const _currentAuto = overrideAutoCount ?? autoSpinsRef.current;
+      void _currentAuto;
 
-      const cost = betAmount;
-    const isFreeRound = freeSpinsLeftRef.current > 0;
-    if (myCoins < cost && !isFreeRound) {
-      alert('Koin Anda tidak mencukupi!');
-      autoSpinsRef.current = 0;
-      setAutoSpins(0);
-      return;
-    }
-
-    // Deduct coins or decrement free spin
-    if (!isFreeRound) {
-      const res = spendSlotCoinsLocal(cost);
-      setMyCoins(res.total);
-      if (username) {
-        syncSlotBetToBackend(API_URL, username, cost);
+      const isFreeRound = !isBuyFeature && freeSpinsLeftRef.current > 0;
+      const cost = isBuyFeature ? betAmount * 100 : betAmount;
+      if (myCoins < cost && !isFreeRound) {
+        alert(isBuyFeature ? 'Koin Anda tidak mencukupi untuk membeli Spin Gratis!' : 'Koin Anda tidak mencukupi!');
+        autoSpinsRef.current = 0;
+        setAutoSpins(0);
+        return;
       }
-    } else {
-      const nextFree = Math.max(0, freeSpinsLeftRef.current - 1);
-      freeSpinsLeftRef.current = nextFree;
-      setFreeSpinsLeft(nextFree);
-    }
 
-    // RTP 96.26% & Hit Frequency 15.05% Mathematical Model
-    const rtpOutcome = determineSpinOutcome({ isFreeSpins: isFreeRound });
-    const winOccurred = rtpOutcome.isHit;
-    let winAmt = 0;
-    const ladder = isFreeRound ? [2, 4, 6, 10] : [1, 2, 3, 5];
-    const cascades = 1 + (Math.random() < 0.5 ? 1 : 0) + (Math.random() < 0.3 ? 1 : 0) + (Math.random() < 0.15 ? 1 : 0);
-    const lastIdx = Math.min(cascades - 1, 3);
-    const winCells: { col: number; row: number }[] = [];
-
-    // Pre-generate target grid
-    const targetGrid: TileItem[][] = [0, 1, 2, 3, 4].map(cIdx => generateCol(cIdx));
-
-    if (winOccurred) {
-      const targetPayout = rtpOutcome.targetMult > 0 ? rtpOutcome.targetMult : (1.5 + Math.random() * 3);
-      winAmt = Math.max(1, Math.floor(cost * targetPayout));
-
-      // Tanam simbol pemenang LANGSUNG ke targetGrid SEBELUM spin dimulai
-      const nonScatter = [2, 3, 4, 5, 6, 7, 8];
-      const matchSym = nonScatter[Math.floor(Math.random() * nonScatter.length)];
-      [0, 1, 2].forEach(c => {
-        const r = Math.floor(Math.random() * (targetGrid[c]?.length || 4));
-        if (targetGrid[c] && targetGrid[c][r]) {
-          targetGrid[c][r] = { symId: matchSym, isGold: false };
-          winCells.push({ col: c, row: r });
+      // Deduct coins or decrement free spin
+      if (!isFreeRound) {
+        const res = spendSlotCoinsLocal(cost);
+        setMyCoins(res.total);
+        if (username) {
+          syncSlotBetToBackend(API_URL, username, cost);
         }
-      });
-      if (Math.random() < 0.6 && targetGrid[3]) {
-        const r = Math.floor(Math.random() * targetGrid[3].length);
-        targetGrid[3][r] = { symId: matchSym, isGold: false };
-        winCells.push({ col: 3, row: r });
+      } else {
+        const nextFree = Math.max(0, freeSpinsLeftRef.current - 1);
+        freeSpinsLeftRef.current = nextFree;
+        setFreeSpinsLeft(nextFree);
       }
-    } else {
-      // Clean loss: break any matching tiles on cols 0, 1, 2
-      [0, 1, 2].forEach(c => {
-        if (targetGrid[c] && targetGrid[c][0]) {
-          targetGrid[c][0] = { symId: 2 + c * 2, isGold: false };
-        }
-      });
-    }
 
-    if (rtpOutcome.isScatter) {
-      [0, 2, 4].forEach(c => {
-        if (targetGrid[c] && targetGrid[c][0]) {
-          targetGrid[c][0] = { symId: 0, isGold: false };
-        }
-      });
-    } else {
-      // Ensure scatter count < 3
-      let scatters = 0;
-      targetGrid.forEach(col => {
-        col.forEach(tile => {
-          if (tile.symId === 0) {
-            scatters++;
-            if (scatters >= 3) {
-              tile.symId = 5;
-            }
+      // Low RTP & Hit Frequency Mathematical Model
+      const rtpOutcome = determineSpinOutcome({ isFreeSpins: isFreeRound });
+      // Jika Beli Spin Gratis (isBuyFeature), putaran pertama fokus menjatuhkan 3+ Scatter terlebih dahulu seperti Olympus!
+      const winOccurred = isBuyFeature ? false : rtpOutcome.isHit;
+      const triggerScatter = isBuyFeature || rtpOutcome.isScatter;
+      let winAmt = 0;
+      const ladder = isFreeRound ? [2, 4, 6, 10] : [1, 2, 3, 5];
+      const cascades = 1 + (Math.random() < 0.22 ? 1 : 0) + (Math.random() < 0.06 ? 1 : 0);
+      const lastIdx = Math.min(cascades - 1, 3);
+      const winCells: { col: number; row: number }[] = [];
+
+      // Pre-generate target grid
+      const targetGrid: TileItem[][] = [0, 1, 2, 3, 4].map(cIdx => generateCol(cIdx, isFreeRound));
+
+      if (winOccurred) {
+        const targetPayout = rtpOutcome.targetMult > 0 ? rtpOutcome.targetMult : (0.35 + Math.random() * 0.85);
+        winAmt = Math.max(1, Math.floor(betAmount * targetPayout));
+
+        // Tanam simbol pemenang LANGSUNG ke targetGrid SEBELUM spin dimulai
+        const nonScatter = [4, 5, 6, 7, 8, 9, 10];
+        const matchSym = nonScatter[Math.floor(Math.random() * nonScatter.length)];
+        [0, 1, 2].forEach(c => {
+          const r = Math.floor(Math.random() * (targetGrid[c]?.length || 4));
+          if (targetGrid[c] && targetGrid[c][r]) {
+            targetGrid[c][r] = { symId: matchSym, isGold: false };
+            winCells.push({ col: c, row: r });
           }
         });
-      });
-    }
-
-    setGridCols(targetGrid);
-
-    isSpinningRef.current = true;
-    setIsSpinning(true);
-    setSpinningCols([true, true, true, true, true]);
-    setWinningCells([]);
-    setActiveWinBanner(null);
-    setTotalWin(0);
-
-    if (spinTimer.current) clearTimeout(spinTimer.current);
-    spinTimer.current = setTimeout(() => {
-      isSpinningRef.current = false;
-      setIsSpinning(false);
-      setSpinningCols([false, false, false, false, false]);
-    }, 12000);
-    // Base game: reset ke x1. Free spin: reset ke x2 per ronde baru
-    setMultiplierIdx(0);
-    mjIdxRef.current = 0;
-
-    const spd = spinSpeedRef.current;
-    const minSpinBase = spd >= 10 ? 80 : spd >= 5 ? 140 : spd === 3 ? 240 : spd === 2 ? 400 : 750;
-    const delayPerCol = spd >= 10 ? 20 : spd >= 5 ? 35 : spd === 3 ? 65 : spd === 2 ? 100 : 180;
-    const bounceDuration = spd >= 10 ? 45 : spd >= 5 ? 80 : spd === 3 ? 160 : spd === 2 ? 220 : 320;
-    let stopTime = minSpinBase;
-
-    // Staggered reel stop (Reels 1..5)
-    for (let c = 0; c < 5; c++) {
-      const col = c;
-      setTimeout(() => {
-        setSpinningCols(prev => {
-          const next = [...prev];
-          next[col] = false;
-          return next;
-        });
-      }, stopTime);
-      stopTime += delayPerCol;
-    }
-
-    // Processing win & tumble sequence after reels settle cleanly
-    const allReelsSettled = stopTime + bounceDuration + 60;
-    setTimeout(async () => {
-      let scatterCount = 0;
-      try {
-        if (winOccurred && winAmt > 0) {
-          let currentGrid = targetGrid.map(col => [...col]);
-          let currentWins = [...winCells];
-
-          for (let k = 0; k < cascades; k++) {
-            if (currentWins.length === 0) break;
-
-            // 1. Highlight winning tiles
-            setWinningCells(currentWins);
-            setMultiplierIdx(Math.min(k, 3));
-            await new Promise(res => setTimeout(res, Math.max(260, 420 / spd)));
-
-            // 2. Explode winning tiles (pecah & lenyap)
-            setExplodingCells(currentWins);
-            await new Promise(res => setTimeout(res, Math.max(200, 320 / spd)));
-
-            // 3. Briefly reveal empty holes where tiles vanished
-            const emptyGrid = currentGrid.map((col, c) =>
-              col.map((cell, r) => currentWins.some(w => w.col === c && w.row === r) ? { symId: null } : cell)
-            );
-            setGridCols(emptyGrid);
-            setWinningCells([]);
-            setExplodingCells([]);
-            await new Promise(res => setTimeout(res, Math.max(70, 110 / spd)));
-
-            // 4. Calculate gravity drop ONLY for tiles strictly above the empty holes!
-            const dropsMap: Record<string, number> = {};
-            const settledGrid = emptyGrid.map((col, c) => {
-              const expRowsInCol = currentWins.filter(w => w.col === c).map(w => w.row);
-              if (expRowsInCol.length === 0) return [...col];
-
-              const maxExpRow = Math.max(...expRowsInCol);
-              const expCount = expRowsInCol.length;
-              for (let r = 0; r <= maxExpRow; r++) {
-                dropsMap[`${c}-${r}`] = expCount;
+        if (Math.random() < 0.25 && targetGrid[3]) {
+          const r = Math.floor(Math.random() * targetGrid[3].length);
+          targetGrid[3][r] = { symId: matchSym, isGold: false };
+          winCells.push({ col: 3, row: r });
+        }
+      } else {
+        // Clean non-winning spin: break any matching tiles on cols 0, 1, 2
+        const col0Syms = [2, 3, 4];
+        const col1Syms = [5, 6, 7];
+        const col2Syms = [8, 9, 10];
+        [col0Syms, col1Syms, col2Syms].forEach((allowed, c) => {
+          if (targetGrid[c]) {
+            targetGrid[c].forEach((tile, r) => {
+              if (tile.symId !== 0) {
+                targetGrid[c][r] = {
+                  symId: allowed[r % allowed.length],
+                  isGold: tile.isGold
+                };
               }
-
-              // Gravity: drop non-null tiles down
-              const existing = col.filter(cell => cell.symId !== null && cell.symId !== undefined);
-              const needed = col.length - existing.length;
-              const newTiles: TileItem[] = [];
-              for (let i = 0; i < needed; i++) {
-                const regularIds = [2, 3, 4, 5, 6, 7, 8, 9, 10];
-                const symId = regularIds[Math.floor(Math.random() * regularIds.length)];
-                const isGold = (c >= 1 && c <= 3 && Math.random() < 0.2);
-                newTiles.push({ symId, isGold });
-              }
-              return [...newTiles, ...existing];
             });
+          }
+        });
+      }
 
-            // 5. Cascade drop: top tiles tumble down
-            setDroppingCells(dropsMap);
-            setGridCols(settledGrid);
-            currentGrid = settledGrid;
-            await new Promise(res => setTimeout(res, Math.max(280, 380 / spd)));
-            setDroppingCells({});
-            await new Promise(res => setTimeout(res, Math.max(60, 120 / spd)));
-
-            // If there are more cascades, set up next match
-            if (k + 1 < cascades) {
-              const nextMatchSym = [2, 3, 4, 5, 6, 7, 8][Math.floor(Math.random() * 7)];
-              const nextWins: { col: number; row: number }[] = [];
-              [0, 1, 2].forEach(c => {
-                const r = Math.floor(Math.random() * currentGrid[c].length);
-                currentGrid[c][r] = { symId: nextMatchSym, isGold: false };
-                nextWins.push({ col: c, row: r });
-              });
-              currentWins = nextWins;
-              setGridCols(currentGrid.map(col => [...col]));
-            } else {
-              currentWins = [];
-            }
-          }
-
-          setTotalWin(winAmt);
-          if (isFreeRound) {
-            const newFsTotal = freeSpinTotalWinRef.current + winAmt;
-            freeSpinTotalWinRef.current = newFsTotal;
-            setFreeSpinTotalWin(newFsTotal);
-          }
-          const winRes = addSlotWinLocal(winAmt);
-          setMyCoins(winRes.total);
-          if (username) {
-            syncSlotWinToBackend(API_URL, username, winAmt);
-          }
-          setMultiplierIdx(lastIdx);
-          setActiveWinBanner(`⚡ KEMENANGAN ${ladder[lastIdx]}x! (+Rp ${winAmt.toLocaleString('id-ID')}) ⚡`);
-          if (!isFreeRound) {
-            const ratio = winAmt / Math.max(1, cost);
-            if (ratio >= 30) {
-              setCelebration({ type: 'super_win', amount: winAmt });
-            } else if (ratio >= 12) {
-              setCelebration({ type: 'mega_win', amount: winAmt });
-            } else if (ratio >= 5) {
-              setCelebration({ type: 'big_win', amount: winAmt });
-            }
-          }
-        }
-
-        // Scatter trigger check: 3+ Scatter memicu 10 Putaran Gratis (PG Soft authentic)
-        scatterCount = targetGrid.flat().filter(t => t.symId === 0).length;
-        if (scatterCount >= 3) {
-          const isRetrigger = isFreeRound;
-          const awarded = 10;
-          const totalFree = freeSpinsLeftRef.current + awarded;
-          freeSpinsLeftRef.current = totalFree;
-          setFreeSpinsLeft(totalFree);
-          if (!isRetrigger) {
-            setFreeSpinTotalWin(0);
-            freeSpinTotalWinRef.current = 0;
-          }
-          setCelebration({
-            type: 'scatter',
-            freeSpinsCount: awarded,
-            title: isRetrigger ? '🀄 RETRIGGER MAHJONG WAYS! 🀄' : '🀄 SCATTER MAHJONG WAYS! 🀄',
-            subtext: isRetrigger
-              ? `LUAR BIASA! +${awarded} PUTARAN GRATIS DITAMBAHKAN KE SISA SPIN! (TOTAL SISA: ${totalFree} SPIN)`
-              : `SELAMAT! 3+ SCATTER MEMICU ${awarded} PUTARAN GRATIS PERKALIAN X2-X10!`
+      if (triggerScatter) {
+        // Bersihkan scatter acak terlebih dahulu agar jumlah scatter terkontrol
+        targetGrid.forEach(col => {
+          col.forEach(tile => {
+            if (tile.symId === 0) tile.symId = 5;
           });
-        }
-      } catch (err) {
-        console.error('Error during tumble sequence:', err);
-      } finally {
-        if (spinTimer.current) clearTimeout(spinTimer.current);
+        });
+
+        // Pilih 3 kolom (atau 4 kolom dengan peluang 12%) untuk menjatuhkan Scatter (胡)
+        const targetScatterCount = Math.random() < 0.12 ? 4 : 3;
+        const availableCols = [0, 1, 2, 3, 4].sort(() => Math.random() - 0.5).slice(0, targetScatterCount);
+        availableCols.forEach(c => {
+          if (targetGrid[c] && targetGrid[c].length > 0) {
+            const r = Math.floor(Math.random() * targetGrid[c].length);
+            targetGrid[c][r] = { symId: 0, isGold: false };
+          }
+        });
+      } else {
+        // Ensure scatter count < 3
+        let scatters = 0;
+        targetGrid.forEach(col => {
+          col.forEach(tile => {
+            if (tile.symId === 0) {
+              scatters++;
+              if (scatters >= 3) {
+                tile.symId = 5;
+              }
+            }
+          });
+        });
+      }
+
+      setGridCols(targetGrid);
+
+      isSpinningRef.current = true;
+      setIsSpinning(true);
+      setSpinningCols([true, true, true, true, true]);
+      setWinningCells([]);
+      setActiveWinBanner(isBuyFeature ? '🀄 MEMBELI FITUR PUTARAN GRATIS... 🀄' : null);
+      setTotalWin(0);
+
+      if (spinTimer.current) clearTimeout(spinTimer.current);
+      spinTimer.current = setTimeout(() => {
         isSpinningRef.current = false;
         setIsSpinning(false);
         setSpinningCols([false, false, false, false, false]);
-        if (isFreeRound && freeSpinsLeftRef.current === 0 && scatterCount < 3) {
-          const finalFsWin = freeSpinTotalWinRef.current;
-          setCelebration({
-            type: 'free_spins_total',
-            amount: finalFsWin,
-            title: 'TOTAL KEMENANGAN',
-            subtext: finalFsWin > 0
-              ? 'SELAMAT! TOTAL KEMENANGAN PUTARAN GRATIS MAHJONG WAYS!'
-              : 'PUTARAN GRATIS SELESAI!'
+      }, 12000);
+      // Base game: reset ke x1. Free spin: reset ke x2 per ronde baru
+      setMultiplierIdx(0);
+      mjIdxRef.current = 0;
+
+      const spd = spinSpeedRef.current;
+      const minSpinBase = spd >= 10 ? 80 : spd >= 5 ? 140 : spd === 3 ? 240 : spd === 2 ? 400 : 750;
+      const delayPerCol = spd >= 10 ? 20 : spd >= 5 ? 35 : spd === 3 ? 65 : spd === 2 ? 100 : 180;
+      const bounceDuration = spd >= 10 ? 45 : spd >= 5 ? 80 : spd === 3 ? 160 : spd === 2 ? 220 : 320;
+      let stopTime = minSpinBase;
+
+      // Staggered reel stop (Reels 1..5) dengan efek suara ubin berhenti & Scatter gong
+      let landedScattersSoFar = 0;
+      for (let c = 0; c < 5; c++) {
+        const col = c;
+        const hasScatterInCol = targetGrid[col]?.some(t => t.symId === 0) ?? false;
+        const scatterOrder = hasScatterInCol ? ++landedScattersSoFar : 0;
+        setTimeout(() => {
+          setSpinningCols(prev => {
+            const next = [...prev];
+            next[col] = false;
+            return next;
           });
-        }
+          if (hasScatterInCol) {
+            playScatterLandSound(scatterOrder);
+          } else {
+            playReelStopSound();
+          }
+        }, stopTime);
+        stopTime += delayPerCol;
       }
-    }, allReelsSettled);
-  } catch (err) {
-    console.error('Error in doSpin:', err);
-    isSpinningRef.current = false;
-    setIsSpinning(false);
-    setSpinningCols([false, false, false, false, false]);
-  }
-};
+
+      // Processing win & tumble sequence after reels settle cleanly
+      const allReelsSettled = stopTime + bounceDuration + 60;
+      setTimeout(async () => {
+        let scatterCount = 0;
+        try {
+          let currentGrid = targetGrid.map(col => [...col]);
+
+          if (winOccurred && winAmt > 0) {
+            let currentWins = [...winCells];
+
+            for (let k = 0; k < cascades; k++) {
+              if (currentWins.length === 0) break;
+
+              // 1. Highlight winning tiles
+              setWinningCells(currentWins);
+              setMultiplierIdx(Math.min(k, 3));
+              await new Promise(res => setTimeout(res, Math.max(260, 420 / spd)));
+
+              // 2. Explode winning tiles (pecah & lenyap)
+              setExplodingCells(currentWins);
+              await new Promise(res => setTimeout(res, Math.max(200, 320 / spd)));
+
+              // 3. Briefly reveal empty holes where tiles vanished
+              const emptyGrid = currentGrid.map((col, c) =>
+                col.map((cell, r) => currentWins.some(w => w.col === c && w.row === r) ? { symId: null } : cell)
+              );
+              setGridCols(emptyGrid);
+              setWinningCells([]);
+              setExplodingCells([]);
+              await new Promise(res => setTimeout(res, Math.max(70, 110 / spd)));
+
+              // 4. Calculate gravity drop ONLY for tiles strictly above the empty holes!
+              const dropsMap: Record<string, number> = {};
+              const settledGrid = emptyGrid.map((col, c) => {
+                const expRowsInCol = currentWins.filter(w => w.col === c).map(w => w.row);
+                if (expRowsInCol.length === 0) return [...col];
+
+                const maxExpRow = Math.max(...expRowsInCol);
+                const expCount = expRowsInCol.length;
+                for (let r = 0; r <= maxExpRow; r++) {
+                  dropsMap[`${c}-${r}`] = expCount;
+                }
+
+                // Gravity: drop non-null tiles down
+                const existing = col.filter(cell => cell.symId !== null && cell.symId !== undefined);
+                const needed = col.length - existing.length;
+                const newTiles: TileItem[] = [];
+                for (let i = 0; i < needed; i++) {
+                  const regularIds = [2, 3, 4, 5, 6, 7, 8, 9, 10];
+                  const symId = regularIds[Math.floor(Math.random() * regularIds.length)];
+                  const isGold = isFreeRound && c === 2
+                    ? true
+                    : (c >= 1 && c <= 3 && Math.random() < 0.2);
+                  newTiles.push({ symId, isGold });
+                }
+                return [...newTiles, ...existing];
+              });
+
+              // 5. Cascade drop: top tiles tumble down
+              setDroppingCells(dropsMap);
+              setGridCols(settledGrid);
+              currentGrid = settledGrid;
+              await new Promise(res => setTimeout(res, Math.max(280, 380 / spd)));
+              setDroppingCells({});
+              await new Promise(res => setTimeout(res, Math.max(60, 120 / spd)));
+
+              // If there are more cascades, set up next match
+              if (k + 1 < cascades) {
+                const nextMatchSym = [2, 3, 4, 5, 6, 7, 8][Math.floor(Math.random() * 7)];
+                const nextWins: { col: number; row: number }[] = [];
+                [0, 1, 2].forEach(c => {
+                  const r = Math.floor(Math.random() * currentGrid[c].length);
+                  currentGrid[c][r] = { symId: nextMatchSym, isGold: false };
+                  nextWins.push({ col: c, row: r });
+                });
+                currentWins = nextWins;
+                setGridCols(currentGrid.map(col => [...col]));
+              } else {
+                currentWins = [];
+              }
+            }
+
+            setTotalWin(winAmt);
+            if (isFreeRound) {
+              const newFsTotal = freeSpinTotalWinRef.current + winAmt;
+              freeSpinTotalWinRef.current = newFsTotal;
+              setFreeSpinTotalWin(newFsTotal);
+            }
+            const winRes = addSlotWinLocal(winAmt);
+            setMyCoins(winRes.total);
+            if (username) {
+              syncSlotWinToBackend(API_URL, username, winAmt);
+            }
+            setMultiplierIdx(lastIdx);
+            setActiveWinBanner(`⚡ KEMENANGAN ${ladder[lastIdx]}x! (+Rp ${winAmt.toLocaleString('id-ID')}) ⚡`);
+            if (!isFreeRound) {
+              const ratio = winAmt / Math.max(1, betAmount);
+              if (ratio >= 30) {
+                setCelebration({ type: 'super_win', amount: winAmt });
+              } else if (ratio >= 12) {
+                setCelebration({ type: 'mega_win', amount: winAmt });
+              } else if (ratio >= 5) {
+                setCelebration({ type: 'big_win', amount: winAmt });
+              }
+            }
+          }
+
+          // Scatter trigger check: 3+ Scatter memicu 10 Putaran Gratis (+2 per Scatter tambahan, PG Soft authentic)
+          const scatterCells: { col: number; row: number }[] = [];
+          currentGrid.forEach((col, cIdx) => {
+            col.forEach((tile, rIdx) => {
+              if (tile.symId === 0) {
+                scatterCells.push({ col: cIdx, row: rIdx });
+              }
+            });
+          });
+          scatterCount = scatterCells.length;
+
+          if (scatterCount >= 3) {
+            // Sorot ubin Scatter yang mendarat di papan terlebih dahulu sebelum menampilkan modal Putaran Gratis!
+            setWinningCells(scatterCells);
+            setActiveWinBanner(`🀄 ${scatterCount} SCATTER MUNCUL! MEMICU PUTARAN GRATIS! 🀄`);
+            playScatterLandSound(4);
+            await new Promise(res => setTimeout(res, Math.max(600, Math.floor(1100 / spd))));
+
+            const isRetrigger = isFreeRound;
+            const awarded = 10 + Math.max(0, scatterCount - 3) * 2;
+            const totalFree = freeSpinsLeftRef.current + awarded;
+            freeSpinsLeftRef.current = totalFree;
+            setFreeSpinsLeft(totalFree);
+            if (!isRetrigger) {
+              setFreeSpinTotalWin(0);
+              freeSpinTotalWinRef.current = 0;
+              setMultiplierIdx(0);
+              mjIdxRef.current = 0;
+            }
+            setCelebration({
+              type: 'scatter',
+              freeSpinsCount: awarded,
+              title: isRetrigger ? '🀄 RETRIGGER MAHJONG WAYS! 🀄' : '🀄 SCATTER MAHJONG WAYS! 🀄',
+              subtext: isRetrigger
+                ? `LUAR BIASA! ${scatterCount} SCATTER MENAMBAH +${awarded} PUTARAN GRATIS! (TOTAL SISA: ${totalFree} SPIN)`
+                : `SELAMAT! ${scatterCount} SCATTER MEMICU ${awarded} PUTARAN GRATIS PERKALIAN X2-X10!`
+            });
+          }
+        } catch (err) {
+          console.error('Error during tumble sequence:', err);
+        } finally {
+          if (spinTimer.current) clearTimeout(spinTimer.current);
+          isSpinningRef.current = false;
+          setIsSpinning(false);
+          setSpinningCols([false, false, false, false, false]);
+          if (isFreeRound && freeSpinsLeftRef.current === 0 && scatterCount < 3) {
+            const finalFsWin = freeSpinTotalWinRef.current;
+            setCelebration({
+              type: 'free_spins_total',
+              amount: finalFsWin,
+              title: 'TOTAL KEMENANGAN',
+              subtext: finalFsWin > 0
+                ? 'SELAMAT! TOTAL KEMENANGAN PUTARAN GRATIS MAHJONG WAYS!'
+                : 'PUTARAN GRATIS SELESAI!'
+            });
+          }
+        }
+      }, allReelsSettled);
+    } catch (err) {
+      console.error('Error in doSpin:', err);
+      isSpinningRef.current = false;
+      setIsSpinning(false);
+      setSpinningCols([false, false, false, false, false]);
+    }
+  };
   doSpinRef.current = doSpin;
 
   const handleBuyFreeSpin = () => {
-    const cost = betAmount * 100;
-    if (myCoins < cost) {
-      alert('Koin Anda tidak mencukupi untuk membeli Spin Gratis!');
+    if (isSpinningRef.current) return;
+    if (freeSpinsLeftRef.current > 0) {
+      setActiveWinBanner('⚡ SEDANG DALAM PUTARAN GRATIS! ⚡');
+      setTimeout(() => setActiveWinBanner(null), 2000);
       return;
     }
-    const res = spendSlotCoinsLocal(cost);
-    setMyCoins(res.total);
-    if (username) {
-      syncSlotBetToBackend(API_URL, username, cost);
-    }
-    const newTotal = (freeSpinsLeftRef.current > 0 ? freeSpinsLeftRef.current : 0) + 10;
-    freeSpinsLeftRef.current = newTotal;
-    setFreeSpinsLeft(newTotal);
-    setFreeSpinTotalWin(0);
-    freeSpinTotalWinRef.current = 0;
-    setMultiplierIdx(0);
-    mjIdxRef.current = 0;
-    alert(`Selamat! Anda membeli 10 Putaran Gratis! Total Spin Gratis: ${newTotal}`);
+    // Jalankan putaran khusus Beli Spin Gratis yang menjatuhkan 3+ Scatter terlebih dahulu seperti Olympus!
+    doSpin(undefined, true);
   };
 
   return (
@@ -531,11 +624,16 @@ export default function MahjongWays2SlotScreen({ onBack, socket }: Props) {
 
       {/* LEFT SIDE BADGES (BELI SPIN GRATIS, SIDE MULTIPLIER & RANSEL) */}
       <div className="mj-side-left">
-        <div className="mj-side-scatter-badge" onClick={handleBuyFreeSpin}>
+        <div
+          className={`mj-side-scatter-badge ${(isSpinning || freeSpinsLeft > 0) ? 'is-disabled' : ''}`}
+          onClick={handleBuyFreeSpin}
+          title={`Beli Putaran Gratis (${(betAmount * 100).toLocaleString('id-ID')} Koin)`}
+        >
           <div className="mj-scatter-icon-wrap">
             <img src="/assets/mahjong2/sym_scatter.png" alt="Scatter Hu" className="mj-scatter-badge-img" />
           </div>
           <div className="mj-scatter-label">BELI SPIN<br/>GRATIS</div>
+          <div className="mj-scatter-cost">🪙 {(betAmount * 100).toLocaleString('id-ID')}</div>
         </div>
 
         <div className="mj-side-ransel" onClick={() => alert('Ransel Item')}>
@@ -791,9 +889,13 @@ export default function MahjongWays2SlotScreen({ onBack, socket }: Props) {
                 onContextMenu={e => { e.preventDefault(); setShowAutoMenu(true); }}
               >
                 <div className="spin-btn-inner">
-                  <span className="spin-txt-main">{isSpinning ? 'STOP' : 'SPIN'}</span>
+                  <span className="spin-txt-main">{freeSpinsLeft > 0 ? 'FREE' : (isSpinning ? 'STOP' : 'SPIN')}</span>
                   <span className="spin-txt-sub">
-                    {autoSpins > 0 ? (autoSpins > 90000 ? 'AUTO ∞' : `AUTO: ${autoSpins}`) : (isSpinning ? 'BERHENTI' : 'PUTAR')}
+                    {freeSpinsLeft > 0
+                      ? `SISA: ${freeSpinsLeft}`
+                      : autoSpins > 0
+                        ? (autoSpins > 90000 ? 'AUTO ∞' : `AUTO: ${autoSpins}`)
+                        : (isSpinning ? 'BERHENTI' : 'PUTAR')}
                   </span>
                 </div>
               </button>

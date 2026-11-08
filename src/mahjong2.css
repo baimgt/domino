@@ -269,10 +269,15 @@
   flex-direction: column;
   align-items: center;
   cursor: pointer;
-  transition: transform 0.12s, filter 0.12s;
+  transition: transform 0.12s, filter 0.12s, opacity 0.15s;
 }
 .mj-side-scatter-badge:hover { filter: brightness(1.15); }
 .mj-side-scatter-badge:active { transform: scale(0.92); }
+.mj-side-scatter-badge.is-disabled {
+  opacity: 0.55;
+  filter: grayscale(0.45);
+  pointer-events: none;
+}
 
 .mj-scatter-icon-wrap {
   width: 8vh; height: 8vh;
@@ -293,6 +298,19 @@
   line-height: 1.15;
   text-shadow: 0 0.2vh 0.4vh rgba(0,0,0,0.8), 0 0 0.5vh rgba(255,215,0,0.5);
   margin-top: 0.3vh;
+}
+
+.mj-scatter-cost {
+  margin-top: 0.35vh;
+  padding: 0.2vh 0.7vh;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(120, 15, 15, 0.92), rgba(55, 5, 5, 0.96));
+  border: 1px solid #ffd700;
+  color: #fff3b0;
+  font-size: 0.95vh;
+  font-weight: 900;
+  white-space: nowrap;
+  box-shadow: 0 0.2vh 0.5vh rgba(0,0,0,0.6);
 }
 
 .mj-side-ransel {

@@ -205,23 +205,22 @@ export default function WildWestSlotScreen({ onBack, socket }: Props) {
           }
         }
 
-        // Calculate landed wild multiplier sum
-        let landedWildMultSum = 0;
-        if (data.initialWildMultGrid) {
+        // Hanya aktifkan pengali Wild apabila terdapat garis kemenangan yang melewati Wild pada putaran ini!
+        let winningWildMultSum = 0;
+        const winSet = new Set<string>(data.winningCells || []);
+        if (winAmt > 0 && data.initialWildMultGrid) {
           for (let r = 0; r < ROWS; r++) {
             for (let c = 0; c < COLS; c++) {
-              if (data.initialWildMultGrid[r]?.[c] > 1) {
-                landedWildMultSum += data.initialWildMultGrid[r][c];
+              if (winSet.has(`${r}-${c}`) && data.initialWildMultGrid[r]?.[c] > 1) {
+                winningWildMultSum += data.initialWildMultGrid[r][c];
               }
             }
           }
         }
-        if (landedWildMultSum > 0) {
-          setCurrentMultiplier(landedWildMultSum);
-          setDroppedMultNotif(`🤠 WILD PENGALI ${landedWildMultSum}x MENDARAT! 🤠`);
+        if (winAmt > 0 && winningWildMultSum > 0) {
+          setCurrentMultiplier(winningWildMultSum);
+          setDroppedMultNotif(`🤠 WILD PENGALI ${winningWildMultSum}x DIKALI! 🤠`);
           setTimeout(() => setDroppedMultNotif(null), 3000);
-        } else if (data.multiplier?.applied && data.multiplier.applied > 1) {
-          setCurrentMultiplier(data.multiplier.applied);
         } else {
           setCurrentMultiplier(1);
         }

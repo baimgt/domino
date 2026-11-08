@@ -81,7 +81,8 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
   const spinStartTime = useRef(0);
   const [freeSpins, setFreeSpins] = useState(0);
   const [inFreeMode, setInFreeMode] = useState(false);
-  const [freeMult,  setFreeMult]  = useState(1);
+  const [freeMult,  setFreeMult]  = useState(0);
+  const [appliedSpinMult, setAppliedSpinMult] = useState(1);
   const [freeSpinTotalWin, setFreeSpinTotalWin] = useState(0);
   const freeSpinTotalWinRef = useRef(0);
   useEffect(() => { freeSpinTotalWinRef.current = freeSpinTotalWin; }, [freeSpinTotalWin]);
@@ -568,12 +569,20 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
           }
         }
 
+        const spinAppliedMult = data.appliedMultiplier || 1;
+        setAppliedSpinMult(spinAppliedMult);
+
         if (data.freeMult !== undefined && inFreeModeRef.current) {
-          setFreeMult(data.freeMult || 1);
+          setFreeMult(data.freeMult || 0);
         }
 
-        if (data.randomMult) {
-          setDroppedMultNotif(`⚡ PETIR ZEUS PENGALI ${data.randomMult}x TURUN! ⚡`);
+        // Hanya tampilkan notifikasi petir pengali apabila ADA pecahan menang DAN ADA bola pengali turun di putaran ini!
+        if (data.totalWinAmount > 0 && (data.roundOrbsSum || 0) > 0 && spinAppliedMult > 1) {
+          setDroppedMultNotif(
+            (inFreeModeRef.current || isFreeRound)
+              ? `⚡ PETIR ZEUS! +${data.roundOrbsSum}x ➔ TOTAL PENGALI ${spinAppliedMult}x DIKALI! ⚡`
+              : `⚡ PETIR ZEUS! PENGALI ${spinAppliedMult}x DIKALI! ⚡`
+          );
           safeTimeout(() => setDroppedMultNotif(null), 2800);
         }
 
@@ -587,7 +596,8 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
           setInFreeMode(true);
           inFreeModeRef.current = true;
           if (!isRetrigger) {
-            setFreeMult(1);
+            setFreeMult(0);
+            setAppliedSpinMult(1);
             setFreeSpinTotalWin(0);
             freeSpinTotalWinRef.current = 0;
           }
@@ -612,7 +622,8 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
           const finalFsWin = freeSpinTotalWinRef.current;
           setInFreeMode(false);
           inFreeModeRef.current = false;
-          setFreeMult(1);
+          setFreeMult(0);
+          setAppliedSpinMult(1);
           setCelebration({
             type: 'free_spins_total',
             amount: finalFsWin,
@@ -711,6 +722,7 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
     setTotalWin(0);
     setClusterWins([]);
     setMultIdx(0);
+    setAppliedSpinMult(1);
     setMultGrid(Array.from({ length: ROWS }, () => Array.from({ length: COLS }, () => 0)));
     setPrevGrid(grid);
     setIsSpinning(true);
@@ -972,21 +984,22 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
           {/* TOTAL PENGALI (SIDE MULTIPLIER) - AUTHENTIC PRAGMATIC GATES OF OLYMPUS */}
           {(() => {
             const isFree = inFreeMode;
-            const displayMult = isFree
-              ? Math.max(1, freeMult)
-              : Math.max(1, [1, 2, 3, 5][multIdx] || 1);
+            const displayMult = isFree ? freeMult : (appliedSpinMult > 1 ? appliedSpinMult : 0);
+            const isMultTriggeredThisSpin = appliedSpinMult > 1;
             return (
-              <div className={`gato-side-multiplier ${isFree ? 'is-free-spin' : ''} ${displayMult > 1 ? 'is-active' : ''}`} style={{ width: '100%', marginBottom: '1vh', boxSizing: 'border-box' }}>
+              <div className={`gato-side-multiplier ${isFree ? 'is-free-spin' : ''} ${isMultTriggeredThisSpin ? 'is-active' : ''}`} style={{ width: '100%', marginBottom: '1vh', boxSizing: 'border-box' }}>
                 <div className="gsm-wing-top">⚡ ⚡ ⚡</div>
                 <div className="gsm-title">{isFree ? 'TOTAL PENGALI' : 'PENGALI'}</div>
                 <div className="gsm-orb-wrap">
                   <div className="gsm-orb-glow" />
                   <div className="gsm-orb">
-                    <span className="gsm-val">{displayMult}x</span>
+                    <span className="gsm-val">{displayMult > 0 ? `${displayMult}x` : '0x'}</span>
                   </div>
                 </div>
                 <div className="gsm-sub">
-                  {isFree ? '★ TERSIMPAN ★' : (displayMult > 1 ? 'AKTIF' : 'BASE x1')}
+                  {isFree
+                    ? (isMultTriggeredThisSpin ? `⚡ DIKALI ${appliedSpinMult}x! ⚡` : '★ TERSIMPAN ★')
+                    : (isMultTriggeredThisSpin ? `⚡ DIKALI ${appliedSpinMult}x! ⚡` : 'MENUNGGU PETIR')}
                 </div>
               </div>
             );
@@ -1018,7 +1031,7 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
               )}
               {totalWin > 0 && showWin && (
                 <div className="ztb-total-win">
-                  <span className="ztb-tw-label notranslate" translate="no">TOTAL</span>
+                  <span className="ztb-tw-label notranslate" translate="no">{appliedSpinMult > 1 ? `TOTAL (${appliedSpinMult}x)` : 'TOTAL'}</span>
                   <span className="ztb-tw-val notranslate" translate="no">{fmt(totalWin)}</span>
                 </div>
               )}
@@ -1030,8 +1043,6 @@ export default function ZeusSlotScreen({ onBack, socket }: Props) {
           {droppedMultNotif && (
             <div className="gato-mult-drop-banner">{droppedMultNotif}</div>
           )}
-          {/* MULTIPLIER BAR DIRECTLY ABOVE REELS */}
-          <SlotMultiplierBar inline={true} idx={multIdx} isFree={inFreeMode} freeMult={freeMult} />
           <div className="zeus-reel-wrapper">
             <div className="zeus-reel-frame">
               <div className="zeus-reel-grid">

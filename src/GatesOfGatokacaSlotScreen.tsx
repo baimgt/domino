@@ -270,7 +270,7 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
         const isFreeRound = isCurrentSpinFreeRef.current;
 
         if (isFreeRound) {
-          setFreeMultVal(data.freeMult || 1);
+          setFreeMultVal(data.freeMult || 0);
         }
 
         if (data.totalWinAmount > 0) {
@@ -279,13 +279,15 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
             freeSpinTotalWinRef.current = newFsTotal;
             setFreeSpinTotalWin(newFsTotal);
           }
-          if (appliedMult > 1 || orbsSum > 0) {
+          if (appliedMult > 1 && orbsSum > 0) {
             setCurrentMultiplier(appliedMult);
             const isLegendary = appliedMult >= 500;
             setDroppedMultNotif(
               isLegendary
                 ? `⚡🔥 SULTAN GATOTKACA 1000! TOTAL PENGALI ${appliedMult}x! 🔥⚡`
-                : `⚡ PETIR GATOTKACA! TOTAL PENGALI ${appliedMult}x! ⚡`
+                : isFreeRound
+                  ? `⚡ PETIR GATOTKACA! +${orbsSum}x ➔ TOTAL PENGALI ${appliedMult}x DIKALI! ⚡`
+                  : `⚡ PETIR GATOTKACA! PENGALI ${appliedMult}x DIKALI! ⚡`
             );
             setTimeout(() => setDroppedMultNotif(null), 3000);
             setStatusText(`TOTAL MENANG: ${Math.floor(data.totalWinAmount).toLocaleString('id-ID')} (${appliedMult}x)`);
@@ -294,7 +296,7 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
             setStatusText(`TOTAL MENANG: ${Math.floor(data.totalWinAmount).toLocaleString('id-ID')}`);
           }
         } else {
-          if (!isFreeRound) setCurrentMultiplier(1);
+          setCurrentMultiplier(1);
           setStatusText('GOOD LUCK');
         }
 
@@ -307,6 +309,8 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
           freeSpinsLeftRef.current = totalFree;
           setFreeSpinsLeft(totalFree);
           if (!isRetrigger) {
+            setFreeMultVal(0);
+            setCurrentMultiplier(1);
             setFreeSpinTotalWin(0);
             freeSpinTotalWinRef.current = 0;
           }
@@ -403,7 +407,7 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
     freeSpinsLeftRef.current = 15;
     setFreeSpinTotalWin(0);
     freeSpinTotalWinRef.current = 0;
-    setFreeMultVal(1);
+    setFreeMultVal(0);
     setCurrentMultiplier(1);
     setStatusText('15 FREE SPINS DIMULAI!');
     setTimeout(() => {
@@ -426,11 +430,11 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
 
     const isFree = freeSpinsLeftRef.current > 0;
     isCurrentSpinFreeRef.current = isFree;
+    setCurrentMultiplier(1);
     if (!isFree) {
       const res = spendSlotCoinsLocal(actualBet);
       setMyCoins(res.total);
-      setCurrentMultiplier(1);
-      setFreeMultVal(1);
+      setFreeMultVal(0);
     } else {
       const nextFree = Math.max(0, freeSpinsLeftRef.current - 1);
       freeSpinsLeftRef.current = nextFree;
@@ -628,21 +632,22 @@ export default function GatesOfGatokacaSlotScreen({ onBack, socket }: Props) {
           {/* TOTAL PENGALI (SIDE MULTIPLIER) - AUTHENTIC PRAGMATIC PLAY WIDGET */}
           {(() => {
             const isFree = freeSpinsLeft > 0;
-            const displayMult = isFree
-              ? Math.max(1, freeMultVal, currentMultiplier)
-              : Math.max(1, currentMultiplier);
+            const displayMult = isFree ? freeMultVal : (currentMultiplier > 1 ? currentMultiplier : 0);
+            const isMultTriggeredThisSpin = currentMultiplier > 1;
             return (
-              <div className={`gato-side-multiplier ${isFree ? 'is-free-spin' : ''} ${displayMult > 1 ? 'is-active' : ''}`}>
+              <div className={`gato-side-multiplier ${isFree ? 'is-free-spin' : ''} ${isMultTriggeredThisSpin ? 'is-active' : ''}`}>
                 <div className="gsm-wing-top">✦ ✦ ✦</div>
                 <div className="gsm-title">{isFree ? 'TOTAL PENGALI' : 'PENGALI'}</div>
                 <div className="gsm-orb-wrap">
                   <div className="gsm-orb-glow" />
                   <div className="gsm-orb">
-                    <span className="gsm-val">{displayMult}x</span>
+                    <span className="gsm-val">{displayMult > 0 ? `${displayMult}x` : '0x'}</span>
                   </div>
                 </div>
                 <div className="gsm-sub">
-                  {isFree ? '★ TERSIMPAN ★' : (displayMult > 1 ? 'AKTIF' : 'BASE x1')}
+                  {isFree
+                    ? (isMultTriggeredThisSpin ? `⚡ DIKALI ${currentMultiplier}x! ⚡` : '★ TERSIMPAN ★')
+                    : (isMultTriggeredThisSpin ? `⚡ DIKALI ${currentMultiplier}x! ⚡` : 'MENUNGGU PETIR')}
                 </div>
               </div>
             );

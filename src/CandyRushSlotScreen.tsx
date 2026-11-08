@@ -53,8 +53,9 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
   const [winningCells, setWinningCells] = useState<string[]>([]);
   const [statusText, setStatusText] = useState('GOOD LUCK');
   const [rainbowActive, setRainbowActive] = useState(false);
-  const [multIdx, setMultIdx] = useState(0);        // tangga x1>x2>x3>x5
+  const [multIdx, setMultIdx] = useState(0);
   const [freeMultVal, setFreeMultVal] = useState(0); // pengali menumpuk saat free spin
+  const [appliedSpinMult, setAppliedSpinMult] = useState(1);
   const [droppedMultNotif, setDroppedMultNotif] = useState<string | null>(null);
   const [celebration, setCelebration] = useState<SlotCelebrationData | null>(null);
 
@@ -131,27 +132,8 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
         stopTime += delayPerCol;
       }
 
-      // Detect landed multiplier orbs and show drop notification after reels settle
-      let initialOrbsSum = 0;
-      let initialOrbsCount = 0;
-      if (data.initialMultGrid) {
-        data.initialMultGrid.forEach((row: number[]) => {
-          row.forEach((v: number) => {
-            if (v > 0) {
-              initialOrbsSum += v;
-              initialOrbsCount++;
-            }
-          });
-        });
-      }
-
       const allReelsSettled = stopTime + bounceDuration + 60;
       setTimeout(async () => {
-        if (initialOrbsCount > 0) {
-          setFreeMultVal(prev => (prev || 0) + initialOrbsSum);
-          setDroppedMultNotif(`🍬 BOLA PENGALI ${initialOrbsSum}x TURUN! 🍬`);
-          setTimeout(() => setDroppedMultNotif(null), 2800);
-        }
         const winDelay = spd >= 10 ? 120 : spd >= 5 ? 180 : spd === 3 ? 280 : spd === 2 ? 360 : 480;
         const explodeDelay = spd >= 10 ? 90 : spd >= 5 ? 130 : spd === 3 ? 200 : spd === 2 ? 260 : 360;
         const dropDelay = spd >= 10 ? 100 : spd >= 5 ? 140 : spd === 3 ? 220 : spd === 2 ? 300 : 420;
@@ -214,9 +196,26 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
         setSpinningCols(Array(COLS).fill(false));
         const applied = applySlotResultBalance(data);
         setMyCoins(data.newBalance != null ? data.newBalance : applied.total);
-        setFreeMultVal(data.freeMult || 0);
-        setTotalWin(data.totalWinAmount || 0);
+
+        const spinAppliedMult = data.appliedMultiplier || 1;
+        const orbsSum = data.roundOrbsSum || 0;
         const isFreeRound = isCurrentSpinFreeRef.current;
+
+        setAppliedSpinMult(spinAppliedMult);
+        if (isFreeRound) {
+          setFreeMultVal(data.freeMult || 0);
+        }
+
+        if ((data.totalWinAmount || 0) > 0 && orbsSum > 0 && spinAppliedMult > 1) {
+          setDroppedMultNotif(
+            isFreeRound
+              ? `🍬 BOM PENGALI +${orbsSum}x ➔ TOTAL PENGALI ${spinAppliedMult}x DIKALI! 🍬`
+              : `🍬 BOM PENGALI ${spinAppliedMult}x DIKALI! 🍬`
+          );
+          setTimeout(() => setDroppedMultNotif(null), 2800);
+        }
+
+        setTotalWin(data.totalWinAmount || 0);
         if (data.totalWinAmount > 0 && isFreeRound) {
           const newFsTotal = freeSpinTotalWinRef.current + data.totalWinAmount;
           freeSpinTotalWinRef.current = newFsTotal;
@@ -229,6 +228,8 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
           freeSpinsLeftRef.current = totalFree;
           setFreeSpinsLeft(totalFree);
           if (!isRetrigger) {
+            setFreeMultVal(0);
+            setAppliedSpinMult(1);
             setFreeSpinTotalWin(0);
             freeSpinTotalWinRef.current = 0;
           }
@@ -321,7 +322,8 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
     freeSpinsLeftRef.current = newTotal;
     setFreeSpinTotalWin(0);
     freeSpinTotalWinRef.current = 0;
-    setFreeMultVal(1);
+    setFreeMultVal(0);
+    setAppliedSpinMult(1);
     setStatusText(`${newTotal} FREE SPINS AKTIF!`);
     setTimeout(() => {
       doSpinRef.current?.();
@@ -346,11 +348,12 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
     setIsSpinning(true);
     spinningColsRef.current = Array(COLS).fill(true);
     setSpinningCols(Array(COLS).fill(true));
+    setAppliedSpinMult(1);
     if (!isFree) {
       const res = spendSlotCoinsLocal(actualBet);
       setMyCoins(res.total);
       setMultIdx(0);
-      setFreeMultVal(1);
+      setFreeMultVal(0);
     } else {
       const nextFree = Math.max(0, freeSpinsLeftRef.current - 1);
       freeSpinsLeftRef.current = nextFree;
@@ -586,21 +589,22 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
           {/* TOTAL PENGALI (SIDE MULTIPLIER) - SWEET BONANZA STYLE */}
           {(() => {
             const isFree = freeSpinsLeft > 0;
-            const displayMult = isFree
-              ? Math.max(1, freeMultVal, [1, 2, 3, 5][multIdx] || 1)
-              : Math.max(1, [1, 2, 3, 5][multIdx] || 1);
+            const displayMult = isFree ? freeMultVal : (appliedSpinMult > 1 ? appliedSpinMult : 0);
+            const isMultTriggeredThisSpin = appliedSpinMult > 1;
             return (
-              <div className={`gato-side-multiplier ${isFree ? 'is-free-spin' : ''} ${displayMult > 1 ? 'is-active' : ''}`} style={{ width: '100%', boxSizing: 'border-box' }}>
+              <div className={`gato-side-multiplier ${isFree ? 'is-free-spin' : ''} ${isMultTriggeredThisSpin ? 'is-active' : ''}`} style={{ width: '100%', boxSizing: 'border-box' }}>
                 <div className="gsm-wing-top">🍭 🍬 🍭</div>
                 <div className="gsm-title">{isFree ? 'TOTAL PENGALI' : 'PENGALI'}</div>
                 <div className="gsm-orb-wrap">
                   <div className="gsm-orb-glow" />
                   <div className="gsm-orb">
-                    <span className="gsm-val">{displayMult}x</span>
+                    <span className="gsm-val">{displayMult > 0 ? `${displayMult}x` : '0x'}</span>
                   </div>
                 </div>
                 <div className="gsm-sub">
-                  {isFree ? '★ TERSIMPAN ★' : (displayMult > 1 ? 'AKTIF' : 'BASE x1')}
+                  {isFree
+                    ? (isMultTriggeredThisSpin ? `🍬 DIKALI ${appliedSpinMult}x! 🍬` : '★ TERSIMPAN ★')
+                    : (isMultTriggeredThisSpin ? `🍬 DIKALI ${appliedSpinMult}x! 🍬` : 'MENUNGGU BOM')}
                 </div>
               </div>
             );
@@ -639,8 +643,6 @@ export default function CandyRushSlotScreen({ onBack, socket }: Props) {
           {droppedMultNotif && (
             <div className="gato-mult-drop-banner">{droppedMultNotif}</div>
           )}
-          {/* MULTIPLIER BAR DIRECTLY ABOVE REELS */}
-          <SlotMultiplierBar inline={true} idx={multIdx} isFree={freeSpinsLeft > 0} freeMult={freeMultVal || 1} />
           {freeSpinsLeft > 0 && (
             <div className="cr-fs-banner">🍬 FREE SPIN: {freeSpinsLeft} 🍬</div>
           )}

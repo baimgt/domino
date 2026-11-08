@@ -194,7 +194,7 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
         setWinType(data.winType);
         setWinningSymbols(data.winningSymbols || []);
 
-        // Calculate landed multiplier sum
+        // Hanya aktifkan pengali apabila ADA kombinasi menang DAN ADA simbol pengali yang turun di putaran ini!
         let landedMultSum = 0;
         if (data.multGrid) {
           for (let r = 0; r < 3; r++) {
@@ -203,12 +203,11 @@ export default function JinJiBaoXiSlotScreen({ onBack, socket }: Props) {
             }
           }
         }
-        if (landedMultSum > 0) {
-          setCurrentMultiplier(landedMultSum);
-          setDroppedMultNotif(`🏮 PENGALI JINJI ${landedMultSum}x TURUN! 🏮`);
+        const appliedMult = data.multiplier?.applied || 1;
+        if ((data.winAmount || 0) > 0 && landedMultSum > 0 && appliedMult > 1) {
+          setCurrentMultiplier(appliedMult);
+          setDroppedMultNotif(`🏮 PENGALI JINJI ${appliedMult}x DIKALI! 🏮`);
           setTimeout(() => setDroppedMultNotif(null), 3000);
-        } else if (data.multiplier?.applied && data.multiplier.applied > 1) {
-          setCurrentMultiplier(data.multiplier.applied);
         } else {
           setCurrentMultiplier(1);
         }

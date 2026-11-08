@@ -4049,7 +4049,7 @@ function RulesModal({ onClose, initialCategory }: { onClose: () => void; initial
     'Domino Partner',
     'Qiu Qiu',
     'Remi',
-    'RemiPro',
+    'RemiPro',   
     'Capsa Susun'
   ];
 
@@ -4331,8 +4331,57 @@ function RulesModal({ onClose, initialCategory }: { onClose: () => void; initial
                 </div>
               )}
 
+              {/* QIU QIU (99) MODE TABS */}
+              {activeTab === 'peraturan' && activeSideCategory === 'Qiu Qiu' && (
+                <div className="rm-text-group">
+                  <div className="rm-section-head">【Pengenalan Domino QiuQiu (99)】</div>
+                  <div className="rm-text-line">Jumlah kartu: 28 kartu Domino standar</div>
+                  <div className="rm-text-line">Jumlah pemain: 2 - 6 orang per meja</div>
+                  <div className="rm-text-line">Setiap pemain memegang 4 kartu Domino yang dibagi menjadi 2 pasang kartu (Pasangan Kiri & Pasangan Kanan).</div>
+
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Cara Menghitung Nilai Kartu】</div>
+                  <div className="rm-text-line">1. Jumlahkan bulatan pada 2 kartu di masing-masing pasangan. Jika totalnya 10 atau lebih, ambil angka satuannya saja (contoh: 14 dihitung 4, 19 dihitung 9 / Qiu).</div>
+                  <div className="rm-text-line">2. Pasangan dengan nilai lebih tinggi selalu diletakkan di sebelah Kiri, dan nilai kedua di sebelah Kanan (contoh: 9 : 8 disebut Qiu 8, 9 : 9 disebut QiuQiu).</div>
+
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Alur Permainan Asli】</div>
+                  <div className="rm-text-line">1. Taruhan Awal (Ante): Setiap pemain memasang taruhan dasar (Ante) ke dalam Pot tengah, lalu Bandar membagikan 3 kartu pertama.</div>
+                  <div className="rm-text-line">2. Ronde Taruhan 1 (3 Kartu): Pemain bergiliran searah jarum jam memilih aksi: Cek (Check), Ikut (Call), Naik (Raise), All-In, atau Balik/Tutup Kartu (Fold).</div>
+                  <div className="rm-text-line">3. Kartu Ke-4 & Ronde Taruhan 2: Pemain yang masih bertahan menerima kartu ke-4, lalu melakukan ronde taruhan kedua.</div>
+                  <div className="rm-text-line">4. Susun & Adu Kartu (Showdown): Pemain menyusun kombinasi 2 pasang terbaik dan membuka kartu untuk menentukan pemenang Pot!</div>
+                </div>
+              )}
+
+              {activeTab === 'pemenang' && activeSideCategory === 'Qiu Qiu' && (
+                <div className="rm-text-group">
+                  <div className="rm-section-head">【Urutan Kartu Spesial (Tertinggi ke Terendah)】</div>
+                  <div className="rm-text-line">1. 😈 Enam Dewa (Six Devil): Tertinggi mutlak! Keempat kartu di tangan masing-masing berjumlah tepat 6 bulatan (0|6, 1|5, 2|4, 3|3).</div>
+                  <div className="rm-text-line">2. 💎 Kartu Balak (Twin Cards): Keempat kartu di tangan semuanya merupakan kartu kembar/balak (contoh: 6|6, 5|5, 2|2, 0|0).</div>
+                  <div className="rm-text-line">3. 🌟 Murni Kecil (Small Cards): Total seluruh bulatan dari 4 kartu tidak lebih dari 9 bulatan (≤ 9).</div>
+                  <div className="rm-text-line">4. ⚡ Murni Besar (Big Cards): Total seluruh bulatan dari 4 kartu minimal 39 bulatan (≥ 39).</div>
+                  <div className="rm-text-line">5. 🔥 QiuQiu (9 : 9): Pasangan kiri bernilai 9 dan pasangan kanan bernilai 9.</div>
+
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Penentuan Jika Nilai Seri (Tie-Breaker Asli)】</div>
+                  <div className="rm-text-line">1. Jika dua pemain memiliki nilai kombinasi yang sama (misal sama-sama 9 : 8 atau sama-sama QiuQiu), pemenang ditentukan dari siapa yang memegang Kartu Balak tertinggi (6|6 &gt; 5|5 &gt; 4|4 &gt; 3|3 &gt; 2|2 &gt; 1|1 &gt; 0|0).</div>
+                  <div className="rm-text-line">2. Jika tidak ada kartu balak, diadu kartu tunggal dengan jumlah bulatan terbesar (misal 6|5 mengalahkan 6|4).</div>
+                </div>
+              )}
+
+              {activeTab === 'hasil' && activeSideCategory === 'Qiu Qiu' && (
+                <div className="rm-text-group">
+                  <div className="rm-section-head">【Hadiah Pot Meja】</div>
+                  <div className="rm-text-line">• Pemenang dengan kombinasi kartu tertinggi (atau pemain terakhir yang bertahan saat lawan lain Balik/Fold) memenangkan seluruh Pot koin di meja!</div>
+
+                  <div className="rm-section-head" style={{ marginTop: '1.5vh' }}>【Hadiah Kupon Jackpot QiuQiu】</div>
+                  <div className="rm-text-line">Jika Anda mengaktifkan Kupon Jackpot pada ronde tersebut dan mendapatkan kombinasi kartu spesial saat Showdown, Anda berhak mendapatkan hadiah tambahan Jackpot:</div>
+                  <div className="rm-text-line">• 🔥 QiuQiu (9 : 9): Hadiah 50x Harga Kupon Jackpot</div>
+                  <div className="rm-text-line">• ⚡ Murni Besar / 🌟 Murni Kecil: Hadiah 100x Harga Kupon Jackpot</div>
+                  <div className="rm-text-line">• 💎 Kartu Balak (4 Balak): Hadiah 200x Harga Kupon Jackpot</div>
+                  <div className="rm-text-line">• 😈 Enam Dewa (Six Devil): Hadiah 500x Harga Kupon Jackpot</div>
+                </div>
+              )}
+
               {/* DEFAULT BIASA MODE TABS */}
-              {activeTab === 'peraturan' && activeSideCategory !== 'Wild' && activeSideCategory !== 'Domino Partner' && activeSideCategory !== '5 Kartu' && activeSideCategory !== 'Fokus' && (
+              {activeTab === 'peraturan' && activeSideCategory !== 'Wild' && activeSideCategory !== 'Domino Partner' && activeSideCategory !== '5 Kartu' && activeSideCategory !== 'Fokus' && activeSideCategory !== 'Qiu Qiu' && (
                 <div className="rm-text-group">
                   <div className="rm-section-head">【Pengenalan】</div>
                   <div className="rm-text-line">Jumlah kartu: 28</div>
@@ -4349,7 +4398,7 @@ function RulesModal({ onClose, initialCategory }: { onClose: () => void; initial
                 </div>
               )}
 
-              {activeTab === 'pemenang' && activeSideCategory !== 'Wild' && activeSideCategory !== 'Domino Partner' && activeSideCategory !== '5 Kartu' && activeSideCategory !== 'Fokus' && (
+              {activeTab === 'pemenang' && activeSideCategory !== 'Wild' && activeSideCategory !== 'Domino Partner' && activeSideCategory !== '5 Kartu' && activeSideCategory !== 'Fokus' && activeSideCategory !== 'Qiu Qiu' && (
                 <div className="rm-text-group">
                   <div className="rm-section-head">【Pemenang】</div>
                   <div className="rm-text-line">1. Pemain yang kartunya habis terlebih dahulu adalah pemenang.</div>
@@ -4359,7 +4408,7 @@ function RulesModal({ onClose, initialCategory }: { onClose: () => void; initial
                 </div>
               )}
 
-              {activeTab === 'hasil' && activeSideCategory !== 'Wild' && activeSideCategory !== 'Domino Partner' && activeSideCategory !== '5 Kartu' && activeSideCategory !== 'Fokus' && (
+              {activeTab === 'hasil' && activeSideCategory !== 'Wild' && activeSideCategory !== 'Domino Partner' && activeSideCategory !== '5 Kartu' && activeSideCategory !== 'Fokus' && activeSideCategory !== 'Qiu Qiu' && (
                 <div className="rm-text-group">
                   <div className="rm-section-head">【Kartu Pemenang】</div>
                   <div className="rm-text-line">Kartu pemenang (kartu yang terakhir dikeluarkan oleh pemenang) terbagi menjadi dua jenis:</div>
@@ -5583,7 +5632,8 @@ function DominoTile({ left, right, onClick, isPlayable, isSelected, isBack = fal
   isFlipping3D?: boolean;
 }) {
   const renderHalf = (val: number) => {
-    const dotMap: Record<number, number[]> = {
+    // Vertical tile pip layout vs Horizontal (rotated 90deg) tile pip layout
+    const dotMapVertical: Record<number, number[]> = {
       0: [],
       1: [4],
       2: [0, 8],
@@ -5592,11 +5642,21 @@ function DominoTile({ left, right, onClick, isPlayable, isSelected, isBack = fal
       5: [0, 2, 4, 6, 8],
       6: [0, 2, 3, 5, 6, 8]
     };
-    const activeDots = dotMap[val] || [];
+    const dotMapHorizontal: Record<number, number[]> = {
+      0: [],
+      1: [4],
+      2: [2, 6],
+      3: [2, 4, 6],
+      4: [0, 2, 6, 8],
+      5: [0, 2, 4, 6, 8],
+      6: [0, 1, 2, 6, 7, 8]
+    };
+    const activeDots = (isRotated ? dotMapHorizontal[val] : dotMapVertical[val]) || [];
+    const pipColorClass = val === 1 || val === 4 ? 'pip-red' : 'pip-dark';
     return (
-      <div className="domino-half">
+      <div className={`domino-half val-${val} ${pipColorClass}`}>
         {Array.from({ length: 9 }).map((_, idx) => (
-          <div key={idx} className={`domino-pip-cell ${activeDots.includes(idx) ? 'active' : ''}`} />
+          <div key={idx} className={`domino-pip-cell ${pipColorClass} ${activeDots.includes(idx) ? 'active' : ''}`} />
         ))}
       </div>
     );
@@ -5621,7 +5681,9 @@ function DominoTile({ left, right, onClick, isPlayable, isSelected, isBack = fal
         <div className="domino-gloss" />
         <div className={`domino-face ${isRotated ? 'horizontal' : 'vertical'}`}>
           {renderHalf(left)}
-          <div className="domino-divider-line" />
+          <div className="domino-divider-line">
+            <span className="domino-spinner-pin" />
+          </div>
           {renderHalf(right)}
         </div>
       </div>
@@ -6129,20 +6191,24 @@ function KamarLobbyScreen({
     { id: 'Tantangan', label: 'Tantangan' },
   ];
 
+  const [selectedRoomIdx, setSelectedRoomIdx] = useState<number>(0);
+
   const handleSelectRoom = (room: Room) => {
-    if (!profile) return;
-    const requiredBuyIn = (room as any).buyIn || (room.entryFee * 10);
-    const usableCoins = Math.max(0, (profile.coins || 0) - (profile.bonusCoins || 0));
+    const totalCoins = profile?.coins ?? (Number(localStorage.getItem('domino_coins')) || 50000);
+    const bonusCoins = profile?.bonusCoins ?? (Number(localStorage.getItem('domino_bonus_coins')) || 0);
+    const requiredBuyIn = (room as any).buyIn || room.entryFee;
+    const usableCoins = Math.max(0, totalCoins - bonusCoins);
+
     if (usableCoins < requiredBuyIn) {
-      if ((profile.bonusCoins || 0) > 0 && profile.coins >= requiredBuyIn) {
-        showAlert(`⚠️ KOIN KLAIM BONUS HARIAN HANYA UNTUK SLOT!\n\nKoin dari bonus harian (${(profile.bonusCoins || 0).toLocaleString('id-ID')} koin) tidak dapat dipakai di Domino.\n\nKoin umum Domino Anda: ${usableCoins.toLocaleString('id-ID')} koin (Butuh minimal: ${requiredBuyIn.toLocaleString('id-ID')} koin).`, 'Koin Bonus Khusus Slot');
+      if (bonusCoins > 0 && totalCoins >= requiredBuyIn) {
+        showAlert(`⚠️ KOIN KLAIM BONUS HARIAN HANYA UNTUK SLOT!\n\nKoin dari bonus harian (${bonusCoins.toLocaleString('id-ID')} koin) tidak dapat dipakai di Domino.\n\nKoin umum Domino Anda: ${usableCoins.toLocaleString('id-ID')} koin (Butuh minimal: ${requiredBuyIn.toLocaleString('id-ID')} koin).`, 'Koin Bonus Khusus Slot');
       } else {
-        showAlert(`⚠️ KOIN TIDAK CUKUP!\n\nUntuk masuk kamar ${room.name}, Anda harus memiliki minimal modal taruhan (Buy-In) sebesar ${requiredBuyIn.toLocaleString('id-ID')} koin.\n\nSaldo koin Anda saat ini: ${profile.coins.toLocaleString('id-ID')} koin.`, 'Koin Tidak Cukup');
+        showAlert(`⚠️ KOIN TIDAK CUKUP!\n\nUntuk masuk kamar ${room.name}, Anda membutuhkan minimal modal taruhan sebesar ${requiredBuyIn.toLocaleString('id-ID')} koin.\n\nSaldo koin Anda saat ini: ${usableCoins.toLocaleString('id-ID')} koin.`, 'Koin Tidak Cukup');
       }
       return;
     }
 
-    if (partnerTeammate && socket) {
+    if (category === 'Domino Partner' && partnerTeammate && socket && socket.connected) {
       socket.emit('team-join-room', {
         roomConfig: room,
         hostUsername: myUsername,
@@ -6404,8 +6470,11 @@ function KamarLobbyScreen({
                 return (
                   <div
                     key={room.id}
-                    className={`lob-rich-card g-btn-press ${cardColor} ${idx === 0 ? 'selected-glow' : ''}`}
-                    onClick={() => handleSelectRoom(room)}
+                    className={`lob-rich-card g-btn-press ${cardColor} ${selectedRoomIdx === idx ? 'selected-glow' : ''}`}
+                    onClick={() => {
+                      setSelectedRoomIdx(idx);
+                      handleSelectRoom(room);
+                    }}
                   >
                     <div className="lob-card-shine" />
 
@@ -6435,10 +6504,18 @@ function KamarLobbyScreen({
                         <div className="lob-card-players">
                           <span className="lob-online-dot">🟢</span> {room.playersCount.toLocaleString()} Pemain
                         </div>
-                        <div className="lob-card-action-btn">
-                          <span>MAIN</span>
+                        <button
+                          type="button"
+                          className="lob-card-action-btn g-btn-press"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedRoomIdx(idx);
+                            handleSelectRoom(room);
+                          }}
+                        >
+                          <span>MAIN SEKARANG</span>
                           <span className="lob-btn-arrow">❯</span>
-                        </div>
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -6449,31 +6526,39 @@ function KamarLobbyScreen({
         </div>
       </div>
 
-      {/* Decorative Football Elements */}
-      <div className="lob-goal-post">
-        <span className="lob-soccer-ball">⚽</span>
-      </div>
-      <div className="lob-trophy-model" />
-
-      {/* Bottom Mulai Button */}
+      {/* Bottom Mulai Cepat Button */}
       <button
+        type="button"
         className="lob-mulai-btn-glowing g-btn-press"
         onClick={() => {
-          const defaultRooms = LOBBY_ROOMS[category === 'Domino Partner' ? '5 Kartu' : category];
-          if (defaultRooms && defaultRooms[0]) {
-            handleSelectRoom(defaultRooms[0]);
+          if (category === 'Domino Partner') {
+            handleSelectRoom({ id: 'partner_250k', name: 'Partner 250K', entryFee: 250000, entryLabel: '250K', coinsRange: '1M+', playersCount: 437004 });
+            return;
+          }
+          const rooms = LOBBY_ROOMS[category] || LOBBY_ROOMS['Biasa'] || [];
+          if (rooms.length > 0) {
+            const totalCoins = profile?.coins ?? (Number(localStorage.getItem('domino_coins')) || 50000);
+            const bonusCoins = profile?.bonusCoins ?? (Number(localStorage.getItem('domino_bonus_coins')) || 0);
+            const usable = Math.max(0, totalCoins - bonusCoins);
+            const chosen = rooms[selectedRoomIdx] || rooms[0];
+            if (usable >= chosen.entryFee) {
+              handleSelectRoom(chosen);
+            } else {
+              const affordable = [...rooms].reverse().find(r => usable >= r.entryFee) || rooms[0];
+              handleSelectRoom(affordable);
+            }
           }
         }}
       >
-        <span className="lob-mulai-text">MULAI</span>
-        <span className="lob-mulai-sub-ball">⚽</span>
+        <span className="lob-mulai-text">MULAI CEPAT</span>
+        <span className="lob-mulai-sub-ball">🀱</span>
       </button>
     </div>
   );
 }
 
 // =====================================================
-// KOMPONEN WAITING ROOM (Matchmaking 20s)
+// KOMPONEN WAITING ROOM (Matchmaking & Instant Start)
 // =====================================================
 function WaitingRoomScreen({
   room,
@@ -6486,10 +6571,34 @@ function WaitingRoomScreen({
   onGameStart: (gameId: string) => void;
   onBack: () => void;
 }) {
-  const [countdown, setCountdown] = useState(20);
-  const [players, setPlayers] = useState<{ username: string; isBot: boolean }[]>([]);
+  const myUsername = localStorage.getItem('domino_username') || 'Pemain';
+  const [countdown, setCountdown] = useState(8);
+  const [players, setPlayers] = useState<{ username: string; isBot: boolean }[]>([
+    { username: myUsername, isBot: false }
+  ]);
   const [dots, setDots] = useState('');
-  const myUsername = localStorage.getItem('domino_username') || '';
+  const startedRef = useRef(false);
+
+  const triggerStartGame = (gid?: string) => {
+    if (startedRef.current) return;
+    startedRef.current = true;
+    onGameStart(gid || `local_game_${Date.now()}`);
+  };
+
+  const handleStartNow = () => {
+    if (startedRef.current) return;
+    if (socket && socket.connected) {
+      socket.emit('force-start-room', { roomKey: room.id });
+      // Fallback to local engine if server doesn't emit game-starting within 600ms
+      setTimeout(() => {
+        if (!startedRef.current) {
+          triggerStartGame(`local_game_${Date.now()}`);
+        }
+      }, 600);
+    } else {
+      triggerStartGame(`local_game_${Date.now()}`);
+    }
+  };
 
   // Dot animation
   useEffect(() => {
@@ -6499,7 +6608,22 @@ function WaitingRoomScreen({
     return () => clearInterval(t);
   }, []);
 
-  // Connect to waiting room
+  // Local countdown fallback so room never freezes at 20
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          handleStartNow();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Connect to waiting room via Socket.IO
   useEffect(() => {
     if (!socket) return;
     let isMounted = true;
@@ -6517,16 +6641,20 @@ function WaitingRoomScreen({
 
     const handleWaiting = (data: any) => {
       if (!isMounted) return;
-      setCountdown(data.countdown);
-      // Deduplicate player usernames for UI safety
+      if (typeof data.countdown === 'number') {
+        setCountdown(prev => Math.min(prev, data.countdown));
+      }
       const uniquePlayers = (data.players || []).filter((p: any, index: number, self: any[]) =>
         index === self.findIndex((t) => t.username === p.username)
       );
-      setPlayers(uniquePlayers);
+      if (uniquePlayers.length > 0) {
+        setPlayers(uniquePlayers);
+      }
     };
 
     const handleGameStarting = (data: any) => {
-      if (!isMounted) return;
+      if (!isMounted || startedRef.current) return;
+      startedRef.current = true;
       onGameStart(data.gameId);
     };
 
@@ -6560,9 +6688,9 @@ function WaitingRoomScreen({
       <div className="wr-particles">
         {Array.from({ length: 12 }).map((_, i) => (
           <div key={i} className="wr-particle" style={{
-            left: `${Math.random() * 100}%`,
-            animationDelay: `${Math.random() * 5}s`,
-            animationDuration: `${3 + Math.random() * 4}s`
+            left: `${(i * 8.3) % 100}%`,
+            animationDelay: `${(i * 0.4) % 5}s`,
+            animationDuration: `${3 + (i % 4)}s`
           }} />
         ))}
       </div>
@@ -6572,18 +6700,17 @@ function WaitingRoomScreen({
         <button className="wr-back-btn g-btn-press" onClick={handleLeave}>« Keluar</button>
         <div className="wr-room-info">
           <span className="wr-room-name">{room.name}</span>
-          <span className="wr-room-fee">🪙 {room.entryLabel}</span>
+          <span className="wr-room-fee">🪙 Taruhan: {room.entryLabel}</span>
         </div>
       </div>
 
       {/* Center Matchmaking Display */}
       <div className="wr-center">
-        {/* Spinning domino animation */}
         <div className="wr-domino-spin">
           <div className="wr-domino-card">🀱</div>
         </div>
 
-        <div className="wr-status-text">Mencari Lawan{dots}</div>
+        <div className="wr-status-text">Menyiapkan Meja Domino{dots}</div>
 
         {/* Countdown Ring */}
         <div className="wr-countdown-ring">
@@ -6593,7 +6720,7 @@ function WaitingRoomScreen({
               className="wr-ring-fill"
               cx="50" cy="50" r="42"
               strokeDasharray={`${2 * Math.PI * 42}`}
-              strokeDashoffset={`${2 * Math.PI * 42 * (1 - countdown / 20)}`}
+              strokeDashoffset={`${2 * Math.PI * 42 * (1 - countdown / 8)}`}
             />
           </svg>
           <div className="wr-countdown-num">{countdown}</div>
@@ -6601,10 +6728,18 @@ function WaitingRoomScreen({
 
         <div className="wr-info-sub">
           {players.length < 4
-            ? `Menunggu ${4 - players.length} pemain lagi...`
+            ? `Menunggu ${4 - players.length} pemain lagi (Otomatis isi Bot VIP)...`
             : 'Semua pemain siap!'
           }
         </div>
+
+        <button
+          type="button"
+          className="wr-start-now-btn g-btn-press"
+          onClick={handleStartNow}
+        >
+          🚀 MULAI SEKARANG
+        </button>
       </div>
 
       {/* Seat indicators */}
@@ -6615,12 +6750,12 @@ function WaitingRoomScreen({
           return (
             <div key={idx} className={`wr-seat ${seat.pos} ${isFilled ? 'filled' : 'empty'}`}>
               <div className="wr-seat-avatar">
-                {isFilled ? '🐸' : '❓'}
+                {isFilled ? '🐸' : '🤖'}
               </div>
               <div className="wr-seat-name">
                 {isFilled ? (player.username === myUsername ? 'Anda' : player.username) : seat.label}
               </div>
-              {isFilled && <div className="wr-seat-ready">✓ Siap</div>}
+              <div className="wr-seat-ready">{isFilled ? '✓ Siap' : 'Menunggu...'}</div>
             </div>
           );
         })}
@@ -6630,7 +6765,7 @@ function WaitingRoomScreen({
 }
 
 // =====================================================
-// KOMPONEN PLAY BOARD DOMINO (ONLINE via WebSocket)
+// KOMPONEN PLAY BOARD DOMINO (ONLINE via WebSocket + LOCAL FALLBACK ENGINE)
 // =====================================================
 type Tile = [number, number];
 
@@ -6654,8 +6789,13 @@ function DominoPlayScreen({
   const [soundOn, setSoundOn] = useState(true);
   const [effectOn, setEffectOn] = useState(true);
 
-  // Game state from server
+  // Game state from server or local fallback engine
   const [gameState, setGameState] = useState<any>(null);
+  const hasServerStateRef = useRef<boolean>(false);
+  const isLocalEngineRef = useRef<boolean>(gameId.startsWith('local_'));
+  const localStateRef = useRef<any>(null);
+  const botTurnTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const [selectedCardIdx, setSelectedCardIdx] = useState<number | null>(null);
   const [heldCardIdx, setHeldCardIdx] = useState<number | null>(null);
   const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -6685,24 +6825,23 @@ function DominoPlayScreen({
 
   const getSeatCoords = (seatIdx: number, mySeatIdx: number, numP: number) => {
     const relPos = (seatIdx - mySeatIdx + numP) % numP;
-    if (relPos === 0) return { x: 50, y: 82 }; // Bottom (Me)
-    if (relPos === 1) return { x: 14, y: 45 }; // Left
-    if (relPos === 2) return { x: 50, y: 15 }; // Top
-    return { x: 86, y: 45 }; // Right
+    if (relPos === 0) return { x: 22, y: 84 }; // Bottom (Me)
+    if (relPos === 1) return { x: 12, y: 44 }; // Left
+    if (relPos === 2) return { x: 50, y: 14 }; // Top
+    return { x: 88, y: 44 }; // Right
   };
 
   const spawnFlyingCoins = (fromSeatIdx: number, toSeatIdx: number, amount: number, currentMySeat: number, totalP: number) => {
     const from = getSeatCoords(fromSeatIdx, currentMySeat, totalP);
     const to = getSeatCoords(toSeatIdx, currentMySeat, totalP);
 
-    // 10 flying coins sliding across screen
     const newCoins: FlyCoin[] = Array.from({ length: 10 }).map((_, i) => ({
       id: Date.now() + i + Math.random(),
       fromX: from.x,
       fromY: from.y,
       toX: to.x,
       toY: to.y,
-      delay: i * 50
+      delay: i * 45
     }));
 
     setFlyingCoins(prev => [...prev, ...newCoins]);
@@ -6739,10 +6878,450 @@ function DominoPlayScreen({
       .catch(() => { });
   }, [myUsername]);
 
-  // Listen for game state updates
+  // =====================================================
+  // LOCAL DOMINO GAPLE ENGINE (Fallback when offline or local_game_)
+  // =====================================================
+  const isWildTileCheck = (tile: Tile | null | undefined, wildTile: Tile | null | undefined, isWildMode?: boolean) => {
+    if (!isWildMode || !wildTile || !tile) return false;
+    return (
+      (tile[0] === wildTile[0] && tile[1] === wildTile[1]) ||
+      (tile[0] === wildTile[1] && tile[1] === wildTile[0])
+    );
+  };
+
+  const canPlayTileLocal = (tile: Tile, st: any) => {
+    if (!tile || tile.length < 2) return false;
+    if (st.leftEnd === null && st.rightEnd === null) return true;
+    if (isWildTileCheck(tile, st.wildTile, st.isWildMode)) return true;
+    const [a, b] = tile;
+    return a === st.leftEnd || b === st.leftEnd || a === st.rightEnd || b === st.rightEnd;
+  };
+
+  const syncLocalStateToUI = (st: any) => {
+    if (hasServerStateRef.current || !isLocalEngineRef.current) return;
+    const prev = localStateRef.current;
+    const snapshot = {
+      ...st,
+      board: [...st.board],
+      logs: [...st.logs],
+      coinChanges: { ...st.coinChanges },
+      mySeatIndex: 0,
+      players: st.players.map((p: any, idx: number) => ({
+        username: p.username,
+        isBot: p.isBot,
+        seatIndex: idx,
+        cardCount: (p.hand || []).length,
+        pipSum: (p.hand || []).reduce((s: number, t: Tile) => s + t[0] + t[1], 0),
+        hand: [...(p.hand || [])],
+        initialBuyIn: p.initialBuyIn ?? p.tableStack,
+        tableStack: p.tableStack,
+        isBankrupt: p.isBankrupt
+      }))
+    };
+
+    if (prev && prev.players) {
+      snapshot.players.forEach((p: any) => {
+        const prevP = prev.players.find((oldP: any) => oldP.username === p.username);
+        if (prevP && p.tableStack < prevP.tableStack) {
+          const diff = prevP.tableStack - p.tableStack;
+          const receiver = snapshot.players.find((other: any) => {
+            const prevOther = prev.players.find((oldP: any) => oldP.username === other.username);
+            return prevOther && (other.tableStack - prevOther.tableStack === diff);
+          });
+          if (receiver) {
+            spawnFlyingCoins(p.seatIndex, receiver.seatIndex, diff, 0, 4);
+          }
+        }
+      });
+    }
+
+    (snapshot as any)._rawPlayers = snapshot.players;
+    localStateRef.current = snapshot;
+    setGameState(snapshot);
+
+    if (snapshot.status === 'ended' && snapshot.winner !== null) {
+      const myChange = snapshot.coinChanges[myUsername] || 0;
+      const savedCoins = Number(localStorage.getItem('domino_coins')) || 50000;
+      const nextCoins = Math.max(0, savedCoins + myChange);
+      localStorage.setItem('domino_coins', String(nextCoins));
+      const isWin = snapshot.isPartnerMode ? (snapshot.winner % 2 === 0) : (snapshot.winner === 0);
+      onUpdateCoins(
+        isWin
+          ? `🏆 Selamat! Anda menang +${Math.abs(myChange).toLocaleString()} koin!`
+          : `😢 Anda kalah ${Math.abs(myChange).toLocaleString()} koin.`
+      );
+    }
+  };
+
+  const initLocalDominoGame = () => {
+    if (hasServerStateRef.current) return;
+    isLocalEngineRef.current = true;
+    const allTiles: Tile[] = [];
+    for (let i = 0; i <= 6; i++) {
+      for (let j = i; j <= 6; j++) {
+        allTiles.push([i, j]);
+      }
+    }
+    for (let i = allTiles.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [allTiles[i], allTiles[j]] = [allTiles[j], allTiles[i]];
+    }
+
+    const rName = (room?.name || '').toLowerCase();
+    const is5Kartu = rName.includes('5 kartu');
+    const isWild = rName.includes('wild');
+    const isPartner = rName.includes('partner');
+    const isBet = rName.includes('bet') || is5Kartu || isWild;
+    const cardsPerPlayer = is5Kartu ? 5 : 7;
+    const fee = room?.entryFee || 1000;
+    const buyIn = (room as any)?.buyIn || (fee * 4);
+
+    const botPool = ['RajaGaple', 'BosDomino', 'Sultan99', 'DewaBalak', 'PutriHoki', 'MasterQiu'];
+    const shuffledBots = [...botPool].sort(() => Math.random() - 0.5);
+
+    const players = [
+      { username: myUsername, isBot: false, seatIndex: 0, hand: [] as Tile[], tableStack: buyIn, initialBuyIn: buyIn, isBankrupt: false },
+      { username: shuffledBots[0], isBot: true, seatIndex: 1, hand: [] as Tile[], tableStack: buyIn, initialBuyIn: buyIn, isBankrupt: false },
+      { username: shuffledBots[1], isBot: true, seatIndex: 2, hand: [] as Tile[], tableStack: buyIn, initialBuyIn: buyIn, isBankrupt: false },
+      { username: shuffledBots[2], isBot: true, seatIndex: 3, hand: [] as Tile[], tableStack: buyIn, initialBuyIn: buyIn, isBankrupt: false }
+    ];
+
+    for (let i = 0; i < 4; i++) {
+      players[i].hand = allTiles.slice(i * cardsPerPlayer, (i + 1) * cardsPerPlayer);
+    }
+    const drawPile = allTiles.slice(4 * cardsPerPlayer);
+
+    let wildTile: Tile | null = null;
+    let wildNumber: number | null = null;
+    if (isWild) {
+      const w = allTiles[Math.floor(Math.random() * allTiles.length)];
+      wildTile = [w[0], w[1]];
+      wildNumber = w[1];
+    }
+
+    // Starter: holder of [1,1] or lowest double, else player 0
+    let starter = 0;
+    let found11 = false;
+    for (let i = 0; i < 4; i++) {
+      if (players[i].hand.some(([a, b]) => a === 1 && b === 1)) {
+        starter = i;
+        found11 = true;
+        break;
+      }
+    }
+    if (!found11) {
+      for (let d = 0; d <= 6; d++) {
+        const idx = players.findIndex(p => p.hand.some(([a, b]) => a === d && b === d));
+        if (idx !== -1) {
+          starter = idx;
+          break;
+        }
+      }
+    }
+
+    const coinChanges: Record<string, number> = {};
+    players.forEach(p => { coinChanges[p.username] = 0; });
+
+    const st = {
+      gameId,
+      players,
+      drawPile,
+      board: [] as { left: number; right: number; playedBy: string }[],
+      leftEnd: null as number | null,
+      rightEnd: null as number | null,
+      turnIndex: starter,
+      consecutivePasses: 0,
+      lastPlayerIndex: starter,
+      status: 'playing',
+      winner: null as number | null,
+      winType: 'normal',
+      winMultiplier: 1,
+      winCategory: 'Single',
+      is5KartuMode: is5Kartu,
+      isWildMode: isWild,
+      isPartnerMode: isPartner,
+      isBetMode: isBet,
+      wildTile,
+      wildNumber,
+      fee,
+      coinChanges,
+      logs: [`🎲 Permainan dimulai! Giliran pertama: ${players[starter].username}`]
+    };
+
+    syncLocalStateToUI(st);
+  };
+
+  // Start local engine immediately if local_game_, or after 2.2s ONLY if server hasn't sent game-state
+  useEffect(() => {
+    hasServerStateRef.current = false;
+    if (gameId.startsWith('local_') || !socket || !socket.connected) {
+      initLocalDominoGame();
+      return;
+    }
+    const fallbackTimer = setTimeout(() => {
+      if (!hasServerStateRef.current && !localStateRef.current) {
+        initLocalDominoGame();
+      }
+    }, 2200);
+    return () => clearTimeout(fallbackTimer);
+  }, [gameId]);
+
+  const finishLocalGame = (st: any, winIdx: number, type: 'normal' | 'block' | 'bankruptcy', lastTile: Tile | null) => {
+    st.status = 'ended';
+    st.winner = winIdx;
+    st.winType = type;
+
+    let mult = 1;
+    let cat = 'Single';
+    if (type === 'normal' && lastTile) {
+      const [a, b] = lastTile;
+      const isDouble = a === b;
+      const bothEndsMatch = st.leftEnd !== null && st.rightEnd !== null && st.leftEnd === st.rightEnd;
+      if (isDouble && bothEndsMatch) {
+        mult = 4;
+        cat = 'Quartet';
+      } else if (bothEndsMatch) {
+        mult = 3;
+        cat = 'Triple';
+      } else if (isDouble) {
+        mult = 2;
+        cat = 'Double';
+      }
+    }
+    st.winMultiplier = mult;
+    st.winCategory = cat;
+
+    const winnerP = st.players[winIdx];
+    st.players.forEach((p: any, idx: number) => {
+      if (idx === winIdx) return;
+      if (st.isPartnerMode && (idx % 2 === winIdx % 2)) return;
+      const pipSum = (p.hand || []).reduce((s: number, t: Tile) => s + t[0] + t[1], 0);
+      const rawPenalty = Math.max(st.fee, Math.floor(pipSum * (st.fee / 5) * mult));
+      const actualPay = Math.min(p.tableStack, rawPenalty);
+      p.tableStack -= actualPay;
+      winnerP.tableStack += actualPay;
+      if (p.tableStack <= 0) p.isBankrupt = true;
+    });
+
+    st.players.forEach((p: any) => {
+      st.coinChanges[p.username] = p.tableStack - (p.initialBuyIn ?? p.tableStack);
+    });
+
+    st.logs.push(`🏆 ${winnerP.username} memenangkan ronde (${cat} ${mult}x)!`);
+    syncLocalStateToUI(st);
+  };
+
+  const advanceLocalTurn = (st: any) => {
+    if (st.status !== 'playing') return;
+    const step = st.isPartnerMode ? 3 : 1;
+    let next = (st.turnIndex + step) % 4;
+    for (let i = 0; i < 4; i++) {
+      if (!st.players[next].isBankrupt) break;
+      next = (next + step) % 4;
+    }
+    st.turnIndex = next;
+  };
+
+  const executeLocalPlayCard = (seatIdx: number, tile: Tile, side: 'left' | 'right') => {
+    if (!isLocalEngineRef.current || hasServerStateRef.current || !localStateRef.current) return;
+    const cur = localStateRef.current;
+    if (cur.status !== 'playing' || cur.turnIndex !== seatIdx) return;
+
+    const st = {
+      ...cur,
+      board: [...cur.board],
+      logs: [...cur.logs],
+      coinChanges: { ...cur.coinChanges },
+      drawPile: [...(cur.drawPile || [])],
+      players: cur.players.map((p: any) => ({
+        ...p,
+        hand: [...(p.hand || [])]
+      }))
+    };
+
+    const player = st.players[seatIdx];
+    const handIdx = player.hand.findIndex(([a, b]: Tile) => (a === tile[0] && b === tile[1]) || (a === tile[1] && b === tile[0]));
+    if (handIdx === -1) return;
+
+    const [a, b] = player.hand[handIdx];
+    const isWild = isWildTileCheck([a, b], st.wildTile, st.isWildMode);
+    const canGoLeft = st.leftEnd === null || a === st.leftEnd || b === st.leftEnd || isWild;
+    const canGoRight = st.rightEnd === null || a === st.rightEnd || b === st.rightEnd || isWild;
+    if (!canGoLeft && !canGoRight) return;
+
+    let effectiveSide: 'left' | 'right' = side === 'left' ? 'left' : 'right';
+    if (effectiveSide === 'left' && !canGoLeft && canGoRight) effectiveSide = 'right';
+    if (effectiveSide === 'right' && !canGoRight && canGoLeft) effectiveSide = 'left';
+
+    if (st.leftEnd === null || st.rightEnd === null) {
+      st.board.push({ left: a, right: b, playedBy: player.username });
+      st.leftEnd = a;
+      st.rightEnd = b;
+    } else if (effectiveSide === 'left') {
+      if (b === st.leftEnd) {
+        st.board.unshift({ left: a, right: b, playedBy: player.username });
+        st.leftEnd = a;
+      } else if (a === st.leftEnd) {
+        st.board.unshift({ left: b, right: a, playedBy: player.username });
+        st.leftEnd = b;
+      } else {
+        st.board.unshift({ left: a, right: b, playedBy: player.username });
+        st.leftEnd = a;
+      }
+    } else {
+      if (a === st.rightEnd) {
+        st.board.push({ left: a, right: b, playedBy: player.username });
+        st.rightEnd = b;
+      } else if (b === st.rightEnd) {
+        st.board.push({ left: b, right: a, playedBy: player.username });
+        st.rightEnd = a;
+      } else {
+        st.board.push({ left: a, right: b, playedBy: player.username });
+        st.rightEnd = b;
+      }
+    }
+
+    player.hand.splice(handIdx, 1);
+    st.consecutivePasses = 0;
+    st.lastPlayerIndex = seatIdx;
+    st.logs.push(`🀱 ${player.username} pasang [${a}|${b}] ke ${effectiveSide === 'left' ? 'Kiri' : 'Kanan'}`);
+
+    if (player.hand.length === 0) {
+      finishLocalGame(st, seatIdx, 'normal', [a, b]);
+      return;
+    }
+
+    advanceLocalTurn(st);
+    syncLocalStateToUI(st);
+  };
+
+  const executeLocalPassTurn = (seatIdx: number) => {
+    if (!isLocalEngineRef.current || hasServerStateRef.current || !localStateRef.current) return;
+    const cur = localStateRef.current;
+    if (cur.status !== 'playing' || cur.turnIndex !== seatIdx) return;
+
+    const st = {
+      ...cur,
+      board: [...cur.board],
+      logs: [...cur.logs],
+      coinChanges: { ...cur.coinChanges },
+      drawPile: [...(cur.drawPile || [])],
+      players: cur.players.map((p: any) => ({
+        ...p,
+        hand: [...(p.hand || [])]
+      }))
+    };
+
+    const player = st.players[seatIdx];
+
+    // In 5 Kartu mode, draw from Bumbung until playable or empty
+    if (st.is5KartuMode && st.drawPile && st.drawPile.length > 0) {
+      while (st.drawPile.length > 0 && !player.hand.some((t: Tile) => canPlayTileLocal(t, st))) {
+        const drawn = st.drawPile.shift();
+        if (drawn) {
+          player.hand.push(drawn);
+          st.logs.push(`📦 ${player.username} ambil 1 kartu dari Bumbung`);
+        }
+      }
+      const playableAfterDraw = player.hand.find((t: Tile) => canPlayTileLocal(t, st));
+      if (playableAfterDraw) {
+        // Sync drawn cards to UI; if bot, the bot turn effect will pause naturally before playing the drawn card
+        syncLocalStateToUI(st);
+        return;
+      }
+    }
+
+    st.consecutivePasses = (st.consecutivePasses || 0) + 1;
+    const payToIdx = st.lastPlayerIndex ?? ((seatIdx + 3) % 4);
+    if (payToIdx !== seatIdx) {
+      const receiver = st.players[payToIdx];
+      const pipSum = player.hand.reduce((s: number, t: Tile) => s + t[0] + t[1], 0);
+      const rawPay = Math.max(st.fee, Math.floor(pipSum * st.fee / 10));
+      const actualPay = Math.min(player.tableStack, rawPay);
+      player.tableStack -= actualPay;
+      receiver.tableStack += actualPay;
+      st.coinChanges[player.username] = player.tableStack - (player.initialBuyIn ?? player.tableStack);
+      st.coinChanges[receiver.username] = receiver.tableStack - (receiver.initialBuyIn ?? receiver.tableStack);
+      st.logs.push(`💸 ${player.username} lewat & bayar ${actualPay.toLocaleString()} ke ${receiver.username}`);
+      if (seatIdx === 0 || payToIdx === 0) {
+        setPayNotification(`${player.username} lewat & bayar ${actualPay.toLocaleString()} koin ke ${receiver.username}`);
+        if (payNotifTimerRef.current) clearTimeout(payNotifTimerRef.current);
+        payNotifTimerRef.current = setTimeout(() => setPayNotification(null), 2800);
+      }
+      if (player.tableStack <= 0) {
+        player.isBankrupt = true;
+      }
+    } else {
+      st.logs.push(`⏭️ ${player.username} lewat giliran`);
+    }
+
+    const activePlayers = st.players.filter((p: any) => !p.isBankrupt);
+    if (activePlayers.length <= 1) {
+      const winIdx = st.players.findIndex((p: any) => !p.isBankrupt);
+      finishLocalGame(st, winIdx !== -1 ? winIdx : payToIdx, 'bankruptcy', null);
+      return;
+    }
+
+    if (st.consecutivePasses >= activePlayers.length) {
+      let bestIdx = 0;
+      let bestPip = 9999;
+      st.players.forEach((p: any, i: number) => {
+        if (p.isBankrupt) return;
+        const sum = p.hand.reduce((s: number, t: Tile) => s + t[0] + t[1], 0);
+        if (sum < bestPip) {
+          bestPip = sum;
+          bestIdx = i;
+        }
+      });
+      finishLocalGame(st, bestIdx, 'block', null);
+      return;
+    }
+
+    advanceLocalTurn(st);
+    syncLocalStateToUI(st);
+  };
+
+  // Trigger AI Bot turns in local engine with natural human-like thinking delay (2.1s - 3.8s)
+  useEffect(() => {
+    if (!isLocalEngineRef.current || hasServerStateRef.current || !gameState || gameState.status !== 'playing') return;
+    const tIdx = gameState.turnIndex;
+    if (tIdx === 0) return; // Human turn
+
+    const botDelay = 2100 + Math.floor(Math.random() * 1700);
+    if (botTurnTimeoutRef.current) clearTimeout(botTurnTimeoutRef.current);
+    botTurnTimeoutRef.current = setTimeout(() => {
+      if (!isLocalEngineRef.current || hasServerStateRef.current || !localStateRef.current || localStateRef.current.status !== 'playing') return;
+      const bot = localStateRef.current.players?.[tIdx];
+      if (!bot || !bot.hand) return;
+
+      const playableTiles: Tile[] = bot.hand.filter((t: Tile) => canPlayTileLocal(t, localStateRef.current));
+      if (playableTiles.length > 0) {
+        playableTiles.sort((x, y) => (y[0] + y[1]) - (x[0] + x[1]));
+        const chosen = playableTiles[0];
+        const [a, b] = chosen;
+        const canLeft = a === localStateRef.current.leftEnd || b === localStateRef.current.leftEnd;
+        executeLocalPlayCard(tIdx, chosen, canLeft ? 'left' : 'right');
+      } else {
+        executeLocalPassTurn(tIdx);
+      }
+    }, botDelay);
+
+    return () => {
+      if (botTurnTimeoutRef.current) clearTimeout(botTurnTimeoutRef.current);
+    };
+  }, [gameState?.turnIndex, gameState?.status, gameState?.board?.length, gameState?.consecutivePasses, gameState?.drawPile?.length]);
+
+  // Listen for online Socket.IO game state updates
   useEffect(() => {
     if (!socket) return;
     const handleGameState = (state: any) => {
+      hasServerStateRef.current = true;
+      isLocalEngineRef.current = false;
+      localStateRef.current = null;
+      if (botTurnTimeoutRef.current) {
+        clearTimeout(botTurnTimeoutRef.current);
+        botTurnTimeoutRef.current = null;
+      }
       setGameState((prev: any) => {
         const currentMySeat = state.mySeatIndex ?? 0;
         const totalP = state.players?.length || 4;
@@ -6800,8 +7379,8 @@ function DominoPlayScreen({
   const mySeat = gameState?.mySeatIndex ?? (foundSeat !== undefined && foundSeat !== -1 ? foundSeat : 0);
   const myHand: Tile[] = gameState?.players?.[mySeat]?.hand || [];
   const board = gameState?.board || [];
-  const leftEnd = gameState?.leftEnd ?? null;
-  const rightEnd = gameState?.rightEnd ?? null;
+  const leftEnd: number | null = gameState?.leftEnd ?? (board.length > 0 ? board[0].left : null);
+  const rightEnd: number | null = gameState?.rightEnd ?? (board.length > 0 ? board[board.length - 1].right : null);
   const turnIndex = gameState?.turnIndex ?? 0;
   const status = gameState?.status ?? 'dealing';
   const winner = gameState?.winner ?? null;
@@ -6811,9 +7390,33 @@ function DominoPlayScreen({
   const numPlayers = gameState?.players?.length || 4;
 
   const isMyTurn = turnIndex === mySeat && status === 'playing';
-  const isBoardEmpty = leftEnd === null && rightEnd === null;
+  const isBoardEmpty = board.length === 0 || (leftEnd === null && rightEnd === null);
 
-  // Turn timer (30s per turn, auto-pass)
+  const matchSideCheck = (tile: Tile, targetEnd: number | null) => {
+    if (!tile || tile.length < 2) return false;
+    if (targetEnd === null || isBoardEmpty) return true;
+    const [a, b] = tile;
+    if (a === targetEnd || b === targetEnd) return true;
+    if (gameState?.isWildMode) {
+      if (gameState?.wildTile && gameState.wildTile.length >= 2) {
+        const [w0, w1] = gameState.wildTile;
+        if ((a === w0 && b === w1) || (a === w1 && b === w0)) return true;
+      }
+      if (gameState?.wildNumber !== undefined && gameState?.wildNumber !== null) {
+        const wn = gameState.wildNumber;
+        if (a === wn || b === wn || targetEnd === wn) return true;
+      }
+    }
+    return false;
+  };
+
+  const isPlayableOnBoard = (tile: Tile) => {
+    if (!tile || tile.length < 2) return false;
+    if (isBoardEmpty || board.length === 0) return true;
+    return matchSideCheck(tile, leftEnd) || matchSideCheck(tile, rightEnd);
+  };
+
+  // Turn timer (30s per turn, auto-pass or auto-play)
   useEffect(() => {
     if (status !== 'playing') return;
     setTurnTimer(30);
@@ -6821,13 +7424,21 @@ function DominoPlayScreen({
       setTurnTimer(prev => {
         if (prev <= 1) {
           if (isMyTurn) {
-            // Auto-pass if can't play, or play first available card
-            const canPlayAny = isBoardEmpty || myHand.some(t => {
-              const [a, b] = t;
-              return a === leftEnd || b === leftEnd || a === rightEnd || b === rightEnd;
-            });
-            if (!canPlayAny) {
-              socket?.emit('pass-turn', { gameId });
+            const playableIdx = myHand.findIndex(t => isPlayableOnBoard(t));
+            if (playableIdx === -1) {
+              if (isLocalEngineRef.current && !hasServerStateRef.current) {
+                executeLocalPassTurn(mySeat);
+              } else {
+                socket?.emit('pass-turn', { gameId, username: myUsername });
+              }
+            } else {
+              const tile = myHand[playableIdx];
+              const autoSide = matchSideCheck(tile, rightEnd) ? 'right' : 'left';
+              if (isLocalEngineRef.current && !hasServerStateRef.current) {
+                executeLocalPlayCard(mySeat, tile, autoSide);
+              } else {
+                socket?.emit('play-card', { gameId, tile, side: autoSide, username: myUsername });
+              }
             }
           }
           return 30;
@@ -6836,7 +7447,7 @@ function DominoPlayScreen({
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [turnIndex, status]);
+  }, [turnIndex, status, isMyTurn, myHand.length]);
 
   const getSeatInfo = (relativePos: number) => {
     const actualSeat = (mySeat + relativePos) % numPlayers;
@@ -6848,31 +7459,28 @@ function DominoPlayScreen({
       pipSum: p?.pipSum ?? 0,
       tableStack: p?.tableStack ?? 0,
       isBankrupt: !!p?.isBankrupt,
-      isTurn: turnIndex === actualSeat,
+      isTurn: turnIndex === actualSeat && status === 'playing',
       seatIndex: actualSeat
     };
   };
 
-  const [isPassing, setIsPassing] = useState(false);
+  const autoPassExecutedTurnRef = useRef<string | null>(null);
+  const [showEndModal, setShowEndModal] = useState(false);
 
-  // Reset isPassing guard on turn change
+  // Reset selection on turn change
   useEffect(() => {
-    setIsPassing(false);
-  }, [turnIndex]);
+    setSelectedCardIdx(null);
+  }, [turnIndex, board.length]);
 
-  const isPlayableOnBoard = (tile: Tile) => {
-    if (!tile || tile.length < 2) return false;
-    if (isBoardEmpty || board.length === 0) return true; // First move on empty board: any tile is playable!
-
-    // Effective left & right ends with board fallback
-    const effLeft = leftEnd ?? (board.length > 0 ? board[0].left : null);
-    const effRight = rightEnd ?? (board.length > 0 ? board[board.length - 1].right : null);
-
-    if (effLeft === null || effRight === null) return true;
-
-    const [a, b] = tile;
-    return a === effLeft || b === effLeft || a === effRight || b === effRight;
-  };
+  // Delay showing Victory / Defeat modal slightly (1.1s) so player can see the final card placed & coin animation
+  useEffect(() => {
+    if (status === 'ended' && winner !== null) {
+      const t = setTimeout(() => setShowEndModal(true), 1100);
+      return () => clearTimeout(t);
+    } else {
+      setShowEndModal(false);
+    }
+  }, [status, winner]);
 
   // Player must play if they can. They can only pass (pay) if they have NO playable card.
   const canPass = isMyTurn && status === 'playing' && myHand.length > 0 && !myHand.some(t => isPlayableOnBoard(t));
@@ -6884,141 +7492,391 @@ function DominoPlayScreen({
 
   // AUTO-PAY EFFECT: When player cannot play, automatically execute payment & pass turn!
   useEffect(() => {
-    if (isMyTurn && canPass && status === 'playing' && !isPassing) {
-      setIsPassing(true);
-      setPayNotification(`💸 Tidak ada kartu yang cocok! Otomatis membayar ${payAmount.toLocaleString()} koin...`);
+    if (!isMyTurn || !canPass || status !== 'playing') return;
+    const turnKey = `${turnIndex}-${board.length}-${myHand.length}-${gameState?.consecutivePasses || 0}-${gameState?.passCount || 0}`;
+    if (autoPassExecutedTurnRef.current === turnKey) return;
 
-      const timer = setTimeout(() => {
-        if (socket && socket.connected) {
-          socket.emit('pass-turn', { gameId });
-        }
-      }, 400);
+    setPayNotification(
+      gameState?.is5KartuMode && (gameState?.drawPile?.length || 0) > 0
+        ? `📦 Tidak ada kartu cocok! Mengambil dari Bumbung...`
+        : `💸 Tidak ada kartu yang cocok! Otomatis lewat (${payAmount.toLocaleString()} koin)...`
+    );
 
-      return () => clearTimeout(timer);
-    }
-  }, [isMyTurn, canPass, status, gameId, socket, payAmount, isPassing]);
+    const timer = setTimeout(() => {
+      if (autoPassExecutedTurnRef.current === turnKey) return;
+      autoPassExecutedTurnRef.current = turnKey;
+      if (isLocalEngineRef.current && !hasServerStateRef.current) {
+        executeLocalPassTurn(mySeat);
+      } else if (socket && socket.connected) {
+        socket.emit('pass-turn', { gameId, username: myUsername });
+      }
+    }, 850);
 
-  // Early return ONLY after all hooks have been declared to strictly obey React Rules of Hooks
+    return () => clearTimeout(timer);
+  }, [isMyTurn, canPass, status, turnIndex, board.length, myHand.length, gameState?.consecutivePasses, gameState?.passCount, gameId, socket, mySeat, myUsername, payAmount]);
+
+  // Early return ONLY after all hooks have been declared
   if (!gameState) {
     return (
       <div className="screen-wrapper table-bg">
         <div className="wr-center">
           <div className="wr-domino-spin"><div className="wr-domino-card">🀱</div></div>
-          <div className="wr-status-text">Memuat permainan...</div>
+          <div className="wr-status-text">Menyiapkan Meja Domino...</div>
         </div>
       </div>
     );
   }
 
-  // Card stats tracking
+  // Card stats tracking & Remaining Pips (0–6) counter
   const totalCardsInHands = gameState?.players?.reduce((sum: number, p: any) => sum + (p.cardCount || 0), 0) || 0;
   const cardsInDrawPile = Math.max(0, 28 - board.length - totalCardsInHands);
+
+  // Calculate remaining unseen/unplayed count for each pip number (0 to 6)
+  // Every pip number (0..6) appears on 7 distinct domino tiles out of 28.
+  const pipRemainingCounts = [0, 1, 2, 3, 4, 5, 6].map(num => {
+    let seenTilesWithNum = 0;
+    board.forEach((item: any) => {
+      if (item.left === num || item.right === num) seenTilesWithNum++;
+    });
+    myHand.forEach(([a, b]) => {
+      if (a === num || b === num) seenTilesWithNum++;
+    });
+    return Math.max(0, 7 - seenTilesWithNum);
+  });
+
+  const sendPlayCard = (tile: Tile, side: 'left' | 'right') => {
+    if (!tile || tile.length < 2) return;
+    if (isLocalEngineRef.current && !hasServerStateRef.current) {
+      executeLocalPlayCard(mySeat, tile, side);
+    } else {
+      socket?.emit('play-card', { gameId, tile, side, username: myUsername });
+    }
+  };
 
   const handleUserSelectCard = (idx: number) => {
     if (!isMyTurn) return;
     const tile = myHand[idx];
-    if (!isPlayableOnBoard(tile)) return;
+    if (!tile || !isPlayableOnBoard(tile)) return;
 
-    setSelectedCardIdx(idx);
-
-    const [a, b] = tile;
-
-    // First move or single-match: play immediately
     if (isBoardEmpty) {
-      socket?.emit('play-card', { gameId, tile, side: 'right' });
+      sendPlayCard(tile, 'right');
       setSelectedCardIdx(null);
       return;
     }
 
-    const matchLeft = (leftEnd !== null && (a === leftEnd || b === leftEnd));
-    const matchRight = (rightEnd !== null && (a === rightEnd || b === rightEnd));
+    const matchLeft = matchSideCheck(tile, leftEnd);
+    const matchRight = matchSideCheck(tile, rightEnd);
 
     if (matchLeft && !matchRight) {
-      socket?.emit('play-card', { gameId, tile, side: 'left' });
+      sendPlayCard(tile, 'left');
       setSelectedCardIdx(null);
-    } else if (matchRight && !matchLeft) {
-      socket?.emit('play-card', { gameId, tile, side: 'right' });
-      setSelectedCardIdx(null);
+      return;
     }
-    // If matches both, we keep selectedCardIdx and show side chooser buttons
+    if (matchRight && !matchLeft) {
+      sendPlayCard(tile, 'right');
+      setSelectedCardIdx(null);
+      return;
+    }
+
+    // When matchLeft && matchRight is true (fits BOTH ends):
+    // First click lifts/selects the card and shows TARUH KIRI & TARUH KANAN buttons.
+    // If already selected and clicked again, toggle selection off.
+    if (selectedCardIdx === idx) {
+      setSelectedCardIdx(null);
+    } else {
+      setSelectedCardIdx(idx);
+    }
   };
 
-  const handleChooseSide = (side: 'left' | 'right') => {
-    if (selectedCardIdx === null) return;
-    const tile = myHand[selectedCardIdx];
-    socket?.emit('play-card', { gameId, tile, side });
+  const handleChooseSide = (side: 'left' | 'right', explicitIdx?: number) => {
+    if (!isMyTurn) return;
+    const targetIdx = explicitIdx !== undefined ? explicitIdx : selectedCardIdx;
+    if (targetIdx === null || targetIdx === undefined) return;
+    const tile = myHand[targetIdx];
+    if (!tile) return;
+    sendPlayCard(tile, side);
     setSelectedCardIdx(null);
   };
 
+  // Allow clicking directly on the board's Left End or Right End cap!
+  const handleBoardEndClick = (side: 'left' | 'right') => {
+    if (!isMyTurn || isBoardEmpty) return;
+    const targetEnd = side === 'left' ? leftEnd : rightEnd;
+
+    // 1. If a card is currently selected and matches this side, play it on this side!
+    if (selectedCardIdx !== null && myHand[selectedCardIdx]) {
+      const selTile = myHand[selectedCardIdx];
+      if (matchSideCheck(selTile, targetEnd)) {
+        sendPlayCard(selTile, side);
+        setSelectedCardIdx(null);
+        return;
+      }
+    }
+
+    // 2. Otherwise, find all cards in hand that match this board end
+    const matchingIndices = myHand
+      .map((t, i) => (matchSideCheck(t, targetEnd) ? i : -1))
+      .filter(i => i !== -1);
+
+    if (matchingIndices.length === 1) {
+      sendPlayCard(myHand[matchingIndices[0]], side);
+      setSelectedCardIdx(null);
+    } else if (matchingIndices.length > 1) {
+      // Play the first matching card on that side immediately
+      sendPlayCard(myHand[matchingIndices[0]], side);
+      setSelectedCardIdx(null);
+    }
+  };
+
   const handleUserPay = () => {
-    if (!isMyTurn || !canPass || isPassing) return;
-    setIsPassing(true);
-    socket?.emit('pass-turn', { gameId });
+    if (!isMyTurn || !canPass) return;
+    const turnKey = `${turnIndex}-${board.length}-${myHand.length}-${gameState?.consecutivePasses || 0}-${gameState?.passCount || 0}`;
+    if (autoPassExecutedTurnRef.current === turnKey) return;
+    autoPassExecutedTurnRef.current = turnKey;
+    if (isLocalEngineRef.current && !hasServerStateRef.current) {
+      executeLocalPassTurn(mySeat);
+    } else {
+      socket?.emit('pass-turn', { gameId, username: myUsername });
+    }
   };
 
   const handlePlayAgain = () => {
+    setShowEndModal(false);
+    autoPassExecutedTurnRef.current = null;
+    if (isLocalEngineRef.current && !hasServerStateRef.current) {
+      localStateRef.current = null;
+      initLocalDominoGame();
+      return;
+    }
     socket?.emit('leave-room', { gameId });
     onBack();
   };
 
   const selectedTileMatchesBoth = () => {
-    if (selectedCardIdx === null) return false;
-    if (isBoardEmpty) return false;
+    if (selectedCardIdx === null || isBoardEmpty) return false;
     const tile = myHand[selectedCardIdx];
-    const [a, b] = tile;
-    const matchLeft = (leftEnd !== null && (a === leftEnd || b === leftEnd));
-    const matchRight = (rightEnd !== null && (a === rightEnd || b === rightEnd));
+    if (!tile) return false;
+    const matchLeft = matchSideCheck(tile, leftEnd);
+    const matchRight = matchSideCheck(tile, rightEnd);
     return matchLeft && matchRight;
+  };
+
+  // Build Real-World Connected Snake Domino Chain (Susunan Ular Domino Asli)
+  const renderDominoSnakeBoard = () => {
+    const bothMatch = selectedTileMatchesBoth();
+    const hasAnyLeftMatch = isMyTurn && !isBoardEmpty && myHand.some(t => matchSideCheck(t, leftEnd));
+    const hasAnyRightMatch = isMyTurn && !isBoardEmpty && myHand.some(t => matchSideCheck(t, rightEnd));
+
+    const leftEndElement = bothMatch ? (
+      <button
+        type="button"
+        className="play-end-indicator left g-btn-press"
+        onClick={() => handleChooseSide('left')}
+        title={`Pasang kartu di Ujung Kiri (${leftEnd})`}
+      >
+        <span className="end-ghost-arrow">◄</span>
+        <span className="end-ghost-label">KIRI ({leftEnd})</span>
+      </button>
+    ) : (
+      <button
+        type="button"
+        className={`chain-end-cap left ${hasAnyLeftMatch ? 'clickable' : ''}`}
+        onClick={() => hasAnyLeftMatch && handleBoardEndClick('left')}
+        disabled={!hasAnyLeftMatch}
+        title={hasAnyLeftMatch ? `Klik untuk pasang kartu di Ujung Kiri (${leftEnd})` : `Ujung Kiri: ${leftEnd}`}
+      >
+        <span>◄ {leftEnd}</span>
+      </button>
+    );
+
+    const renderRightEndElement = (dir: 'lr' | 'rl' | 'down') => {
+      if (bothMatch) {
+        return (
+          <button
+            type="button"
+            className="play-end-indicator right g-btn-press"
+            onClick={() => handleChooseSide('right')}
+            title={`Pasang kartu di Ujung Kanan (${rightEnd})`}
+          >
+            {dir === 'rl' && <span className="end-ghost-arrow">◄</span>}
+            <span className="end-ghost-label">KANAN ({rightEnd})</span>
+            {dir !== 'rl' && <span className="end-ghost-arrow">{dir === 'down' ? '▼' : '►'}</span>}
+          </button>
+        );
+      }
+      return (
+        <button
+          type="button"
+          className={`chain-end-cap right ${hasAnyRightMatch ? 'clickable' : ''}`}
+          onClick={() => hasAnyRightMatch && handleBoardEndClick('right')}
+          disabled={!hasAnyRightMatch}
+          title={hasAnyRightMatch ? `Klik untuk pasang kartu di Ujung Kanan (${rightEnd})` : `Ujung Kanan: ${rightEnd}`}
+        >
+          <span>{dir === 'rl' ? `◄ ${rightEnd}` : dir === 'down' ? `▼ ${rightEnd}` : `${rightEnd} ►`}</span>
+        </button>
+      );
+    };
+
+    // Segment definition for realistic Boustrophedon (Snake) domino chain:
+    // 6 tiles per horizontal row so the chain fits comfortably inside the felt table
+    // and every vertical corner aligns flush with the 6th tile above/below it!
+    const segDefs: { type: 'row-lr' | 'corner-right' | 'row-rl' | 'corner-left'; start: number; end: number }[] = [
+      { type: 'row-lr', start: 0, end: 6 },
+      { type: 'corner-right', start: 6, end: 7 },
+      { type: 'row-rl', start: 7, end: 13 },
+      { type: 'corner-left', start: 13, end: 14 },
+      { type: 'row-lr', start: 14, end: 20 },
+      { type: 'corner-right', start: 20, end: 21 },
+      { type: 'row-rl', start: 21, end: 30 }
+    ];
+
+    const activeSegs = segDefs
+      .map(def => ({
+        ...def,
+        items: board.slice(def.start, def.end).map((item: any, localIdx: number) => ({
+          item,
+          globalIdx: def.start + localIdx
+        }))
+      }))
+      .filter(seg => seg.items.length > 0);
+
+    const scaleClass =
+      board.length > 14 ? 'snake-scale-sm' :
+      board.length > 6 ? 'snake-scale-md' : 'snake-scale-lg';
+
+    return (
+      <div className={`domino-snake-board ${scaleClass}`}>
+        {activeSegs.map((seg, segIdx) => {
+          if (seg.type === 'corner-right' || seg.type === 'corner-left') {
+            const { item, globalIdx } = seg.items[0];
+            const isLastTile = globalIdx === board.length - 1;
+            return (
+              <div
+                key={`seg-${segIdx}`}
+                className={`snake-corner-row ${seg.type === 'corner-right' ? 'right-turn' : 'left-turn'}`}
+              >
+                <div className="chain-tile-item corner-tile">
+                  <DominoTile
+                    left={item.left}
+                    right={item.right}
+                    isRotated={false}
+                    isSmall={true}
+                  />
+                  {isLastTile && (
+                    <div className="chain-end-anchor anchor-down">
+                      {renderRightEndElement('down')}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          }
+
+          const isRL = seg.type === 'row-rl';
+          return (
+            <div
+              key={`seg-${segIdx}`}
+              className={`snake-row ${isRL ? 'dir-rl' : 'dir-lr'} ${board.length <= 6 ? 'single-row' : ''}`}
+            >
+              {seg.items.map(({ item, globalIdx }: { item: any; globalIdx: number }) => {
+                const isDouble = item.left === item.right;
+                // Stand double tiles vertically in single-row mode; keep uniform horizontal width once wrapped into snake rows so corners align to the exact pixel!
+                const standVertical = isDouble && board.length <= 6;
+                const displayLeft = isRL ? item.right : item.left;
+                const displayRight = isRL ? item.left : item.right;
+                const isFirstTile = globalIdx === 0;
+                const isLastTile = globalIdx === board.length - 1;
+
+                return (
+                  <div
+                    key={`${item.left}-${item.right}-${globalIdx}`}
+                    className={`chain-tile-item ${standVertical ? 'balak-vertical' : 'tile-horizontal'}`}
+                  >
+                    {isFirstTile && (
+                      <div className="chain-end-anchor anchor-left">
+                        {leftEndElement}
+                      </div>
+                    )}
+                    <DominoTile
+                      left={displayLeft}
+                      right={displayRight}
+                      isRotated={!standVertical}
+                      isSmall={true}
+                    />
+                    {isLastTile && (
+                      <div className={`chain-end-anchor ${isRL ? 'anchor-left' : 'anchor-right'}`}>
+                        {renderRightEndElement(isRL ? 'rl' : 'lr')}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
+    );
   };
 
   const topPlayer = getSeatInfo(2);
   const leftPlayer = getSeatInfo(1);
   const rightPlayer = numPlayers > 3 ? getSeatInfo(3) : null;
 
-  // Render player seat with timer ring
+  // Render opponent seat pod with clean non-overlapping layout
   const renderSeat = (player: ReturnType<typeof getSeatInfo>, position: 'top' | 'left' | 'right') => {
-    const avatars = { top: '🐢', left: '🐸', right: '🦎' };
+    const avatars = { top: '👑', left: '🐯', right: '🦅' };
     const timerFraction = player.isTurn ? turnTimer / 30 : 0;
     const playerCoinChange = coinChanges[player.username] || 0;
     return (
       <div className={`gs-seat ${position} ${player.isTurn ? 'active' : ''}`}>
-        <div className="gs-avatar-ring">
-          {player.isTurn && (
-            <svg className="gs-timer-ring" viewBox="0 0 44 44">
-              <circle cx="22" cy="22" r="20" className="gs-timer-track" />
-              <circle cx="22" cy="22" r="20" className="gs-timer-fill"
-                strokeDasharray={`${2 * Math.PI * 20}`}
-                strokeDashoffset={`${2 * Math.PI * 20 * (1 - timerFraction)}`}
-              />
-            </svg>
+        <div className="gs-seat-pod">
+          <div className="gs-avatar-ring">
+            {player.isTurn && (
+              <svg className="gs-timer-ring" viewBox="0 0 44 44">
+                <circle cx="22" cy="22" r="20" className="gs-timer-track" />
+                <circle cx="22" cy="22" r="20" className="gs-timer-fill"
+                  strokeDasharray={`${2 * Math.PI * 20}`}
+                  strokeDashoffset={`${2 * Math.PI * 20 * (1 - timerFraction)}`}
+                />
+              </svg>
+            )}
+            <div className="gs-avatar-img">{avatars[position]}</div>
+            <div className={`gs-card-badge ${player.isTurn ? 'pulse' : ''}`} title="Sisa kartu di tangan">
+              {player.cardCount}
+            </div>
+          </div>
+
+          <div className="gs-seat-meta">
+            <div className="gs-seat-name-row">
+              <span className="gs-seat-name">{player.username.substring(0, 10)}</span>
+              {gameState?.isPartnerMode && (
+                <span className={`gs-team-badge ${player.seatIndex % 2 === 0 ? 'team-a' : 'team-b'}`}>
+                  {player.seatIndex % 2 === 0 ? 'TIM A' : 'TIM B'}
+                </span>
+              )}
+            </div>
+            {player.isBankrupt ? (
+              <div className="gs-seat-coins bankrupt">💥 BANGKRUT</div>
+            ) : (
+              <div className="gs-seat-coins">🪙 {player.tableStack.toLocaleString()}</div>
+            )}
+            <div className="gs-seat-sub-row">
+              <div className="gs-mini-fan" title={`${player.cardCount} Kartu`}>
+                {Array.from({ length: Math.min(player.cardCount, 5) }).map((_, i) => (
+                  <span key={i} className="gs-mini-tile-back" />
+                ))}
+              </div>
+              {status === 'ended' && (
+                <span className="gs-seat-pip">⚫{player.pipSum}</span>
+              )}
+            </div>
+          </div>
+
+          {playerCoinChange !== 0 && (
+            <div className={`gs-seat-change ${playerCoinChange > 0 ? 'win' : 'lose'}`}>
+              {playerCoinChange > 0 ? '+' : ''}{playerCoinChange.toLocaleString()}
+            </div>
           )}
-          <div className="gs-avatar-img">{player.isBot ? '🤖' : avatars[position]}</div>
-          <div className={`gs-card-badge ${player.isTurn ? 'pulse' : ''}`}>{player.cardCount}</div>
-        </div>
-        <div className="gs-seat-name">{player.username.substring(0, 10)}</div>
-        {player.isBankrupt ? (
-          <div className="gs-seat-coins" style={{ color: '#e74c3c', fontWeight: 'bold' }}>💥 BANGKRUT</div>
-        ) : (
-          <div className="gs-seat-coins">🪙 Meja: {player.tableStack.toLocaleString()}</div>
-        )}
-        <div className="gs-seat-pip">⚫ {player.pipSum} Titik</div>
-        {gameState?.isPartnerMode && (
-          <div className={`gs-team-badge ${player.seatIndex % 2 === 0 ? 'team-a' : 'team-b'}`}>
-            {player.seatIndex % 2 === 0 ? '🔵 TIM A' : '🔴 TIM B'}
-          </div>
-        )}
-        {playerCoinChange !== 0 && (
-          <div className={`gs-seat-change ${playerCoinChange > 0 ? 'win' : 'lose'}`}>
-            {playerCoinChange > 0 ? '+' : ''}{playerCoinChange.toLocaleString()}
-          </div>
-        )}
-        {/* Card backs */}
-        <div className={`gs-card-backs ${position}`}>
-          {Array.from({ length: Math.min(player.cardCount, 4) }).map((_, i) => (
-            <div key={i} className="gs-mini-back" style={{
-              transform: `rotate(${(i - 1.5) * 8}deg) translateY(${-i * 1}px)`
-            }} />
-          ))}
         </div>
       </div>
     );
@@ -7036,7 +7894,7 @@ function DominoPlayScreen({
           style={{
             left: `${(coin as any).x ?? coin.fromX}vw`,
             top: `${(coin as any).y ?? coin.fromY}vh`,
-            animationDelay: `${coin.delay}s`
+            animationDelay: `${coin.delay}ms`
           }}
         >
           🪙
@@ -7067,158 +7925,205 @@ function DominoPlayScreen({
       {/* Rules Modal */}
       {showRules && <RulesModal onClose={() => setShowRules(false)} initialCategory={room?.name || 'Kamar Biasa'} />}
 
-      {/* Game Header */}
+      {/* TOP CASINO HUD BAR */}
       <div className="table-header">
-        <button className="lob-back-btn g-btn-press" onClick={() => { socket?.emit('leave-room', { gameId }); onBack(); }}>«</button>
-        <div className="table-room-title">
-          {room.name} — <span style={{ color: '#f1c40f' }}>{room.entryLabel}</span>
+        <div className="table-header-left">
+          <button className="lob-back-btn g-btn-press" onClick={() => { socket?.emit('leave-room', { gameId }); onBack(); }}>«</button>
+          <div className="table-room-badge">
+            <span className="table-room-title">{room.name}</span>
+            <span className="table-room-stake">TARUHAN {room.entryLabel}</span>
+          </div>
         </div>
 
-        {/* Card Tracker Widget */}
+        {/* Center Live Board Status & Ends Tracker */}
         <div className="table-card-tracker">
+          {!isBoardEmpty && (
+            <div className="tracker-ends-pill" title="Angka ujung rantai kiri dan kanan saat ini">
+              <span
+                className="end-tag left"
+                style={{ cursor: isMyTurn ? 'pointer' : 'default' }}
+                onClick={() => handleBoardEndClick('left')}
+              >
+                ◄ Kiri: <b>{leftEnd}</b>
+              </span>
+              <span className="end-divider">|</span>
+              <span
+                className="end-tag right"
+                style={{ cursor: isMyTurn ? 'pointer' : 'default' }}
+                onClick={() => handleBoardEndClick('right')}
+              >
+                Kanan: <b>{rightEnd}</b> ►
+              </span>
+            </div>
+          )}
           <div className="tracker-pill" title="Kartu yang sudah dimainkan di meja">
             <span className="tracker-icon">🀱</span>
             <span>Meja: <b style={{ color: '#f1c40f' }}>{board.length}/28</b></span>
           </div>
           {cardsInDrawPile > 0 && (
-            <div className="tracker-pill" title="Sisa kartu di tumpukan / bumbung">
+            <div className="tracker-pill" title="Sisa kartu tertutup / Bumbung">
               <span className="tracker-icon">📦</span>
               <span>Bumbung: <b style={{ color: '#2ecc71' }}>{cardsInDrawPile}</b></span>
             </div>
           )}
         </div>
 
-        <div style={{ display: 'flex', gap: '1vh', alignItems: 'center', position: 'relative' }}>
+        <div className="table-header-right">
           <div className="table-coins-display">
-            🪙 Meja: {mySeatPlayer?.tableStack ? mySeatPlayer.tableStack.toLocaleString() : '...'}
+            🪙 {mySeatPlayer?.tableStack !== undefined ? mySeatPlayer.tableStack.toLocaleString() : '...'}
           </div>
-          <button className="gs-rules-btn g-btn-press" onClick={() => setShowMenu(v => !v)}>≡</button>
+          <button className="gs-rules-btn g-btn-press" onClick={() => setShowRules(true)} title="Aturan Main">?</button>
+          <button className="gs-rules-btn g-btn-press" onClick={() => setShowMenu(v => !v)} title="Menu Meja">≡</button>
 
           <GameMenuDropdown
             isOpen={showMenu}
             onClose={() => setShowMenu(false)}
             items={[
-              { id: 'lobi', icon: '🚪', label: 'Lobi', onClick: () => { setShowMenu(false); socket?.emit('leave-room', { gameId }); onBack(); } },
-              { id: 'ganti', icon: '🔄', label: 'Ganti meja', onClick: () => { setShowMenu(false); socket?.emit('leave-room', { gameId }); onBack(); } },
-              { id: 'berdiri', icon: '👤', label: 'Berdiri', onClick: () => { setShowMenu(false); handleUserPay(); } },
+              { id: 'lobi', icon: '🚪', label: 'Kembali ke Lobi', onClick: () => { setShowMenu(false); socket?.emit('leave-room', { gameId }); onBack(); } },
+              { id: 'ganti', icon: '🔄', label: 'Meja Baru', onClick: () => { setShowMenu(false); handlePlayAgain(); } },
               { id: 'suara', icon: '🔊', label: 'Suara', badge: soundOn ? 'ON' : 'OFF', onClick: () => setSoundOn(v => !v) },
-              { id: 'efek', icon: '✨', label: 'Efek', badge: effectOn ? 'ON' : 'OFF', onClick: () => setEffectOn(v => !v) },
-              { id: 'bantuan', icon: '❓', label: 'Bantuan', onClick: () => { setShowMenu(false); setShowRules(true); } }
+              { id: 'efek', icon: '✨', label: 'Efek Visual', badge: effectOn ? 'ON' : 'OFF', onClick: () => setEffectOn(v => !v) },
+              { id: 'bantuan', icon: '❓', label: 'Panduan & Aturan', onClick: () => { setShowMenu(false); setShowRules(true); } }
             ]}
           />
         </div>
       </div>
 
-      {/* Main Board Area */}
+      {/* MAIN 3D CASINO TABLE ARENA */}
       <div className="table-board-area">
-        {/* Player Seats */}
+        {/* Luxury 3D Wood & Brass Casino Felt Rim */}
+        <div className="domino-felt-table">
+          <div className="domino-felt-inner-ring">
+            <div className="domino-felt-watermark">
+              <span className="watermark-crown">👑</span>
+              <span className="watermark-title">DOMINO GAPLE CASINO</span>
+              <span className="watermark-ante">ANTE {room.entryLabel} • {gameState?.is5KartuMode ? '5 KARTU' : gameState?.isWildMode ? 'WILD MODE' : gameState?.isPartnerMode ? 'PARTNER 2V2' : ' KLASIK'}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Opponent Player Seats */}
         {renderSeat(topPlayer, 'top')}
         {renderSeat(leftPlayer, 'left')}
         {rightPlayer && renderSeat(rightPlayer, 'right')}
 
-        {/* Central Played Tiles Chain */}
+        {/* Central Played Domino Chain */}
         <div className="table-center-chain">
-          {gameState?.isPartnerMode && (
-            <div style={{ textAlign: 'center', marginBottom: '0.8vh' }}>
-              <div className="gs-wild-badge-pill" style={{ background: 'linear-gradient(180deg, #2980b9, #8e44ad)' }}>
-                👥 DOMINO PARTNER (2 vs 2) — 🔄 Berlawanan Arah Jarum Jam
-              </div>
+          {(gameState?.isPartnerMode || (gameState?.isWildMode && gameState?.wildTile)) && (
+            <div className="table-mode-banners">
+              {gameState?.isPartnerMode && (
+                <div className="gs-wild-badge-pill partner">
+                  👥 PARTNER 2v2 • Giliran Berlawanan Jarum Jam
+                </div>
+              )}
+              {gameState?.isWildMode && gameState?.wildTile && (
+                <div className="gs-wild-badge-pill">
+                  🃏 KARTU WILD: <span style={{ color: '#f1c40f', fontWeight: 900 }}>[{gameState.wildTile[0]}|{gameState.wildTile[1]}] (Angka {gameState.wildNumber})</span>
+                </div>
+              )}
             </div>
           )}
-          {gameState?.isWildMode && gameState?.wildTile && (
-            <div style={{ textAlign: 'center', marginBottom: '0.8vh' }}>
-              <div className="gs-wild-badge-pill">
-                🃏 KARTU WILD: <span style={{ color: '#f1c40f', fontWeight: 'bold' }}>[{gameState.wildTile[0]}, {gameState.wildTile[1]}]</span>
-              </div>
-            </div>
-          )}
+
           {board.length === 0 ? (
-            <div className="table-empty-status">
-              {isMyTurn ? '▶️ Giliran Anda — mainkan kartu pertama!' : 'Menunggu kartu pertama...'}
+            <div className={`table-empty-status ${isMyTurn ? 'my-turn-pulse' : ''}`}>
+              <div className="empty-domino-icon">🀱</div>
+              <div>{isMyTurn ? '▶️ Giliran Anda! Klik salah satu kartu di bawah untuk memulai meja' : `Menunggu ${gameState.players[turnIndex]?.username || 'pemain'} menurunkan kartu pertama...`}</div>
             </div>
           ) : (
-            <div className="table-chain-scroller">
-              {selectedTileMatchesBoth() && (
-                <button className="play-end-indicator left g-btn-press" onClick={() => handleChooseSide('left')}>
-                  ◄ Kiri
-                </button>
-              )}
-              {board.map((item: any, idx: number) => {
-                const isDouble = item.left === item.right;
-                return (
-                  <DominoTile
-                    key={`${item.left}-${item.right}-${idx}`}
-                    left={item.left}
-                    right={item.right}
-                    isRotated={!isDouble}
-                    isSmall={true}
-                  />
-                );
-              })}
-              {selectedTileMatchesBoth() && (
-                <button className="play-end-indicator right g-btn-press" onClick={() => handleChooseSide('right')}>
-                  Kanan ►
-                </button>
-              )}
+            <div className="table-chain-wrapper">
+              {renderDominoSnakeBoard()}
             </div>
           )}
-          {/* Ante Watermark on Felt Table */}
-          <div className="gs-ante-label">
-            ANTE: {room.entryLabel}
-          </div>
         </div>
 
         {/* Victory / Defeat Panel */}
-        {status === 'ended' && winner !== null && (
-          <div className="victory-overlay">
-            <div className="victory-box tm-box-bounce">
-              <div className={`victory-title ${(gameState?.isPartnerMode ? (winner % 2 === mySeat % 2) : (winner === mySeat)) ? 'win' : 'lose'}`}>
-                {gameState?.isPartnerMode
-                  ? ((winner % 2 === mySeat % 2) ? '🏆 TIM ANDA MENANG!' : '😢 TIM ANDA KALAH!')
-                  : (winner === mySeat ? '🏆 MENANG!' : '😢 KALAH!')}
-              </div>
-              <div className="victory-message">
-                <div className="victory-winner-text">
-                  Pemenang: <span style={{ color: '#f1c40f', fontWeight: 'bold' }}>{gameState.players[winner]?.username}</span>
+        {showEndModal && status === 'ended' && winner !== null && (() => {
+          const isPlayerWin = gameState?.isPartnerMode ? (winner % 2 === mySeat % 2) : (winner === mySeat);
+          const myNetChange = coinChanges[myUsername] ?? 0;
+          const seatAvatars = ['😎', '🐯', '👑', '🦅'];
+          return (
+            <div className="victory-overlay">
+              <div className={`victory-box tm-box-bounce ${isPlayerWin ? 'is-win' : 'is-lose'}`}>
+                <div className={`victory-crest-badge ${isPlayerWin ? 'win' : 'lose'}`}>
+                  {isPlayerWin ? '🏆' : '💔'}
                 </div>
-                <div className="victory-sub-desc">
-                  {winType === 'bankruptcy' ? '💥 Semua lawan BANGKRUT!' : winType === 'block' ? '🔴 Dead-End — jumlah titik terkecil menang.' : '✅ Kartu habis!'}
+                <div className={`victory-title ${isPlayerWin ? 'win' : 'lose'}`}>
+                  {gameState?.isPartnerMode
+                    ? (isPlayerWin ? 'TIM ANDA MENANG!' : 'TIM ANDA KALAH!')
+                    : (isPlayerWin ? 'KEMENANGAN!' : 'KEKALAHAN!')}
                 </div>
-                {gameState.winCategory && (
-                  <div className="victory-badge-pill">
-                    🔥 KEMENANGAN {gameState.winCategory.toUpperCase()} ({gameState.winMultiplier || 1}x Bet)
+                <div className={`victory-net-pill ${myNetChange >= 0 ? 'win' : 'lose'}`}>
+                  <span>{myNetChange >= 0 ? 'HADIAH BERSIH' : 'TOTAL KALAH'}</span>
+                  <strong>{myNetChange >= 0 ? `+${myNetChange.toLocaleString()}` : myNetChange.toLocaleString()} 🪙</strong>
+                </div>
+                <div className="victory-message">
+                  <div className="victory-winner-banner">
+                    <div className="victory-winner-text">
+                      👑 Pemenang: <span className="winner-hl">{gameState.players[winner]?.username}</span>
+                    </div>
+                    <div className="victory-sub-desc">
+                      {winType === 'bankruptcy'
+                        ? '💥 Lawan kehabisan koin (Bangkrut)!'
+                        : winType === 'block'
+                          ? '🔴 Meja Buntu (Dead-End) — jumlah titik terkecil menang!'
+                          : '✅ Kartu di tangan habis terjual!'}
+                    </div>
                   </div>
-                )}
-                {/* Show each player's coin change in neat grid table */}
-                <div className="gs-result-table">
-                  {gameState.players.map((p: any) => {
-                    const change = coinChanges[p.username] || 0;
-                    return (
-                      <div key={p.username} className="gs-result-row">
-                        <div className="gs-result-user">
-                          <span>👤</span>
-                          <span>{p.username.substring(0, 10)} {p.isBankrupt ? '(BANGKRUT)' : ''}</span>
+                  {gameState.winCategory && (
+                    <div className="victory-badge-pill">
+                      🔥 KEMENANGAN {gameState.winCategory.toUpperCase()} ({gameState.winMultiplier || 1}x LIPAT)
+                    </div>
+                  )}
+                  <div className="gs-result-table">
+                    {gameState.players.map((p: any, idx: number) => {
+                      const change = coinChanges[p.username] || 0;
+                      const isWinnerRow = idx === winner;
+                      const isMeRow = p.username === myUsername;
+                      const avatarIcon = seatAvatars[p.seatIndex ?? idx] || '👤';
+                      return (
+                        <div key={p.username} className={`gs-result-row ${isWinnerRow ? 'winner-row' : ''} ${isMeRow ? 'me-row' : ''}`}>
+                          <div className="gs-result-user">
+                            <span className="gs-res-avatar">{avatarIcon}</span>
+                            <div className="gs-res-meta">
+                              <span className="gs-res-name">
+                                {p.username.substring(0, 12)}
+                                {isMeRow && <em className="gs-me-tag">ANDA</em>}
+                                {isWinnerRow && <span className="gs-win-crown">👑</span>}
+                              </span>
+                              <span className="gs-res-sub">
+                                {p.isBankrupt
+                                  ? '💥 Bangkrut'
+                                  : (p.cardCount === 0 || (p.pipSum ?? 0) === 0)
+                                    ? '✨ Habis (0 titik)'
+                                    : `Sisa ${p.cardCount ?? '?'} kartu • ${p.pipSum ?? 0} titik`}
+                              </span>
+                            </div>
+                          </div>
+                          <span className={change >= 0 ? 'gs-result-win' : 'gs-result-lose'}>
+                            {change >= 0 ? '+' : ''}{change.toLocaleString()} 🪙
+                          </span>
                         </div>
-                        <span className={change >= 0 ? 'gs-result-win' : 'gs-result-lose'}>
-                          {change >= 0 ? '+' : ''}{change.toLocaleString()} 🪙
-                        </span>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-              <div className="victory-actions-bar">
-                <button className="victory-action-btn g-btn-press restart" onClick={handlePlayAgain}>Main Lagi 🔄</button>
-                <button className="victory-action-btn g-btn-press close" onClick={() => { socket?.emit('leave-room', { gameId }); onBack(); }}>Lobby 🚪</button>
+                <div className="victory-actions-bar">
+                  <button className="victory-action-btn g-btn-press restart" onClick={handlePlayAgain}>
+                    🔄 Main Lagi
+                  </button>
+                  <button className="victory-action-btn g-btn-press close" onClick={() => { socket?.emit('leave-room', { gameId }); onBack(); }}>
+                    🚪 Kembali ke Lobi
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
       </div>
 
-      {/* BOTTOM Player Area */}
+      {/* BOTTOM PLAYER CONTROL DOCK */}
       <div className={`gs-bottom-tray ${isMyTurn ? 'my-turn' : ''}`}>
-        {/* Player info — bottom left */}
+        {/* Left: My Player Pod */}
         <div className="gs-me-info">
           <div className="gs-me-avatar-ring">
             {isMyTurn && (
@@ -7230,18 +8135,18 @@ function DominoPlayScreen({
                 />
               </svg>
             )}
-            <div className="gs-me-avatar">🐸</div>
+            <div className="gs-me-avatar">😎</div>
+            {isMyTurn && <div className="gs-me-timer-badge">{turnTimer}s</div>}
           </div>
           <div className="gs-me-text">
-            <div className="gs-me-name">{myUsername.substring(0, 10)}..</div>
+            <div className="gs-me-name">{myUsername.substring(0, 12)}</div>
             {mySeatPlayer?.isBankrupt ? (
               <div className="gs-me-coins" style={{ color: '#e74c3c', fontWeight: 'bold' }}>💥 BANGKRUT</div>
             ) : (
-              <div className="gs-me-coins">🪙 Meja: {(mySeatPlayer?.tableStack ?? 0).toLocaleString()}</div>
+              <div className="gs-me-coins">🪙 {(mySeatPlayer?.tableStack ?? 0).toLocaleString()}</div>
             )}
-            <div className="gs-me-pip">⚫ Titik: {myPipSum}</div>
+            <div className="gs-me-pip">⚫ Total Titik: <b>{myPipSum}</b></div>
           </div>
-          {/* My coin change during game */}
           {coinChanges[myUsername] !== undefined && coinChanges[myUsername] !== 0 && (
             <div className={`gs-me-change ${coinChanges[myUsername] > 0 ? 'win' : 'lose'}`}>
               {coinChanges[myUsername] > 0 ? '+' : ''}{coinChanges[myUsername].toLocaleString()}
@@ -7249,93 +8154,168 @@ function DominoPlayScreen({
           )}
         </div>
 
-        {/* Center area — cards + pips stacked */}
+        {/* Center: Turn Banner + 3D Wooden Domino Rack */}
         <div className="gs-center-column">
-          {/* Turn indicator */}
-          {isMyTurn && !canPass && (
-            <div className="gs-turn-indicator">
-              {isBoardEmpty ? '▶️ Mainkan kartu pertama!' : '▶️ Giliran Anda! Pilih kartu'}
+          {selectedTileMatchesBoth() && selectedCardIdx !== null && myHand[selectedCardIdx] ? (
+            <div className="gs-dual-side-chooser">
+              <button
+                type="button"
+                className="gs-side-choice-btn left g-btn-press"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleChooseSide('left');
+                }}
+              >
+                ◄ TARUH KIRI ({leftEnd})
+              </button>
+              <span className="gs-side-choice-label">
+                Kartu [{myHand[selectedCardIdx][0]}|{myHand[selectedCardIdx][1]}] cocok di 2 sisi:
+              </span>
+              <button
+                type="button"
+                className="gs-side-choice-btn right g-btn-press"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleChooseSide('right');
+                }}
+              >
+                TARUH KANAN ({rightEnd}) ►
+              </button>
+            </div>
+          ) : (
+            isMyTurn && !canPass && (
+              <div className="gs-turn-indicator">
+                {isBoardEmpty
+                  ? '▶️ Giliran Anda! Klik kartu untuk memulai permainan'
+                  : '▶️ Giliran Anda! Klik kartu yang menyala (atau ujung Kiri/Kanan meja) untuk menurunkan'}
+              </div>
+            )
+          )}
+          {isMyTurn && canPass && (
+            <div className="gs-turn-indicator pass-mode" onClick={handleUserPay} style={{ cursor: 'pointer' }}>
+              {gameState?.is5KartuMode && cardsInDrawPile > 0
+                ? '📦 Tidak ada kartu cocok — mengambil dari Bumbung...'
+                : `💸 Tidak ada kartu cocok — Lewat (${payAmount.toLocaleString()} 🪙)`}
             </div>
           )}
 
-          {/* Cards row — side by side, no overlap */}
-          <div className={`gs-hand-row ${isMyTurn ? 'lifted' : ''}`}>
-            {myHand.map((tile: Tile, idx: number) => {
-              const playable = isPlayableOnBoard(tile) && isMyTurn;
-              return (
-                <div
-                  key={`${tile[0]}-${tile[1]}`}
-                  className={`gs-card-slot ${playable ? 'can-play' : (isMyTurn ? 'unplayable' : '')} ${selectedCardIdx === idx ? 'picked' : ''} ${heldCardIdx === idx ? 'held' : ''}`}
-                  onClick={() => handleUserSelectCard(idx)}
-                  onMouseDown={() => {
-                    holdTimerRef.current = setTimeout(() => setHeldCardIdx(idx), 400);
-                  }}
-                  onMouseUp={() => {
-                    if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
-                    holdTimerRef.current = null;
-                    setHeldCardIdx(null);
-                  }}
-                  onMouseLeave={() => {
-                    if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
-                    holdTimerRef.current = null;
-                    setHeldCardIdx(null);
-                  }}
-                  onTouchStart={() => {
-                    holdTimerRef.current = setTimeout(() => setHeldCardIdx(idx), 400);
-                  }}
-                  onTouchEnd={() => {
-                    if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
-                    holdTimerRef.current = null;
-                    setHeldCardIdx(null);
-                  }}
-                >
-                  <DominoTile
-                    left={tile[0]}
-                    right={tile[1]}
-                    isPlayable={playable}
-                    isSelected={selectedCardIdx === idx}
-                  />
-                </div>
-              );
-            })}
+          {/* 3D Player Hand Rack */}
+          <div className="gs-hand-rack-frame">
+            <div className={`gs-hand-row ${isMyTurn ? 'lifted' : ''}`}>
+              {myHand.map((tile: Tile, idx: number) => {
+                const playable = isPlayableOnBoard(tile) && isMyTurn;
+                const canL = !isBoardEmpty && matchSideCheck(tile, leftEnd);
+                const canR = !isBoardEmpty && matchSideCheck(tile, rightEnd);
+                const dualSide = playable && canL && canR;
+                const isPicked = selectedCardIdx === idx;
+                return (
+                  <div
+                    key={`${tile[0]}-${tile[1]}-${idx}`}
+                    className={`gs-card-slot ${playable ? 'can-play' : (isMyTurn ? 'unplayable' : '')} ${dualSide ? 'dual-side' : ''} ${isPicked ? 'picked' : ''} ${heldCardIdx === idx ? 'held' : ''}`}
+                    onClick={() => handleUserSelectCard(idx)}
+                    onMouseDown={() => {
+                      holdTimerRef.current = setTimeout(() => setHeldCardIdx(idx), 650);
+                    }}
+                    onMouseUp={() => {
+                      if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
+                      holdTimerRef.current = null;
+                      setHeldCardIdx(null);
+                    }}
+                    onMouseLeave={() => {
+                      if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
+                      holdTimerRef.current = null;
+                      setHeldCardIdx(null);
+                    }}
+                    onTouchStart={() => {
+                      holdTimerRef.current = setTimeout(() => setHeldCardIdx(idx), 650);
+                    }}
+                    onTouchEnd={() => {
+                      if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
+                      holdTimerRef.current = null;
+                      setHeldCardIdx(null);
+                    }}
+                  >
+                    {isPicked && dualSide ? (
+                      <div className="gs-card-inline-sides" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          className="gs-inline-side-btn left g-btn-press"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleChooseSide('left', idx);
+                          }}
+                        >
+                          ◄ Kiri
+                        </button>
+                        <button
+                          type="button"
+                          className="gs-inline-side-btn right g-btn-press"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleChooseSide('right', idx);
+                          }}
+                        >
+                          Kanan ►
+                        </button>
+                      </div>
+                    ) : (
+                      playable && (
+                        <span className={`gs-playable-dot ${dualSide ? 'both-sides' : ''}`}>
+                          {isBoardEmpty ? '●' : dualSide ? '◄►' : canL ? '◄' : '►'}
+                        </span>
+                      )
+                    )}
+                    <DominoTile
+                      left={tile[0]}
+                      right={tile[1]}
+                      isPlayable={playable}
+                      isSelected={isPicked}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+            <div className="gs-wooden-rack-ledge" />
           </div>
 
           {/* Card hold preview popup */}
           {heldCardIdx !== null && myHand[heldCardIdx] && (
-            <div className="gs-card-preview-overlay">
+            <div className="gs-card-preview-overlay" style={{ pointerEvents: 'none' }}>
               <div className="gs-card-preview-box">
                 <DominoTile
                   left={myHand[heldCardIdx][0]}
                   right={myHand[heldCardIdx][1]}
                 />
                 <div className="gs-card-preview-label">
-                  {myHand[heldCardIdx][0]}–{myHand[heldCardIdx][1]}
+                  Kartu [{myHand[heldCardIdx][0]} | {myHand[heldCardIdx][1]}]
                 </div>
               </div>
             </div>
           )}
-
-          {/* Logs feed */}
-          <div className="gs-logs-feed">
-            {logs.slice(-3).reverse().map((log, i) => (
-              <div key={i} className={`gs-log-line ${i === 0 ? 'latest' : ''}`}>{log}</div>
-            ))}
-          </div>
         </div>
 
-        {/* Stats panel — bottom right */}
+        {/* Right: Remaining Pips (0-6) Counter & Live Log */}
         <div className="gs-stats-tray">
-          <div className="gs-stats-header">Titik Sisa</div>
-          {gameState.players.map((p: any) => (
-            <div key={p.username} className="gs-stats-row">
-              <span style={{ fontSize: '1.2vh' }}>{p.username.substring(0, 7)}</span>
-              <span className="gs-stats-val">⚫{p.pipSum}</span>
-            </div>
-          ))}
-          <div className="gs-stats-row gs-stats-dim" style={{ marginTop: '0.5vh' }}>
-            <span>Timer</span>
-            <span className={`gs-stats-val ${turnTimer <= 10 ? 'urgent' : ''}`}>{turnTimer}s</span>
+          <div className="gs-stats-header">
+            <span>🔍 Sisa Angka (0–6)</span>
           </div>
+          <div className="gs-pip-counter-grid">
+            {pipRemainingCounts.map((rem, num) => (
+              <div
+                key={num}
+                className={`gs-pip-counter-cell ${rem === 0 ? 'depleted' : ''} ${(leftEnd === num || rightEnd === num) ? 'active-end' : ''}`}
+                title={`Angka ${num}: tersisa ${rem} kartu di luar`}
+              >
+                <span className="pip-num">{num}</span>
+                <span className="pip-rem">{rem}</span>
+              </div>
+            ))}
+          </div>
+          {logs.length > 0 && (
+            <div className="gs-latest-log" title={logs[logs.length - 1]}>
+              {logs[logs.length - 1]}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -8150,7 +9130,7 @@ function SlotLobbyScreen({ onBack, onPlaySlot }: { onBack: () => void; onPlaySlo
   );
 }
 
-// QiuQiu Tile Helper Functions
+// QiuQiu Tile Helper Functions (Authentic Domino QiuQiu 99 Rules & Tie-Breakers)
 type QiuTile = [number, number];
 
 const FULL_DOMINO_DECK: QiuTile[] = [
@@ -8163,65 +9143,178 @@ const FULL_DOMINO_DECK: QiuTile[] = [
   [6, 6]
 ];
 
-const getQiuPips = (t: QiuTile) => t[0] + t[1];
+const getQiuPips = (t: QiuTile) => (t ? t[0] + t[1] : 0);
 const getQiuPairScore = (t1: QiuTile, t2: QiuTile) => (getQiuPips(t1) + getQiuPips(t2)) % 10;
 
+// Cari pasangan 2 kartu terbaik dari 3 kartu pertama (Ronde 1) agar kartu Qiu (9) otomatis di kiri
+const arrangeBestThreeCards = (threeTiles: QiuTile[]): {
+  leftScore: number;
+  ordered: [QiuTile, QiuTile, QiuTile];
+} => {
+  if (!threeTiles || threeTiles.length < 3) {
+    const a = threeTiles?.[0] || [0, 0];
+    const b = threeTiles?.[1] || [0, 0];
+    const c = threeTiles?.[2] || [0, 0];
+    return { leftScore: getQiuPairScore(a, b), ordered: [a, b, c] };
+  }
+  const [a, b, c] = threeTiles;
+  const options: Array<{ score: number; ordered: [QiuTile, QiuTile, QiuTile] }> = [
+    { score: getQiuPairScore(a, b), ordered: [a, b, c] },
+    { score: getQiuPairScore(a, c), ordered: [a, c, b] },
+    { score: getQiuPairScore(b, c), ordered: [b, c, a] },
+  ];
+  options.sort((x, y) => y.score - x.score);
+  return { leftScore: options[0].score, ordered: options[0].ordered };
+};
+
 interface QiuEvaluation {
-  rank: number; // 6: Six Devil, 5: Twin, 4: Small, 3: Big, 2: QiuQiu, 1: Normal
+  rank: number; // 6: Enam Dewa, 5: Kartu Balak, 4: Murni Kecil, 3: Murni Besar, 2: QiuQiu, 1: Normal/Qiu X
   title: string;
   leftScore: number;
   rightScore: number;
+  totalPips: number;
+  highestBalak: number;      // -1 jika tidak punya balak, atau 0..6
+  highestSinglePips: number; // jumlah bulatan kartu terbesar (0..12)
+  highestTopPip: number;     // sisi terbesar pada kartu terbesar (0..6)
   bestPairs: [QiuTile, QiuTile, QiuTile, QiuTile];
 }
 
-const evaluateQiuHand = (hand: QiuTile[]): QiuEvaluation => {
+const getHandTieBreakerStats = (tiles: QiuTile[]) => {
+  let highestBalak = -1;
+  let highestSinglePips = -1;
+  let highestTopPip = -1;
+
+  for (const t of tiles) {
+    if (!t) continue;
+    if (t[0] === t[1] && t[0] > highestBalak) {
+      highestBalak = t[0];
+    }
+    const pips = t[0] + t[1];
+    const top = Math.max(t[0], t[1]);
+    if (pips > highestSinglePips || (pips === highestSinglePips && top > highestTopPip)) {
+      highestSinglePips = pips;
+      highestTopPip = top;
+    }
+  }
+  return { highestBalak, highestSinglePips, highestTopPip };
+};
+
+const evaluateQiuHand = (hand: QiuTile[], useExactOrder = false): QiuEvaluation => {
   if (!hand || hand.length < 4) {
-    const s = hand && hand.length >= 2 ? getQiuPairScore(hand[0], hand[1]) : 0;
-    return { rank: 1, title: `${s} : ?`, leftScore: s, rightScore: 0, bestPairs: [hand[0] || [0, 0], hand[1] || [0, 0], hand[2] || [0, 0], [0, 0]] };
+    const arr3 = arrangeBestThreeCards(hand || []);
+    return {
+      rank: 1,
+      title: arr3.leftScore === 9 ? 'Qiu : ?' : `${arr3.leftScore} : ?`,
+      leftScore: arr3.leftScore,
+      rightScore: 0,
+      totalPips: (hand || []).reduce((acc, t) => acc + getQiuPips(t), 0),
+      highestBalak: -1,
+      highestSinglePips: 0,
+      highestTopPip: 0,
+      bestPairs: [arr3.ordered[0], arr3.ordered[1], arr3.ordered[2], [0, 0]]
+    };
   }
 
   const [t1, t2, t3, t4] = hand;
   const totalPips = getQiuPips(t1) + getQiuPips(t2) + getQiuPips(t3) + getQiuPips(t4);
+  const tb = getHandTieBreakerStats([t1, t2, t3, t4]);
 
-  // 1. Six Devil: All 4 tiles each have exactly 6 pips
+  // 1. Enam Dewa (Six Devil): Keempat kartu masing-masing memiliki tepat 6 bulatan
   if (getQiuPips(t1) === 6 && getQiuPips(t2) === 6 && getQiuPips(t3) === 6 && getQiuPips(t4) === 6) {
-    return { rank: 6, title: 'Six Devil 😈', leftScore: 9, rightScore: 9, bestPairs: [t1, t2, t3, t4] };
+    return {
+      rank: 6,
+      title: 'Enam Dewa 😈',
+      leftScore: 9,
+      rightScore: 9,
+      totalPips,
+      ...tb,
+      bestPairs: [t1, t2, t3, t4]
+    };
   }
 
-  // 2. Twin Cards: All 4 tiles are double balak
+  // 2. Kartu Balak (Twin Cards): Keempat kartu semuanya kartu kembar/balak
   if (t1[0] === t1[1] && t2[0] === t2[1] && t3[0] === t3[1] && t4[0] === t4[1]) {
-    return { rank: 5, title: 'Twin Cards 💎', leftScore: 9, rightScore: 9, bestPairs: [t1, t2, t3, t4] };
+    return {
+      rank: 5,
+      title: 'Kartu Balak 💎',
+      leftScore: 9,
+      rightScore: 9,
+      totalPips,
+      ...tb,
+      bestPairs: [t1, t2, t3, t4]
+    };
   }
 
-  // 3. Small Cards: Total sum <= 9
+  // 3. Murni Kecil (Small Cards): Total bulatan 4 kartu <= 9
   if (totalPips <= 9) {
-    return { rank: 4, title: 'Murni Kecil 🌟', leftScore: 9, rightScore: 9, bestPairs: [t1, t2, t3, t4] };
+    return {
+      rank: 4,
+      title: `Murni Kecil (${totalPips}) 🌟`,
+      leftScore: 9,
+      rightScore: 9,
+      totalPips,
+      ...tb,
+      bestPairs: [t1, t2, t3, t4]
+    };
   }
 
-  // 4. Big Cards: Total sum >= 39
+  // 4. Murni Besar (Big Cards): Total bulatan 4 kartu >= 39
   if (totalPips >= 39) {
-    return { rank: 3, title: 'Murni Besar ⚡', leftScore: 9, rightScore: 9, bestPairs: [t1, t2, t3, t4] };
+    return {
+      rank: 3,
+      title: `Murni Besar (${totalPips}) ⚡`,
+      leftScore: 9,
+      rightScore: 9,
+      totalPips,
+      ...tb,
+      bestPairs: [t1, t2, t3, t4]
+    };
   }
 
-  // Test all 3 possible pair combinations to find best (Left >= Right)
+  // Jika menggunakan urutan kartu yang sedang disusun pemain secara manual
+  if (useExactOrder) {
+    const sLeft = getQiuPairScore(t1, t2);
+    const sRight = getQiuPairScore(t3, t4);
+    const left = Math.max(sLeft, sRight);
+    const right = Math.min(sLeft, sRight);
+    const orderedPairs: [QiuTile, QiuTile, QiuTile, QiuTile] =
+      sLeft >= sRight ? [t1, t2, t3, t4] : [t3, t4, t1, t2];
+    const isQQ = left === 9 && right === 9;
+    const isQX = left === 9;
+    return {
+      rank: isQQ ? 2 : 1,
+      title: isQQ ? 'QiuQiu 9-9 🔥' : isQX ? `Qiu ${right}` : `${left} : ${right}`,
+      leftScore: left,
+      rightScore: right,
+      totalPips,
+      ...tb,
+      bestPairs: orderedPairs
+    };
+  }
+
+  // Cari kombinasi terbaik dari 3 kemungkinan pasangan (Kiri >= Kanan)
   const combinations = [
     { p1: [t1, t2], p2: [t3, t4] },
     { p1: [t1, t3], p2: [t2, t4] },
     { p1: [t1, t4], p2: [t2, t3] },
   ];
 
-  let bestCombo: any = null;
+  let bestCombo: { left: number; right: number; bestPairs: [QiuTile, QiuTile, QiuTile, QiuTile] } = {
+    left: 0,
+    right: 0,
+    bestPairs: [t1, t2, t3, t4]
+  };
   let bestScoreVal = -1;
 
   for (const c of combinations) {
-    let s1 = getQiuPairScore(c.p1[0] as QiuTile, c.p1[1] as QiuTile);
-    let s2 = getQiuPairScore(c.p2[0] as QiuTile, c.p2[1] as QiuTile);
-    let left = Math.max(s1, s2);
-    let right = Math.min(s1, s2);
-    let leftPair = s1 >= s2 ? c.p1 : c.p2;
-    let rightPair = s1 >= s2 ? c.p2 : c.p1;
+    const s1 = getQiuPairScore(c.p1[0] as QiuTile, c.p1[1] as QiuTile);
+    const s2 = getQiuPairScore(c.p2[0] as QiuTile, c.p2[1] as QiuTile);
+    const left = Math.max(s1, s2);
+    const right = Math.min(s1, s2);
+    const leftPair = s1 >= s2 ? c.p1 : c.p2;
+    const rightPair = s1 >= s2 ? c.p2 : c.p1;
 
-    let totalRankVal = left * 10 + right;
+    const totalRankVal = left * 10 + right;
     if (totalRankVal > bestScoreVal) {
       bestScoreVal = totalRankVal;
       bestCombo = {
@@ -8240,8 +9333,21 @@ const evaluateQiuHand = (hand: QiuTile[]): QiuEvaluation => {
     title: isQiuQiu ? 'QiuQiu 9-9 🔥' : isQiuX ? `Qiu ${bestCombo.right}` : `${bestCombo.left} : ${bestCombo.right}`,
     leftScore: bestCombo.left,
     rightScore: bestCombo.right,
+    totalPips,
+    ...tb,
     bestPairs: bestCombo.bestPairs
   };
+};
+
+// Perbandingan 2 tangan QiuQiu sesuai aturan Tie-Breaker Asli (Rank -> Skor Pasangan -> Balak Tertinggi -> Kartu Tunggal Terbesar)
+const compareQiuHands = (evA: QiuEvaluation, evB: QiuEvaluation): number => {
+  if (evA.rank !== evB.rank) return evA.rank - evB.rank;
+  const scoreA = evA.leftScore * 10 + evA.rightScore;
+  const scoreB = evB.leftScore * 10 + evB.rightScore;
+  if (scoreA !== scoreB) return scoreA - scoreB;
+  if (evA.highestBalak !== evB.highestBalak) return evA.highestBalak - evB.highestBalak;
+  if (evA.highestSinglePips !== evB.highestSinglePips) return evA.highestSinglePips - evB.highestSinglePips;
+  return evA.highestTopPip - evB.highestTopPip;
 };
 
 interface FlyChipItem {
@@ -8254,15 +9360,31 @@ interface FlyChipItem {
 }
 
 const SEAT_COORDS: Record<number, { x: string; y: string }> = {
-  0: { x: '50vw', y: '85vh' },
-  1: { x: '88vw', y: '35vh' },
-  2: { x: '75vw', y: '10vh' },
-  3: { x: '25vw', y: '10vh' },
-  4: { x: '12vw', y: '70vh' },
-  5: { x: '88vw', y: '70vh' },
+  0: { x: '26vw', y: '82vh' },
+  1: { x: '88vw', y: '44vh' },
+  2: { x: '76vw', y: '14vh' },
+  3: { x: '24vw', y: '14vh' },
+  4: { x: '12vw', y: '44vh' },
+  5: { x: '14vw', y: '74vh' },
 };
 
-const CENTER_POT_COORDS = { x: '50vw', y: '46vh' };
+const CENTER_POT_COORDS = { x: '50vw', y: '44vh' };
+
+interface QiuSeatState {
+  id: number;
+  name: string;
+  coins: number;
+  avatar: string;
+  isDealer: boolean;
+  badge: string;
+  roundBet: number;
+  totalBet: number;
+  hasActed: boolean;
+  hand: QiuTile[];
+  folded: boolean;
+  allIn: boolean;
+  isEmpty: boolean;
+}
 
 // =====================================================
 // KOMPONEN GAME DOMINO QIUQIU (99) AUTHENTIC CASINO TABLE
@@ -8283,21 +9405,45 @@ function QiuQiuGameScreen({
   customCode?: string | null;
 }) {
   const activeRoom = room || QIUQIU_ROOMS[0];
-  const myUsername = localStorage.getItem('domino_username') || 'V2043';
+  const myUsername = localStorage.getItem('domino_username') || 'Player';
   const avatarEmoji = localStorage.getItem('domino_avatar') || '🐸';
+  const baseBlind = customBet ? Math.max(1000, Math.round(customBet * 0.1)) : activeRoom.blind;
+  const baseAnte = customBet ? Math.max(1000, Math.round(customBet * 0.1)) : activeRoom.ante;
+  const baseBuyIn = customBet || activeRoom.buyIn;
 
-  const [phase, setPhase] = useState<'round1_bet' | 'mix' | 'tentukan' | 'round2_bet' | 'showdown'>('round1_bet');
-  const [potAmount, setPotAmount] = useState((customBet ? Math.round(customBet * 0.1) : activeRoom.ante) * (customPlayers?.length || 6));
-  const [tentukanCount, setTentukanCount] = useState(10);
-  const [activeTurnIdx, setActiveTurnIdx] = useState(0);
-  const [winnerNotice, setWinnerNotice] = useState<{ winnerName: string; amount: number; title: string } | null>(null);
+  // Game Phases:
+  // 'round1_bet': 3 Kartu dibagikan, ronde taruhan pertama searah jarum jam
+  // 'round2_bet': Kartu ke-4 dibagikan, ronde taruhan kedua searah jarum jam
+  // 'tentukan'  : Waktu singkat menyusun/mengonfirmasi 2 pasang kartu (Kiri & Kanan)
+  // 'showdown'  : Buka kartu semua pemain aktif, hitung pemenang & tie-breaker balak, auto lanjut ronde baru
+  const [phase, setPhase] = useState<'round1_bet' | 'round2_bet' | 'tentukan' | 'showdown'>('round1_bet');
+  const [roundNumber, setRoundNumber] = useState(1);
+  const [dealerSeatIdx, setDealerSeatIdx] = useState(1);
+  const [potAmount, setPotAmount] = useState(0);
+  const [roundMaxBet, setRoundMaxBet] = useState(0);
+  const [tentukanCount, setTentukanCount] = useState(6);
+  const [nextRoundCount, setNextRoundCount] = useState<number | null>(null);
+  const [activeTurnIdx, setActiveTurnIdx] = useState<number>(-1);
+  const [winnerInfo, setWinnerInfo] = useState<{
+    winnerSeatId: number;
+    winnerName: string;
+    amount: number;
+    title: string;
+    jackpotBonus?: number;
+    byFold?: boolean;
+  } | null>(null);
   const [flyingChips, setFlyingChips] = useState<FlyChipItem[]>([]);
   const [userComboIdx, setUserComboIdx] = useState(0);
+  const [selectedTileIdx, setSelectedTileIdx] = useState<number | null>(null);
+  const [fourthCardPeeked, setFourthCardPeeked] = useState(false);
 
-  // Deck & Deal State
-  const [deck, setDeck] = useState<QiuTile[]>([]);
+  // Raise Popup & Slider state
+  const [showRaisePanel, setShowRaisePanel] = useState(false);
+  const [raiseAmount, setRaiseAmount] = useState(baseBlind * 2);
 
-  const [currentBetTarget, setCurrentBetTarget] = useState(customBet ? Math.round(customBet * 0.1) : activeRoom.blind);
+  // Jackpot Coupon State (Off / 100 / 500 / 1000)
+  const [jackpotCoupon, setJackpotCoupon] = useState<0 | 100 | 500 | 1000>(100);
+  const [jackpotPool, setJackpotPool] = useState(130185000);
 
   const [showMenu, setShowMenu] = useState(false);
   const [soundOn, setSoundOn] = useState(true);
@@ -8308,9 +9454,10 @@ function QiuQiuGameScreen({
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
 
-  const [tableCode, setTableCode] = useState(() => 'Q' + Math.floor(100 + Math.random() * 900));
+  const [tableCode, setTableCode] = useState(() => customCode || ('Q' + Math.floor(100 + Math.random() * 900)));
   const [tableToast, setTableToast] = useState<string | null>(null);
   const [isStanding, setIsStanding] = useState(false);
+  const [isFlipping3D, setIsFlipping3D] = useState(false);
 
   const showToast = (msg: string) => {
     setTableToast(msg);
@@ -8319,37 +9466,56 @@ function QiuQiuGameScreen({
     }, 2800);
   };
 
-  // 6 Players seating state initialized with active room buyIn or By One custom players
-  const [seats, setSeats] = useState<any[]>(() => {
-    const buyIn = customBet || activeRoom.buyIn;
-    const blind = customBet ? Math.round(customBet * 0.1) : activeRoom.blind;
+  // Helper to format currency labels
+  const formatBetLabel = (n: number) => {
+    if (!n || n <= 0) return '0';
+    if (n >= 1000000) return (n / 1000000).toFixed(1).replace('.0', '') + 'M';
+    if (n >= 1000) return (n / 1000).toFixed(n % 1000 === 0 ? 0 : 1).replace('.0', '') + 'K';
+    return n.toString();
+  };
 
+  // 6 Players seating state initialized with active room buyIn or By One custom players
+  const [seats, setSeats] = useState<QiuSeatState[]>(() => {
     if (customPlayers && customPlayers.length > 0) {
-      const myPlayer = customPlayers.find((p: any) => p.username === myUsername) || { username: myUsername, avatar: avatarEmoji, coins: buyIn };
+      const myPlayer = customPlayers.find((p: any) => p.username === myUsername) || { username: myUsername, avatar: avatarEmoji, coins: baseBuyIn };
       const otherPlayers = customPlayers.filter((p: any) => p.username !== myUsername);
 
-      const realSeats = [
-        { id: 0, name: myPlayer.username, coins: myPlayer.coins || buyIn, avatar: myPlayer.avatar || avatarEmoji, isDealer: false, badge: 'Cek', currentBet: blind, turn: true, score: '9 : 7', hand: [[6, 3], [0, 0], [5, 4], [0, 0]], folded: false, isEmpty: false }
+      const realSeats: QiuSeatState[] = [
+        {
+          id: 0,
+          name: myPlayer.username,
+          coins: myPlayer.coins || baseBuyIn,
+          avatar: myPlayer.avatar || avatarEmoji,
+          isDealer: false,
+          badge: '',
+          roundBet: 0,
+          totalBet: 0,
+          hasActed: false,
+          hand: [[0, 0], [0, 0], [0, 0], [0, 0]],
+          folded: false,
+          allIn: false,
+          isEmpty: false,
+        }
       ];
 
       otherPlayers.forEach((p: any, idx: number) => {
         realSeats.push({
           id: idx + 1,
           name: p.username,
-          coins: p.coins || buyIn,
+          coins: p.coins || baseBuyIn,
           avatar: p.avatar || '🐯',
           isDealer: idx === 0,
-          badge: 'Cek',
-          currentBet: blind,
-          turn: false,
-          score: '9 : 5',
-          hand: [[6, 6], [1, 6], [5, 2], [0, 4]],
+          badge: '',
+          roundBet: 0,
+          totalBet: 0,
+          hasActed: false,
+          hand: [[0, 0], [0, 0], [0, 0], [0, 0]],
           folded: false,
+          allIn: false,
           isEmpty: false,
         });
       });
 
-      // Fill remaining seats as EMPTY (not bots!)
       for (let i = realSeats.length; i < 6; i++) {
         realSeats.push({
           id: i,
@@ -8358,11 +9524,12 @@ function QiuQiuGameScreen({
           avatar: '🪑',
           isDealer: false,
           badge: '',
-          currentBet: 0,
-          turn: false,
-          score: '',
+          roundBet: 0,
+          totalBet: 0,
+          hasActed: true,
           hand: [],
           folded: true,
+          allIn: false,
           isEmpty: true,
         });
       }
@@ -8371,12 +9538,12 @@ function QiuQiuGameScreen({
     }
 
     return [
-      { id: 0, name: myUsername, coins: buyIn, avatar: avatarEmoji, isDealer: false, badge: 'Cek', currentBet: blind, turn: true, score: '9 : 7', hand: [[6, 3], [0, 0], [5, 4], [0, 0]], folded: false, isEmpty: false },
-      { id: 1, name: 'CPH2773', coins: Math.round(buyIn * 1.2), avatar: '🐯', isDealer: true, badge: 'Cek', currentBet: blind, turn: false, score: '9 : 1', hand: [[6, 6], [1, 6], [5, 2], [0, 4]], folded: false, isEmpty: false },
-      { id: 2, name: 'Infinix X669', coins: Math.round(buyIn * 0.9), avatar: '👩', isDealer: false, badge: 'Cek', currentBet: blind, turn: false, score: '8 : 2', hand: [[5, 3], [0, 0], [4, 4], [0, 4]], folded: false, isEmpty: false },
-      { id: 3, name: 'Sultan_QQ', coins: Math.round(buyIn * 3.5), avatar: '🧔‍♂️', isDealer: false, badge: 'Balik', currentBet: 0, turn: false, score: '9 : 5', hand: [[6, 5], [4, 4], [3, 2], [0, 0]], folded: true, isEmpty: false },
-      { id: 4, name: 'Dewi_QQ', coins: Math.round(buyIn * 1.5), avatar: '👩‍🦰', isDealer: false, badge: 'Cek', currentBet: blind, turn: false, score: '7 : 6', hand: [[4, 3], [0, 0], [3, 3], [0, 0]], folded: false, isEmpty: false },
-      { id: 5, name: 'V2043', coins: Math.round(buyIn * 0.8), avatar: '👨‍🦱', isDealer: false, badge: 'Cek', currentBet: blind, turn: false, score: '7 : 3', hand: [[5, 2], [0, 0], [2, 1], [0, 0]], folded: false, isEmpty: false },
+      { id: 0, name: myUsername, coins: baseBuyIn, avatar: avatarEmoji, isDealer: false, badge: '', roundBet: 0, totalBet: 0, hasActed: false, hand: [[0, 0], [0, 0], [0, 0], [0, 0]], folded: false, allIn: false, isEmpty: false },
+      { id: 1, name: 'Sultan_QQ', coins: Math.round(baseBuyIn * 1.4), avatar: '🐯', isDealer: true, badge: '', roundBet: 0, totalBet: 0, hasActed: false, hand: [[0, 0], [0, 0], [0, 0], [0, 0]], folded: false, allIn: false, isEmpty: false },
+      { id: 2, name: 'Dewi_99', coins: Math.round(baseBuyIn * 1.1), avatar: '👩', isDealer: false, badge: '', roundBet: 0, totalBet: 0, hasActed: false, hand: [[0, 0], [0, 0], [0, 0], [0, 0]], folded: false, allIn: false, isEmpty: false },
+      { id: 3, name: 'RajaBalak', coins: Math.round(baseBuyIn * 2.2), avatar: '🧔‍♂️', isDealer: false, badge: '', roundBet: 0, totalBet: 0, hasActed: false, hand: [[0, 0], [0, 0], [0, 0], [0, 0]], folded: false, allIn: false, isEmpty: false },
+      { id: 4, name: 'Putri_Hoki', coins: Math.round(baseBuyIn * 1.3), avatar: '👩‍🦰', isDealer: false, badge: '', roundBet: 0, totalBet: 0, hasActed: false, hand: [[0, 0], [0, 0], [0, 0], [0, 0]], folded: false, allIn: false, isEmpty: false },
+      { id: 5, name: 'Bos_Domino', coins: Math.round(baseBuyIn * 0.95), avatar: '👨‍🦱', isDealer: false, badge: '', roundBet: 0, totalBet: 0, hasActed: false, hand: [[0, 0], [0, 0], [0, 0], [0, 0]], folded: false, allIn: false, isEmpty: false },
     ];
   });
 
@@ -8384,6 +9551,16 @@ function QiuQiuGameScreen({
   useEffect(() => {
     seatsRef.current = seats;
   }, [seats]);
+
+  const potRef = useRef(potAmount);
+  useEffect(() => {
+    potRef.current = potAmount;
+  }, [potAmount]);
+
+  const roundMaxBetRef = useRef(roundMaxBet);
+  useEffect(() => {
+    roundMaxBetRef.current = roundMaxBet;
+  }, [roundMaxBet]);
 
   const hasCashedOutRef = useRef(false);
   const isByOneCustom = Boolean(customPlayers && customPlayers.length >= 2);
@@ -8395,11 +9572,13 @@ function QiuQiuGameScreen({
     const handleByOneMatchEnd = (data: any) => {
       if (data?.isMeWinner || data?.winner === myUsername || data?.byOpponentLeft || data?.byDisconnect) {
         byOneForfeitedRef.current = true;
-        const winPot = data?.pot || (customBet ? customBet * (customPlayers?.length || 2) : potAmount);
-        setWinnerNotice({
+        const winPot = data?.pot || (customBet ? customBet * (customPlayers?.length || 2) : potRef.current);
+        setWinnerInfo({
+          winnerSeatId: 0,
           winnerName: myUsername,
           amount: winPot,
           title: `🏳️ ${data?.leaver || 'Lawan'} Keluar — AUTO WIN!`,
+          byFold: true,
         });
         showToast(`🏆 Lawan keluar dari kamar! Anda OTOMATIS MENANG +${winPot.toLocaleString('id-ID')} koin!`);
         if (typeof data?.newCoins === 'number') {
@@ -8412,7 +9591,7 @@ function QiuQiuGameScreen({
     return () => {
       socket.off('byone_match_ended', handleByOneMatchEnd);
     };
-  }, [isByOneCustom, socket, myUsername, customBet, customPlayers, potAmount]);
+  }, [isByOneCustom, socket, myUsername, customBet, customPlayers]);
 
   // Refund / Cashout player's table chips back to main wallet on exit
   const handleExecuteCashoutAndExit = async () => {
@@ -8472,419 +9651,719 @@ function QiuQiuGameScreen({
     };
   }, []);
 
-  const handleGantiMeja = () => {
-    const newCode = 'Q' + Math.floor(100 + Math.random() * 900);
-    setTableCode(newCode);
-    setIsStanding(false);
-    showToast(`🔄 Berpindah ke Meja Baru [Meja #${newCode}]...`);
-
-    const buyIn = activeRoom.buyIn;
-    const BOT_POOLS = [
-      { name: 'CPH' + Math.floor(1000 + Math.random() * 9000), avatar: '🐯', coins: Math.round(buyIn * 1.2) },
-      { name: 'Infinix_' + Math.floor(100 + Math.random() * 900), avatar: '👩', coins: Math.round(buyIn * 0.9) },
-      { name: 'Sultan_' + Math.floor(10 + Math.random() * 90), avatar: '🧔‍♂️', coins: Math.round(buyIn * 3.5) },
-      { name: 'Dewi_QQ', avatar: '👩‍🦰', coins: Math.round(buyIn * 1.5) },
-      { name: 'Rizky_' + Math.floor(10 + Math.random() * 90), avatar: '👨‍🦱', coins: Math.round(buyIn * 1.1) },
-      { name: 'Baim99', avatar: '🦊', coins: Math.round(buyIn * 2.0) },
-      { name: 'Alfi_Win', avatar: '🐼', coins: Math.round(buyIn * 1.3) },
-      { name: 'KingDomino', avatar: '👑', coins: Math.round(buyIn * 2.5) }
-    ].sort(() => Math.random() - 0.5);
-
-    const playerCurrentCoins = seats[0]?.coins || buyIn;
-    const shuffled = [...FULL_DOMINO_DECK].sort(() => Math.random() - 0.5);
-    const newSeats = [
-      { id: 0, name: myUsername, coins: playerCurrentCoins, avatar: avatarEmoji, isDealer: false, badge: 'Cek', currentBet: activeRoom.blind, turn: true, score: '9 : 7', hand: [shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0]], folded: false },
-      { id: 1, name: BOT_POOLS[0].name, coins: BOT_POOLS[0].coins, avatar: BOT_POOLS[0].avatar, isDealer: true, badge: 'Cek', currentBet: activeRoom.blind, turn: false, score: '9 : 1', hand: [shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0]], folded: false },
-      { id: 2, name: BOT_POOLS[1].name, coins: BOT_POOLS[1].coins, avatar: BOT_POOLS[1].avatar, isDealer: false, badge: 'Cek', currentBet: activeRoom.blind, turn: false, score: '8 : 2', hand: [shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0]], folded: false },
-      { id: 3, name: BOT_POOLS[2].name, coins: BOT_POOLS[2].coins, avatar: BOT_POOLS[2].avatar, isDealer: false, badge: 'Balik', currentBet: 0, turn: false, score: '9 : 5', hand: [shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0]], folded: true },
-      { id: 4, name: BOT_POOLS[3].name, coins: BOT_POOLS[3].coins, avatar: BOT_POOLS[3].avatar, isDealer: false, badge: 'Cek', currentBet: activeRoom.blind, turn: false, score: '7 : 6', hand: [shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0]], folded: false },
-      { id: 5, name: BOT_POOLS[4].name, coins: BOT_POOLS[4].coins, avatar: BOT_POOLS[4].avatar, isDealer: false, badge: 'Cek', currentBet: activeRoom.blind, turn: false, score: '7 : 3', hand: [shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0], shuffled.pop() || [0, 0]], folded: false },
-    ];
-
-    setSeats(newSeats);
-    setDeck(shuffled);
-    setPhase('round1_bet');
-    setActiveTurnIdx(0);
-    setUserComboIdx(0);
-    setCurrentBetTarget(activeRoom.blind);
-    setPotAmount(activeRoom.ante * 6);
-    setWinnerNotice(null);
-    setPotChips([
-      { id: 1, label: activeRoom.entryLabel, color: 'red', marginTop: 0, zIndex: 1 },
-      { id: 2, label: activeRoom.entryLabel, color: 'red', marginTop: -8, zIndex: 2 },
-      { id: 3, label: activeRoom.entryLabel, color: 'red', marginTop: 4, zIndex: 3 },
-      { id: 4, label: activeRoom.entryLabel, color: 'red', marginTop: -12, zIndex: 4 },
-      { id: 5, label: activeRoom.entryLabel, color: 'red', marginTop: 8, zIndex: 5 },
-      { id: 6, label: activeRoom.entryLabel, color: 'red', marginTop: -4, zIndex: 6 },
-    ]);
-
-    setIsFlipping3D(true);
-    setTimeout(() => {
-      setIsFlipping3D(false);
-    }, 800);
-  };
-
-  const handleBerdiri = () => {
-    setIsStanding(true);
-    setSeats(prev => prev.map((s, idx) => idx === 0 ? { ...s, folded: true, badge: 'Berdiri' } : s));
-    showToast('🧍 Anda berdiri dari kursi. Mode Menonton aktif.');
-    if (activeTurnIdx === 0) {
-      setActiveTurnIdx(1);
-    }
-  };
-
-  const handleDudukKembali = () => {
-    setIsStanding(false);
-    showToast('🪑 Anda duduk kembali. Bersiap untuk ronde berikutnya!');
-  };
-
   const [marqueeIdx, setMarqueeIdx] = useState(0);
-
   const REALTIME_NOTIFS = [
-    '📢 Selamat "Alfi" Di[Bonus QiuQiu 2M] Mendapatkan 2,000,000,000 Koin! 🏆 Event QiuQiu Sultan Berhadiah Puluhan Juta!',
-    '📢 Selamat "Baim99" Di[Jackpot Six Devil 😈] Mendapatkan 8,500,000,000 Koin!',
-    '📢 Selamat "Rizky_Domino" Di[Bonus QiuQiu 9-9 🔥] Mendapatkan 3,200,000,000 Koin!',
-    '📢 Selamat "CPH2773" Di[Murni Besar ⚡] Mendapatkan 1,800,000,000 Koin!',
-    '📢 Selamat "Sultan_QQ" Di[Super Twin 💎] Mendapatkan 12,000,000,000 Koin!',
+    '📢 Selamat "Alfi_99" mendapatkan Kartu Spesial [Enam Dewa 😈] & memenangkan Jackpot +50,000,000 Koin!',
+    '📢 Selamat "Sultan_QQ" mendapatkan [Kartu Balak Kembar 💎] di Meja VIP!',
+    '📢 Selamat "Rizky_Domino" mendapatkan [QiuQiu 9 : 9 🔥] dan menyapu bersih Pot Meja!',
+    '📢 Selamat "Dewi_99" mendapatkan [Murni Kecil 🌟] & klaim Kupon Jackpot 100x!',
   ];
 
-  // Rotate real-time marquee notifications every 5 seconds
   useEffect(() => {
     const marqueeTimer = setInterval(() => {
       setMarqueeIdx(prev => (prev + 1) % REALTIME_NOTIFS.length);
-    }, 5000);
+      setJackpotPool(prev => prev + Math.floor(2500 + Math.random() * 8500));
+    }, 4500);
     return () => clearInterval(marqueeTimer);
   }, []);
 
-  // Helper to format currency labels
-  const formatBetLabel = (n: number) => {
-    if (!n) return '0';
-    if (n >= 1000000) return (n / 1000000).toFixed(1).replace('.0', '') + 'M';
-    if (n >= 1000) return (n / 1000).toFixed(0) + 'K';
-    return n.toString();
-  };
-
-  // Helper to calculate all 3 possible pair combinations for player 0
-  const getPlayerCombinations = (hand: QiuTile[]) => {
-    if (!hand || hand.length < 4) return [];
-    const [t1, t2, t3, t4] = hand;
-    const combos = [
-      { p1: [t1, t2], p2: [t3, t4] },
-      { p1: [t1, t3], p2: [t2, t4] },
-      { p1: [t1, t4], p2: [t2, t3] },
-    ];
-
-    return combos.map(c => {
-      let s1 = getQiuPairScore(c.p1[0] as QiuTile, c.p1[1] as QiuTile);
-      let s2 = getQiuPairScore(c.p2[0] as QiuTile, c.p2[1] as QiuTile);
-      let left = Math.max(s1, s2);
-      let right = Math.min(s1, s2);
-      let leftPair = s1 >= s2 ? c.p1 : c.p2;
-      let rightPair = s1 >= s2 ? c.p2 : c.p1;
-      return {
-        left,
-        right,
-        label: `${left} : ${right}`,
-        pairs: [leftPair[0], leftPair[1], rightPair[0], rightPair[1]] as [QiuTile, QiuTile, QiuTile, QiuTile]
-      };
-    });
-  };
-
-  const [potChips, setPotChips] = useState<Array<{ id: number; label: string; color: 'red' | 'blue' | 'purple' | 'gold'; marginTop: number; zIndex: number }>>([
-    { id: 1, label: activeRoom.entryLabel, color: 'red', marginTop: 0, zIndex: 1 },
-    { id: 2, label: activeRoom.entryLabel, color: 'red', marginTop: -8, zIndex: 2 },
-    { id: 3, label: activeRoom.entryLabel, color: 'red', marginTop: 4, zIndex: 3 },
-    { id: 4, label: activeRoom.entryLabel, color: 'red', marginTop: -12, zIndex: 4 },
-    { id: 5, label: activeRoom.entryLabel, color: 'red', marginTop: 8, zIndex: 5 },
-    { id: 6, label: activeRoom.entryLabel, color: 'red', marginTop: -4, zIndex: 6 },
-  ]);
+  const [potChips, setPotChips] = useState<Array<{ id: number; label: string; color: 'red' | 'blue' | 'purple' | 'gold'; marginTop: number; zIndex: number }>>([]);
 
   const addBetToPotChips = (amount: number) => {
-    const newItems: any[] = [];
+    if (amount <= 0) return;
     const baseId = Date.now() + Math.random();
-    newItems.push({ id: baseId + 1, label: formatBetLabel(amount), color: amount >= activeRoom.blind * 5 ? 'gold' : amount >= activeRoom.blind * 2 ? 'blue' : 'red', marginTop: Math.floor(Math.random() * 16 - 8), zIndex: potChips.length + 1 });
-    setPotChips(prev => [...prev, ...newItems]);
+    const chipColor: 'red' | 'blue' | 'purple' | 'gold' =
+      amount >= baseBlind * 10 ? 'gold' : amount >= baseBlind * 5 ? 'purple' : amount >= baseBlind * 2 ? 'blue' : 'red';
+    setPotChips(prev => [
+      ...prev.slice(-18),
+      {
+        id: baseId,
+        label: formatBetLabel(amount),
+        color: chipColor,
+        marginTop: Math.floor(Math.random() * 14 - 7),
+        zIndex: prev.length + 1
+      }
+    ]);
   };
 
-  const userCombos = getPlayerCombinations(seats[0]?.hand || []);
-
-  const handleSelectCombo = (idx: number) => {
-    setUserComboIdx(idx);
-    if (userCombos[idx]) {
-      const newHand = userCombos[idx].pairs;
-      setSeats(prev => prev.map((s, i) => i === 0 ? { ...s, hand: newHand } : s));
-    }
-  };
-
-  const handleSwapNext = () => {
-    const nextIdx = (userComboIdx + 1) % (userCombos.length || 1);
-    handleSelectCombo(nextIdx);
-  };
-
-  // Helper to spawn flying chips
+  // Spawn flying chips animation
   const spawnFlyingChips = (fromPos: { x: string; y: string }, toPos: { x: string; y: string }) => {
-    const newChips: FlyChipItem[] = Array.from({ length: 8 }).map((_, i) => ({
+    const newChips: FlyChipItem[] = Array.from({ length: 6 }).map((_, i) => ({
       id: Date.now() + i + Math.random(),
       fromX: fromPos.x,
       fromY: fromPos.y,
       toX: toPos.x,
       toY: toPos.y,
-      delay: i * 60
+      delay: i * 55
     }));
 
     setFlyingChips(prev => [...prev, ...newChips]);
     setTimeout(() => {
       setFlyingChips(prev => prev.filter(c => !newChips.includes(c)));
-    }, 1200);
+    }, 1100);
   };
 
-  const [isFlipping3D, setIsFlipping3D] = useState(false);
+  // Helper: Find next active player who can act in the current betting round
+  const findNextTurnIndex = (currentSeats: QiuSeatState[], fromIdx: number, targetBet: number): number => {
+    const activeUnfolded = currentSeats.filter(s => !s.isEmpty && !s.folded);
+    if (activeUnfolded.length <= 1) return -1;
 
-  // Start new QiuQiu game round with Ante chips collection & 3D deal flip
-  const startNewRound = () => {
-    // 1. Ante Chips collection from active seats to center pot!
-    [0, 1, 2, 3, 4, 5].forEach((sIdx, i) => {
-      if (sIdx === 0 && isStanding) return;
-      setTimeout(() => {
-        spawnFlyingChips(SEAT_COORDS[sIdx] || SEAT_COORDS[0], CENTER_POT_COORDS);
-      }, i * 80);
-    });
+    for (let step = 1; step <= 6; step++) {
+      const candidateIdx = (fromIdx + step) % 6;
+      const s = currentSeats[candidateIdx];
+      if (!s || s.isEmpty || s.folded || s.allIn || s.coins <= 0) continue;
+      if (!s.hasActed || s.roundBet < targetBet) {
+        return candidateIdx;
+      }
+    }
+    return -1;
+  };
 
-    const shuffled = [...FULL_DOMINO_DECK].sort(() => Math.random() - 0.5);
-    const newSeats = seats.map((seat, i) => {
-      const tile1 = shuffled.pop() || [0, 0];
-      const tile2 = shuffled.pop() || [0, 0];
-      const tile3 = shuffled.pop() || [0, 0];
-      const tile4 = shuffled.pop() || [0, 0];
-      const isMeStanding = (i === 0 && isStanding);
+  // Helper: Calculate all 3 possible pair combinations for player 0's 4 cards
+  const getPlayerCombinations = (hand: QiuTile[]) => {
+    if (!hand || hand.length < 4) return [];
+    const [t1, t2, t3, t4] = hand;
+    const rawCombos = [
+      { p1: [t1, t2], p2: [t3, t4] },
+      { p1: [t1, t3], p2: [t2, t4] },
+      { p1: [t1, t4], p2: [t2, t3] },
+    ];
+
+    const mapped = rawCombos.map(c => {
+      const s1 = getQiuPairScore(c.p1[0] as QiuTile, c.p1[1] as QiuTile);
+      const s2 = getQiuPairScore(c.p2[0] as QiuTile, c.p2[1] as QiuTile);
+      const left = Math.max(s1, s2);
+      const right = Math.min(s1, s2);
+      const leftPair = s1 >= s2 ? c.p1 : c.p2;
+      const rightPair = s1 >= s2 ? c.p2 : c.p1;
+      const isQQ = left === 9 && right === 9;
+      const isQX = left === 9;
       return {
-        ...seat,
-        hand: [tile1, tile2, tile3, tile4],
-        badge: isMeStanding ? 'Berdiri' : 'Cek',
-        currentBet: isMeStanding ? 0 : activeRoom.blind,
-        coins: isMeStanding ? seat.coins : Math.max(0, seat.coins - activeRoom.ante), // Real-time Ante deduction!
-        folded: isMeStanding
+        left,
+        right,
+        scoreVal: left * 10 + right,
+        label: isQQ ? 'QiuQiu (9:9)' : isQX ? `Qiu ${right} (9:${right})` : `${left} : ${right}`,
+        shortLabel: `${left} : ${right}`,
+        pairs: [leftPair[0], leftPair[1], rightPair[0], rightPair[1]] as [QiuTile, QiuTile, QiuTile, QiuTile]
       };
     });
 
-    setSeats(newSeats);
-    setDeck(shuffled);
-    setPhase('round1_bet');
-    setActiveTurnIdx(isStanding ? 1 : 0);
-    setUserComboIdx(0);
-    setCurrentBetTarget(activeRoom.blind);
-    setPotAmount(isStanding ? (activeRoom.ante * 5) : (activeRoom.ante * 6));
-    setWinnerNotice(null);
-    setPotChips([
-      { id: 1, label: activeRoom.entryLabel, color: 'red', marginTop: 0, zIndex: 1 },
-      { id: 2, label: activeRoom.entryLabel, color: 'red', marginTop: -8, zIndex: 2 },
-      { id: 3, label: activeRoom.entryLabel, color: 'red', marginTop: 4, zIndex: 3 },
-      { id: 4, label: activeRoom.entryLabel, color: 'red', marginTop: -12, zIndex: 4 },
-      { id: 5, label: activeRoom.entryLabel, color: 'red', marginTop: 8, zIndex: 5 },
-      { id: 6, label: activeRoom.entryLabel, color: 'red', marginTop: -4, zIndex: 6 },
-    ]);
+    // Sort highest combination first and deduplicate identical score labels if needed
+    mapped.sort((a, b) => b.scoreVal - a.scoreVal);
+    return mapped;
+  };
 
-    // 2. Trigger 3D Card Flip animation
+  // Start a new authentic QiuQiu round: Collect Ante -> Deal 3 cards -> Start Betting Round 1
+  const startNewRound = (overrideStanding?: boolean) => {
+    const standingNow = overrideStanding !== undefined ? overrideStanding : isStanding;
+    setNextRoundCount(null);
+    setWinnerInfo(null);
+    setShowRaisePanel(false);
+    setSelectedTileIdx(null);
+    setFourthCardPeeked(false);
+
+    const prevSeats = seatsRef.current;
+    const nextDealer = (dealerSeatIdx + 1) % 6;
+    setDealerSeatIdx(nextDealer);
+
+    // Shuffle 28 Domino tiles using Fisher-Yates
+    const shuffled = [...FULL_DOMINO_DECK];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
+    let initialPot = 0;
+    const initialChips: Array<{ id: number; label: string; color: 'red' | 'blue' | 'purple' | 'gold'; marginTop: number; zIndex: number }> = [];
+
+    const updatedSeats: QiuSeatState[] = prevSeats.map((seat, idx) => {
+      if (seat.isEmpty) {
+        return { ...seat, folded: true, hasActed: true, roundBet: 0, totalBet: 0, badge: '' };
+      }
+
+      const isMeStanding = idx === 0 && standingNow;
+      // Refill bot coins if a bot ran too low
+      let seatCoins = seat.coins;
+      if (idx > 0 && !isByOneCustom && seatCoins < baseAnte * 4) {
+        seatCoins = Math.round(baseBuyIn * (0.9 + Math.random() * 1.4));
+      }
+
+      if (isMeStanding || seatCoins <= 0) {
+        return {
+          ...seat,
+          coins: seatCoins,
+          isDealer: idx === nextDealer,
+          folded: true,
+          allIn: false,
+          hasActed: true,
+          roundBet: 0,
+          totalBet: 0,
+          badge: isMeStanding ? 'Menonton' : 'Habis',
+          hand: [[0, 0], [0, 0], [0, 0], [0, 0]],
+        };
+      }
+
+      // Deduct Ante (plus Jackpot coupon for Player 0 if enabled)
+      const antePaid = Math.min(seatCoins, baseAnte);
+      const jpFee = idx === 0 && jackpotCoupon > 0 && seatCoins - antePaid >= jackpotCoupon ? jackpotCoupon : 0;
+      const newCoins = Math.max(0, seatCoins - antePaid - jpFee);
+      initialPot += antePaid;
+
+      // Deal 4 cards from deck, and arrange the first 3 cards so best pair is on the Left!
+      const raw1 = shuffled.pop() || [0, 0];
+      const raw2 = shuffled.pop() || [0, 0];
+      const raw3 = shuffled.pop() || [0, 0];
+      const raw4 = shuffled.pop() || [0, 0];
+      const best3 = arrangeBestThreeCards([raw1, raw2, raw3]);
+
+      initialChips.push({
+        id: Date.now() + idx + Math.random(),
+        label: formatBetLabel(antePaid),
+        color: 'red',
+        marginTop: (idx % 2 === 0 ? 1 : -1) * (idx * 2),
+        zIndex: idx + 1,
+      });
+
+      setTimeout(() => {
+        spawnFlyingChips(SEAT_COORDS[idx] || SEAT_COORDS[0], CENTER_POT_COORDS);
+      }, idx * 70);
+
+      return {
+        ...seat,
+        coins: newCoins,
+        isDealer: idx === nextDealer,
+        badge: 'Ante ' + formatBetLabel(antePaid),
+        roundBet: 0,
+        totalBet: antePaid,
+        hasActed: false,
+        allIn: newCoins === 0,
+        folded: false,
+        hand: [best3.ordered[0], best3.ordered[1], best3.ordered[2], raw4],
+      };
+    });
+
+    setSeats(updatedSeats);
+    setPotAmount(initialPot);
+    setPotChips(initialChips);
+    setRoundMaxBet(0);
+    setRaiseAmount(baseBlind * 2);
+    setUserComboIdx(0);
+    setPhase('round1_bet');
+
+    // First turn starts clockwise from Dealer
+    const firstTurn = findNextTurnIndex(updatedSeats, nextDealer, 0);
+    setActiveTurnIdx(firstTurn !== -1 ? firstTurn : 0);
+
     setIsFlipping3D(true);
     setTimeout(() => {
       setIsFlipping3D(false);
-    }, 800);
+    }, 650);
   };
 
   useEffect(() => {
     startNewRound();
   }, []);
 
-  const [playerTurnTimer, setPlayerTurnTimer] = useState(10);
+  // Transition when a betting round completes
+  const advancePhaseAfterBetting = (currentSeats: QiuSeatState[], currentPot: number) => {
+    const activeSurvivors = currentSeats.filter(s => !s.isEmpty && !s.folded);
 
-  // Per-Player 10-Second Turn Countdown Timer for Player 0 (Me)
-  useEffect(() => {
-    let timer: any;
-    if ((phase === 'round1_bet' || phase === 'round2_bet') && activeTurnIdx === 0 && !seats[0]?.folded) {
-      setPlayerTurnTimer(10);
-      timer = setInterval(() => {
-        setPlayerTurnTimer(prev => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            // Auto Cek or Balik when 10s turn timer expires
-            handleActionClick(currentBetTarget > activeRoom.blind ? 'balik' : 'cek');
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+    // If only 1 player hasn't folded, they win immediately by Fold!
+    if (activeSurvivors.length === 1) {
+      const soleWinner = activeSurvivors[0];
+      setActiveTurnIdx(-1);
+      setPhase('showdown');
+      spawnFlyingChips(CENTER_POT_COORDS, SEAT_COORDS[soleWinner.id] || SEAT_COORDS[0]);
+      setSeats(prev => prev.map(s => s.id === soleWinner.id ? { ...s, coins: s.coins + currentPot, badge: 'MENANG!' } : s));
+      setWinnerInfo({
+        winnerSeatId: soleWinner.id,
+        winnerName: soleWinner.name,
+        amount: currentPot,
+        title: 'Menang Tanpa Buka Kartu (Lawan Balik)',
+        byFold: true,
+      });
+      setNextRoundCount(4);
+      return;
     }
-    return () => clearInterval(timer);
-  }, [activeTurnIdx, phase, seats, currentBetTarget, activeRoom.blind]);
 
-  // Bot Turn Automation Loop (Clockwise sequential turn-by-turn with 1.5s thinking time!)
-  useEffect(() => {
-    if (phase === 'round1_bet' || phase === 'round2_bet') {
-      if (activeTurnIdx === 0 && seats[0]?.folded) {
-        const passTimer = setTimeout(() => {
-          setActiveTurnIdx(1);
-        }, 1000);
-        return () => clearTimeout(passTimer);
+    if (phase === 'round1_bet') {
+      // Reveal 4th card & auto-arrange player 0's 4 cards into their best combination for Round 2!
+      const nextSeats = currentSeats.map(s => {
+        if (s.isEmpty || s.folded) return { ...s, roundBet: 0, hasActed: true };
+        const bestEv = evaluateQiuHand(s.hand);
+        return {
+          ...s,
+          hand: bestEv.bestPairs,
+          roundBet: 0,
+          hasActed: s.allIn || s.coins <= 0,
+          badge: s.allIn ? 'ALL IN' : '',
+        };
+      });
+
+      setSeats(nextSeats);
+      setRoundMaxBet(0);
+      setRaiseAmount(baseBlind * 2);
+      setUserComboIdx(0);
+      setFourthCardPeeked(true);
+      setPhase('round2_bet');
+      showToast('🃏 Kartu ke-4 dibagikan! Ronde Taruhan ke-2 dimulai.');
+
+      const firstTurnR2 = findNextTurnIndex(nextSeats, dealerSeatIdx, 0);
+      if (firstTurnR2 === -1) {
+        // Everyone is All-In -> go straight to Tentukan/Showdown
+        setActiveTurnIdx(-1);
+        setPhase('tentukan');
+        setTentukanCount(5);
+      } else {
+        setActiveTurnIdx(firstTurnR2);
       }
-
-      if (activeTurnIdx > 0 && activeTurnIdx < 6) {
-        if (seats[activeTurnIdx]?.isEmpty) {
-          if (activeTurnIdx === 5 || seats.slice(activeTurnIdx + 1).every(s => s.isEmpty)) {
-            setActiveTurnIdx(0);
-            if (phase === 'round1_bet') {
-              setPhase('round2_bet');
-            } else {
-              setPhase('tentukan');
-              setTentukanCount(10);
-            }
-          } else {
-            setActiveTurnIdx(prev => prev + 1);
-          }
-          return;
-        }
-
-        const botTimer = setTimeout(() => {
-          const fromPos = SEAT_COORDS[activeTurnIdx] || SEAT_COORDS[1];
-          spawnFlyingChips(fromPos, CENTER_POT_COORDS);
-
-          const isRaise = Math.random() > 0.75;
-          let actionBadge = `Ikut ${formatBetLabel(currentBetTarget)}`;
-          let addBet = currentBetTarget;
-
-          if (isRaise) {
-            const newTarget = currentBetTarget + activeRoom.blind;
-            setCurrentBetTarget(newTarget);
-            actionBadge = `Raise ${formatBetLabel(newTarget)}`;
-            addBet = newTarget;
-          }
-
-          addBetToPotChips(addBet);
-          setSeats(prev => prev.map((s, idx) => idx === activeTurnIdx ? { ...s, badge: actionBadge, currentBet: addBet, coins: Math.max(0, s.coins - addBet) } : s));
-          setPotAmount(prev => prev + addBet);
-
-          const isLastPlayer = activeTurnIdx === 5 || seats.slice(activeTurnIdx + 1).every(s => s.isEmpty);
-          if (isLastPlayer) {
-            // Last player turn completed
-            setActiveTurnIdx(0);
-            if (phase === 'round1_bet') {
-              // Stage 1 completed -> Move to Stage 2 (4th card bet round!)
-              setPhase('round2_bet');
-            } else {
-              // Stage 2 completed -> Move to Tentukan Phase!
-              setPhase('tentukan');
-              setTentukanCount(10);
-            }
-          } else {
-            setActiveTurnIdx(prev => prev + 1);
-          }
-        }, 1500);
-
-        return () => clearTimeout(botTimer);
-      }
-    }
-  }, [activeTurnIdx, phase, currentBetTarget, seats]);
-
-  // Handle Mix 4th Card
-  const handleMixFourthCard = () => {
-    if (phase === 'round1_bet' || phase === 'mix') {
+    } else if (phase === 'round2_bet') {
+      // Move to Tentukan Susunan Kartu phase
+      setActiveTurnIdx(-1);
+      setShowRaisePanel(false);
       setPhase('tentukan');
-      setTentukanCount(10);
+      setTentukanCount(5);
     }
   };
 
-  // Tentukan Countdown Timer
-  useEffect(() => {
-    let timer: any;
-    if (phase === 'tentukan' && tentukanCount > 0) {
-      timer = setInterval(() => {
-        setTentukanCount(prev => prev - 1);
-      }, 1000);
-    } else if (phase === 'tentukan' && tentukanCount === 0) {
-      handleTentukanDone();
+  // Apply a player/bot betting action and advance turn
+  const executeSeatAction = (
+    seatIdx: number,
+    action: 'balik' | 'cek' | 'ikut' | 'naik' | 'allin',
+    customRaiseDelta?: number
+  ) => {
+    const curSeats = [...seatsRef.current];
+    const actor = curSeats[seatIdx];
+    if (!actor || actor.isEmpty || actor.folded) return;
+
+    let curMaxBet = roundMaxBetRef.current;
+    let curPot = potRef.current;
+    const toCall = Math.max(0, curMaxBet - actor.roundBet);
+
+    let addedCoins = 0;
+    let newBadge = actor.badge;
+    let isFolded = false;
+    let isAllIn = actor.allIn;
+    let raisedAboveMax = false;
+
+    if (action === 'balik') {
+      isFolded = true;
+      newBadge = 'Balik';
+    } else if (action === 'cek') {
+      addedCoins = 0;
+      newBadge = 'Cek';
+    } else if (action === 'ikut') {
+      addedCoins = Math.min(actor.coins, toCall);
+      if (addedCoins === actor.coins && actor.coins > 0) {
+        isAllIn = true;
+        newBadge = 'ALL IN';
+      } else {
+        newBadge = addedCoins > 0 ? `Ikut ${formatBetLabel(addedCoins)}` : 'Cek';
+      }
+    } else if (action === 'naik') {
+      const raiseExtra = customRaiseDelta || baseBlind * 2;
+      const desiredTotalRoundBet = curMaxBet + raiseExtra;
+      const neededFromWallet = Math.max(toCall + baseBlind, desiredTotalRoundBet - actor.roundBet);
+      addedCoins = Math.min(actor.coins, neededFromWallet);
+      const newSeatRoundBet = actor.roundBet + addedCoins;
+      if (newSeatRoundBet > curMaxBet) {
+        curMaxBet = newSeatRoundBet;
+        raisedAboveMax = true;
+      }
+      if (addedCoins === actor.coins) {
+        isAllIn = true;
+        newBadge = 'ALL IN';
+      } else {
+        newBadge = `Naik ${formatBetLabel(newSeatRoundBet)}`;
+      }
+    } else if (action === 'allin') {
+      addedCoins = actor.coins;
+      const newSeatRoundBet = actor.roundBet + addedCoins;
+      if (newSeatRoundBet > curMaxBet) {
+        curMaxBet = newSeatRoundBet;
+        raisedAboveMax = true;
+      }
+      isAllIn = true;
+      newBadge = 'ALL IN';
     }
+
+    if (addedCoins > 0) {
+      spawnFlyingChips(SEAT_COORDS[seatIdx] || SEAT_COORDS[0], CENTER_POT_COORDS);
+      addBetToPotChips(addedCoins);
+      curPot += addedCoins;
+    }
+
+    const nextSeats = curSeats.map((s, idx) => {
+      if (idx === seatIdx) {
+        return {
+          ...s,
+          coins: Math.max(0, s.coins - addedCoins),
+          roundBet: s.roundBet + addedCoins,
+          totalBet: s.totalBet + addedCoins,
+          folded: isFolded,
+          allIn: isAllIn,
+          hasActed: true,
+          badge: newBadge,
+        };
+      }
+      // If this player raised, other active players must act again to match the new bet
+      if (raisedAboveMax && !s.isEmpty && !s.folded && !s.allIn && s.coins > 0) {
+        return { ...s, hasActed: false };
+      }
+      return s;
+    });
+
+    seatsRef.current = nextSeats;
+    potRef.current = curPot;
+    roundMaxBetRef.current = curMaxBet;
+
+    setSeats(nextSeats);
+    setPotAmount(curPot);
+    setRoundMaxBet(curMaxBet);
+    if (seatIdx === 0) setShowRaisePanel(false);
+
+    // Check if only 1 player remains unfolded
+    const remainingUnfolded = nextSeats.filter(s => !s.isEmpty && !s.folded);
+    if (remainingUnfolded.length <= 1) {
+      advancePhaseAfterBetting(nextSeats, curPot);
+      return;
+    }
+
+    // Find next player to act
+    const nextTurn = findNextTurnIndex(nextSeats, seatIdx, curMaxBet);
+    if (nextTurn === -1) {
+      advancePhaseAfterBetting(nextSeats, curPot);
+    } else {
+      setActiveTurnIdx(nextTurn);
+    }
+  };
+
+  // Player 0 Turn Timer (12 seconds)
+  const [playerTurnTimer, setPlayerTurnTimer] = useState(12);
+  useEffect(() => {
+    if ((phase !== 'round1_bet' && phase !== 'round2_bet') || activeTurnIdx !== 0) return;
+    if (seatsRef.current[0]?.folded || seatsRef.current[0]?.allIn) return;
+
+    setPlayerTurnTimer(12);
+    const timer = setInterval(() => {
+      setPlayerTurnTimer(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          const toCall = Math.max(0, roundMaxBetRef.current - (seatsRef.current[0]?.roundBet || 0));
+          executeSeatAction(0, toCall > 0 ? 'balik' : 'cek');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
     return () => clearInterval(timer);
+  }, [activeTurnIdx, phase, roundMaxBet]);
+
+  // Smart Bot AI Turn Execution (Evaluates real hand strength in Round 1 & Round 2)
+  useEffect(() => {
+    if (phase !== 'round1_bet' && phase !== 'round2_bet') return;
+    if (activeTurnIdx <= 0 || activeTurnIdx >= 6) return;
+
+    const botSeat = seats[activeTurnIdx];
+    if (!botSeat || botSeat.isEmpty || botSeat.folded || botSeat.allIn) {
+      const nextIdx = findNextTurnIndex(seats, activeTurnIdx, roundMaxBet);
+      if (nextIdx === -1) {
+        advancePhaseAfterBetting(seats, potAmount);
+      } else {
+        setActiveTurnIdx(nextIdx);
+      }
+      return;
+    }
+
+    const botTimer = setTimeout(() => {
+      const curBot = seatsRef.current[activeTurnIdx];
+      if (!curBot || curBot.folded || curBot.isEmpty) return;
+
+      const toCall = Math.max(0, roundMaxBetRef.current - curBot.roundBet);
+      const roll = Math.random();
+
+      if (phase === 'round1_bet') {
+        // Evaluate bot's 3 cards
+        const best3 = arrangeBestThreeCards(curBot.hand.slice(0, 3));
+        const hasQiuIn3 = best3.leftScore === 9;
+        const hasGood3 = best3.leftScore >= 8;
+
+        if (toCall === 0) {
+          if (hasQiuIn3 && roll > 0.45 && curBot.coins >= baseBlind * 2) {
+            executeSeatAction(activeTurnIdx, 'naik', baseBlind * 2);
+          } else {
+            executeSeatAction(activeTurnIdx, 'cek');
+          }
+        } else {
+          // Someone raised in Round 1
+          if (toCall > baseBlind * 8 && !hasGood3 && roll > 0.25) {
+            executeSeatAction(activeTurnIdx, 'balik');
+          } else if (toCall > baseBlind * 4 && best3.leftScore < 6 && roll > 0.35) {
+            executeSeatAction(activeTurnIdx, 'balik');
+          } else if (hasQiuIn3 && roll > 0.78 && curBot.coins >= toCall + baseBlind * 2) {
+            executeSeatAction(activeTurnIdx, 'naik', baseBlind * 2);
+          } else {
+            executeSeatAction(activeTurnIdx, 'ikut');
+          }
+        }
+      } else {
+        // Round 2: Bot evaluates full 4-card hand
+        const ev4 = evaluateQiuHand(curBot.hand);
+        const isMonster = ev4.rank >= 2 || (ev4.leftScore === 9 && ev4.rightScore >= 7);
+        const isDecent = ev4.leftScore === 9 || (ev4.leftScore === 8 && ev4.rightScore >= 5);
+
+        if (toCall === 0) {
+          if (isMonster && roll > 0.3 && curBot.coins >= baseBlind * 2) {
+            executeSeatAction(activeTurnIdx, 'naik', baseBlind * (ev4.rank >= 2 ? 4 : 2));
+          } else if (isDecent && roll > 0.65 && curBot.coins >= baseBlind * 2) {
+            executeSeatAction(activeTurnIdx, 'naik', baseBlind * 2);
+          } else {
+            executeSeatAction(activeTurnIdx, 'cek');
+          }
+        } else {
+          // Facing a bet in Round 2
+          if (!isDecent && toCall >= baseBlind * 4 && roll > 0.2) {
+            executeSeatAction(activeTurnIdx, 'balik');
+          } else if (ev4.leftScore < 7 && toCall > 0 && roll > 0.35) {
+            executeSeatAction(activeTurnIdx, 'balik');
+          } else if (isMonster && roll > 0.7 && curBot.coins >= toCall + baseBlind * 2) {
+            executeSeatAction(activeTurnIdx, 'naik', baseBlind * 2);
+          } else {
+            executeSeatAction(activeTurnIdx, 'ikut');
+          }
+        }
+      }
+    }, 1050);
+
+    return () => clearTimeout(botTimer);
+  }, [activeTurnIdx, phase, roundMaxBet]);
+
+  // Tentukan Susunan Kartu Countdown (5s)
+  useEffect(() => {
+    if (phase !== 'tentukan') return;
+    if (tentukanCount <= 0) {
+      handleTentukanDone();
+      return;
+    }
+    const timer = setTimeout(() => {
+      setTentukanCount(prev => prev - 1);
+    }, 1000);
+    return () => clearTimeout(timer);
   }, [phase, tentukanCount]);
 
+  // Auto Next Round Countdown after Showdown (4s)
+  useEffect(() => {
+    if (phase !== 'showdown' || nextRoundCount === null) return;
+    if (nextRoundCount <= 0) {
+      setRoundNumber(r => r + 1);
+      startNewRound();
+      return;
+    }
+    const timer = setTimeout(() => {
+      setNextRoundCount(prev => (prev !== null ? prev - 1 : null));
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [phase, nextRoundCount]);
+
   const handleTentukanDone = () => {
+    if (phase === 'showdown') return;
     setPhase('showdown');
     evaluateWinnerAndShowdown();
   };
 
-  // Showdown Winner Calculation & Flying Chips Payout
+  // Authentic Showdown Winner Calculation with Balak Tie-Breaker & Jackpot Payout
   const evaluateWinnerAndShowdown = () => {
-    const activeSeats = seats.filter(s => !s.folded);
+    const curSeats = seatsRef.current;
+    const activeSeats = curSeats.filter(s => !s.isEmpty && !s.folded);
+    if (activeSeats.length === 0) return;
+
     let bestSeat = activeSeats[0];
-    let bestEval = evaluateQiuHand(bestSeat.hand);
+    // For Player 0, evaluate using their chosen card arrangement; for bots, use their optimal 4-card pairing
+    let bestEval = evaluateQiuHand(bestSeat.hand, bestSeat.id === 0);
 
     for (let i = 1; i < activeSeats.length; i++) {
-      const ev = evaluateQiuHand(activeSeats[i].hand);
-      if (ev.rank > bestEval.rank) {
+      const candidate = activeSeats[i];
+      const ev = evaluateQiuHand(candidate.hand, candidate.id === 0);
+      if (compareQiuHands(ev, bestEval) > 0) {
         bestEval = ev;
-        bestSeat = activeSeats[i];
-      } else if (ev.rank === bestEval.rank) {
-        if (ev.leftScore > bestEval.leftScore) {
-          bestEval = ev;
-          bestSeat = activeSeats[i];
-        } else if (ev.leftScore === bestEval.leftScore && ev.rightScore > bestEval.rightScore) {
-          bestEval = ev;
-          bestSeat = activeSeats[i];
-        }
+        bestSeat = candidate;
       }
     }
 
-    // Spawn flying chips from pot to winner seat
+    // Check if Player 0 won a Special Hand Jackpot!
+    let jpBonus = 0;
+    if (!curSeats[0]?.folded && jackpotCoupon > 0) {
+      const myEv = evaluateQiuHand(curSeats[0].hand, true);
+      if (myEv.rank === 6) jpBonus = jackpotCoupon * 500;      // Enam Dewa
+      else if (myEv.rank === 5) jpBonus = jackpotCoupon * 200; // Kartu Balak
+      else if (myEv.rank === 4 || myEv.rank === 3) jpBonus = jackpotCoupon * 100; // Murni Kecil / Besar
+      else if (myEv.rank === 2) jpBonus = jackpotCoupon * 50;  // QiuQiu 9:9
+    }
+
+    const totalPotWon = potRef.current;
     const winnerPos = SEAT_COORDS[bestSeat.id] || SEAT_COORDS[0];
     spawnFlyingChips(CENTER_POT_COORDS, winnerPos);
 
-    // Live Payout: Add winning pot amount directly to winner's seat coins!
-    setSeats(prev => prev.map(s => s.id === bestSeat.id ? { ...s, coins: s.coins + potAmount } : s));
+    setSeats(prev =>
+      prev.map(s => {
+        let add = 0;
+        if (s.id === bestSeat.id) add += totalPotWon;
+        if (s.id === 0 && jpBonus > 0) add += jpBonus;
+        const ev = !s.isEmpty && !s.folded ? evaluateQiuHand(s.hand, s.id === 0) : null;
+        return {
+          ...s,
+          coins: s.coins + add,
+          hand: ev ? ev.bestPairs : s.hand,
+          badge: s.id === bestSeat.id ? '👑 MENANG' : s.folded ? 'Balik' : ev?.title || '',
+        };
+      })
+    );
 
-    setWinnerNotice({
+    setWinnerInfo({
+      winnerSeatId: bestSeat.id,
       winnerName: bestSeat.name,
-      amount: potAmount,
-      title: bestEval.title
+      amount: totalPotWon,
+      title: bestEval.title,
+      jackpotBonus: jpBonus > 0 ? jpBonus : undefined,
     });
+
+    setNextRoundCount(5);
   };
 
-  // Handle Action Buttons for Player 0 (Me)
-  const handleActionClick = (actionType: 'balik' | 'cek' | 'ikut' | 'allin') => {
-    // Only allow click if it's Player 0's turn (or in tentukan/showdown)
-    if ((phase === 'round1_bet' || phase === 'round2_bet') && activeTurnIdx !== 0) return;
+  // Player Combinations & Manual Tile Swap
+  const userCombos = getPlayerCombinations(seats[0]?.hand || []);
 
-    const fromPos = SEAT_COORDS[0];
-    spawnFlyingChips(fromPos, CENTER_POT_COORDS);
-
-    if (phase === 'round1_bet' || phase === 'round2_bet') {
-      let addBet = currentBetTarget;
-      let badgeText = `Ikut ${formatBetLabel(currentBetTarget)}`;
-
-      if (actionType === 'balik') {
-        setSeats(prev => prev.map((s, idx) => idx === 0 ? { ...s, folded: true, badge: 'Balik' } : s));
-      } else if (actionType === 'cek') {
-        setSeats(prev => prev.map((s, idx) => idx === 0 ? { ...s, badge: 'Cek' } : s));
-      } else if (actionType === 'ikut') {
-        addBetToPotChips(addBet);
-        setPotAmount(prev => prev + addBet);
-        setSeats(prev => prev.map((s, idx) => idx === 0 ? { ...s, badge: badgeText, currentBet: addBet, coins: Math.max(0, s.coins - addBet) } : s));
-      } else if (actionType === 'allin') {
-        addBet = seats[0]?.coins || activeRoom.buyIn;
-        setCurrentBetTarget(Math.max(currentBetTarget, addBet));
-        addBetToPotChips(addBet);
-        setPotAmount(prev => prev + addBet);
-        setSeats(prev => prev.map((s, idx) => idx === 0 ? { ...s, badge: 'ALL IN', currentBet: addBet, coins: 0 } : s));
-      }
-
-      // Move turn to Bot 1 (Seat 1)
-      setActiveTurnIdx(1);
-    } else if (phase === 'tentukan') {
-      handleTentukanDone();
-    } else if (phase === 'showdown') {
-      startNewRound();
+  const handleSelectCombo = (idx: number) => {
+    setUserComboIdx(idx);
+    setSelectedTileIdx(null);
+    if (userCombos[idx]) {
+      const newHand = userCombos[idx].pairs;
+      setSeats(prev => prev.map((s, i) => (i === 0 ? { ...s, hand: newHand } : s)));
     }
   };
 
-  // Current Player evaluation
-  const myEval = evaluateQiuHand(seats[0]?.hand || []);
+  // Click two tiles to manually swap their positions between Left Pair and Right Pair
+  const handleTileClick = (tileIdx: number) => {
+    if (phase === 'round1_bet' && tileIdx === 3) {
+      setFourthCardPeeked(v => !v);
+      return;
+    }
+    if (selectedTileIdx === null) {
+      setSelectedTileIdx(tileIdx);
+    } else if (selectedTileIdx === tileIdx) {
+      setSelectedTileIdx(null);
+    } else {
+      const curHand = [...(seats[0]?.hand || [])] as QiuTile[];
+      if (curHand.length === 4) {
+        const temp = curHand[selectedTileIdx];
+        curHand[selectedTileIdx] = curHand[tileIdx];
+        curHand[tileIdx] = temp;
+        setSeats(prev => prev.map((s, i) => (i === 0 ? { ...s, hand: curHand } : s)));
+      }
+      setSelectedTileIdx(null);
+    }
+  };
+
+  const handleGantiMeja = () => {
+    const newCode = 'Q' + Math.floor(100 + Math.random() * 900);
+    setTableCode(newCode);
+    setIsStanding(false);
+    showToast(`🔄 Berpindah ke Meja Baru [Meja #${newCode}]...`);
+    startNewRound(false);
+  };
+
+  const handleBerdiri = () => {
+    setIsStanding(true);
+    if (activeTurnIdx === 0 && (phase === 'round1_bet' || phase === 'round2_bet')) {
+      executeSeatAction(0, 'balik');
+    } else {
+      setSeats(prev => prev.map((s, idx) => (idx === 0 ? { ...s, folded: true, badge: 'Menonton' } : s)));
+    }
+    showToast('🧍 Anda berdiri dari kursi. Mode Menonton aktif.');
+  };
+
+  const handleDudukKembali = () => {
+    setIsStanding(false);
+    showToast('🪑 Anda duduk kembali. Ikut bermain di ronde berikutnya!');
+  };
+
+  const mySeat = seats[0];
+  const myToCall = Math.max(0, roundMaxBet - (mySeat?.roundBet || 0));
+  const isMyBettingTurn = !isStanding && (phase === 'round1_bet' || phase === 'round2_bet') && activeTurnIdx === 0 && !mySeat?.folded && !mySeat?.allIn;
+  const maxRaiseAllowed = Math.max(baseBlind, (mySeat?.coins || 0) - myToCall);
+
+  // Helper to render an opponent seat (Seats 1..5)
+  const renderOpponentSeat = (seatIdx: number, posClass: string) => {
+    const seat = seats[seatIdx];
+    if (!seat || seat.isEmpty) return null;
+    const isTurn = (phase === 'round1_bet' || phase === 'round2_bet') && activeTurnIdx === seatIdx;
+    const isWinner = phase === 'showdown' && winnerInfo?.winnerSeatId === seatIdx;
+    const ev = evaluateQiuHand(seat.hand);
+    const visibleBackCount = phase === 'round1_bet' ? 3 : 4;
+
+    return (
+      <div key={seatIdx} className={`qq-seat ${posClass} ${isTurn ? 'turn' : ''} ${seat.folded ? 'folded' : ''} ${isWinner ? 'winner' : ''}`}>
+        <div className="qq-seat-main-row">
+          <div className="qq-avatar-wrapper">
+            {seat.isDealer && <div className="qq-dealer-btn" title="Dealer / Bandar">D</div>}
+            {seat.badge && (
+              <div className={`qq-action-badge ${seat.allIn ? 'allin' : seat.folded ? 'fold' : isWinner ? 'win' : ''}`}>
+                {seat.badge}
+              </div>
+            )}
+            <div className="qq-avatar-circle">
+              {renderPlayerAvatar(seat.avatar, '🐸', 'qq-avatar-img')}
+            </div>
+            {seat.roundBet > 0 && (
+              <div className="qq-player-bet-chips">
+                <div className={`qq-mini-chip ${seat.roundBet >= baseBlind * 5 ? 'purple' : seat.roundBet >= baseBlind * 2 ? 'blue' : ''}`}>🪙</div>
+                <span>{formatBetLabel(seat.roundBet)}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Opponent Hidden Cards during Betting / Tentukan */}
+          {phase !== 'showdown' && !seat.folded && (
+            <div className="qq-opp-hidden-cards">
+              <div className="qq-opp-backs-row">
+                {Array.from({ length: visibleBackCount }).map((_, cIdx) => (
+                  <div key={cIdx} className="qq-mini-card-back" />
+                ))}
+              </div>
+              <span className="qq-opp-card-status">
+                {phase === 'tentukan' ? '✓ Siap' : `${visibleBackCount} Kartu`}
+              </span>
+            </div>
+          )}
+        </div>
+
+        <div className="qq-player-info">
+          <span className="qq-player-name">{seat.name}</span>
+          <span className="qq-player-coins">🪙 {formatBetLabel(seat.coins)}</span>
+        </div>
+
+        {/* Showdown Revealed 2 Pairs (Left Pair | Right Pair) for Opponent */}
+        {phase === 'showdown' && !seat.folded && seat.hand?.length === 4 && (
+          <div className={`qq-opponent-showdown-hand ${isWinner ? 'winner-glow' : ''}`}>
+            <div className={`qq-score-pill-header ${ev.rank >= 2 ? 'special' : ''}`} style={{ fontSize: '1.15vh', padding: '0.15vh 0.7vw' }}>
+              {ev.title}
+            </div>
+            <div className="qq-opponent-pairs-split">
+              <div className="qq-opp-pair-group">
+                <DominoTile left={ev.bestPairs[0][0]} right={ev.bestPairs[0][1]} isSmall />
+                <DominoTile left={ev.bestPairs[1][0]} right={ev.bestPairs[1][1]} isSmall />
+              </div>
+              <span className="qq-opp-pair-divider">|</span>
+              <div className="qq-opp-pair-group">
+                <DominoTile left={ev.bestPairs[2][0]} right={ev.bestPairs[2][1]} isSmall />
+                <DominoTile left={ev.bestPairs[3][0]} right={ev.bestPairs[3][1]} isSmall />
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="qq-screen-wrapper">
@@ -8915,31 +10394,48 @@ function QiuQiuGameScreen({
         </div>
       ))}
 
-      {/* Top Announcement Marquee (Real-time Live Rotation) */}
+      {/* Top Announcement Marquee */}
       <div className="qq-top-marquee">
         <div className="qq-marquee-text">
           {REALTIME_NOTIFS[marqueeIdx]}
         </div>
       </div>
 
-      {/* Jackpot Neon Panel (Top Left) */}
+      {/* Interactive Jackpot Neon Panel (Top Left) */}
       <div className="qq-jackpot-panel">
         <div className="qq-jackpot-header">
-          <span className="qq-jp-title">🌴 JACKPOT</span>
+          <span className="qq-jp-title">💎 JACKPOT</span>
           <div className="qq-jp-counter">
-            {['0', '0', '1', '3', '0', '1'].map((d, i) => (
+            {String(jackpotPool).slice(-7).padStart(7, '0').split('').map((d, i) => (
               <span key={i} className="qq-jp-digit">{d}</span>
             ))}
           </div>
         </div>
         <div className="qq-jackpot-box">
           <div className="qq-jp-row">
-            <span>Twin/Small/Big 🎟️</span>
-            <span className="val">100</span>
+            <span>Enam Dewa 😈</span>
+            <span className="val">500x</span>
           </div>
           <div className="qq-jp-row">
-            <span>QiuQiu 🎟️</span>
-            <span className="val">50</span>
+            <span>Balak / Murni 💎</span>
+            <span className="val">200x / 100x</span>
+          </div>
+          <div className="qq-jp-row">
+            <span>QiuQiu (9:9) 🔥</span>
+            <span className="val">50x</span>
+          </div>
+          <div className="qq-jp-coupon-selector">
+            <span>🎟️ Kupon:</span>
+            {([0, 100, 500, 1000] as const).map(val => (
+              <button
+                key={val}
+                type="button"
+                className={`qq-jp-coupon-btn g-btn-press ${jackpotCoupon === val ? 'active' : ''}`}
+                onClick={() => setJackpotCoupon(val)}
+              >
+                {val === 0 ? 'OFF' : val === 1000 ? '1K' : val}
+              </button>
+            ))}
           </div>
         </div>
       </div>
@@ -8954,9 +10450,19 @@ function QiuQiuGameScreen({
       {/* Top Right Controls */}
       <div className="qq-top-right-controls">
         <div className="qq-rp-badge">
-          <span>Ante</span>
-          <span>{activeRoom.entryLabel}</span>
+          <span>Ronde #{roundNumber}</span>
+          <span>•</span>
+          <span>Ante {activeRoom.entryLabel}</span>
         </div>
+
+        <button
+          type="button"
+          className="qq-icon-btn g-btn-press"
+          onClick={() => setShowRulesModal(true)}
+          title="Aturan QiuQiu"
+        >
+          ?
+        </button>
 
         <div className="qq-menu-wrap">
           <button
@@ -8981,7 +10487,7 @@ function QiuQiuGameScreen({
               { id: 'berdiri', icon: '👤', label: isStanding ? 'Duduk Kembali' : 'Berdiri', onClick: () => { setShowMenu(false); if (isStanding) handleDudukKembali(); else handleBerdiri(); } },
               { id: 'suara', icon: '🔊', label: 'Suara', badge: soundOn ? 'ON' : 'OFF', onClick: () => setSoundOn(v => !v) },
               { id: 'efek', icon: '✨', label: 'Efek', badge: effectOn ? 'ON' : 'OFF', onClick: () => setEffectOn(v => !v) },
-              { id: 'bantuan', icon: '❓', label: 'Bantuan', onClick: () => { setShowMenu(false); setShowRulesModal(true); } }
+              { id: 'bantuan', icon: '❓', label: 'Aturan QiuQiu', onClick: () => { setShowMenu(false); setShowRulesModal(true); } }
             ]}
             style={{ top: '5.4vh', right: 0 }}
           />
@@ -8995,19 +10501,28 @@ function QiuQiuGameScreen({
         <div className="qq-dealer-avatar">
           💃
         </div>
+        <div className="qq-phase-pill">
+          {phase === 'round1_bet' && '🃏 RONDE 1: TARUHAN 3 KARTU'}
+          {phase === 'round2_bet' && '🔥 RONDE 2: TARUHAN KARTU KE-4'}
+          {phase === 'tentukan' && `⏱️ SUSUN PASANGAN KARTU (${tentukanCount}s)`}
+          {phase === 'showdown' && '🏆 ADU KARTU (SHOWDOWN)'}
+        </div>
       </div>
 
       {/* Oval Green Table Felt */}
       <div className="qq-table-felt">
-        <div className="qq-table-watermark">QiuQiu</div>
-        <div className="qq-blind-tag">Meja #{tableCode} | Blind:{activeRoom.entryLabel}</div>
+        <div className="qq-table-watermark">QiuQiu 99</div>
+        <div className="qq-blind-tag">
+          Meja #{tableCode} • Ante: {formatBetLabel(baseAnte)} • Max Bet Ronde: {formatBetLabel(roundMaxBet)}
+        </div>
 
         {/* Central Digital Pot Scoreboard */}
         <div className="qq-pot-scoreboard">
-          <div className="qq-pot-amount">{potAmount.toLocaleString('id-ID').padStart(16, '0')}</div>
+          <span className="qq-pot-label">TOTAL POT</span>
+          <div className="qq-pot-amount">🪙 {potAmount.toLocaleString('id-ID')}</div>
         </div>
 
-        {/* Authentic Dynamic 3D Clustered Chips in Pot (Matching User Image) */}
+        {/* Authentic Dynamic 3D Clustered Chips in Pot */}
         <div className="qq-pot-chips-cluster">
           {potChips.map(chip => (
             <div
@@ -9021,304 +10536,238 @@ function QiuQiuGameScreen({
         </div>
       </div>
 
-      {/* Seats around Table */}
-      {/* Seat 1: Bottom Right */}
-      {!seats[5]?.isEmpty && (
-        <div className={`qq-seat pos-bottom-right ${activeTurnIdx === 5 ? 'turn' : ''}`}>
-          <div className="qq-avatar-wrapper">
-            {seats[5]?.badge && <div className={`qq-action-badge ${seats[5]?.badge === 'ALL IN' ? 'allin' : ''}`}>{seats[5].badge}</div>}
-            <div className="qq-avatar-circle">{renderPlayerAvatar(seats[5]?.avatar, '🐸', 'qq-avatar-img')}</div>
-            {seats[5]?.currentBet > 0 && (
-              <div className="qq-player-bet-chips">
-                <div className="qq-mini-chip blue">1M</div>
-                <span>{formatBetLabel(seats[5].currentBet)}</span>
-              </div>
-            )}
-          </div>
-          <div className="qq-player-info">
-            <span className="qq-player-name">{seats[5]?.name}</span>
-            <span className="qq-player-coins">🪙 {seats[5]?.coins?.toLocaleString()}</span>
-          </div>
-          {/* Showdown Revealed Cards for Opponent */}
-          {phase === 'showdown' && !seats[5]?.folded && (
-            <div className="qq-opponent-showdown-hand">
-              <div className="qq-score-pill-header" style={{ fontSize: '1.2vh', padding: '0.1vh 0.8vw' }}>
-                {evaluateQiuHand(seats[5].hand).title}
-              </div>
-              <div className="qq-opponent-tiles-mini">
-                <DominoTile left={evaluateQiuHand(seats[5].hand).bestPairs[0][0]} right={evaluateQiuHand(seats[5].hand).bestPairs[0][1]} isSmall />
-                <DominoTile left={evaluateQiuHand(seats[5].hand).bestPairs[1][0]} right={evaluateQiuHand(seats[5].hand).bestPairs[1][1]} isSmall />
-                <DominoTile left={evaluateQiuHand(seats[5].hand).bestPairs[2][0]} right={evaluateQiuHand(seats[5].hand).bestPairs[2][1]} isSmall />
-                <DominoTile left={evaluateQiuHand(seats[5].hand).bestPairs[3][0]} right={evaluateQiuHand(seats[5].hand).bestPairs[3][1]} isSmall />
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+      {/* 5 Opponent Seats Around the Oval Table */}
+      {renderOpponentSeat(5, 'pos-bottom-left')}
+      {renderOpponentSeat(4, 'pos-left')}
+      {renderOpponentSeat(3, 'pos-top-left')}
+      {renderOpponentSeat(2, 'pos-top-right')}
+      {renderOpponentSeat(1, 'pos-right')}
 
-      {/* Seat 2: Right */}
-      {!seats[1]?.isEmpty && (
-        <div className={`qq-seat pos-right ${activeTurnIdx === 1 ? 'turn' : ''}`}>
-          <div className="qq-avatar-wrapper">
-            {seats[1]?.isDealer && <div className="qq-dealer-btn">D</div>}
-            {seats[1]?.badge && <div className="qq-action-badge">{seats[1].badge}</div>}
-            <div className="qq-avatar-circle">{renderPlayerAvatar(seats[1]?.avatar, '🐸', 'qq-avatar-img')}</div>
-            {seats[1]?.currentBet > 0 && (
-              <div className="qq-player-bet-chips">
-                <div className="qq-mini-chip">200K</div>
-                <span>{formatBetLabel(seats[1].currentBet)}</span>
-              </div>
-            )}
-          </div>
-          <div className="qq-player-info">
-            <span className="qq-player-name">{seats[1]?.name}</span>
-            <span className="qq-player-coins">🪙 {formatBetLabel(seats[1]?.coins)}</span>
-          </div>
-          {/* Showdown Revealed Cards for Opponent */}
-          {phase === 'showdown' && !seats[1]?.folded && (
-            <div className="qq-opponent-showdown-hand">
-              <div className="qq-score-pill-header" style={{ fontSize: '1.2vh', padding: '0.1vh 0.8vw' }}>
-                {evaluateQiuHand(seats[1].hand).title}
-              </div>
-              <div className="qq-opponent-tiles-mini">
-                <DominoTile left={evaluateQiuHand(seats[1].hand).bestPairs[0][0]} right={evaluateQiuHand(seats[1].hand).bestPairs[0][1]} isSmall />
-                <DominoTile left={evaluateQiuHand(seats[1].hand).bestPairs[1][0]} right={evaluateQiuHand(seats[1].hand).bestPairs[1][1]} isSmall />
-                <DominoTile left={evaluateQiuHand(seats[1].hand).bestPairs[2][0]} right={evaluateQiuHand(seats[1].hand).bestPairs[2][1]} isSmall />
-                <DominoTile left={evaluateQiuHand(seats[1].hand).bestPairs[3][0]} right={evaluateQiuHand(seats[1].hand).bestPairs[3][1]} isSmall />
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Seat 3: Top Right */}
-      {!seats[2]?.isEmpty && (
-        <div className={`qq-seat pos-top-right ${activeTurnIdx === 2 ? 'turn' : ''}`}>
-          <div className="qq-avatar-wrapper">
-            {seats[2]?.badge && <div className="qq-action-badge">{seats[2].badge}</div>}
-            <div className="qq-avatar-circle">{renderPlayerAvatar(seats[2]?.avatar, '🐸', 'qq-avatar-img')}</div>
-            {seats[2]?.currentBet > 0 && (
-              <div className="qq-player-bet-chips">
-                <div className="qq-mini-chip blue">1M</div>
-                <span>{formatBetLabel(seats[2].currentBet)}</span>
-              </div>
-            )}
-          </div>
-          <div className="qq-player-info">
-            <span className="qq-player-name">{seats[2]?.name}</span>
-            <span className="qq-player-coins">🪙 {formatBetLabel(seats[2]?.coins)}</span>
-          </div>
-          {/* Showdown Revealed Cards for Opponent */}
-          {phase === 'showdown' && !seats[2]?.folded && (
-            <div className="qq-opponent-showdown-hand">
-              <div className="qq-score-pill-header" style={{ fontSize: '1.2vh', padding: '0.1vh 0.8vw' }}>
-                {evaluateQiuHand(seats[2].hand).title}
-              </div>
-              <div className="qq-opponent-tiles-mini">
-                <DominoTile left={evaluateQiuHand(seats[2].hand).bestPairs[0][0]} right={evaluateQiuHand(seats[2].hand).bestPairs[0][1]} isSmall />
-                <DominoTile left={evaluateQiuHand(seats[2].hand).bestPairs[1][0]} right={evaluateQiuHand(seats[2].hand).bestPairs[1][1]} isSmall />
-                <DominoTile left={evaluateQiuHand(seats[2].hand).bestPairs[2][0]} right={evaluateQiuHand(seats[2].hand).bestPairs[2][1]} isSmall />
-                <DominoTile left={evaluateQiuHand(seats[2].hand).bestPairs[3][0]} right={evaluateQiuHand(seats[2].hand).bestPairs[3][1]} isSmall />
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Seat 4: Top Left */}
-      {!seats[3]?.isEmpty && (
-        <div className={`qq-seat pos-top-left ${activeTurnIdx === 3 ? 'turn' : ''}`}>
-          <div className="qq-avatar-wrapper">
-            {seats[3]?.badge && <div className="qq-action-badge">{seats[3].badge}</div>}
-            <div className="qq-avatar-circle">{renderPlayerAvatar(seats[3]?.avatar, '🐸', 'qq-avatar-img')}</div>
-            {seats[3]?.currentBet > 0 && (
-              <div className="qq-player-bet-chips">
-                <div className="qq-mini-chip purple">10M</div>
-                <span>{formatBetLabel(seats[3].currentBet)}</span>
-              </div>
-            )}
-          </div>
-          <div className="qq-player-info">
-            <span className="qq-player-name">{seats[3]?.name}</span>
-            <span className="qq-player-coins">🪙 {formatBetLabel(seats[3]?.coins)}</span>
-          </div>
-          {/* Showdown Revealed Cards for Opponent */}
-          {phase === 'showdown' && !seats[3]?.folded && (
-            <div className="qq-opponent-showdown-hand">
-              <div className="qq-score-pill-header" style={{ fontSize: '1.2vh', padding: '0.1vh 0.8vw' }}>
-                {evaluateQiuHand(seats[3].hand).title}
-              </div>
-              <div className="qq-opponent-tiles-mini">
-                <DominoTile left={evaluateQiuHand(seats[3].hand).bestPairs[0][0]} right={evaluateQiuHand(seats[3].hand).bestPairs[0][1]} isSmall />
-                <DominoTile left={evaluateQiuHand(seats[3].hand).bestPairs[1][0]} right={evaluateQiuHand(seats[3].hand).bestPairs[1][1]} isSmall />
-                <DominoTile left={evaluateQiuHand(seats[3].hand).bestPairs[2][0]} right={evaluateQiuHand(seats[3].hand).bestPairs[2][1]} isSmall />
-                <DominoTile left={evaluateQiuHand(seats[3].hand).bestPairs[3][0]} right={evaluateQiuHand(seats[3].hand).bestPairs[3][1]} isSmall />
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Seat 5: Bottom Left */}
-      {!seats[4]?.isEmpty && (
-        <div className={`qq-seat pos-bottom-left ${activeTurnIdx === 4 ? 'turn' : ''}`}>
-          <div className="qq-avatar-wrapper">
-            {seats[4]?.badge && <div className="qq-action-badge">{seats[4].badge}</div>}
-            <div className="qq-avatar-circle">{renderPlayerAvatar(seats[4]?.avatar, '🐸', 'qq-avatar-img')}</div>
-            {seats[4]?.currentBet > 0 && (
-              <div className="qq-player-bet-chips">
-                <div className="qq-mini-chip blue">1M</div>
-                <span>{formatBetLabel(seats[4].currentBet)}</span>
-              </div>
-            )}
-          </div>
-          <div className="qq-player-info">
-            <span className="qq-player-name">{seats[4]?.name}</span>
-            <span className="qq-player-coins">🪙 {formatBetLabel(seats[4]?.coins)}</span>
-          </div>
-          {/* Showdown Revealed Cards for Opponent */}
-          {phase === 'showdown' && !seats[4]?.folded && (
-            <div className="qq-opponent-showdown-hand">
-              <div className="qq-score-pill-header" style={{ fontSize: '1.2vh', padding: '0.1vh 0.8vw' }}>
-                {evaluateQiuHand(seats[4].hand).title}
-              </div>
-              <div className="qq-opponent-tiles-mini">
-                <DominoTile left={evaluateQiuHand(seats[4].hand).bestPairs[0][0]} right={evaluateQiuHand(seats[4].hand).bestPairs[0][1]} isSmall />
-                <DominoTile left={evaluateQiuHand(seats[4].hand).bestPairs[1][0]} right={evaluateQiuHand(seats[4].hand).bestPairs[1][1]} isSmall />
-                <DominoTile left={evaluateQiuHand(seats[4].hand).bestPairs[2][0]} right={evaluateQiuHand(seats[4].hand).bestPairs[2][1]} isSmall />
-                <DominoTile left={evaluateQiuHand(seats[4].hand).bestPairs[3][0]} right={evaluateQiuHand(seats[4].hand).bestPairs[3][1]} isSmall />
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Seat 0: Me (Bottom Center) */}
-      <div className={`qq-seat pos-bottom ${activeTurnIdx === 0 ? 'turn' : ''}`} style={isStanding ? { opacity: 0.6 } : {}}>
+      {/* Seat 0: Player's Own Avatar Dock (Left of Player's Hand Cards) */}
+      <div
+        className={`qq-seat pos-bottom ${isMyBettingTurn ? 'turn' : ''} ${mySeat?.folded ? 'folded' : ''} ${phase === 'showdown' && winnerInfo?.winnerSeatId === 0 ? 'winner' : ''}`}
+        style={isStanding ? { opacity: 0.65 } : {}}
+      >
         <div className="qq-avatar-wrapper">
-          <div className={`qq-action-badge ${seats[0]?.badge === 'ALL IN' ? 'allin' : ''}`}>{isStanding ? 'Menonton' : seats[0]?.badge}</div>
-          <div className="qq-avatar-circle">{isStanding ? '🧍' : renderPlayerAvatar(avatarEmoji, '🐸', 'qq-avatar-img')}</div>
-          {!isStanding && seats[0]?.currentBet > 0 && (
+          {mySeat?.isDealer && <div className="qq-dealer-btn" title="Dealer / Bandar">D</div>}
+          {(isStanding || mySeat?.badge) && (
+            <div className={`qq-action-badge ${mySeat?.allIn ? 'allin' : mySeat?.folded ? 'fold' : ''}`}>
+              {isStanding ? 'Menonton' : mySeat?.badge}
+            </div>
+          )}
+          <div className="qq-avatar-circle">
+            {isStanding ? '🧍' : renderPlayerAvatar(avatarEmoji, '🐸', 'qq-avatar-img')}
+          </div>
+          {!isStanding && (mySeat?.roundBet || 0) > 0 && (
             <div className="qq-player-bet-chips">
-              <div className="qq-mini-chip blue">1M</div>
-              <span>{formatBetLabel(seats[0].currentBet)}</span>
+              <div className="qq-mini-chip blue">🪙</div>
+              <span>{formatBetLabel(mySeat.roundBet)}</span>
             </div>
           )}
         </div>
         <div className="qq-player-info">
           <span className="qq-player-name">{myUsername}</span>
-          <span className="qq-player-coins">🪙 {formatBetLabel(seats[0]?.coins)}</span>
+          <span className="qq-player-coins">🪙 {(mySeat?.coins || 0).toLocaleString('id-ID')}</span>
         </div>
+        {isMyBettingTurn && (
+          <div className={`qq-my-turn-pill ${playerTurnTimer <= 3 ? 'urgent' : ''}`}>
+            ⏳ Giliranmu: {playerTurnTimer}s
+          </div>
+        )}
       </div>
 
-      {/* Center Tentukan Banner */}
-      {phase === 'tentukan' && (
-        <div className="qq-tentukan-banner">
-          Tentukan Susunan Kartu <span className="count">{tentukanCount}</span>
-        </div>
-      )}
-
-      {/* Showdown Winner Announcement Banner */}
-      {winnerNotice && (
-        <div className="claim-toast-overlay">
-          <div className="claim-toast-box">
-            <div className="claim-toast-icon">🏆</div>
-            <div className="claim-toast-content">
-              <div className="claim-toast-title">PEMENANG: {winnerNotice.winnerName}!</div>
-              <div className="claim-toast-sub">
-                {winnerNotice.title}: <span>+{winnerNotice.amount.toLocaleString('id-ID')} Koin</span>
+      {/* Showdown Winner Banner & Next Round Trigger */}
+      {winnerInfo && (
+        <div className="qq-showdown-banner">
+          <div className="qq-showdown-banner-inner">
+            <span className="qq-showdown-trophy">🏆</span>
+            <div className="qq-showdown-text">
+              <div className="qq-showdown-winner">
+                PEMENANG: <span>{winnerInfo.winnerName}</span> (+{winnerInfo.amount.toLocaleString('id-ID')} Koin)
+              </div>
+              <div className="qq-showdown-hand-type">
+                Kombinasi: <b>{winnerInfo.title}</b>
+                {winnerInfo.jackpotBonus ? ` • 🎰 JACKPOT +${winnerInfo.jackpotBonus.toLocaleString('id-ID')}!` : ''}
               </div>
             </div>
-            <div className="claim-toast-shimmer" />
+            <button
+              type="button"
+              className="qq-next-round-btn g-btn-press"
+              onClick={() => {
+                setRoundNumber(r => r + 1);
+                startNewRound();
+              }}
+            >
+              Main Lagi {nextRoundCount !== null ? `(${nextRoundCount}s)` : '▶'}
+            </button>
           </div>
         </div>
       )}
 
-      {/* Player's Own Cards & Score Pills (Bottom Center) */}
-      {!isStanding && (() => {
-        const h0 = seats[0]?.hand?.[0] || [0, 0];
-        const h1 = seats[0]?.hand?.[1] || [0, 0];
-        const h2 = seats[0]?.hand?.[2] || [0, 0];
-        const h3 = seats[0]?.hand?.[3] || [0, 0];
+      {/* Player 0's Authentic 2-Pair Hand Area (Pasangan Kiri + Pasangan Kanan) */}
+      {!isStanding && mySeat && (() => {
+        const h0 = mySeat.hand?.[0] || [0, 0];
+        const h1 = mySeat.hand?.[1] || [0, 0];
+        const h2 = mySeat.hand?.[2] || [0, 0];
+        const h3 = mySeat.hand?.[3] || [0, 0];
 
-        const leftVal = (getQiuPips(h0) + getQiuPips(h1)) % 10;
-        const rightVal = (getQiuPips(h2) + getQiuPips(h3)) % 10;
+        const leftVal = getQiuPairScore(h0, h1);
+        const isFourthHidden = phase === 'round1_bet' && !fourthCardPeeked;
+        const rightVal = isFourthHidden ? null : getQiuPairScore(h2, h3);
+        const liveEval = evaluateQiuHand([h0, h1, h2, h3], true);
 
         return (
-          <div className="qq-hand-container">
-            {/* Score Pill Header */}
-            <div className="qq-score-pill-header g-btn-press" onClick={handleSwapNext} style={{ cursor: 'pointer' }}>
-              <span>{leftVal}</span> : <span>{phase === 'round1_bet' ? '?' : rightVal}</span>
+          <div className={`qq-hand-container ${mySeat.folded ? 'folded-hand' : ''}`}>
+            {/* Top Combination Title Ribbon */}
+            <div className={`qq-hand-title-ribbon ${liveEval.rank >= 2 && !isFourthHidden ? 'special' : ''}`}>
+              {mySeat.folded ? (
+                <span>🚫 KARTU DITUTUP (BALIK)</span>
+              ) : isFourthHidden ? (
+                <span>
+                  Pasangan Kiri: <b>{leftVal === 9 ? 'QIU (9) 🔥' : leftVal}</b> • Pasangan Kanan: <b>?</b>
+                </span>
+              ) : (
+                <span>
+                  {liveEval.title} ({leftVal} : {rightVal})
+                </span>
+              )}
             </div>
 
-            {/* Tiles Row (Click any tile to swap pair combinations "tukar ke sebelah") */}
-            <div className="qq-tiles-row g-btn-press" onClick={handleSwapNext} style={{ cursor: 'pointer' }}>
-              <DominoTile left={h0[0]} right={h0[1]} isFlipping3D={isFlipping3D} />
-              <DominoTile left={h1[0]} right={h1[1]} isFlipping3D={isFlipping3D} />
-              <DominoTile left={h2[0]} right={h2[1]} isFlipping3D={isFlipping3D} />
-
-              {/* 4th Card Slot */}
-              {phase === 'round1_bet' ? (
-                <div className="qq-mix-card-slot" onClick={e => { e.stopPropagation(); handleMixFourthCard(); }}>
-                  <DominoTile left={0} right={0} isBack isFlipping3D={isFlipping3D} />
-                  <div className="qq-hand-cursor-popup">
-                    👆 Klik untuk Mix
+            {/* Two Distinct Pairs: [Pair Left] + [Pair Right] */}
+            <div className="qq-pairs-stage">
+              {/* LEFT PAIR (2 Kartu Pertama) */}
+              <div className={`qq-pair-box ${leftVal === 9 ? 'qiu-glow' : ''}`}>
+                <div className={`qq-pair-score-badge ${leftVal === 9 ? 'qiu' : ''}`}>
+                  {leftVal === 9 ? 'QIU (9)' : leftVal}
+                </div>
+                <div className="qq-pair-tiles">
+                  <div
+                    className={`qq-selectable-tile ${selectedTileIdx === 0 ? 'selected' : ''}`}
+                    onClick={() => handleTileClick(0)}
+                    title="Klik 2 kartu untuk menukar posisi pasangan"
+                  >
+                    <DominoTile left={h0[0]} right={h0[1]} isFlipping3D={isFlipping3D} />
+                  </div>
+                  <div
+                    className={`qq-selectable-tile ${selectedTileIdx === 1 ? 'selected' : ''}`}
+                    onClick={() => handleTileClick(1)}
+                    title="Klik 2 kartu untuk menukar posisi pasangan"
+                  >
+                    <DominoTile left={h1[0]} right={h1[1]} isFlipping3D={isFlipping3D} />
                   </div>
                 </div>
-              ) : (
-                <DominoTile left={h3[0]} right={h3[1]} isFlipping3D={isFlipping3D} />
-              )}
+              </div>
+
+              <div className="qq-pairs-plus">+</div>
+
+              {/* RIGHT PAIR (Kartu ke-3 & Kartu ke-4) */}
+              <div className={`qq-pair-box ${rightVal === 9 ? 'qiu-glow' : ''}`}>
+                <div className={`qq-pair-score-badge ${rightVal === 9 ? 'qiu' : ''}`}>
+                  {rightVal === null ? '?' : rightVal === 9 ? 'QIU (9)' : rightVal}
+                </div>
+                <div className="qq-pair-tiles">
+                  <div
+                    className={`qq-selectable-tile ${selectedTileIdx === 2 ? 'selected' : ''}`}
+                    onClick={() => handleTileClick(2)}
+                    title="Klik 2 kartu untuk menukar posisi pasangan"
+                  >
+                    <DominoTile left={h2[0]} right={h2[1]} isFlipping3D={isFlipping3D} />
+                  </div>
+
+                  {/* 4th Card: Hidden in Round 1 (unless peeked), Revealed in Round 2 */}
+                  {phase === 'round1_bet' ? (
+                    <div
+                      className="qq-mix-card-slot"
+                      onClick={() => showToast('💡 Selesaikan Ronde Taruhan 1 untuk membuka Kartu Ke-4!')}
+                      title="Kartu ke-4 dibuka setelah Ronde Taruhan 1 selesai"
+                    >
+                      <DominoTile left={0} right={0} isBack isFlipping3D={isFlipping3D} />
+                      <div className="qq-fourth-lock-tag">Kartu Ke-4</div>
+                    </div>
+                  ) : (
+                    <div
+                      className={`qq-selectable-tile ${selectedTileIdx === 3 ? 'selected' : ''}`}
+                      onClick={() => handleTileClick(3)}
+                      title="Klik 2 kartu untuk menukar posisi pasangan"
+                    >
+                      <DominoTile left={h3[0]} right={h3[1]} isFlipping3D={isFlipping3D} />
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
-            {/* Interactive Hint Pills Row (Click to select & swap pair) - Concealed in 3-Card Phase */}
-            <div className="qq-hint-pills-row">
-              {phase === 'round1_bet' ? (
-                <span className="qq-hint-pill">{leftVal} : ?</span>
-              ) : userCombos.length > 0 ? userCombos.map((combo, cIdx) => (
-                <span
-                  key={cIdx}
-                  className={`qq-hint-pill g-btn-press ${userComboIdx === cIdx ? 'active' : ''}`}
-                  style={{
-                    cursor: 'pointer',
-                    borderColor: userComboIdx === cIdx ? '#f1c40f' : 'rgba(241,196,15,0.4)',
-                    background: userComboIdx === cIdx ? 'linear-gradient(180deg, #d35400, #a04000)' : 'rgba(0,0,0,0.6)'
-                  }}
-                  onClick={() => handleSelectCombo(cIdx)}
-                >
-                  {combo.label}
-                </span>
-              )) : (
-                <>
-                  <span className="qq-hint-pill">{leftVal} : {rightVal}</span>
-                </>
-              )}
-            </div>
-
-            {/* Green Tentukan Button */}
-            {phase === 'tentukan' && (
-              <button className="qq-tentukan-btn g-btn-press" onClick={handleTentukanDone}>
-                Tentukan
-              </button>
+            {/* 3 Quick-Combination Switcher Pills (Available once 4th card is dealt) */}
+            {phase !== 'round1_bet' && !mySeat.folded && (
+              <div className="qq-hint-pills-row">
+                {userCombos.map((combo, cIdx) => (
+                  <button
+                    key={cIdx}
+                    type="button"
+                    className={`qq-hint-pill g-btn-press ${userComboIdx === cIdx ? 'active' : ''}`}
+                    onClick={() => handleSelectCombo(cIdx)}
+                  >
+                    {combo.label}
+                  </button>
+                ))}
+                {phase === 'tentukan' && (
+                  <button
+                    type="button"
+                    className="qq-buka-kartu-btn g-btn-press"
+                    onClick={handleTentukanDone}
+                  >
+                    ✓ Buka Kartu ({tentukanCount}s)
+                  </button>
+                )}
+              </div>
             )}
           </div>
         );
       })()}
 
-      {/* Turn Timer Countdown Banner with Expiry Alert */}
-      {!isStanding && (phase === 'round1_bet' || phase === 'round2_bet') && activeTurnIdx === 0 && (
-        <div className={`qq-turn-timer-banner ${playerTurnTimer <= 3 ? 'urgent' : ''}`} style={{
-          textAlign: 'center',
-          color: playerTurnTimer <= 3 ? '#ff2222' : '#f1c40f',
-          fontSize: '1.4vh',
-          fontWeight: 900,
-          textShadow: playerTurnTimer <= 3 ? '0 0 15px #ff0000' : '0 0 10px rgba(0,0,0,0.9)',
-          margin: '0.5vh 0'
-        }}>
-          {playerTurnTimer <= 3 ? (
-            <span>⚠️ WAKTU HAMPIR HABIS! <span style={{ fontSize: '2vh', color: '#ffea00' }}>{playerTurnTimer}s</span></span>
-          ) : (
-            <span>⏳ Giliran Anda: <span style={{ fontSize: '1.8vh', color: '#e74c3c' }}>{playerTurnTimer}s</span></span>
-          )}
+      {/* Raise Slider & Quick Multiplier Popup */}
+      {showRaisePanel && isMyBettingTurn && (
+        <div className="qq-raise-slider-popup" onClick={e => e.stopPropagation()}>
+          <div className="qq-raise-presets">
+            {[
+              { label: '2x Blind', val: baseBlind * 2 },
+              { label: '5x Blind', val: baseBlind * 5 },
+              { label: '10x Blind', val: baseBlind * 10 },
+              { label: '1/2 Pot', val: Math.max(baseBlind * 2, Math.round(potAmount * 0.5)) },
+              { label: '1x Pot', val: Math.max(baseBlind * 2, potAmount) },
+            ].map(preset => {
+              const clampedVal = Math.min(maxRaiseAllowed, preset.val);
+              return (
+                <button
+                  key={preset.label}
+                  type="button"
+                  className={`qq-raise-preset-btn g-btn-press ${raiseAmount === clampedVal ? 'active' : ''}`}
+                  onClick={() => setRaiseAmount(clampedVal)}
+                >
+                  <span>{preset.label}</span>
+                  <b>{formatBetLabel(clampedVal)}</b>
+                </button>
+              );
+            })}
+          </div>
+          <div className="qq-raise-slider-row">
+            <input
+              type="range"
+              min={baseBlind}
+              max={Math.max(baseBlind, maxRaiseAllowed)}
+              step={baseBlind}
+              value={Math.min(raiseAmount, maxRaiseAllowed)}
+              onChange={e => setRaiseAmount(Number(e.target.value))}
+              className="qq-raise-range-input"
+            />
+            <button
+              type="button"
+              className="qq-raise-confirm-btn g-btn-press"
+              onClick={() => executeSeatAction(0, 'naik', raiseAmount)}
+            >
+              Naik +{formatBetLabel(raiseAmount)}
+            </button>
+          </div>
         </div>
       )}
 
@@ -9331,22 +10780,63 @@ function QiuQiuGameScreen({
           </button>
         </div>
       ) : (
-        <div className="qq-bottom-controls" style={{
-          opacity: (phase === 'round1_bet' || phase === 'round2_bet') && activeTurnIdx !== 0 ? 0.4 : 1,
-          pointerEvents: (phase === 'round1_bet' || phase === 'round2_bet') && activeTurnIdx !== 0 ? 'none' : 'auto'
-        }}>
-          <button className="qq-action-btn orange g-btn-press" onClick={() => handleActionClick('balik')}>
+        <div
+          className="qq-bottom-controls"
+          style={{
+            opacity: isMyBettingTurn ? 1 : 0.45,
+            pointerEvents: isMyBettingTurn ? 'auto' : 'none',
+          }}
+        >
+          {/* 1. BALIK / FOLD */}
+          <button
+            type="button"
+            className="qq-action-btn orange g-btn-press"
+            onClick={() => executeSeatAction(0, 'balik')}
+          >
             <span>Balik</span>
+            <span className="qq-action-btn-sub">Tutup Kartu</span>
           </button>
-          <button className="qq-action-btn g-btn-press" onClick={() => handleActionClick('cek')}>
-            <span>Cek</span>
+
+          {/* 2. CEK (when toCall === 0) OR IKUT / CALL (when toCall > 0) */}
+          {myToCall === 0 ? (
+            <button
+              type="button"
+              className="qq-action-btn g-btn-press"
+              onClick={() => executeSeatAction(0, 'cek')}
+            >
+              <span>Cek</span>
+              <span className="qq-action-btn-sub">Lewat Gratis</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="qq-action-btn blue g-btn-press"
+              onClick={() => executeSeatAction(0, 'ikut')}
+            >
+              <span>Ikut</span>
+              <span className="qq-action-btn-sub">🪙 {formatBetLabel(Math.min(mySeat?.coins || 0, myToCall))}</span>
+            </button>
+          )}
+
+          {/* 3. NAIK / RAISE */}
+          <button
+            type="button"
+            className="qq-action-btn purple g-btn-press"
+            onClick={() => setShowRaisePanel(v => !v)}
+            disabled={(mySeat?.coins || 0) <= myToCall}
+          >
+            <span>Naik ▴</span>
+            <span className="qq-action-btn-sub">Tambah Bet</span>
           </button>
-          <button className="qq-action-btn g-btn-press" onClick={() => handleActionClick('ikut')}>
-            <span>Ikut</span>
-            <span className="qq-action-btn-sub">{formatBetLabel(currentBetTarget)}</span>
-          </button>
-          <button className="qq-action-btn gold g-btn-press" onClick={() => handleActionClick('allin')}>
+
+          {/* 4. ALL IN */}
+          <button
+            type="button"
+            className="qq-action-btn gold g-btn-press"
+            onClick={() => executeSeatAction(0, 'allin')}
+          >
             <span>ALL IN</span>
+            <span className="qq-action-btn-sub">🪙 {formatBetLabel(mySeat?.coins || 0)}</span>
           </button>
         </div>
       )}
