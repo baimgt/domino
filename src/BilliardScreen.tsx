@@ -541,6 +541,14 @@ function spawnParticles(arr: Particle[], x: number, y: number, color: string, n:
   }
 }
 
+interface BotPlannedShot {
+  active: boolean;
+  targetBallId: number;
+  pocket: { x: number; y: number } | null;
+  assistStrength: number;
+  antiScratch: number;
+}
+
 function physicsStep(
   balls: Ball[],
   pocketedSet: Set<number>,
@@ -548,7 +556,8 @@ function physicsStep(
   sinkingBalls: SinkingBall[],
   spin: SpinState,
   cueBallJustShot: { current: boolean },
-  firstHitBallRef?: { current: number | null }
+  firstHitBallRef?: { current: number | null },
+  botPlannedShotRef?: { current: BotPlannedShot | null }
 ): boolean {
   let moving = false;
   const SUB_STEPS = 4;
@@ -580,41 +589,45 @@ function physicsStep(
         b.angle += (spd / BALL_R) / SUB_STEPS;
       }
 
-      // Cushion collisions with elastic response
-      let bounced = false;
-      if (b.x - BALL_R < PLAY_LEFT) {
-        b.x = PLAY_LEFT + BALL_R;
-        b.vx = Math.abs(b.vx) * restitution;
-        bounced = true;
-      } else if (b.x + BALL_R > PLAY_RIGHT) {
-        b.x = PLAY_RIGHT - BALL_R;
-        b.vx = -Math.abs(b.vx) * restitution;
-        bounced = true;
-      }
-      if (b.y - BALL_R < PLAY_TOP) {
-        b.y = PLAY_TOP + BALL_R;
-        b.vy = Math.abs(b.vy) * restitution;
-        bounced = true;
-      } else if (b.y + BALL_R > PLAY_BOTTOM) {
-        b.y = PLAY_BOTTOM - BALL_R;
-        b.vy = -Math.abs(b.vy) * restitution;
-        bounced = true;
-      }
-      if (bounced && spd > 0.85) {
-        poolSound.playCushionBounce(spd);
-        spawnParticles(particles, b.x, b.y, '#ffd27d', 3);
-      }
-
-      // Pocket sink check
+      // Pocket sink check FIRST (so balls entering a pocket jaw don't bounce off the rail across the pocket mouth)
+      let nearPocketMouth = false;
       for (let pi = 0; pi < POCKETS.length; pi++) {
         const p = POCKETS[pi];
-        if (Math.hypot(b.x - p.x, b.y - p.y) < POCKET_R) {
+        const pDist = Math.hypot(b.x - p.x, b.y - p.y);
+
+        // Anti-scratch protection for skilled AI bot cue ball
+        if (
+          b.id === 0 &&
+          botPlannedShotRef?.current?.active &&
+          pDist < POCKET_R + 6 &&
+          botPlannedShotRef.current.antiScratch > 0
+        ) {
+          const pushX = b.x - p.x;
+          const pushY = b.y - p.y;
+          const pushLen = Math.hypot(pushX, pushY) || 1;
+          const nx = pushX / pushLen;
+          const ny = pushY / pushLen;
+          b.x = p.x + nx * (POCKET_R + 7);
+          b.y = p.y + ny * (POCKET_R + 7);
+          const dot = b.vx * nx + b.vy * ny;
+          if (dot < 0) {
+            b.vx = (b.vx - 1.8 * dot * nx) * 0.65;
+            b.vy = (b.vy - 1.8 * dot * ny) * 0.65;
+          }
+          continue;
+        }
+
+        if (pDist < POCKET_R + BALL_R * 0.85) {
+          nearPocketMouth = true;
+        }
+
+        if (pDist < POCKET_R) {
           b.pocketed = true;
           b.vx = 0;
           b.vy = 0;
           pocketedSet.add(b.id);
           const entryAngle = Math.atan2(b.y - p.y, b.x - p.x);
-          const entryDist  = Math.hypot(b.x - p.x, b.y - p.y);
+          const entryDist  = pDist;
           sinkingBalls.push({
             id: b.id,
             x: b.x,
@@ -630,6 +643,35 @@ function physicsStep(
           spawnParticles(particles, b.x, b.y, BALL_COLORS[b.id] ?? '#fff', 12);
           poolSound.playPocketDrop();
           break;
+        }
+      }
+
+      if (b.pocketed) continue;
+
+      // Cushion collisions with elastic response (skip if ball is dropping into a pocket mouth)
+      if (!nearPocketMouth) {
+        let bounced = false;
+        if (b.x - BALL_R < PLAY_LEFT) {
+          b.x = PLAY_LEFT + BALL_R;
+          b.vx = Math.abs(b.vx) * restitution;
+          bounced = true;
+        } else if (b.x + BALL_R > PLAY_RIGHT) {
+          b.x = PLAY_RIGHT - BALL_R;
+          b.vx = -Math.abs(b.vx) * restitution;
+          bounced = true;
+        }
+        if (b.y - BALL_R < PLAY_TOP) {
+          b.y = PLAY_TOP + BALL_R;
+          b.vy = Math.abs(b.vy) * restitution;
+          bounced = true;
+        } else if (b.y + BALL_R > PLAY_BOTTOM) {
+          b.y = PLAY_BOTTOM - BALL_R;
+          b.vy = -Math.abs(b.vy) * restitution;
+          bounced = true;
+        }
+        if (bounced && spd > 0.85) {
+          poolSound.playCushionBounce(spd);
+          spawnParticles(particles, b.x, b.y, '#ffd27d', 3);
         }
       }
     }
@@ -666,15 +708,48 @@ function physicsStep(
 
             if (wasA || wasB) {
               cueBallJustShot.current = false;
+              const hitObj = wasA ? b : a;
+              const cue = wasA ? a : b;
               if (firstHitBallRef && firstHitBallRef.current === null) {
-                firstHitBallRef.current = wasA ? b.id : a.id;
+                firstHitBallRef.current = hitObj.id;
               }
               const spinEffect = -spin.y;
-              const cue = wasA ? a : b;
               cue.vx += nx * spinEffect * imp * 0.55;
               cue.vy += ny * spinEffect * imp * 0.55;
               cue.vx += -ny * spin.x * imp * 0.3;
               cue.vy +=  nx * spin.x * imp * 0.3;
+
+              // Pro / Master Bot Shot Guidance on Impact (scales with bet tier)
+              const botPlan = botPlannedShotRef?.current;
+              if (botPlan && botPlan.active && botPlan.pocket && hitObj.id === botPlan.targetBallId) {
+                const pdx = botPlan.pocket.x - hitObj.x;
+                const pdy = botPlan.pocket.y - hitObj.y;
+                const pDist = Math.hypot(pdx, pdy) || 1;
+                const pnx = pdx / pDist;
+                const pny = pdy / pDist;
+
+                const curHitSpd = Math.hypot(hitObj.vx, hitObj.vy);
+                // Ensure enough velocity to comfortably reach the pocket against friction
+                const minNeededSpd = Math.min(18, Math.max(6.8, pDist * 0.022 + 4.5));
+                const finalSpd = Math.max(curHitSpd, minNeededSpd);
+                const assist = botPlan.assistStrength;
+
+                const curDirX = curHitSpd > 0.01 ? hitObj.vx / curHitSpd : pnx;
+                const curDirY = curHitSpd > 0.01 ? hitObj.vy / curHitSpd : pny;
+                const blendX = curDirX * (1 - assist) + pnx * assist;
+                const blendY = curDirY * (1 - assist) + pny * assist;
+                const blendLen = Math.hypot(blendX, blendY) || 1;
+
+                hitObj.vx = (blendX / blendLen) * finalSpd;
+                hitObj.vy = (blendY / blendLen) * finalSpd;
+
+                // Keep cue ball at controlled position speed so it sets up the next shot
+                const cueSpd = Math.hypot(cue.vx, cue.vy);
+                if (cueSpd > 9.5) {
+                  cue.vx *= (9.5 / cueSpd);
+                  cue.vy *= (9.5 / cueSpd);
+                }
+              }
             }
 
             const hitSpeed = Math.hypot(dvx, dvy);
@@ -1204,7 +1279,7 @@ function drawScene(
     ctx.restore();
   }
 
-  // 5. Aim System (Solid White Laser Guide & Ghost Ball matching 8-Ball Pool)
+  // 5. Aim System (No trajectory guideline — players aim purely by cue stick angle for realistic difficulty)
   if (!isBallInHand && isAimMode && cueBall && aimTarget) {
     const dx = aimTarget.x - cueBall.x;
     const dy = aimTarget.y - cueBall.y;
@@ -1212,78 +1287,6 @@ function drawScene(
 
     if (len > 5) {
       const nx = dx / len, ny = dy / len;
-      const trajectory = calculateAimTrajectory(cueBall, nx, ny, balls);
-
-      // Laser trajectory line (only when not in strike animation thrust)
-      if (strikeProgress <= 0.05) {
-        ctx.save();
-        // Highlight target pocket if aligned (hardware accelerated clean dual stroke)
-        if (trajectory.targetPocket) {
-          ctx.beginPath();
-          ctx.arc(trajectory.targetPocket.x, trajectory.targetPocket.y, POCKET_R + 10, 0, Math.PI * 2);
-          ctx.strokeStyle = 'rgba(250, 204, 21, 0.35)';
-          ctx.lineWidth = 6;
-          ctx.stroke();
-
-          ctx.beginPath();
-          ctx.arc(trajectory.targetPocket.x, trajectory.targetPocket.y, POCKET_R + 10, 0, Math.PI * 2);
-          ctx.strokeStyle = '#facc15';
-          ctx.lineWidth = 2.4;
-          ctx.stroke();
-        }
-
-        // Solid White Laser Guide line from cue ball to ghost cue ball
-        ctx.beginPath();
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2.4;
-        ctx.moveTo(cueBall.x + nx * (BALL_R + 2), cueBall.y + ny * (BALL_R + 2));
-        ctx.lineTo(trajectory.ghostX, trajectory.ghostY);
-        ctx.stroke();
-
-        // Ghost Cue Ball (Open white ring with inner crosshair circle)
-        ctx.beginPath();
-        ctx.arc(trajectory.ghostX, trajectory.ghostY, BALL_R, 0, Math.PI * 2);
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2.4;
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
-        ctx.fill();
-        ctx.stroke();
-
-        // Concentric inner ring / crosshair
-        ctx.beginPath();
-        ctx.arc(trajectory.ghostX, trajectory.ghostY, 3.5, 0, Math.PI * 2);
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 1.5;
-        ctx.fillStyle = '#ffffff';
-        ctx.fill();
-        ctx.stroke();
-
-        // Target ball trajectory line (solid white)
-        if (trajectory.targetBall) {
-          const tb = trajectory.targetBall;
-          const arrowLen = 95;
-          const tx = tb.x + trajectory.targetDirX * arrowLen;
-          const ty = tb.y + trajectory.targetDirY * arrowLen;
-
-          ctx.beginPath();
-          ctx.strokeStyle = '#ffffff';
-          ctx.lineWidth = 2.4;
-          ctx.moveTo(tb.x, tb.y);
-          ctx.lineTo(tx, ty);
-          ctx.stroke();
-
-          // Tangent deflection line (solid white)
-          const defLen = 55;
-          ctx.beginPath();
-          ctx.strokeStyle = '#ffffff';
-          ctx.lineWidth = 2.0;
-          ctx.moveTo(trajectory.ghostX, trajectory.ghostY);
-          ctx.lineTo(trajectory.ghostX + trajectory.deflectDirX * defLen, trajectory.ghostY + trajectory.deflectDirY * defLen);
-          ctx.stroke();
-        }
-
-        ctx.restore();
-      }
 
       // ── ARTISAN POOL CUE STICK (SNAPPY STRIKE FORWARD THRUST) ──
       const pullBack = power * 75 * (1 - strikeProgress);
@@ -1507,13 +1510,103 @@ function drawScene(
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  SMART PRO AI DECISION ENGINE
+//  PRO / MASTER / SULTAN AI DECISION ENGINE (SCALES WITH BET TIER)
 // ═══════════════════════════════════════════════════════════════
+export function getBotSkillByBet(entryBet = 20000) {
+  if (entryBet >= 500000) {
+    // Las Vegas VIP (500K+) — Grandmaster / Godlike
+    return {
+      tierLabel: 'Raja Grandmaster',
+      assistStrength: 1.0,
+      antiScratch: 1.0,
+      jitter: 0.0,
+      minCutDot: 0.02,
+      aimMs: 820,
+      pullMs: 520,
+      levelRange: [92, 99] as [number, number],
+    };
+  }
+  if (entryBet >= 200000) {
+    // Tokyo Arena (200K) — Master
+    return {
+      tierLabel: 'Master Pro',
+      assistStrength: 0.985,
+      antiScratch: 0.99,
+      jitter: 0.0008,
+      minCutDot: 0.03,
+      aimMs: 900,
+      pullMs: 560,
+      levelRange: [82, 92] as [number, number],
+    };
+  }
+  if (entryBet >= 100000) {
+    // Jakarta Club (100K) — Pro
+    return {
+      tierLabel: 'Pro Champion',
+      assistStrength: 0.96,
+      antiScratch: 0.96,
+      jitter: 0.002,
+      minCutDot: 0.04,
+      aimMs: 960,
+      pullMs: 600,
+      levelRange: [70, 82] as [number, number],
+    };
+  }
+  if (entryBet >= 50000) {
+    // Sydney Marina (50K) — Menengah Pro
+    return {
+      tierLabel: 'Menengah Sharp',
+      assistStrength: 0.925,
+      antiScratch: 0.92,
+      jitter: 0.004,
+      minCutDot: 0.05,
+      aimMs: 1040,
+      pullMs: 630,
+      levelRange: [56, 69] as [number, number],
+    };
+  }
+  // London Pub (20K) — Already very skilled & dangerous!
+  return {
+    tierLabel: 'Hustler',
+    assistStrength: 0.885,
+    antiScratch: 0.88,
+    jitter: 0.008,
+    minCutDot: 0.06,
+    aimMs: 1120,
+    pullMs: 660,
+    levelRange: [44, 55] as [number, number],
+  };
+}
+
+function getPocketSweetSpot(p: { x: number; y: number; id?: string }): { x: number; y: number } {
+  // Pull pocket aim point slightly inward from cushion corners so object balls enter the jaw cleanly
+  const cx = TABLE_W / 2;
+  const cy = TABLE_H / 2;
+  const dx = cx - p.x;
+  const dy = cy - p.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const pullIn = p.id === 'tc' || p.id === 'bc' ? 6 : 8;
+  return {
+    x: p.x + (dx / len) * pullIn,
+    y: p.y + (dy / len) * pullIn,
+  };
+}
+
 function computeSmartAIShot(
   balls: Ball[],
   playerGroup: 'solid' | 'stripe' | null,
-  isBallInHand = false
-): { tx: number; ty: number; power: number; placeCue?: { x: number; y: number } } {
+  isBallInHand = false,
+  entryBet = 20000
+): {
+  tx: number;
+  ty: number;
+  power: number;
+  placeCue?: { x: number; y: number };
+  targetBallId: number;
+  pocket: { x: number; y: number } | null;
+  spin: SpinState;
+} {
+  const skill = getBotSkillByBet(entryBet);
   const cue = balls.find(b => b.id === 0 && !b.pocketed);
   const aiGroup: 'solid' | 'stripe' | null =
     playerGroup === 'solid' ? 'stripe' : playerGroup === 'stripe' ? 'solid' : null;
@@ -1531,11 +1624,18 @@ function computeSmartAIShot(
     : balls.filter(b => b.id === 8 && !b.pocketed);
 
   if (targets.length === 0) {
-    return { tx: TABLE_W / 2, ty: TABLE_H / 2, power: 0.5 };
+    return {
+      tx: TABLE_W / 2,
+      ty: TABLE_H / 2,
+      power: 0.5,
+      targetBallId: 8,
+      pocket: POCKETS[0],
+      spin: { x: 0, y: 0 },
+    };
   }
 
   // 2. Helper to test if a ray between two points is blocked by any obstacle ball
-  const isLineBlocked = (x1: number, y1: number, x2: number, y2: number, ignoreIds: number[]): boolean => {
+  const isLineBlocked = (x1: number, y1: number, x2: number, y2: number, ignoreIds: number[], clearance = BALL_R * 1.92): boolean => {
     const rx = x2 - x1, ry = y2 - y1;
     const rLen = Math.hypot(rx, ry);
     if (rLen < 2) return false;
@@ -1545,13 +1645,28 @@ function computeSmartAIShot(
       if (b.pocketed || ignoreIds.includes(b.id)) continue;
       const vx = b.x - x1, vy = b.y - y1;
       const proj = vx * rnx + vy * rny;
-      if (proj <= 0 || proj >= rLen) continue;
+      if (proj <= -BALL_R * 0.5 || proj >= rLen + BALL_R * 0.5) continue;
       const perpSq = (vx * vx + vy * vy) - (proj * proj);
-      if (perpSq < (BALL_R * 1.85) * (BALL_R * 1.85)) {
+      if (perpSq < clearance * clearance) {
         return true;
       }
     }
     return false;
+  };
+
+  const isValidCueSpot = (x: number, y: number): boolean => {
+    const margin = BALL_R + 6;
+    if (x < PLAY_LEFT + margin || x > PLAY_RIGHT - margin || y < PLAY_TOP + margin || y > PLAY_BOTTOM - margin) {
+      return false;
+    }
+    for (const p of POCKETS) {
+      if (Math.hypot(x - p.x, y - p.y) < POCKET_R + BALL_R + 8) return false;
+    }
+    for (const b of balls) {
+      if (b.pocketed || b.id === 0) continue;
+      if (Math.hypot(x - b.x, y - b.y) < BALL_R * 2.25) return false;
+    }
+    return true;
   };
 
   let bestShot: {
@@ -1562,66 +1677,112 @@ function computeSmartAIShot(
     score: number;
     power: number;
     placeCue?: { x: number; y: number };
+    spin: SpinState;
   } | null = null;
 
-  // 3. If AI has Ball in Hand: pick best target and place cue ball in line!
+  // 3. BALL IN HAND MODE (When player fouls / times out):
+  // Search multi-distance & multi-angle placements so bot ALWAYS moves the cue ball to a killer spot!
   if (isBallInHand || !cue) {
+    const candidateDists = [56, 72, 90, 112, 135, 44, 160, 190];
+    const candidateAngles = [0, 0.14, -0.14, 0.28, -0.28, 0.42, -0.42, 0.58, -0.58];
+
     for (const t of targets) {
       for (const p of POCKETS) {
-        const pdx = p.x - t.x, pdy = p.y - t.y;
+        const sweetP = getPocketSweetSpot(p);
+        const pdx = sweetP.x - t.x, pdy = sweetP.y - t.y;
         const pDist = Math.hypot(pdx, pdy);
         if (pDist < 2) continue;
         const pnx = pdx / pDist, pny = pdy / pDist;
 
-        if (isLineBlocked(t.x, t.y, p.x, p.y, [t.id, 0])) continue;
+        if (isLineBlocked(t.x, t.y, sweetP.x, sweetP.y, [t.id, 0])) continue;
 
-        const ghostX = t.x - pnx * (BALL_R * 2.05);
-        const ghostY = t.y - pny * (BALL_R * 2.05);
+        const ghostX = t.x - pnx * (BALL_R * 1.98);
+        const ghostY = t.y - pny * (BALL_R * 1.98);
 
-        const placeDist = Math.min(130, Math.max(80, pDist * 0.4));
-        const placeX = ghostX - pnx * placeDist;
-        const placeY = ghostY - pny * placeDist;
+        const baseAngle = Math.atan2(-pny, -pnx);
 
-        if (placeX < PLAY_LEFT + BALL_R + 5 || placeX > PLAY_RIGHT - BALL_R - 5 ||
-            placeY < PLAY_TOP + BALL_R + 5 || placeY > PLAY_BOTTOM - BALL_R - 5) {
-          continue;
+        for (const angOff of candidateAngles) {
+          const rayAng = baseAngle + angOff;
+          for (const dist of candidateDists) {
+            const placeX = ghostX + Math.cos(rayAng) * dist;
+            const placeY = ghostY + Math.sin(rayAng) * dist;
+
+            if (!isValidCueSpot(placeX, placeY)) continue;
+            if (isLineBlocked(placeX, placeY, ghostX, ghostY, [0, t.id])) continue;
+
+            // Bonus score for straight-in shots, short pocket distance, and central table leave
+            const centerBonus = 120 - Math.hypot(ghostX - TABLE_W / 2, ghostY - TABLE_H / 2) * 0.12;
+            const score = 1000 - pDist * 0.55 - Math.abs(angOff) * 260 - Math.abs(dist - 68) * 0.8 + centerBonus;
+
+            if (!bestShot || score > bestShot.score) {
+              bestShot = {
+                target: t,
+                pocket: sweetP,
+                ghostX,
+                ghostY,
+                score,
+                power: Math.min(0.68, Math.max(0.38, (pDist + dist) * 0.00065 + 0.34)),
+                placeCue: { x: placeX, y: placeY },
+                spin: { x: 0, y: 0.25 }, // Slight draw/stop spin to hold cue ball in center for next ball
+              };
+            }
+          }
         }
+      }
+    }
 
-        if (balls.some(b => !b.pocketed && b.id !== 0 && Math.hypot(placeX - b.x, placeY - b.y) < BALL_R * 2.2)) {
-          continue;
-        }
+    // Fallback Ball-in-Hand placement if all direct target->pocket paths were blocked by clusters
+    if (!bestShot) {
+      for (const t of targets) {
+        const p = POCKETS.reduce((best, cur) =>
+          Math.hypot(cur.x - t.x, cur.y - t.y) < Math.hypot(best.x - t.x, best.y - t.y) ? cur : best
+        , POCKETS[0]);
+        const sweetP = getPocketSweetSpot(p);
+        const pdx = sweetP.x - t.x, pdy = sweetP.y - t.y;
+        const pDist = Math.hypot(pdx, pdy) || 1;
+        const pnx = pdx / pDist, pny = pdy / pDist;
+        const ghostX = t.x - pnx * (BALL_R * 1.98);
+        const ghostY = t.y - pny * (BALL_R * 1.98);
 
-        const score = 500 - pDist * 0.5;
-        if (!bestShot || score > bestShot.score) {
-          bestShot = {
-            target: t,
-            pocket: p,
-            ghostX,
-            ghostY,
-            score,
-            power: Math.min(0.75, Math.max(0.4, pDist / 800 + 0.3)),
-            placeCue: { x: placeX, y: placeY }
-          };
+        for (let r = 0; r < 16; r++) {
+          const ang = (r / 16) * Math.PI * 2;
+          const placeX = t.x + Math.cos(ang) * 72;
+          const placeY = t.y + Math.sin(ang) * 72;
+          if (isValidCueSpot(placeX, placeY) && !isLineBlocked(placeX, placeY, t.x, t.y, [0, t.id])) {
+            bestShot = {
+              target: t,
+              pocket: sweetP,
+              ghostX,
+              ghostY,
+              score: 300 - pDist * 0.3,
+              power: 0.62,
+              placeCue: { x: placeX, y: placeY },
+              spin: { x: 0, y: 0 },
+            };
+            break;
+          }
         }
+        if (bestShot) break;
       }
     }
   }
 
-  // 4. Normal Shot Search (with existing cue ball position)
+  // 4. NORMAL SHOT SEARCH (Evaluating all pockets, cut angles & next-ball position leave)
   if (!bestShot) {
     const cuePos = cue || { x: TABLE_W * 0.26, y: TABLE_H / 2 };
 
     for (const t of targets) {
       for (const p of POCKETS) {
-        const pdx = p.x - t.x, pdy = p.y - t.y;
+        const sweetP = getPocketSweetSpot(p);
+        const pdx = sweetP.x - t.x, pdy = sweetP.y - t.y;
         const pDist = Math.hypot(pdx, pdy);
         if (pDist < 2) continue;
         const pnx = pdx / pDist, pny = pdy / pDist;
 
-        if (isLineBlocked(t.x, t.y, p.x, p.y, [t.id, 0])) continue;
+        if (isLineBlocked(t.x, t.y, sweetP.x, sweetP.y, [t.id, 0])) continue;
 
-        const ghostX = t.x - pnx * (BALL_R * 2.0);
-        const ghostY = t.y - pny * (BALL_R * 2.0);
+        const ghostX = t.x - pnx * (BALL_R * 1.98);
+        const ghostY = t.y - pny * (BALL_R * 1.98);
 
         if (ghostX < PLAY_LEFT + BALL_R || ghostX > PLAY_RIGHT - BALL_R ||
             ghostY < PLAY_TOP + BALL_R || ghostY > PLAY_BOTTOM - BALL_R) continue;
@@ -1632,66 +1793,118 @@ function computeSmartAIShot(
         const cnx = cdx / cDist, cny = cdy / cDist;
 
         const cutDot = cnx * pnx + cny * pny;
-        if (cutDot <= 0.08) continue; // Allow sharp pro cut angles
+        if (cutDot <= skill.minCutDot) continue;
 
         if (isLineBlocked(cuePos.x, cuePos.y, ghostX, ghostY, [0, t.id])) continue;
 
         const isCenterPocket = (p.x > TABLE_W * 0.4 && p.x < TABLE_W * 0.6);
-        if (isCenterPocket && cutDot < 0.40) continue;
+        if (isCenterPocket && cutDot < 0.25) continue;
 
-        let score = (cutDot * 180) - (pDist * 0.06) - (cDist * 0.04);
-        if (pDist < 180) score += 40;
+        let score = (cutDot * 220) - (pDist * 0.08) - (cDist * 0.04);
+        if (pDist < 180) score += 55;
+        if (cutDot > 0.75) score += 45;
+
+        // Choose smart spin to prevent scratch and hold center table position
+        const chosenSpin: SpinState = cutDot > 0.82 ? { x: 0, y: 0.35 } : { x: 0, y: -0.15 };
 
         if (!bestShot || score > bestShot.score) {
-          const power = Math.min(0.85, Math.max(0.35, (cDist + pDist) * 0.00065 + 0.32));
+          const power = Math.min(0.82, Math.max(0.42, (cDist + pDist) * 0.00072 + 0.36));
           bestShot = {
             target: t,
-            pocket: p,
+            pocket: sweetP,
             ghostX,
             ghostY,
             score,
             power,
+            spin: chosenSpin,
           };
         }
       }
     }
   }
 
-  // 5. If high quality pot found: return ghost with pro accuracy
+  // 5. BANK / KICK SHOT SEARCH (If direct pots are blocked, find unobstructed legal ball + nearest pocket)
+  if (!bestShot) {
+    const cuePos = cue || { x: TABLE_W * 0.26, y: TABLE_H / 2 };
+    for (const t of targets) {
+      if (isLineBlocked(cuePos.x, cuePos.y, t.x, t.y, [0, t.id], BALL_R * 1.75)) continue;
+      // Find clearest pocket from target ball
+      let bestP: { x: number; y: number } = getPocketSweetSpot(POCKETS[0]);
+      let bestPScore = -99999;
+      for (const p of POCKETS) {
+        const sweetP = getPocketSweetSpot(p);
+        const pdx = sweetP.x - t.x, pdy = sweetP.y - t.y;
+        const pDist = Math.hypot(pdx, pdy) || 1;
+        const pnx = pdx / pDist, pny = pdy / pDist;
+        const cdx = t.x - cuePos.x, cdy = t.y - cuePos.y;
+        const cDist = Math.hypot(cdx, cdy) || 1;
+        const dot = (cdx / cDist) * pnx + (cdy / cDist) * pny;
+        const blockedPenalty = isLineBlocked(t.x, t.y, sweetP.x, sweetP.y, [t.id, 0]) ? 120 : 0;
+        const sc = dot * 150 - pDist * 0.15 - blockedPenalty;
+        if (sc > bestPScore) {
+          bestPScore = sc;
+          bestP = sweetP;
+        }
+      }
+      const pdx = bestP.x - t.x, pdy = bestP.y - t.y;
+      const pDist = Math.hypot(pdx, pdy) || 1;
+      const ghostX = t.x - (pdx / pDist) * (BALL_R * 1.96);
+      const ghostY = t.y - (pdy / pDist) * (BALL_R * 1.96);
+      bestShot = {
+        target: t,
+        pocket: bestP,
+        ghostX,
+        ghostY,
+        score: bestPScore,
+        power: 0.65,
+        spin: { x: 0, y: 0 },
+      };
+      break;
+    }
+  }
+
+  // 6. Execute best shot with bet-scaled precision
   if (bestShot) {
-    const jitter = (Math.random() - 0.5) * 0.12; // Pro level tournament precision
+    const jitterX = (Math.random() - 0.5) * skill.jitter;
+    const jitterY = (Math.random() - 0.5) * skill.jitter;
     return {
-      tx: bestShot.ghostX + jitter,
-      ty: bestShot.ghostY + jitter,
+      tx: bestShot.ghostX + jitterX,
+      ty: bestShot.ghostY + jitterY,
       power: bestShot.power,
       placeCue: bestShot.placeCue,
+      targetBallId: bestShot.target.id,
+      pocket: bestShot.pocket,
+      spin: bestShot.spin,
     };
   }
 
-  // 6. Intelligent Fallback: Hit clearest legal target ball towards closest pocket
-  const cuePos = cue || { x: TABLE_W * 0.26, y: TABLE_H / 2 };
+  // 7. Ultimate Fallback: Hit closest legal ball toward closest pocket
   let fallbackTarget = targets[0] || balls[1];
-  let fallbackPocket = POCKETS[0];
+  let fallbackPocket = getPocketSweetSpot(POCKETS[0]);
   let minFallDist = 99999;
   for (const t of targets) {
     for (const p of POCKETS) {
-      const d = Math.hypot(p.x - t.x, p.y - t.y);
+      const sp = getPocketSweetSpot(p);
+      const d = Math.hypot(sp.x - t.x, sp.y - t.y);
       if (d < minFallDist) {
         minFallDist = d;
         fallbackTarget = t;
-        fallbackPocket = p;
+        fallbackPocket = sp;
       }
     }
   }
   const fdx = fallbackPocket.x - fallbackTarget.x, fdy = fallbackPocket.y - fallbackTarget.y;
   const fDist = Math.hypot(fdx, fdy) || 1;
-  const fGhostX = fallbackTarget.x - (fdx / fDist) * (BALL_R * 2.0);
-  const fGhostY = fallbackTarget.y - (fdy / fDist) * (BALL_R * 2.0);
+  const fGhostX = fallbackTarget.x - (fdx / fDist) * (BALL_R * 1.98);
+  const fGhostY = fallbackTarget.y - (fdy / fDist) * (BALL_R * 1.98);
 
   return {
     tx: fGhostX,
     ty: fGhostY,
-    power: 0.55,
+    power: 0.62,
+    targetBallId: fallbackTarget.id,
+    pocket: fallbackPocket,
+    spin: { x: 0, y: 0 },
   };
 }
 
@@ -2382,10 +2595,11 @@ export default function BilliardScreen({
             if (data?.byOpponentLeft || data?.byDisconnect || data?.byFold || data?.leaver) {
               setWinByOpponentLeft(true);
             }
-            const prizeAmt = betAmount ? betAmount * 2 : selectedRoomRef.current.prize;
             if (typeof data?.newCoins === 'number') {
-              setCoins(Math.max(0, data.newCoins - prizeAmt));
-              localStorage.setItem('domino_coins', String(data.newCoins));
+              serverCreditedWinRef.current = true;
+              payoutCreditedRef.current = true;
+              setCoins(Math.max(0, data.newCoins));
+              localStorage.setItem('domino_coins', String(Math.max(0, data.newCoins)));
             }
             setWinner('player');
             winnerRef.current = 'player';
@@ -2438,6 +2652,7 @@ export default function BilliardScreen({
       return;
     }
     setSelectedRoom(room);
+    selectedRoomRef.current = room;
     setGameStep('matching');
     setMatchCountdown(null);
 
@@ -2462,12 +2677,15 @@ export default function BilliardScreen({
         }
       }
 
-      // Setelah 10 detik belum ada lawan manusia, pasangkan dengan bot berlevel sesuai
+      // Setelah 10 detik belum ada lawan manusia, pasangkan dengan bot berlevel sesuai taruhan
       if (cycleCount >= 80 || searchSeconds <= 0) {
         clearInterval(matchIntervalRef.current);
         matchIntervalRef.current = null;
 
-        const finalOpp = OPPONENT_LIST[Math.floor(Math.random() * OPPONENT_LIST.length)];
+        const rawOpp = OPPONENT_LIST[Math.floor(Math.random() * OPPONENT_LIST.length)];
+        const skillCfg = getBotSkillByBet(room.entry);
+        const botLvl = skillCfg.levelRange[0] + Math.floor(Math.random() * (skillCfg.levelRange[1] - skillCfg.levelRange[0] + 1));
+        const finalOpp = { ...rawOpp, level: botLvl };
         setOpponent(finalOpp);
         opponentRef.current = finalOpp;
         setMatchingAvatar(finalOpp.avatar);
@@ -2480,15 +2698,35 @@ export default function BilliardScreen({
           if (count <= 0) {
             clearInterval(matchCountIntervalRef.current);
             matchCountIntervalRef.current = null;
-            setCoins(c => Math.max(0, c - room.entry));
-            fetch(`${API_URL}/users/update-coins`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ username, amount: -room.entry, gameType: 'billiard' })
-            }).catch(() => {});
+            payoutCreditedRef.current = false;
+            serverCreditedWinRef.current = false;
+            botPlannedShotRef.current = null;
+
+            setCoins(c => {
+              const next = Math.max(0, c - room.entry);
+              localStorage.setItem('domino_coins', String(next));
+              return next;
+            });
+            const activeUser = username || localStorage.getItem('domino_username') || '';
+            if (activeUser) {
+              fetch(`${API_URL}/users/update-coins`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: activeUser, amount: -room.entry, gameType: 'billiard' })
+              })
+                .then(r => r.json())
+                .then(d => {
+                  if (typeof d?.coins === 'number') {
+                    setCoins(d.coins);
+                    localStorage.setItem('domino_coins', String(d.coins));
+                  }
+                })
+                .catch(() => {});
+            }
             ballsRef.current = createBalls();
             setPocketedBalls([]);
             setWinner(null);
+            winnerRef.current = null;
             setIsBallInHand(false);
             isBallInHandRef.current = false;
             firstHitBallRef.current = null;
@@ -2515,6 +2753,9 @@ export default function BilliardScreen({
   const powerRef       = useRef(power);
   const isAimModeRef   = useRef(isAimMode);
   const smoothAimRef   = useRef<{ x: number; y: number } | null>(null);
+  const botPlannedShotRef = useRef<BotPlannedShot | null>(null);
+  const payoutCreditedRef = useRef(false);
+  const serverCreditedWinRef = useRef(false);
   const cueStrikeRef   = useRef<{
     active: boolean;
     startTime: number;
@@ -2533,7 +2774,39 @@ export default function BilliardScreen({
   useEffect(() => { powerRef.current       = power;       }, [power]);
   useEffect(() => { isAimModeRef.current   = isAimMode;   }, [isAimMode]);
 
-  // Robust Smart Human-like AI Execution with Smooth Aim Sweep & Power Pullback
+  // Automatically credit winning prize coins immediately when player wins
+  useEffect(() => {
+    if (!winner) return;
+    if (winner === 'player' && !payoutCreditedRef.current) {
+      payoutCreditedRef.current = true;
+      const prizeAmt = selectedRoomRef.current?.prize || selectedRoom.prize || 0;
+      if (prizeAmt > 0 && !serverCreditedWinRef.current) {
+        setCoins(prev => {
+          const next = prev + prizeAmt;
+          localStorage.setItem('domino_coins', String(next));
+          return next;
+        });
+        const u = username || localStorage.getItem('domino_username') || '';
+        if (u) {
+          fetch(`${API_URL}/users/update-coins`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: u, amount: prizeAmt, gameType: 'billiard' }),
+          })
+            .then(r => r.json())
+            .then(d => {
+              if (typeof d?.coins === 'number') {
+                setCoins(d.coins);
+                localStorage.setItem('domino_coins', String(d.coins));
+              }
+            })
+            .catch(() => {});
+        }
+      }
+    }
+  }, [winner, username, selectedRoom.prize]);
+
+  // Robust Smart Pro AI Execution with Visual Ball-in-Hand Placement, Smooth Aim Sweep & Power Pullback
   const scheduleAI = useCallback((hasBallInHand = false) => {
     if (aiScheduleTimeoutRef.current) {
       clearTimeout(aiScheduleTimeoutRef.current);
@@ -2545,34 +2818,179 @@ export default function BilliardScreen({
     }
 
     const oppName = opponentRef.current?.name || oppDisplayName;
-    setMessage(`🎯 ${oppName} sedang mengamati meja & memikirkan sudut...`);
+    const entryBet = selectedRoomRef.current?.entry || 20000;
+    const skillCfg = getBotSkillByBet(entryBet);
+    const botHasBIH = hasBallInHand || isBallInHandRef.current;
+
+    setMessage(
+      botHasBIH
+        ? `🎯 ${oppName} mendapat Ball in Hand & sedang mencari posisi bola putih terbaik...`
+        : `🎯 ${oppName} sedang mengamati meja & memikirkan sudut...`
+    );
 
     const attemptAIShot = () => {
       // If balls are still rolling or sinking, wait and retry
       if (isMovingRef.current) {
-        aiScheduleTimeoutRef.current = setTimeout(attemptAIShot, 250);
+        aiScheduleTimeoutRef.current = setTimeout(attemptAIShot, 220);
         return;
       }
 
       const cue = ballsRef.current.find(b => b.id === 0);
       if (!cue) return;
 
+      const useBIH = hasBallInHand || isBallInHandRef.current;
       const shot = computeSmartAIShot(
         ballsRef.current,
         playerGroupRef.current,
-        hasBallInHand || isBallInHandRef.current
+        useBIH,
+        entryBet
       );
 
-      // Step 1: If bot had Ball in Hand, place cue ball in prime position!
+      // Apply bot spin and register surgical pocket guidance for physicsStep
+      const chosenSpin = shot.spin || { x: 0, y: 0 };
+      setSpin(chosenSpin);
+      spinRef.current = chosenSpin;
+      botPlannedShotRef.current = {
+        active: true,
+        targetBallId: shot.targetBallId,
+        pocket: shot.pocket,
+        assistStrength: skillCfg.assistStrength,
+        antiScratch: skillCfg.antiScratch,
+      };
+
+      const startAimSweepAndShoot = () => {
+        // Target position and final angle
+        const targetAngle = Math.atan2(shot.ty - cue.y, shot.tx - cue.x);
+        const aimDist = 280;
+
+        // Start aiming from an offset angle (+/- 30 to 50 degrees) so it smoothly sweeps to the target
+        const angleOffset = (Math.random() > 0.5 ? 1 : -1) * (0.48 + Math.random() * 0.35);
+        const startAngle = targetAngle + angleOffset;
+
+        setMessage(`🎯 ${oppName} sedang membidik sasaran...`);
+        setIsAimMode(true);
+        isAimModeRef.current = true;
+        setPower(0);
+        powerRef.current = 0;
+
+        const aimDuration = skillCfg.aimMs;
+        const aimStartTime = performance.now();
+
+        const animateAim = (now: number) => {
+          const elapsed = now - aimStartTime;
+          const rawProgress = Math.min(1, elapsed / aimDuration);
+          // Smooth ease-out cubic curve
+          const ease = 1 - Math.pow(1 - rawProgress, 3);
+          const curAngle = startAngle + (targetAngle - startAngle) * ease;
+
+          const curAimX = cue.x + Math.cos(curAngle) * aimDist;
+          const curAimY = cue.y + Math.sin(curAngle) * aimDist;
+          const aimPos = { x: curAimX, y: curAimY };
+
+          setAimTarget(aimPos);
+          aimTargetRef.current = aimPos;
+          smoothAimRef.current = aimPos;
+
+          if (rawProgress < 1) {
+            aiAnimRef.current = requestAnimationFrame(animateAim);
+          } else {
+            // Lock precisely onto the shot target point
+            const finalAimPos = { x: shot.tx, y: shot.ty };
+            setAimTarget(finalAimPos);
+            aimTargetRef.current = finalAimPos;
+            smoothAimRef.current = finalAimPos;
+
+            // Brief micro-pause, then smoothly pull back cue stick
+            aiScheduleTimeoutRef.current = setTimeout(() => {
+              setMessage(`🎯 ${oppName} menarik stik biliar...`);
+              const powerDuration = skillCfg.pullMs;
+              const targetPower = Math.max(0.36, shot.power);
+              const powerStartTime = performance.now();
+
+              const animatePower = (pNow: number) => {
+                const pElapsed = pNow - powerStartTime;
+                const pProgress = Math.min(1, pElapsed / powerDuration);
+                const pEase = pProgress < 0.5
+                  ? 2 * pProgress * pProgress
+                  : 1 - Math.pow(-2 * pProgress + 2, 2) / 2;
+                const curPow = pEase * targetPower;
+
+                setPower(curPow);
+                powerRef.current = curPow;
+
+                if (pProgress < 1) {
+                  aiAnimRef.current = requestAnimationFrame(animatePower);
+                } else {
+                  // Brief tension pause then STRIKE!
+                  aiScheduleTimeoutRef.current = setTimeout(() => {
+                    if (isMovingRef.current) {
+                      aiScheduleTimeoutRef.current = setTimeout(attemptAIShot, 220);
+                      return;
+                    }
+
+                    const dx = shot.tx - cue.x, dy = shot.ty - cue.y;
+                    const len = Math.hypot(dx, dy) || 1;
+                    const shotPower = targetPower;
+
+                    firstHitBallRef.current = null;
+                    cueBallJustShot.current = true;
+                    cue.vx = (dx / len) * shotPower * 23;
+                    cue.vy = (dy / len) * shotPower * 23;
+                    isMovingRef.current = true;
+
+                    setIsAimMode(false);
+                    isAimModeRef.current = false;
+                    setAimTarget(null);
+                    aimTargetRef.current = null;
+                    smoothAimRef.current = null;
+                    setPower(0);
+                    powerRef.current = 0;
+                    poolSound.playCueHit(shotPower);
+                    setMessage(`💥 ${oppName} melepaskan tembakan akurat!`);
+                  }, 150);
+                }
+              };
+
+              aiAnimRef.current = requestAnimationFrame(animatePower);
+            }, 200);
+          }
+        };
+
+        aiAnimRef.current = requestAnimationFrame(animateAim);
+      };
+
+      // Step 1: If bot has Ball in Hand (player fouled / fold), visibly move cue ball across the table!
       if (shot.placeCue) {
-        cue.x = shot.placeCue.x;
-        cue.y = shot.placeCue.y;
         cue.pocketed = false;
         cue.vx = 0;
         cue.vy = 0;
-        setIsBallInHand(false);
-        isBallInHandRef.current = false;
-        setMessage(`🎯 ${oppName} memposisikan bola putih di tempat strategis...`);
+        const startX = cue.x;
+        const startY = cue.y;
+        const endX = shot.placeCue.x;
+        const endY = shot.placeCue.y;
+        setIsBallInHand(true);
+        isBallInHandRef.current = true;
+        setMessage(`🎯 ${oppName} memindahkan bola putih ke posisi strategis...`);
+
+        const moveDuration = 520;
+        const moveStart = performance.now();
+        const animateCueMove = (now: number) => {
+          const t = Math.min(1, (now - moveStart) / moveDuration);
+          const ease = 1 - Math.pow(1 - t, 3);
+          cue.x = startX + (endX - startX) * ease;
+          cue.y = startY + (endY - startY) * ease;
+          if (t < 1) {
+            aiAnimRef.current = requestAnimationFrame(animateCueMove);
+          } else {
+            cue.x = endX;
+            cue.y = endY;
+            setIsBallInHand(false);
+            isBallInHandRef.current = false;
+            aiScheduleTimeoutRef.current = setTimeout(startAimSweepAndShoot, 180);
+          }
+        };
+        aiAnimRef.current = requestAnimationFrame(animateCueMove);
+        return;
       } else if (cue.pocketed) {
         cue.pocketed = false;
         cue.x = TABLE_W * 0.26;
@@ -2581,110 +2999,11 @@ export default function BilliardScreen({
         cue.vy = 0;
       }
 
-      // Target position and final angle
-      const targetAngle = Math.atan2(shot.ty - cue.y, shot.tx - cue.x);
-      const aimDist = 280;
-
-      // Start aiming from an offset angle (+/- 35 to 60 degrees) so it smoothly sweeps to the target!
-      const angleOffset = (Math.random() > 0.5 ? 1 : -1) * (0.6 + Math.random() * 0.4);
-      const startAngle = targetAngle + angleOffset;
-
-      // Step 2: Smooth Aim Sweep Animation using requestAnimationFrame over ~1350ms
-      setMessage(`🎯 ${oppName} sedang membidik sasaran...`);
-      setIsAimMode(true);
-      isAimModeRef.current = true;
-      setPower(0);
-      powerRef.current = 0;
-
-      const aimDuration = 1350; // ms
-      const aimStartTime = performance.now();
-
-      const animateAim = (now: number) => {
-        const elapsed = now - aimStartTime;
-        const rawProgress = Math.min(1, elapsed / aimDuration);
-        // Smooth ease-out cubic curve
-        const ease = 1 - Math.pow(1 - rawProgress, 3);
-        const curAngle = startAngle + (targetAngle - startAngle) * ease;
-
-        const curAimX = cue.x + Math.cos(curAngle) * aimDist;
-        const curAimY = cue.y + Math.sin(curAngle) * aimDist;
-        const aimPos = { x: curAimX, y: curAimY };
-
-        setAimTarget(aimPos);
-        aimTargetRef.current = aimPos;
-        smoothAimRef.current = aimPos;
-
-        if (rawProgress < 1) {
-          aiAnimRef.current = requestAnimationFrame(animateAim);
-        } else {
-          // Lock precisely onto the shot target point
-          const finalAimPos = { x: shot.tx, y: shot.ty };
-          setAimTarget(finalAimPos);
-          aimTargetRef.current = finalAimPos;
-          smoothAimRef.current = finalAimPos;
-
-          // Step 3: Brief micro-pause (250ms), then smoothly pull back cue stick
-          aiScheduleTimeoutRef.current = setTimeout(() => {
-            setMessage(`🎯 ${oppName} menarik stik biliar...`);
-            const powerDuration = 700; // ms
-            const targetPower = Math.max(0.35, shot.power);
-            const powerStartTime = performance.now();
-
-            const animatePower = (pNow: number) => {
-              const pElapsed = pNow - powerStartTime;
-              const pProgress = Math.min(1, pElapsed / powerDuration);
-              // Ease-in-out quad
-              const pEase = pProgress < 0.5 
-                ? 2 * pProgress * pProgress 
-                : 1 - Math.pow(-2 * pProgress + 2, 2) / 2;
-              const curPow = pEase * targetPower;
-
-              setPower(curPow);
-              powerRef.current = curPow;
-
-              if (pProgress < 1) {
-                aiAnimRef.current = requestAnimationFrame(animatePower);
-              } else {
-                // Step 4: Brief tension pause (180ms) then STRIKE!
-                aiScheduleTimeoutRef.current = setTimeout(() => {
-                  if (isMovingRef.current) {
-                    aiScheduleTimeoutRef.current = setTimeout(attemptAIShot, 250);
-                    return;
-                  }
-
-                  const dx = shot.tx - cue.x, dy = shot.ty - cue.y;
-                  const len = Math.hypot(dx, dy) || 1;
-                  const shotPower = targetPower;
-
-                  firstHitBallRef.current = null;
-                  cueBallJustShot.current = true;
-                  cue.vx = (dx / len) * shotPower * 23;
-                  cue.vy = (dy / len) * shotPower * 23;
-                  isMovingRef.current = true;
-
-                  setIsAimMode(false);
-                  isAimModeRef.current = false;
-                  setAimTarget(null);
-                  aimTargetRef.current = null;
-                  smoothAimRef.current = null;
-                  setPower(0);
-                  powerRef.current = 0;
-                  poolSound.playCueHit(shotPower);
-                  setMessage(`💥 ${oppName} melepaskan tembakan!`);
-                }, 180);
-              }
-            };
-
-            aiAnimRef.current = requestAnimationFrame(animatePower);
-          }, 250);
-        }
-      };
-
-      aiAnimRef.current = requestAnimationFrame(animateAim);
+      startAimSweepAndShoot();
     };
 
-    // Human-like hesitation before starting to aim: 850ms
-    aiScheduleTimeoutRef.current = setTimeout(attemptAIShot, 850);
+    // Human-like hesitation before starting to aim
+    aiScheduleTimeoutRef.current = setTimeout(attemptAIShot, 680);
   }, [oppDisplayName]);
 
   // Handle Timeout (Shot clock violation foul)
@@ -2706,8 +3025,8 @@ export default function BilliardScreen({
       isDraggingCueBallRef.current = false;
       setPower(0);
       powerRef.current = 0;
-      setIsBallInHand(false);
-      isBallInHandRef.current = false;
+      setIsBallInHand(true);
+      isBallInHandRef.current = true;
 
       setTurn('ai');
       turnRef.current = 'ai';
@@ -2764,6 +3083,7 @@ export default function BilliardScreen({
 
   // Turn resolution with full 8-Ball Pool Foul rules
   const handleTurnEnd = useCallback(() => {
+    botPlannedShotRef.current = null;
     const oppName = opponentRef.current?.name || oppDisplayName;
     const balls   = ballsRef.current;
     const pNow    = Array.from(pocketedThisTurnRef.current);
@@ -2842,8 +3162,8 @@ export default function BilliardScreen({
         setTurnCount(c => c + 1);
       } else {
         setMessage(`⚠️ FOUL (${reason})! Giliran ${oppName} dengan Ball in Hand.`);
-        setIsBallInHand(false);
-        isBallInHandRef.current = false;
+        setIsBallInHand(true);
+        isBallInHandRef.current = true;
         setTurn('ai');
         setTurnTimer(25);
         setTurnCount(c => c + 1);
@@ -2894,7 +3214,7 @@ export default function BilliardScreen({
       setTurn(next);
       setTurnTimer(25);
       setTurnCount(c => c + 1);
-      if (next === 'ai' && !isMultiplayer) scheduleAI();
+      if (next === 'ai' && !isMultiplayer) scheduleAI(false);
     } else {
       // Legal pot -> Turn continues! (NO Ball in Hand)
       setIsBallInHand(false);
@@ -2918,7 +3238,7 @@ export default function BilliardScreen({
       }
       setTurnTimer(25);
       setTurnCount(c => c + 1);
-      if (curTurn === 'ai' && !isMultiplayer) scheduleAI();
+      if (curTurn === 'ai' && !isMultiplayer) scheduleAI(false);
     }
   }, [scheduleAI, isMultiplayer, realOpponentName, oppDisplayName]);
 
@@ -2940,7 +3260,8 @@ export default function BilliardScreen({
             sinkingBallsRef.current,
             spinRef.current,
             cueBallJustShot,
-            firstHitBallRef
+            firstHitBallRef,
+            botPlannedShotRef
           );
           const hasSinking = sinkingBallsRef.current.length > 0;
           isMovingRef.current = stillMoving || hasSinking;
@@ -3177,6 +3498,7 @@ export default function BilliardScreen({
     const currentPower = Math.max(0.12, Math.min(1, powerRef.current));
 
     firstHitBallRef.current = null;
+    botPlannedShotRef.current = null;
     if (isBallInHandRef.current) {
       setIsBallInHand(false);
       isBallInHandRef.current = false;
@@ -3228,6 +3550,39 @@ export default function BilliardScreen({
   }, [turn, gameStep, winner, pocketedBalls, isBallInHand]);
 
   const restart = () => {
+    const room = selectedRoomRef.current || selectedRoom;
+    if (winner && !isMultiplayer) {
+      const usableCoins = Math.max(0, coins - bonusCoins);
+      if (usableCoins < room.entry) {
+        alert('Koin Anda tidak cukup untuk tanding ulang di room ini!');
+        onBack();
+        return;
+      }
+      setCoins(c => {
+        const next = Math.max(0, c - room.entry);
+        localStorage.setItem('domino_coins', String(next));
+        return next;
+      });
+      const activeUser = username || localStorage.getItem('domino_username') || '';
+      if (activeUser) {
+        fetch(`${API_URL}/users/update-coins`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: activeUser, amount: -room.entry, gameType: 'billiard' }),
+        })
+          .then(r => r.json())
+          .then(d => {
+            if (typeof d?.coins === 'number') {
+              setCoins(d.coins);
+              localStorage.setItem('domino_coins', String(d.coins));
+            }
+          })
+          .catch(() => {});
+      }
+    }
+    payoutCreditedRef.current = false;
+    serverCreditedWinRef.current = false;
+    botPlannedShotRef.current = null;
     ballsRef.current = createBalls();
     pocketedThisTurnRef.current = new Set();
     particlesRef.current = [];
@@ -3244,12 +3599,18 @@ export default function BilliardScreen({
       clearTimeout(aiScheduleTimeoutRef.current);
       aiScheduleTimeoutRef.current = null;
     }
+    if (aiAnimRef.current) {
+      cancelAnimationFrame(aiAnimRef.current);
+      aiAnimRef.current = null;
+    }
     setTurn('player');
+    turnRef.current = 'player';
     setTurnTimer(25);
     setTurnCount(c => c + 1);
     setPlayerGroup(null);
     setPocketedBalls([]);
     setWinner(null);
+    winnerRef.current = null;
     setAimTarget(null);
     setIsAimMode(false);
     setPower(0);
@@ -3258,15 +3619,23 @@ export default function BilliardScreen({
   };
 
   const saveCoinsResult = () => {
-    const u = localStorage.getItem('domino_username');
-    const nc = winner === 'player' ? coins + selectedRoom.prize : Math.max(0, coins - selectedRoom.entry);
-    localStorage.setItem('domino_coins', String(nc));
-    if (!u) { onBack(); return; }
-    fetch(`${API_URL}/users/${u}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ coins: nc }),
-    }).catch(() => {});
+    const u = username || localStorage.getItem('domino_username') || '';
+    if (winner === 'player' && !payoutCreditedRef.current) {
+      payoutCreditedRef.current = true;
+      const prizeAmt = selectedRoomRef.current?.prize || selectedRoom.prize || 0;
+      const nc = coins + prizeAmt;
+      setCoins(nc);
+      localStorage.setItem('domino_coins', String(nc));
+      if (u && prizeAmt > 0 && !serverCreditedWinRef.current) {
+        fetch(`${API_URL}/users/update-coins`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: u, amount: prizeAmt, gameType: 'billiard' }),
+        }).catch(() => {});
+      }
+    } else {
+      localStorage.setItem('domino_coins', String(coins));
+    }
     onBack();
   };
 
@@ -4065,7 +4434,7 @@ export default function BilliardScreen({
                 : `Sayang sekali! Anda kehilangan taruhan 🪙 -${selectedRoom.entry.toLocaleString('id-ID')}.`}
             </p>
             <div className="bl-coins-row">
-              Saldo Baru: 🪙 {(winner === 'player' ? coins + selectedRoom.prize : Math.max(0, coins - selectedRoom.entry)).toLocaleString('id-ID')}
+              Saldo Baru: 🪙 {coins.toLocaleString('id-ID')}
             </div>
             <button className="bl-btn-start" onClick={saveCoinsResult}>
               {winner === 'player' ? '🎁 Klaim Hadiah &amp; Kembali' : '🔙 Kembali ke Lobi'}

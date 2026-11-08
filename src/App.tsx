@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import './App.css';
 import './slot-modal.css';
 import { io, Socket } from 'socket.io-client';
@@ -10401,45 +10401,6 @@ function QiuQiuGameScreen({
         </div>
       </div>
 
-      {/* Interactive Jackpot Neon Panel (Top Left) */}
-      <div className="qq-jackpot-panel">
-        <div className="qq-jackpot-header">
-          <span className="qq-jp-title">💎 JACKPOT</span>
-          <div className="qq-jp-counter">
-            {String(jackpotPool).slice(-7).padStart(7, '0').split('').map((d, i) => (
-              <span key={i} className="qq-jp-digit">{d}</span>
-            ))}
-          </div>
-        </div>
-        <div className="qq-jackpot-box">
-          <div className="qq-jp-row">
-            <span>Enam Dewa 😈</span>
-            <span className="val">500x</span>
-          </div>
-          <div className="qq-jp-row">
-            <span>Balak / Murni 💎</span>
-            <span className="val">200x / 100x</span>
-          </div>
-          <div className="qq-jp-row">
-            <span>QiuQiu (9:9) 🔥</span>
-            <span className="val">50x</span>
-          </div>
-          <div className="qq-jp-coupon-selector">
-            <span>🎟️ Kupon:</span>
-            {([0, 100, 500, 1000] as const).map(val => (
-              <button
-                key={val}
-                type="button"
-                className={`qq-jp-coupon-btn g-btn-press ${jackpotCoupon === val ? 'active' : ''}`}
-                onClick={() => setJackpotCoupon(val)}
-              >
-                {val === 0 ? 'OFF' : val === 1000 ? '1K' : val}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
       {/* Floating Table Toast Notification */}
       {tableToast && (
         <div className="qq-table-toast">
@@ -10517,23 +10478,27 @@ function QiuQiuGameScreen({
         </div>
 
         {/* Central Digital Pot Scoreboard */}
-        <div className="qq-pot-scoreboard">
-          <span className="qq-pot-label">TOTAL POT</span>
-          <div className="qq-pot-amount">🪙 {potAmount.toLocaleString('id-ID')}</div>
-        </div>
+        {!winnerInfo && (
+          <div className="qq-pot-scoreboard">
+            <span className="qq-pot-label">TOTAL POT</span>
+            <div className="qq-pot-amount">🪙 {potAmount.toLocaleString('id-ID')}</div>
+          </div>
+        )}
 
         {/* Authentic Dynamic 3D Clustered Chips in Pot */}
-        <div className="qq-pot-chips-cluster">
-          {potChips.map(chip => (
-            <div
-              key={chip.id}
-              className={`qq-poker-chip-3d pop-in ${chip.color}`}
-              style={{ marginTop: `${chip.marginTop}px`, zIndex: chip.zIndex }}
-            >
-              {chip.label}
-            </div>
-          ))}
-        </div>
+        {!winnerInfo && (
+          <div className="qq-pot-chips-cluster">
+            {potChips.map(chip => (
+              <div
+                key={chip.id}
+                className={`qq-poker-chip-3d pop-in ${chip.color}`}
+                style={{ marginTop: `${chip.marginTop}px`, zIndex: chip.zIndex }}
+              >
+                {chip.label}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* 5 Opponent Seats Around the Oval Table */}
@@ -10894,19 +10859,53 @@ function QiuQiuGameScreen({
 // =====================================================
 
 function MobileLandscapeLockOverlay() {
-  const [isPortraitMobile, setIsPortraitMobile] = useState<boolean>(() => {
+  const isIOS = useMemo(() => {
+    if (typeof navigator === 'undefined') return false;
+    return (
+      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+    );
+  }, []);
+
+  const checkIsPortrait = useCallback(() => {
     if (typeof window === 'undefined') return false;
     const w = window.innerWidth;
     const h = window.innerHeight;
     const isTouchOrMobile =
-      w <= 900 ||
+      w <= 1024 ||
       window.matchMedia?.('(pointer: coarse)').matches ||
       /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(navigator.userAgent);
-    return h > w && isTouchOrMobile;
-  });
+
+    if (!isTouchOrMobile) return false;
+
+    // 1. Cek window.orientation (Sangat akurat & sinkron di iOS Safari)
+    if (typeof window.orientation === 'number') {
+      if (Math.abs(window.orientation) === 90) return false; // Mendatar (Landscape)
+      if (window.orientation === 0 || window.orientation === 180) return true; // Tegak (Portrait)
+    }
+
+    // 2. Cek screen.orientation.type jika didukung browser
+    const scrType = (window.screen as any)?.orientation?.type;
+    if (typeof scrType === 'string') {
+      if (scrType.includes('landscape')) return false;
+      if (scrType.includes('portrait')) return true;
+    }
+
+    // 3. Cek CSS media query landscape
+    if (window.matchMedia?.('(orientation: landscape)').matches) {
+      return false;
+    }
+
+    // 4. Fallback perbandingan lebar vs tinggi viewport
+    return h > w;
+  }, []);
+
+  const [isPortraitMobile, setIsPortraitMobile] = useState<boolean>(() => checkIsPortrait());
+  const [showIosGuide, setShowIosGuide] = useState<boolean>(false);
+  const [bypassed, setBypassed] = useState<boolean>(false);
 
   useEffect(() => {
-    const checkOrientation = () => {
+    const update = () => {
       const w = window.innerWidth;
       const h = window.innerHeight;
       const visibleH = window.visualViewport?.height || h;
@@ -10914,35 +10913,48 @@ function MobileLandscapeLockOverlay() {
       document.documentElement.style.setProperty('--app-height', `${visibleH}px`);
       document.documentElement.style.setProperty('--app-width', `${visibleW}px`);
 
-      const isTouchOrMobile =
-        w <= 900 ||
-        window.matchMedia?.('(pointer: coarse)').matches ||
-        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(navigator.userAgent);
-      setIsPortraitMobile(h > w && isTouchOrMobile);
+      const port = checkIsPortrait();
+      setIsPortraitMobile(port);
+      if (!port) {
+        setShowIosGuide(false);
+      }
     };
 
-    checkOrientation();
-    window.addEventListener('resize', checkOrientation);
-    window.addEventListener('orientationchange', checkOrientation);
-    window.visualViewport?.addEventListener('resize', checkOrientation);
-    window.visualViewport?.addEventListener('scroll', checkOrientation);
+    update();
+
+    // Event listener rotasi dengan multiple checks untuk mengatasi delay layout di WebKit iOS
+    const handleOrientationChange = () => {
+      update();
+      setTimeout(update, 80);
+      setTimeout(update, 200);
+      setTimeout(update, 400);
+      setTimeout(update, 800);
+    };
+
+    window.addEventListener('resize', handleOrientationChange);
+    window.addEventListener('orientationchange', handleOrientationChange);
+    window.visualViewport?.addEventListener('resize', handleOrientationChange);
+    window.visualViewport?.addEventListener('scroll', handleOrientationChange);
+
     const scrOrient = (window.screen as any)?.orientation;
     if (scrOrient && typeof scrOrient.addEventListener === 'function') {
-      scrOrient.addEventListener('change', checkOrientation);
+      scrOrient.addEventListener('change', handleOrientationChange);
     }
 
     return () => {
-      window.removeEventListener('resize', checkOrientation);
-      window.removeEventListener('orientationchange', checkOrientation);
-      window.visualViewport?.removeEventListener('resize', checkOrientation);
-      window.visualViewport?.removeEventListener('scroll', checkOrientation);
+      window.removeEventListener('resize', handleOrientationChange);
+      window.removeEventListener('orientationchange', handleOrientationChange);
+      window.visualViewport?.removeEventListener('resize', handleOrientationChange);
+      window.visualViewport?.removeEventListener('scroll', handleOrientationChange);
       if (scrOrient && typeof scrOrient.removeEventListener === 'function') {
-        scrOrient.removeEventListener('change', checkOrientation);
+        scrOrient.removeEventListener('change', handleOrientationChange);
       }
     };
-  }, []);
+  }, [checkIsPortrait]);
 
   const handleForceLandscape = async () => {
+    // 1. Coba request fullscreen & hardware orientation lock (berfungsi di Android / browser pendukung)
+    let nativeSuccess = false;
     try {
       const docEl = document.documentElement as any;
       if (!document.fullscreenElement) {
@@ -10955,13 +10967,34 @@ function MobileLandscapeLockOverlay() {
       const scrOrient = (window.screen as any)?.orientation;
       if (scrOrient && typeof scrOrient.lock === 'function') {
         await scrOrient.lock('landscape');
+        nativeSuccess = true;
       }
     } catch {
-      // Browser requires physical device rotation (e.g. iOS Safari)
+      nativeSuccess = false;
+    }
+
+    if (nativeSuccess) {
+      setIsPortraitMobile(false);
+      return;
+    }
+
+    // 2. Jika di iPhone / iOS atau hardware lock tidak diizinkan:
+    // Cek apakah HP sebenarnya sudah dimiringkan oleh user
+    if (!checkIsPortrait()) {
+      setIsPortraitMobile(false);
+      return;
+    }
+
+    // Jika masih dalam posisi potret di iPhone:
+    if (isIOS) {
+      setShowIosGuide(true);
+    } else {
+      // Jika Android menolak lock, langsung izinkan masuk
+      setBypassed(true);
     }
   };
 
-  if (!isPortraitMobile) return null;
+  if (!isPortraitMobile || bypassed) return null;
 
   return (
     <div
@@ -10991,21 +11024,96 @@ function MobileLandscapeLockOverlay() {
           Silakan miringkan HP Anda ke samping untuk mulai bermain!
         </p>
 
-        <div className="mllo-steps">
-          <div className="mllo-step-item">
-            <span className="mllo-step-icon">🔓</span>
-            <span>Aktifkan <b>Putar Otomatis (Auto-Rotate)</b> di pengaturan HP Anda</span>
+        {isIOS ? (
+          <div className="mllo-steps">
+            <div className="mllo-ios-badge">📱 Pengguna iPhone (iOS)</div>
+            <div className="mllo-step-item">
+              <span className="mllo-step-icon">🔓</span>
+              <span>Matikan <b>Kunci Orientasi (🔒)</b> di Control Center iPhone</span>
+            </div>
+            <div className="mllo-step-item">
+              <span className="mllo-step-icon">📱</span>
+              <span>Miringkan iPhone secara horizontal (Landscape)</span>
+            </div>
           </div>
-          <div className="mllo-step-item">
-            <span className="mllo-step-icon">📱</span>
-            <span>Miringkan HP secara horizontal (Landscape)</span>
+        ) : (
+          <div className="mllo-steps">
+            <div className="mllo-step-item">
+              <span className="mllo-step-icon">🔓</span>
+              <span>Aktifkan <b>Putar Otomatis (Auto-Rotate)</b> di pengaturan HP Anda</span>
+            </div>
+            <div className="mllo-step-item">
+              <span className="mllo-step-icon">📱</span>
+              <span>Miringkan HP secara horizontal (Landscape)</span>
+            </div>
           </div>
-        </div>
+        )}
 
         <button className="mllo-rotate-btn g-btn-press" onClick={handleForceLandscape}>
           <span>🔄</span> Masuk Mode Landscape Otomatis
         </button>
+
+        <button
+          className="mllo-bypass-btn"
+          onClick={() => setBypassed(true)}
+        >
+          Tetap Masuk ke Game (Abaikan Kunci) »
+        </button>
       </div>
+
+      {showIosGuide && (
+        <div className="mllo-ios-modal-backdrop" onClick={() => setShowIosGuide(false)}>
+          <div className="mllo-ios-modal-card" onClick={e => e.stopPropagation()}>
+            <h3 className="mllo-ios-modal-title">
+              <span>🍎</span> Panduan Khusus iPhone (iOS)
+            </h3>
+            <p style={{ margin: 0, fontSize: '12px', color: '#94a3b8' }}>
+              Apple iOS membatasi rotasi otomatis lewat tombol browser. Agar layar dapat berputar:
+            </p>
+
+            <div className="mllo-ios-guide-box">
+              <div className="mllo-ios-guide-item">
+                <span className="mllo-ios-guide-num">1</span>
+                <div>
+                  <b>Buka Pusat Kontrol (Control Center)</b><br />
+                  Usap (Swipe) layar dari sudut kanan atas ke bawah.
+                </div>
+              </div>
+              <div className="mllo-ios-guide-item">
+                <span className="mllo-ios-guide-num">2</span>
+                <div>
+                  <b>Matikan Kunci Orientasi (🔒)</b><br />
+                  Ketuk ikon gembok berputar agar berwarna abu-abu (tidak merah/putih).
+                </div>
+              </div>
+              <div className="mllo-ios-guide-item">
+                <span className="mllo-ios-guide-num">3</span>
+                <div>
+                  <b>Miringkan iPhone ke Samping</b><br />
+                  Layar game akan otomatis mendatar dan langsung dapat dimainkan!
+                </div>
+              </div>
+            </div>
+
+            <button
+              className="mllo-ios-primary-btn g-btn-press"
+              onClick={() => {
+                setBypassed(true);
+                setShowIosGuide(false);
+              }}
+            >
+              <span>🔓</span> Buka Game Sekarang (Tetap Masuk)
+            </button>
+
+            <button
+              className="mllo-ios-close-btn"
+              onClick={() => setShowIosGuide(false)}
+            >
+              Tutup & Miringkan HP
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
