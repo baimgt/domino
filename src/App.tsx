@@ -1303,7 +1303,7 @@ function Modal({ title, message, onClose }: { title: string; message: string; on
 // =====================================================
 // MODAL TEMAN (FRIENDS)
 // =====================================================
-function TemanModal({ defaultTab = 'Teman', onViewProfile, onClose }: { defaultTab?: string; onViewProfile: (username: string) => void; onClose: () => void }) {
+function TemanModal({ defaultTab = 'Teman', onViewProfile, onClose, onOpenKirimKoin }: { defaultTab?: string; onViewProfile: (username: string) => void; onClose: () => void; onOpenKirimKoin?: (username: string) => void }) {
   const [activeTab, setActiveTab] = useState(defaultTab);
   const myUsername = localStorage.getItem('domino_username') || '';
 
@@ -1315,7 +1315,7 @@ function TemanModal({ defaultTab = 'Teman', onViewProfile, onClose }: { defaultT
   const [loading, setLoading] = useState(true);
 
   const [searchId, setSearchId] = useState('');
-  const [transferTarget, setTransferTarget] = useState<{ username: string } | null>(null);
+  const [transferTarget, setTransferTarget] = useState<PlayerProfile | null>(null);
   const [transferAmount, setTransferAmount] = useState('');
   const [alertModal, setAlertModal] = useState<{ title: string; message: string } | null>(null);
   const [confirmModal, setConfirmModal] = useState<{ message: string; onConfirm: () => void } | null>(null);
@@ -1564,7 +1564,20 @@ function TemanModal({ defaultTab = 'Teman', onViewProfile, onClose }: { defaultT
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '1vw' }}>
-                <button className="tm-action-btn g-btn-press" style={{ background: 'linear-gradient(180deg, #e67e22, #d35400)' }} onClick={() => setTransferTarget({ username: f.username })}>Kirim Uang</button>
+                <button
+                  className="tm-action-btn g-btn-press"
+                  style={{ background: 'linear-gradient(180deg, #e67e22, #d35400)' }}
+                  onClick={() => {
+                    if (onOpenKirimKoin) {
+                      onClose();
+                      onOpenKirimKoin(f.username);
+                    } else {
+                      setTransferTarget(f);
+                    }
+                  }}
+                >
+                  Kirim Uang
+                </button>
                 <button className="tm-action-btn delete g-btn-press" onClick={() => handleDeleteFriend(f.username)}>Hapus</button>
               </div>
             </div>
@@ -1725,10 +1738,22 @@ function TemanModal({ defaultTab = 'Teman', onViewProfile, onClose }: { defaultT
               </div>
 
               <div className="tm-transfer-info-card">
-                <div style={{ fontSize: '2.5vh', color: '#fff', fontWeight: 'bold' }}>
-                  Kirim ke: <span style={{ color: '#f1c40f' }}>{transferTarget.username}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  {transferTarget.avatar && (
+                    <span className="tm-li-avatar" style={{ width: '42px', height: '42px', fontSize: '22px', overflow: 'hidden', flexShrink: 0 }}>
+                      {renderPlayerAvatar(transferTarget.avatar, '🐸', 'tm-avatar-pic')}
+                    </span>
+                  )}
+                  <div>
+                    <div style={{ fontSize: '2.2vh', color: '#fff', fontWeight: 'bold' }}>
+                      Kirim ke: <span style={{ color: '#f1c40f' }}>{transferTarget.username}</span>
+                    </div>
+                    {transferTarget.userId && (
+                      <div style={{ fontSize: '1.6vh', color: '#ffd54f' }}>ID: #{transferTarget.userId}</div>
+                    )}
+                  </div>
                 </div>
-                <div style={{ fontSize: '1.8vh', color: 'rgba(255,255,255,0.7)', marginTop: '0.5vh' }}>
+                <div style={{ fontSize: '1.8vh', color: 'rgba(255,255,255,0.7)', marginTop: '0.6vh' }}>
                   Koin Anda: <span style={{ color: '#2ecc71', fontWeight: 'bold' }}>{formatCoins(myCoins)}</span>
                 </div>
               </div>
@@ -2092,14 +2117,25 @@ function InboxModal({ onClose, onViewProfile }: { onClose: () => void; onViewPro
 // =====================================================
 // KIRIM KOIN MODAL (FITUR VIP)
 // =====================================================
-function KirimKoinModal({ onClose, onCoinsTransferred, onOpenShop, onOpenHistory }: { onClose: () => void; onCoinsTransferred?: () => void; onOpenShop?: () => void; onOpenHistory?: () => void }) {
+function KirimKoinModal({ onClose, onCoinsTransferred, onOpenShop, onOpenHistory, initialRecipient }: {
+  onClose: () => void;
+  onCoinsTransferred?: () => void;
+  onOpenShop?: () => void;
+  onOpenHistory?: () => void;
+  initialRecipient?: string;
+}) {
   const myUsername = localStorage.getItem('domino_username') || '';
-  const [recipient, setRecipient] = useState('');
+  const [recipient, setRecipient] = useState(initialRecipient || '');
   const [amountInput, setAmountInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [alert, setAlert] = useState<string | null>(null);
   const [profile, setProfile] = useState<any>(null);
   const [userList, setUserList] = useState<any[]>([]);
+
+  // Preview target state
+  const [searchedUser, setSearchedUser] = useState<any | null>(null);
+  const [isSearchingUser, setIsSearchingUser] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
 
   const fetchProfile = async () => {
     try {
@@ -2126,9 +2162,98 @@ function KirimKoinModal({ onClose, onCoinsTransferred, onOpenShop, onOpenHistory
     fetchUsers();
   }, []);
 
+  useEffect(() => {
+    if (initialRecipient !== undefined) {
+      setRecipient(initialRecipient);
+    }
+  }, [initialRecipient]);
+
+  // Debounced user lookup for live account preview
+  useEffect(() => {
+    const raw = recipient.trim();
+    if (!raw) {
+      setSearchedUser(null);
+      setSearchError(null);
+      setIsSearchingUser(false);
+      return;
+    }
+
+    setIsSearchingUser(true);
+    setSearchError(null);
+
+    const timer = setTimeout(async () => {
+      try {
+        const cleanTarget = raw.replace(/^#/, '').trim();
+        let foundAccount: any = null;
+
+        // 1. Cek via /api/users?q=... (Hanya EXACT MATCH pada userId atau username)
+        try {
+          const res = await fetch(`${API_URL}/users?q=${encodeURIComponent(cleanTarget)}`);
+          if (res.ok) {
+            const list = await res.json();
+            if (Array.isArray(list) && list.length > 0) {
+              const exact = list.find((u: any) =>
+                (u.userId && String(u.userId).trim() === cleanTarget) ||
+                (u.username && u.username.trim().toLowerCase() === cleanTarget.toLowerCase())
+              );
+              if (exact && exact.username) {
+                foundAccount = exact;
+              }
+            }
+          }
+        } catch { /* fallback */ }
+
+        // 2. Cek via /api/users/lookup?q=... (Hanya jika exact match)
+        if (!foundAccount) {
+          try {
+            const res = await fetch(`${API_URL}/users/lookup?q=${encodeURIComponent(cleanTarget)}`);
+            if (res.ok) {
+              const data = await res.json();
+              const candidate = data?.user || (data?.username ? data : null);
+              if (
+                candidate &&
+                candidate.username &&
+                ((candidate.userId && String(candidate.userId).trim() === cleanTarget) ||
+                  candidate.username.trim().toLowerCase() === cleanTarget.toLowerCase())
+              ) {
+                foundAccount = candidate;
+              }
+            }
+          } catch { /* fallback */ }
+        }
+
+        // Catatan: JANGAN panggil /api/profile/:username di sini karena endpoint profil di server otomatis membuat akun dummy jika tidak ada!
+
+        if (foundAccount && foundAccount.username) {
+          setSearchedUser(foundAccount);
+          setSearchError(null);
+        } else {
+          setSearchedUser(null);
+          setSearchError('Akun pemain tidak ditemukan. Periksa kembali ID atau Username!');
+        }
+      } catch {
+        setSearchedUser(null);
+        setSearchError('Gagal memeriksa akun penerima');
+      } finally {
+        setIsSearchingUser(false);
+      }
+    }, 280);
+
+    return () => clearTimeout(timer);
+  }, [recipient]);
+
   const handleSend = async () => {
+    const rawTarget = recipient.trim();
+    if (!rawTarget) { setAlert('Masukkan ID atau username penerima!'); return; }
+
+    const targetUser = searchedUser ? searchedUser.username : rawTarget.replace(/^#/, '').trim();
+
+    if (targetUser.toLowerCase() === myUsername.toLowerCase()) {
+      setAlert('⚠️ Tidak dapat mentransfer koin ke akun sendiri!');
+      return;
+    }
+
     const amount = parseInt(amountInput, 10);
-    if (!recipient.trim()) { setAlert('Masukkan ID atau username penerima!'); return; }
     if (isNaN(amount) || amount <= 0) { setAlert('Masukkan jumlah koin yang valid!'); return; }
 
     const usableForTransfer = Math.max(0, (profile?.coins || 0) - (profile?.bonusCoins || 0));
@@ -2147,7 +2272,7 @@ function KirimKoinModal({ onClose, onCoinsTransferred, onOpenShop, onOpenHistory
       const res = await fetch(`${API_URL}/users/transfer`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fromUsername: myUsername, toUsername: recipient.trim(), amount })
+        body: JSON.stringify({ fromUsername: myUsername, toUsername: targetUser, amount })
       });
 
       const data = await res.json();
@@ -2166,6 +2291,15 @@ function KirimKoinModal({ onClose, onCoinsTransferred, onOpenShop, onOpenHistory
     }
   };
 
+  const fmtCoins = (n?: number) => {
+    if (!n) return '0';
+    if (n >= 1000000000) return (n / 1000000000).toFixed(1) + 'B';
+    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+    if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+    return n.toLocaleString('id-ID');
+  };
+
+  const isSelf = (searchedUser?.username || recipient.replace(/^#/, '').trim()).toLowerCase() === myUsername.toLowerCase();
   const totalCoins = profile?.coins || 0;
   const bonusCoins = profile?.bonusCoins || 0;
   const transferrableCoins = Math.max(0, totalCoins - bonusCoins);
@@ -2242,8 +2376,64 @@ function KirimKoinModal({ onClose, onCoinsTransferred, onOpenShop, onOpenHistory
               value={recipient}
               onChange={e => setRecipient(e.target.value)}
               disabled={loading}
+              autoFocus
             />
           </div>
+
+          {/* Live Preview Card Penerima */}
+          {recipient.trim() && (
+            <div style={{ marginTop: '-4px', marginBottom: '4px' }}>
+              {isSearchingUser ? (
+                <div className="kirim-preview-card is-loading">
+                  <div className="kirim-preview-spinner" />
+                  <div className="kirim-preview-loading-text">Memeriksa akun "{recipient}"...</div>
+                </div>
+              ) : isSelf ? (
+                <div className="kirim-preview-card is-warning">
+                  <span className="kirim-pc-err-icon">⚠️</span>
+                  <div className="kirim-pc-err-content">
+                    <div className="kirim-pc-warn-title">Akun Anda Sendiri</div>
+                    <div className="kirim-pc-warn-text">Anda tidak dapat mentransfer koin ke akun sendiri.</div>
+                  </div>
+                </div>
+              ) : searchedUser ? (
+                <div className="kirim-preview-card is-found">
+                  <div className="kirim-pc-avatar-box">
+                    <span className="kirim-pc-avatar">
+                      {renderPlayerAvatar(searchedUser.avatar, '🐸', 'kirim-pc-avatar-img')}
+                    </span>
+                    {searchedUser.vipLevel > 0 && (
+                      <span className="kirim-pc-vip-badge">VIP {searchedUser.vipLevel}</span>
+                    )}
+                  </div>
+                  <div className="kirim-pc-meta">
+                    <div className="kirim-pc-name-row">
+                      <span className="kirim-pc-username">{searchedUser.username}</span>
+                      <span className="kirim-pc-verified-pill">✓ Ditemukan</span>
+                    </div>
+                    <div className="kirim-pc-sub-row">
+                      {searchedUser.userId && (
+                        <span className="kirim-pc-id-badge">ID: #{searchedUser.userId}</span>
+                      )}
+                      <span className="kirim-pc-coins-badge">Saldo: 🪙 {fmtCoins(searchedUser.coins)}</span>
+                    </div>
+                  </div>
+                  <div className="kirim-pc-status-ready">
+                    <span className="kirim-pc-ready-dot" />
+                    Siap
+                  </div>
+                </div>
+              ) : searchError ? (
+                <div className="kirim-preview-card is-error">
+                  <span className="kirim-pc-err-icon">⚠️</span>
+                  <div className="kirim-pc-err-content">
+                    <div className="kirim-pc-err-title">Akun Tidak Ditemukan</div>
+                    <div className="kirim-pc-err-text">{searchError}</div>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          )}
 
           {/* Quick select receiver */}
           {userList.length > 0 && (
@@ -2251,8 +2441,13 @@ function KirimKoinModal({ onClose, onCoinsTransferred, onOpenShop, onOpenHistory
               <span className="quick-label">Pilihan pemain:</span>
               <div className="quick-chips">
                 {userList.slice(0, 6).map(u => (
-                  <button key={u.username} className={`quick-chip ${recipient === (u.userId || u.username) ? 'selected' : ''}`} onClick={() => setRecipient(u.userId || u.username)}>
-                    {u.avatar || '👤'} {u.username} {u.userId ? `(ID: ${u.userId})` : ''}
+                  <button
+                    key={u.username}
+                    type="button"
+                    className={`quick-chip ${recipient === (u.userId || u.username) ? 'selected' : ''}`}
+                    onClick={() => setRecipient(u.userId || u.username)}
+                  >
+                    {u.avatar || '👤'} {u.username} {u.userId ? `(#${u.userId})` : ''}
                   </button>
                 ))}
               </div>
@@ -2275,6 +2470,7 @@ function KirimKoinModal({ onClose, onCoinsTransferred, onOpenShop, onOpenHistory
             {[10000, 25000, 50000, 100000, 500000].map(val => (
               <button
                 key={val}
+                type="button"
                 className="kirim-preset-btn"
                 onClick={() => setAmountInput(val.toString())}
                 disabled={loading}
@@ -2285,7 +2481,7 @@ function KirimKoinModal({ onClose, onCoinsTransferred, onOpenShop, onOpenHistory
           </div>
 
           {/* Submit button */}
-          <button className="kirim-submit-btn" onClick={handleSend} disabled={loading}>
+          <button className="kirim-submit-btn" onClick={handleSend} disabled={loading || isSelf}>
             {loading ? 'Mengirim...' : '🎁 KIRIM KOIN SEKARANG'}
           </button>
         </div>
@@ -3248,7 +3444,7 @@ function TokoModal({ onClose, onProfileUpdated, onOpenKirimKoin }: { onClose: ()
 // =====================================================
 // GARDU SCREEN
 // =====================================================
-function GarduScreen({ onBack, onViewProfile }: { onBack: () => void; onViewProfile: (username: string) => void }) {
+function GarduScreen({ onBack, onViewProfile, onOpenKirimKoin }: { onBack: () => void; onViewProfile: (username: string) => void; onOpenKirimKoin?: (username: string) => void }) {
   const [temanModalState, setTemanModalState] = useState<{ isOpen: boolean, tab: string }>({ isOpen: false, tab: 'Teman' });
 
   return (
@@ -3317,6 +3513,7 @@ function GarduScreen({ onBack, onViewProfile }: { onBack: () => void; onViewProf
           defaultTab={temanModalState.tab}
           onViewProfile={onViewProfile}
           onClose={() => setTemanModalState({ isOpen: false, tab: 'Teman' })}
+          onOpenKirimKoin={onOpenKirimKoin}
         />
       )}
     </div>
@@ -4637,6 +4834,7 @@ function HomeScreen({
   const [canClaimBonus, setCanClaimBonus] = useState(false);
   const [showToko, setShowToko] = useState(false);
   const [showKirimKoin, setShowKirimKoin] = useState(false);
+  const [kirimKoinTarget, setKirimKoinTarget] = useState<string>('');
   const [showSlotPopup, setShowSlotPopup] = useState(initialShowSlotPopup);
 
   useEffect(() => {
@@ -4917,7 +5115,11 @@ function HomeScreen({
         <FriendModal
           socket={socket}
           onClose={() => setShowFriendModal(false)}
-          onOpenKirimKoin={() => setShowKirimKoin(true)}
+          onOpenKirimKoin={(targetUser) => {
+            setShowFriendModal(false);
+            setKirimKoinTarget(targetUser || '');
+            setShowKirimKoin(true);
+          }}
         />
       )}
 
@@ -4928,7 +5130,11 @@ function HomeScreen({
       {showToko && (
         <TokoModal
           onClose={() => setShowToko(false)}
-          onOpenKirimKoin={() => setShowKirimKoin(true)}
+          onOpenKirimKoin={() => {
+            setShowToko(false);
+            setKirimKoinTarget('');
+            setShowKirimKoin(true);
+          }}
           onProfileUpdated={() => {
             const savedUser = localStorage.getItem('domino_username');
             if (savedUser) {
@@ -4944,7 +5150,11 @@ function HomeScreen({
       {/* Kirim Koin Modal (VIP Feature) */}
       {showKirimKoin && (
         <KirimKoinModal
-          onClose={() => setShowKirimKoin(false)}
+          initialRecipient={kirimKoinTarget}
+          onClose={() => {
+            setShowKirimKoin(false);
+            setKirimKoinTarget('');
+          }}
           onOpenShop={() => setShowToko(true)}
           onOpenHistory={() => {
             setShowKirimKoin(false);
@@ -4968,6 +5178,7 @@ function HomeScreen({
           onClose={() => setShowRiwayatTransfer(false)}
           onOpenSendCoins={() => {
             setShowRiwayatTransfer(false);
+            setKirimKoinTarget('');
             setShowKirimKoin(true);
           }}
         />
@@ -4978,6 +5189,11 @@ function HomeScreen({
         <OtherProfileModal
           username={viewingProfileFromHome}
           onClose={() => setViewingProfileFromHome(null)}
+          onSendCoins={(uname) => {
+            setViewingProfileFromHome(null);
+            setKirimKoinTarget(uname);
+            setShowKirimKoin(true);
+          }}
         />
       )}
 
@@ -5121,7 +5337,7 @@ function HomeScreen({
 
         {/* Right Sidebar Dropdown */}
         <div className={`hb-right-sidebar ${showRightSidebar ? 'open' : ''}`}>
-          <div className="hb-rs-item" onClick={() => { setShowRightSidebar(false); setShowKirimKoin(true); }}>
+          <div className="hb-rs-item" onClick={() => { setShowRightSidebar(false); setKirimKoinTarget(''); setShowKirimKoin(true); }}>
             <span className="hb-rs-icon">🎁</span>
             <span className="hb-rs-label">Kirim Koin</span>
           </div>
@@ -11121,7 +11337,7 @@ function App() {
   const [screen, setScreen] = useState<string>('loading');
   const [returnToSlotPopup, setReturnToSlotPopup] = useState(false);
   const [viewingProfile, setViewingProfile] = useState<string | null>(null);
-  const [transferTarget, setTransferTarget] = useState<{ username: string } | null>(null);
+  const [transferTarget, setTransferTarget] = useState<{ username: string; userId?: string; avatar?: string } | null>(null);
   const [transferAmount, setTransferAmount] = useState('');
   const [appAlert, setAppAlert] = useState<string | null>(null);
   const [activeSlotLoading, setActiveSlotLoading] = useState<string | null>(null);
@@ -11186,7 +11402,15 @@ function App() {
     return n.toString();
   };
 
-  const handleOpenTransferFromProfile = (username: string) => {
+  const handleOpenTransferFromProfile = async (username: string) => {
+    try {
+      const res = await fetch(`${API_URL}/profile/${encodeURIComponent(username)}`);
+      if (res.ok) {
+        const d = await res.json();
+        setTransferTarget({ username: d.username, userId: d.userId, avatar: d.avatar });
+        return;
+      }
+    } catch { /* ignore */ }
     setTransferTarget({ username });
   };
 
@@ -11316,7 +11540,11 @@ function App() {
       )}
 
       {screen === 'gardu' && (
-        <GarduScreen onBack={() => setScreen('home')} onViewProfile={setViewingProfile} />
+        <GarduScreen
+          onBack={() => setScreen('home')}
+          onViewProfile={setViewingProfile}
+          onOpenKirimKoin={handleOpenTransferFromProfile}
+        />
       )}
       {screen === 'kamar-lobby' && (
         <KamarLobbyScreen
@@ -11579,8 +11807,20 @@ function App() {
                 <span className="tm-floating-coin c3">🪙</span>
               </div>
               <div className="tm-transfer-info-card">
-                <div style={{ fontSize: '2.5vh', color: '#fff', fontWeight: 'bold' }}>
-                  Kirim ke: <span style={{ color: '#f1c40f' }}>{transferTarget.username}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  {transferTarget.avatar && (
+                    <span className="tm-li-avatar" style={{ width: '42px', height: '42px', fontSize: '22px', overflow: 'hidden', flexShrink: 0 }}>
+                      {renderPlayerAvatar(transferTarget.avatar, '🐸', 'tm-avatar-pic')}
+                    </span>
+                  )}
+                  <div>
+                    <div style={{ fontSize: '2.4vh', color: '#fff', fontWeight: 'bold' }}>
+                      Kirim ke: <span style={{ color: '#f1c40f' }}>{transferTarget.username}</span>
+                    </div>
+                    {transferTarget.userId && (
+                      <div style={{ fontSize: '1.6vh', color: '#ffd54f' }}>ID: #{transferTarget.userId}</div>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="tm-input-group">

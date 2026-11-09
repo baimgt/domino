@@ -13964,6 +13964,244 @@ input:checked+.setting-slider:before {
   cursor: not-allowed;
 }
 
+/* --- Account Preview Card in Kirim Koin Modal --- */
+.kirim-preview-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: kirimFadeSlideIn 0.25s ease-out;
+}
+
+@keyframes kirimFadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.kirim-preview-card.is-loading {
+  background: rgba(30, 41, 59, 0.6);
+  border-color: rgba(96, 165, 250, 0.3);
+  color: #93c5fd;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 12px 14px;
+}
+
+.kirim-preview-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(147, 197, 253, 0.3);
+  border-top-color: #60a5fa;
+  border-radius: 50%;
+  animation: kirimSpin 0.8s linear infinite;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+@keyframes kirimSpin {
+  to { transform: rotate(360deg); }
+}
+
+.kirim-preview-loading-text {
+  font-size: 12px;
+  color: #93c5fd;
+  font-weight: 600;
+}
+
+.kirim-preview-card.is-found {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(15, 23, 42, 0.75));
+  border: 1px solid rgba(52, 211, 153, 0.45);
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.15);
+}
+
+.kirim-pc-avatar-box {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.kirim-pc-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid #34d399;
+  box-shadow: 0 0 10px rgba(52, 211, 153, 0.3);
+  font-size: 26px;
+}
+
+.kirim-pc-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.kirim-pc-vip-badge {
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 900;
+  padding: 1px 6px;
+  border-radius: 8px;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.kirim-pc-meta {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.kirim-pc-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.kirim-pc-username {
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kirim-pc-verified-pill {
+  font-size: 10px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
+}
+
+.kirim-pc-sub-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.kirim-pc-id-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: #fcd34d;
+  background: rgba(245, 158, 11, 0.15);
+  padding: 1px 6px;
+  border-radius: 6px;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.kirim-pc-coins-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: #a7f3d0;
+}
+
+.kirim-pc-status-ready {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.15);
+  padding: 4px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(52, 211, 153, 0.3);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.kirim-pc-ready-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #34d399;
+  box-shadow: 0 0 8px #34d399;
+  animation: kirimPulseDot 1.5s ease-in-out infinite;
+}
+
+@keyframes kirimPulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+.kirim-preview-card.is-error {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(15, 23, 42, 0.75));
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.kirim-pc-err-icon {
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.kirim-pc-err-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.kirim-pc-err-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #fca5a5;
+}
+
+.kirim-pc-err-text {
+  font-size: 11px;
+  color: #f87171;
+}
+
+.kirim-preview-card.is-warning {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(15, 23, 42, 0.75));
+  border: 1px solid rgba(245, 158, 11, 0.45);
+}
+
+.kirim-pc-warn-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #fde047;
+}
+
+.kirim-pc-warn-text {
+  font-size: 11px;
+  color: #fcd34d;
+}
+
 .kirim-quick-list {
   display: flex;
   flex-direction: column;
