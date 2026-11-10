@@ -1,4 +1,4 @@
-/* =====================================================
+﻿/* =====================================================
    RESET & BASE
    ===================================================== */
 *,
@@ -17579,11 +17579,11 @@ input:checked+.setting-slider:before {
   text-transform: uppercase;
 }
 
-/* 4 FEATURED GAME CARDS ROW */
+/* 5 FEATURED GAME CARDS ROW */
 .home-cards-row-v3 {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1.4vw;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.8vw;
   width: 100%;
   max-width: 1120px;
   margin: 0 auto;
@@ -17599,7 +17599,7 @@ input:checked+.setting-slider:before {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  height: clamp(220px, 42vh, 330px);
+  height: clamp(190px, 38vh, 290px);
   align-self: center;
   box-shadow:
     0 12px 35px rgba(0,0,0,0.95),
@@ -17623,12 +17623,14 @@ input:checked+.setting-slider:before {
 .card-billar { --card-glow: rgba(34,197,94,0.7);  border-color: rgba(80,220,100,0.5); }
 .card-qiuqiu { --card-glow: rgba(239,68,68,0.7);  border-color: rgba(255,100,100,0.5); }
 .card-domino { --card-glow: rgba(250,204,21,0.7);  border-color: rgba(255,215,0,0.6); }
+.card-olympus { --card-glow: rgba(99,102,241,0.7);  border-color: rgba(139,92,246,0.6); }
+.card-mahjong { --card-glow: rgba(34,197,94,0.7);  border-color: rgba(74,222,128,0.5); }
 
 /* SLOT card — slightly emphasized hero card */
 .card-slot {
   --card-glow: rgba(168,85,247,0.7);
   border-color: rgba(255,215,0,0.75);
-  height: clamp(235px, 44vh, 350px);
+  height: clamp(200px, 40vh, 300px);
   align-self: center;
   border-radius: 20px;
   box-shadow:
@@ -17715,6 +17717,8 @@ input:checked+.setting-slider:before {
 .badge-billar { background: linear-gradient(90deg,#15803d,#22c55e); color:#fff; box-shadow: 0 0 10px rgba(34,197,94,0.8); }
 .badge-qiuqiu { background: linear-gradient(90deg,#b91c1c,#f87171); color:#fff; box-shadow: 0 0 10px rgba(239,68,68,0.8); }
 .badge-domino { background: linear-gradient(90deg,#a16207,#fbbf24); color:#000; box-shadow: 0 0 10px rgba(251,191,36,0.8); }
+.badge-olympus { background: linear-gradient(90deg,#4f46e5,#818cf8); color:#fff; box-shadow: 0 0 10px rgba(99,102,241,0.8); }
+.badge-mahjong { background: linear-gradient(90deg,#15803d,#22c55e); color:#fff; box-shadow: 0 0 10px rgba(34,197,94,0.8); }
 
 /* Game name — BIG and styled like reference image */
 .hgc-title {
@@ -17730,6 +17734,8 @@ input:checked+.setting-slider:before {
 .title-billar { color: #4ade80; text-shadow: 0 0 15px rgba(74,222,128,0.8), 0 3px 8px #000; }
 .title-qiuqiu { color: #fbbf24; text-shadow: 0 0 15px rgba(251,191,36,0.8), 0 3px 8px #000; }
 .title-domino { color: #fde047; text-shadow: 0 0 15px rgba(253,224,71,0.8), 0 3px 8px #000; }
+.title-olympus { color: #c4b5fd; text-shadow: 0 0 15px rgba(196,181,253,0.9), 0 3px 8px #000; }
+.title-mahjong { color: #86efac; text-shadow: 0 0 15px rgba(134,239,172,0.8), 0 3px 8px #000; }
 
 /* Subtitle — e.g. SPIN • JACKPOT • BIG WIN */
 .hgc-sub {
@@ -18021,12 +18027,16 @@ input:checked+.setting-slider:before {
 .badge-billar { background: linear-gradient(90deg, #f59e0b, #d97706); color: #fff; border: 1px solid #fde68a; }
 .badge-qiuqiu { background: linear-gradient(90deg, #a855f7, #7c3aed); color: #fff; border: 1px solid #d8b4fe; }
 .badge-domino { background: linear-gradient(90deg, #16a34a, #15803d); color: #fff; border: 1px solid #86efac; }
+.badge-olympus { background: linear-gradient(90deg, #4f46e5, #818cf8); color: #fff; border: 1px solid #c4b5fd; }
+.badge-mahjong { background: linear-gradient(90deg, #15803d, #22c55e); color: #fff; border: 1px solid #86efac; }
 
 /* Card per-game golden border accent */
 .card-slot   { border-color: rgba(168,85,247,0.7); }
 .card-billar { border-color: rgba(34,197,94,0.7); }
 .card-qiuqiu { border-color: rgba(239,68,68,0.7); }
 .card-domino { border-color: rgba(250,204,21,0.7); }
+.card-olympus { border-color: rgba(139,92,246,0.7); }
+.card-mahjong { border-color: rgba(34,197,94,0.7); }
 
 .home-game-card-v3:hover { border-color: #ffd700 !important; }
 
@@ -19771,12 +19781,13 @@ input:checked+.setting-slider:before {
   }
 
   .home-cards-row-v3 {
+    grid-template-columns: repeat(5, 1fr) !important;
     height: auto !important;
     min-height: 0 !important;
     max-height: none !important;
-    max-width: 1020px !important;
+    max-width: 1200px !important;
     margin: 0 auto !important;
-    gap: 1.4vw !important;
+    gap: 0.9vw !important;
     align-items: center !important;
   }
 
@@ -19926,16 +19937,31 @@ input:checked+.setting-slider:before {
 
   .home-cards-row-v3 {
     display: grid !important;
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 14px 12px !important;
+    grid-template-columns: repeat(5, 1fr) !important;
+    gap: 8px 6px !important;
     height: auto !important;
     min-height: 0 !important;
     max-height: none !important;
     width: 100% !important;
+    overflow-x: auto !important;
   }
 
+  .home-game-card-v3 {
+    height: clamp(130px, 22vh, 190px) !important;
+    border-radius: 12px !important;
+  }
   .card-slot {
-    height: clamp(175px, 25vh, 230px) !important;
+    height: clamp(140px, 24vh, 200px) !important;
+  }
+  .hgc-title {
+    font-size: 2.8vh !important;
+  }
+  .hgc-badge {
+    font-size: 0.85vh !important;
+    padding: 1px 4px !important;
+  }
+  .hgc-sub {
+    font-size: 0.75vh !important;
   }
 
   .card-title-3d {
@@ -20658,13 +20684,15 @@ body,
 
   .home-cards-row-v3 {
     flex: 0 0 auto !important;
+    display: grid !important;
+    grid-template-columns: repeat(5, 1fr) !important;
     min-height: 0 !important;
     height: auto !important;
     max-height: none !important;
     width: 100% !important;
-    max-width: 94% !important;
+    max-width: 98% !important;
     margin: 0 auto !important;
-    gap: 8px !important;
+    gap: 5px !important;
     align-items: center !important;
   }
 

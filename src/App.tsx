@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+﻿import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import './App.css';
 import './slot-modal.css';
 import { io, Socket } from 'socket.io-client';
@@ -5396,7 +5396,7 @@ function HomeScreen({
           {/* GOLD RIBBON BANNER HEADER */}
           <div className="home-ribbon-banner">
             <div className="hrb-title">PLAY MORE 👑 WIN BIGGER</div>
-            <div className="hrb-sub">SATU APLIKASI • EMPAT PERMAINAN SERU</div>
+            <div className="hrb-sub">SATU APLIKASI • LIMA PERMAINAN SERU</div>
           </div>
 
           {/* 4 FEATURED GAME CARDS ROW — ULTRA LIGHTWEIGHT & FAST */}
@@ -5454,27 +5454,31 @@ function HomeScreen({
               </div>
             </div>
 
-            {/* CARD 4: DOMINO */}
-            <div className="home-game-card-v3 card-domino" onClick={() => {
-              const usable = Math.max(0, (profile?.coins || 0) - (profile?.bonusCoins || 0));
-              if (usable < 10000 && (profile?.bonusCoins || 0) > 0 && (profile?.coins || 0) >= 10000) {
-                setModal({
-                  title: 'Koin Bonus Khusus Slot',
-                  message: `⚠️ Koin dari klaim bonus harian (${(profile?.bonusCoins || 0).toLocaleString('id-ID')} koin) hanya dapat dimainkan di SLOT!\n\nKoin umum Domino Anda: ${usable.toLocaleString('id-ID')} koin (Butuh minimal 10.000 koin untuk modal kamar Domino).`
-                });
-                return;
-              }
-              onNavigate('kamar-lobby', 'Biasa');
-            }}>
+            {/* CARD 4: GATES OF OLYMPUS */}
+            <div className="home-game-card-v3 card-olympus" onClick={() => onNavigate('zeus-game')}>
               <div className="hgc-img-wrapper">
-                <img className="hgc-bg-img" src="/assets/home/card_domino_hero.jpg" alt="Domino" loading="eager" decoding="async" />
-                <div className="hgc-video-overlay domino-overlay" />
+                <img className="hgc-bg-img" src="/assets/zeus/bg_olympus_hd.jpg" alt="Gates of Olympus" loading="eager" decoding="async" />
+                <div className="hgc-video-overlay slot-overlay" />
               </div>
               <div className="hgc-shine" />
               <div className="hgc-info">
-                <div className="hgc-badge badge-domino">🐉 EPIC</div>
-                <div className="hgc-title title-domino">DOMINO</div>
-                <div className="hgc-sub">SANTAI • SERU • PENUH STRATEGI</div>
+                <div className="hgc-badge badge-olympus">⚡ FEATURED</div>
+                <div className="hgc-title title-olympus">OLYMPUS</div>
+                <div className="hgc-sub">GATES OF OLYMPUS</div>
+              </div>
+            </div>
+
+            {/* CARD 5: MAHJONG WAYS 2 */}
+            <div className="home-game-card-v3 card-mahjong" onClick={() => onNavigate('mahjong2-game')}>
+              <div className="hgc-img-wrapper">
+                <img className="hgc-bg-img" src="/assets/mahjong2/loading.jpg" alt="Mahjong Ways 2" loading="eager" decoding="async" />
+                <div className="hgc-video-overlay slot-overlay" />
+              </div>
+              <div className="hgc-shine" />
+              <div className="hgc-info">
+                <div className="hgc-badge badge-mahjong">🀄 HOT</div>
+                <div className="hgc-title title-mahjong">MAHJONG</div>
+                <div className="hgc-sub">MAHJONG WAYS 2</div>
               </div>
             </div>
 
