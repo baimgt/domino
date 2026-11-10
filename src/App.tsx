@@ -5501,7 +5501,7 @@ function HomeScreen({
             </span>
             <span className="hb3-lbl">Beranda</span>
           </button>
-          <button className="hb3-nav-btn" onClick={() => setShowByOneRoomModal(true)}>
+                    <button className="hb3-nav-btn" onClick={() => setShowByOneRoomModal(true)}>
             <span className="hb3-ico">
               <svg viewBox="0 0 24 24" fill="currentColor">
                 <path d="M6.92 5h-.01L4 7.91l2.92 2.92-1.42 1.42L2.59 9.33a1.996 1.996 0 0 1 0-2.83l3.5-3.5c.78-.78 2.05-.78 2.83 0l2.92 2.92-1.42 1.42L7.5 4.41l-.58.59zm12.67 4.33l-1.42-1.42 2.92-2.92-.58-.59-2.92 2.92-1.42-1.42 2.92-2.92a1.996 1.996 0 0 1 2.83 0l3.5 3.5c.78.78.78 2.05 0 2.83l-2.91 2.92-2.92-2.92zm-7.66 1.34l-1.41-1.41 7.07-7.07 1.41 1.41-7.07 7.07zm-4.95 4.95l1.41 1.41-5.66 5.66-1.41-1.41 5.66-5.66zM20 20.59l-1.41 1.41-5.66-5.66 1.41-1.41 5.66 5.66zm-7.07-7.07l1.41 1.41-7.07 7.07-1.41-1.41 7.07-7.07z" />

@@ -6,7 +6,7 @@ import './byone.css';
 
 interface ByOneRoomModalProps {
   onClose: () => void;
-  onLaunchGame: (mode: 'billiard' | 'domino' | 'qiuqiu', bet: number, players: any[], code: string) => void;
+  onLaunchGame: (mode: 'billiard' | 'qiuqiu', bet: number, players: any[], code: string) => void;
   socket: Socket | null;
 }
 
@@ -21,17 +21,6 @@ const AVAILABLE_MODES = [
     maxPlayers: 2,
     accent: '#10b981',
     bgGrad: 'linear-gradient(135deg, rgba(16, 185, 129, 0.22) 0%, rgba(6, 78, 59, 0.45) 100%)',
-  },
-  {
-    id: 'domino' as const,
-    name: 'DOMINO GAPLE ARENA',
-    shortName: 'Domino Gaple',
-    icon: '🀄',
-    tag: '2 - 4 PEMAIN',
-    desc: 'Duel balak & strategi kartu di meja privat bersama teman!',
-    maxPlayers: 4,
-    accent: '#ef4444',
-    bgGrad: 'linear-gradient(135deg, rgba(239, 68, 68, 0.22) 0%, rgba(127, 29, 29, 0.45) 100%)',
   },
   {
     id: 'qiuqiu' as const,
@@ -62,7 +51,7 @@ export default function ByOneRoomModal({ onClose, onLaunchGame, socket }: ByOneR
   const [tab, setTab] = useState<'create' | 'join'>('create');
 
   // Creation State
-  const [selectedMode, setSelectedMode] = useState<'billiard' | 'domino' | 'qiuqiu'>('billiard');
+  const [selectedMode, setSelectedMode] = useState<'billiard' | 'qiuqiu'>('billiard');
   const [selectedBet, setSelectedBet] = useState<number>(20000);
   const [customBetInput, setCustomBetInput] = useState<string>('');
 

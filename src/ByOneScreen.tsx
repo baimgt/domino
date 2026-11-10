@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+﻿import { useState, useEffect, useRef, useCallback } from 'react';
 import { Socket } from 'socket.io-client';
 import { API_URL } from './config';
 import './byone.css';
@@ -32,7 +32,7 @@ export const BYONE_TIERS = [
 
 const BOT_RIVALS: PlayerInfo[] = [
   { username: 'Sultan_Fajar',    avatar: 'https://i.pravatar.cc/100?img=68', coins: 150000000, vipLevel: 5, winRate: '82%' },
-  { username: 'RatuGaple_Ayu',   avatar: 'https://i.pravatar.cc/100?img=47', coins: 85000000,  vipLevel: 4, winRate: '79%' },
+  { username: 'RatuHoki_Ayu',   avatar: 'https://i.pravatar.cc/100?img=47', coins: 85000000,  vipLevel: 4, winRate: '79%' },
   { username: 'Budi_Master',     avatar: 'https://i.pravatar.cc/100?img=12', coins: 45000000,  vipLevel: 3, winRate: '71%' },
   { username: 'DewaBanting_99',  avatar: 'https://i.pravatar.cc/100?img=33', coins: 280000000, vipLevel: 6, winRate: '88%' },
   { username: 'Sniper_Kartu',    avatar: 'https://i.pravatar.cc/100?img=53', coins: 62000000,  vipLevel: 2, winRate: '75%' },
@@ -59,7 +59,7 @@ const BOT_RIVALS: PlayerInfo[] = [
   { username: 'HokiSelalu_88',   avatar: 'https://i.pravatar.cc/100?img=20', coins: 92000000,  vipLevel: 4, winRate: '78%' },
   { username: 'SiPalingHoki',    avatar: 'https://i.pravatar.cc/100?img=48', coins: 155000000, vipLevel: 5, winRate: '83%' },
   { username: 'AutoWin_VIP',     avatar: 'https://i.pravatar.cc/100?img=62', coins: 350000000, vipLevel: 8, winRate: '92%' },
-  { username: 'PangeranGaple',   avatar: 'https://i.pravatar.cc/100?img=61', coins: 180000000, vipLevel: 6, winRate: '86%' },
+  { username: 'PangeranQiu',   avatar: 'https://i.pravatar.cc/100?img=61', coins: 180000000, vipLevel: 6, winRate: '86%' },
   { username: 'KudaHitam_99',    avatar: 'https://i.pravatar.cc/100?img=36', coins: 145000000, vipLevel: 5, winRate: '84%' },
   { username: 'PendekarKartu',   avatar: 'https://i.pravatar.cc/100?img=37', coins: 160000000, vipLevel: 5, winRate: '85%' },
   { username: 'BegalChip_ID',    avatar: 'https://i.pravatar.cc/100?img=38', coins: 125000000, vipLevel: 5, winRate: '82%' },
@@ -67,10 +67,10 @@ const BOT_RIVALS: PlayerInfo[] = [
   { username: 'RajaBluffing',    avatar: 'https://i.pravatar.cc/100?img=40', coins: 220000000, vipLevel: 7, winRate: '89%' },
   { username: 'Mpok_Siti_Hoki',  avatar: 'https://i.pravatar.cc/100?img=21', coins: 80000000,  vipLevel: 4, winRate: '77%' },
   { username: 'Teh_Lilis_Priangan', avatar: 'https://i.pravatar.cc/100?img=24', coins: 98000000, vipLevel: 4, winRate: '80%' },
-  { username: 'Maya_DominoQueen',avatar: 'https://i.pravatar.cc/100?img=23', coins: 170000000, vipLevel: 6, winRate: '85%' },
+  { username: 'Maya_QueenQQ',avatar: 'https://i.pravatar.cc/100?img=23', coins: 170000000, vipLevel: 6, winRate: '85%' },
   { username: 'GarudaSakty_88',  avatar: 'https://i.pravatar.cc/100?img=4',  coins: 205000000, vipLevel: 6, winRate: '88%' },
   { username: 'DewaKoplok',      avatar: 'https://i.pravatar.cc/100?img=8',  coins: 135000000, vipLevel: 5, winRate: '83%' },
-  { username: 'BimaSakti_Gaple', avatar: 'https://i.pravatar.cc/100?img=30', coins: 190000000, vipLevel: 6, winRate: '87%' }
+  { username: 'BimaSakti_88', avatar: 'https://i.pravatar.cc/100?img=30', coins: 190000000, vipLevel: 6, winRate: '87%' }
 ];
 
 const TAUNT_LIST = [
@@ -251,7 +251,7 @@ export default function ByOneScreen({
   // Screen View: 'lobby' | 'matching' | 'versus' | 'playing' | 'result'
   const [viewMode, setViewMode] = useState<'lobby' | 'matching' | 'versus' | 'playing' | 'result'>('lobby');
   const [lobbyTab, setLobbyTab] = useState<'quick' | 'custom' | 'rules'>('quick');
-  const [gameMode, setGameMode] = useState<'gaple' | 'qiuqiu'>('gaple');
+  const [gameMode, setGameMode] = useState<'qiuqiu'>('qiuqiu');
 
   // Selected Betting Tier
   const [selectedTier, setSelectedTier] = useState(BYONE_TIERS[1]); // default: 20k
@@ -893,12 +893,6 @@ export default function ByOneScreen({
           <span>FORMAT DUEL 1V1:</span>
         </div>
         <div className="byone-gt-switch">
-          <button
-            className={`byone-gt-option ${gameMode === 'gaple' ? 'active' : ''}`}
-            onClick={() => setGameMode('gaple')}
-          >
-            🀄 DOMINO GAPLE (1V1)
-          </button>
           <button
             className={`byone-gt-option ${gameMode === 'qiuqiu' ? 'active' : ''}`}
             onClick={() => setGameMode('qiuqiu')}
