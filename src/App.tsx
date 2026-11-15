@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import './App.css';
 import './slot-modal.css';
 import { io, Socket } from 'socket.io-client';
@@ -413,7 +413,7 @@ function LoginScreen({ onLoginSuccess }: { onLoginSuccess: () => void }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           username: sanitizedUsername,
-          coins: 100000,
+          coins: 10000,
           rp: 0,
           score: 50,
           avatar: initialAvatar,
@@ -435,7 +435,7 @@ function LoginScreen({ onLoginSuccess }: { onLoginSuccess: () => void }) {
         localStorage.setItem('domino_login_provider', 'google');
         if (googleEmail) localStorage.setItem('domino_google_email', googleEmail);
         localStorage.setItem('domino_avatar', initialAvatar);
-        localStorage.setItem('domino_coins', '100000');
+        localStorage.setItem('domino_coins', '10000');
         onLoginSuccess();
       } else {
         const errorData = await res.json().catch(() => ({ error: 'Respon server tidak valid' }));

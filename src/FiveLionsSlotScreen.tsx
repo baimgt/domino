@@ -349,7 +349,7 @@ export default function FiveLionsSlotScreen({ onBack, socket }: Props) {
   useEffect(() => {
     const coinsStr = localStorage.getItem('domino_coins');
     if (coinsStr) setMyCoins(parseInt(coinsStr));
-    else localStorage.setItem('domino_coins', '100000');
+    else localStorage.setItem('domino_coins', '10000');
 
     // Restore saved Free Spins session if any
     const savedSpins = localStorage.getItem('domino_fivelions_spins');

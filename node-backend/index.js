@@ -1,4 +1,4 @@
-﻿const express = require('express');
+const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const http = require('http');
@@ -34,6 +34,7 @@ const adminController = require('./controllers/adminController');
 const { initSocketIO } = require('./gameManager');
 
 const app = express();
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 8080;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://gamerstore:P1CwEUjy84OiTfAM@gamerstore.yy5ekdc.mongodb.net/domino_db?retryWrites=true&w=majority';
 
@@ -144,6 +145,7 @@ app.get('/api/admin/users',                        adminController.requireAdminA
 app.post('/api/admin/set-role',                    adminController.requireAdminAuth, adminController.setRole);
 app.post('/api/admin/adjust-coins',                adminController.requireAdminAuth, adminController.adjustCoins);
 app.post('/api/admin/toggle-slot-lock',            adminController.requireAdminAuth, adminController.toggleSlotLock);
+app.post('/api/admin/delete-user',                 adminController.requireAdminAuth, adminController.deleteUser);
 app.get('/api/admin/coin-logs',                    adminController.requireAdminAuth, adminController.getCoinLogs);
 
 // Initialize Socket.IO game events
