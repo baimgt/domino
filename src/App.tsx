@@ -37,6 +37,8 @@ import AvatarSelectionModal from './AvatarSelectionModal';
 import ChangeNameModal from './ChangeNameModal';
 import { MIN_SLOT_BET, MAX_SLOT_BET, stepSlotBet } from './slotConfig';
 import BeritaModal from './BeritaModal';
+import { CLIENT_VERSION, isVersionOutdated } from './version';
+import { UpdateRequiredModal, type SystemVersionConfig } from './UpdateRequiredModal';
 
 import { API_URL, getBackendBase, DEFAULT_LAN_SERVER } from './config';
 
@@ -952,7 +954,7 @@ function PengaturanModal({ onClose, onLogout, onOpenBerita }: { onClose: () => v
 
         <div className="peng-update-row">
           <span>⬇️ <b>Update</b></span>
-          <span className="peng-version">V2.79</span>
+          <span className="peng-version">V{CLIENT_VERSION}</span>
         </div>
 
         <div className="peng-action-row">
@@ -11346,6 +11348,35 @@ function App() {
   const [appAlert, setAppAlert] = useState<string | null>(null);
   const [activeSlotLoading, setActiveSlotLoading] = useState<string | null>(null);
 
+  // System Version & Force Update state
+  const [systemVersionConfig, setSystemVersionConfig] = useState<SystemVersionConfig | null>(null);
+  const [isUpdateRequired, setIsUpdateRequired] = useState<boolean>(false);
+
+  const checkVersion = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_URL}/system/version`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!data || !data.success) return;
+      setSystemVersionConfig(data);
+
+      const isNative = Capacitor.isNativePlatform();
+      let required = false;
+      if (isNative) {
+        const minVer = data.minAppVersion || data.appVersion;
+        const force = data.forceUpdateApp !== false;
+        required = force && isVersionOutdated(CLIENT_VERSION, minVer);
+      } else {
+        const minVer = data.minWebVersion || data.webVersion;
+        const force = data.forceUpdateWeb !== false;
+        required = force && isVersionOutdated(CLIENT_VERSION, minVer);
+      }
+      setIsUpdateRequired(required);
+    } catch (err) {
+      console.warn('Check system version error:', err);
+    }
+  }, []);
+
   // By One 1v1 state
   const [byoneOpponent, setByoneOpponent] = useState<string | null>(null);
   const [byoneBet, setByoneBet] = useState<number | null>(null);
@@ -11380,6 +11411,25 @@ function App() {
       setIncomingChallenge(data);
     });
 
+    sock.on('system:version_update', (newConfig: any) => {
+      console.log('Socket system:version_update received:', newConfig);
+      if (newConfig) {
+        setSystemVersionConfig(newConfig);
+        const isNative = Capacitor.isNativePlatform();
+        let required = false;
+        if (isNative) {
+          const minVer = newConfig.minAppVersion || newConfig.appVersion;
+          const force = newConfig.forceUpdateApp !== false;
+          required = force && isVersionOutdated(CLIENT_VERSION, minVer);
+        } else {
+          const minVer = newConfig.minWebVersion || newConfig.webVersion;
+          const force = newConfig.forceUpdateWeb !== false;
+          required = force && isVersionOutdated(CLIENT_VERSION, minVer);
+        }
+        setIsUpdateRequired(required);
+      }
+    });
+
     sock.on('disconnect', () => {
       console.log('Socket.IO disconnected');
     });
@@ -11388,6 +11438,18 @@ function App() {
       sock.disconnect();
     };
   }, []);
+
+  // Periodic and on-focus system version check
+  useEffect(() => {
+    checkVersion();
+    const timer = setInterval(checkVersion, 60000);
+    const onFocus = () => checkVersion();
+    window.addEventListener('focus', onFocus);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, [checkVersion]);
 
   // Manage Lobby BGM based on active screen
   useEffect(() => {
@@ -11431,6 +11493,10 @@ function App() {
   };
 
   const handleNavigate = (targetScreen: any, categoryOverride?: any, extraData?: any) => {
+    if (isUpdateRequired) {
+      checkVersion();
+      return;
+    }
     const COMING_SOON_SCREENS = ['slot-game'];
     if (COMING_SOON_SCREENS.includes(targetScreen)) {
       setAppAlert('Game slot ini sedang dalam pengembangan (Coming Soon)!');
@@ -11530,12 +11596,13 @@ function App() {
     }
   };
 
-  if (screen === 'loading') return <><MobileLandscapeLockOverlay /><LoadingScreen onFinish={t => setScreen(t)} /></>;
-  if (screen === 'login') return <><MobileLandscapeLockOverlay /><LoginScreen onLoginSuccess={handleLoginSuccess} /></>;
+  if (screen === 'loading') return <><MobileLandscapeLockOverlay />{isUpdateRequired && <UpdateRequiredModal config={systemVersionConfig} />}<LoadingScreen onFinish={t => setScreen(t)} /></>;
+  if (screen === 'login') return <><MobileLandscapeLockOverlay />{isUpdateRequired && <UpdateRequiredModal config={systemVersionConfig} />}<LoginScreen onLoginSuccess={handleLoginSuccess} /></>;
 
   return (
     <>
       <MobileLandscapeLockOverlay />
+      {isUpdateRequired && <UpdateRequiredModal config={systemVersionConfig} />}
       {showLoginAnim && (
         <VIPLoginAnimationOverlay
           username={localStorage.getItem('domino_username') || 'PLAYER'}
@@ -11554,6 +11621,10 @@ function App() {
         <KamarLobbyScreen
           onBack={() => setScreen('home')}
           onPlayRoom={(room) => {
+            if (isUpdateRequired) {
+              checkVersion();
+              return;
+            }
             setSelectedRoom(room);
             setGameId(null);
             setScreen('waiting-room');
@@ -11568,6 +11639,10 @@ function App() {
           room={selectedRoom}
           socket={socketRef.current}
           onGameStart={(gid) => {
+            if (isUpdateRequired) {
+              checkVersion();
+              return;
+            }
             setGameId(gid);
             setScreen('domino-play');
           }}
@@ -11609,6 +11684,10 @@ function App() {
             setScreen('home');
           }}
           onPlaySlot={(gameId) => {
+            if (isUpdateRequired) {
+              checkVersion();
+              return;
+            }
             const COMING_SOON = ['duofugrand', 'duofuduocai', 'superace', 'speedwinner', 'yingcaishen', 'richmine'];
             if (COMING_SOON.includes(gameId)) {
               setAppAlert('Game slot ini sedang dalam pengembangan (Coming Soon)!');
