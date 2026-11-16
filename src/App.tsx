@@ -4919,7 +4919,11 @@ function HomeScreen({
 
   useEffect(() => {
     const u = localStorage.getItem('domino_username');
-    if (socket && u) socket.emit('register-user', { username: u });
+    if (socket && u) socket.emit('register-user', { 
+      username: u, 
+      clientVersion: CLIENT_VERSION, 
+      platform: Capacitor.isNativePlatform() ? 'android' : 'web' 
+    });
   }, [socket]);
 
   useEffect(() => {
@@ -6097,7 +6101,11 @@ function KamarLobbyScreen({
   useEffect(() => {
     if (!socket || !myUsername) return;
 
-    socket.emit('register-user', { username: myUsername });
+    socket.emit('register-user', { 
+      username: myUsername, 
+      clientVersion: CLIENT_VERSION, 
+      platform: Capacitor.isNativePlatform() ? 'android' : 'web' 
+    });
     socket.emit('get-team-status', { username: myUsername });
 
     const handleTeamStatusUpdate = ({ partnerUsername }: { partnerUsername: string | null }) => {
@@ -11395,16 +11403,29 @@ function App() {
 
   // Initialize socket connection once
   useEffect(() => {
+    const isNative = Capacitor.isNativePlatform();
     const sock = io(getBackendBase(), {
       transports: ['websocket', 'polling'],
-      autoConnect: true
+      autoConnect: true,
+      auth: {
+        clientVersion: CLIENT_VERSION,
+        platform: isNative ? 'android' : 'web'
+      },
+      query: {
+        clientVersion: CLIENT_VERSION,
+        platform: isNative ? 'android' : 'web'
+      }
     });
     socketRef.current = sock;
 
     sock.on('connect', () => {
       console.log('Socket.IO connected:', sock.id);
       const u = localStorage.getItem('domino_username');
-      if (u) sock.emit('register-user', { username: u });
+      if (u) sock.emit('register-user', { 
+        username: u,
+        clientVersion: CLIENT_VERSION,
+        platform: isNative ? 'android' : 'web'
+      });
     });
 
     sock.on('byone_challenge_received', (data: any) => {

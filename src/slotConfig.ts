@@ -1,3 +1,5 @@
+import { CLIENT_VERSION } from './version';
+
 /**
  * Standard Slot Betting Configuration & Slot Coins Helper
  * Min Bet: 500
@@ -144,7 +146,10 @@ export async function syncSlotBetToBackend(apiUrl: string, username: string, bet
   try {
     const res = await fetch(`${apiUrl}/users/update-coins`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'x-client-version': CLIENT_VERSION
+      },
       body: JSON.stringify({ username, amount: -betAmount, gameType: 'slot', isSlot: true })
     });
     if (res.ok) {
@@ -165,7 +170,10 @@ export async function syncSlotWinToBackend(apiUrl: string, username: string, win
   try {
     const res = await fetch(`${apiUrl}/users/update-coins`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'x-client-version': CLIENT_VERSION
+      },
       body: JSON.stringify({ username, amount: winAmount, gameType: 'slot', isSlot: true })
     });
     if (res.ok) {
